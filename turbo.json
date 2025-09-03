@@ -1,19 +1,52 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
+  "globalEnv": [
+    "DATABASE_URL",
+    "MINIO_ENDPOINT",
+    "JWT_ACCESS_TOKEN_SECRET",
+    "JWT_REFRESH_TOKEN_SECRET",
+    "JWT_ACCESS_TOKEN_EXPIRATION_MS",
+    "JWT_REFRESH_TOKEN_EXPIRATION_MS",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "FACEBOOK_APP_ID",
+    "FACEBOOK_APP_SECRET"
+  ],
   "globalDependencies": ["**/.env.*local"],
   "tasks": {
     "build": {
       "dependsOn": ["^build", "db:generate"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**", ".expo/**", "dist/**"],
-      "env": ["BACKEND_URL", "NEXT_PUBLIC_BACKEND_URL", "MINIO_ENDPOINT"]
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", ".expo/**"]
     },
-    "lint": {
-      "dependsOn": ["^lint"]
+    "web#build": {
+      "dependsOn": ["^build"],
+      "env": ["BACKEND_URL", "NEXT_PUBLIC_BACKEND_URL", "MINIO_ENDPOINT"],
+      "outputs": [".next/**", "!.next/cache/**"]
     },
-    "check-types": {
-      "dependsOn": ["^check-types"]
+    "backend#build": {
+      "dependsOn": ["^build"],
+      "env": [
+        "JWT_ACCESS_TOKEN_EXPIRATION_MS",
+        "JWT_REFRESH_TOKEN_EXPIRATION_MS",
+        "JWT_REFRESH_TOKEN_SECRET",
+        "JWT_ACCESS_TOKEN_SECRET",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "AUTH_UI_REDIRECT",
+        "FACEBOOK_APP_ID",
+        "FACEBOOK_APP_SECRET",
+        "FACEBOOK_CALLBACK_URL",
+        "WEB_UI_REDIRECT",
+        "MOBILE_UI_REDIRECT",
+        "MINIO_ENDPOINT"
+      ],
+      "outputs": ["dist/**"]
+    },
+    "database#build": {
+      "dependsOn": ["^build"],
+      "env": ["DATABASE_URL"],
+      "outputs": ["dist/**"]
     },
     "dev": {
       "cache": false,
@@ -28,6 +61,12 @@
     },
     "db:deploy": {
       "cache": false
+    },
+    "lint": {
+      "dependsOn": ["^lint"]
+    },
+    "check-types": {
+      "dependsOn": ["^check-types"]
     }
   }
 }
