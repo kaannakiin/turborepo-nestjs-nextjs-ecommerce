@@ -4,14 +4,16 @@ import cookieParser from 'cookie-parser';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.use(cookieParser());
+  const allowedOrigins =
+    process.env.NODE_ENV === 'production'
+      ? ['https://terravivashop.com', 'https://www.terravivashop.com']
+      : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+
   app.enableCors({
-    origin: [
-      'http://localhost:3000', // Frontend'in portu
-      'http://127.0.0.1:3000', // Alternative localhost
-    ],
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true, // Eğer authentication cookie'leri kullanıyorsan
+    credentials: true,
   });
   await app.listen(process.env.PORT ?? 3001);
 }
