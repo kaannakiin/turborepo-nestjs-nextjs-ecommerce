@@ -11,7 +11,8 @@
     "GOOGLE_CLIENT_ID",
     "GOOGLE_CLIENT_SECRET",
     "FACEBOOK_APP_ID",
-    "FACEBOOK_APP_SECRET"
+    "FACEBOOK_APP_SECRET",
+    "NODE_ENV"
   ],
   "globalDependencies": ["**/.env.*local"],
   "tasks": {
@@ -21,7 +22,12 @@
     },
     "web#build": {
       "dependsOn": ["^build"],
-      "env": ["BACKEND_URL", "NEXT_PUBLIC_BACKEND_URL", "MINIO_ENDPOINT"],
+      "env": [
+        "BACKEND_URL",
+        "NEXT_PUBLIC_BACKEND_URL",
+        "MINIO_ENDPOINT",
+        "NODE_ENV"
+      ],
       "outputs": [".next/**", "!.next/cache/**"]
     },
     "backend#build": {
@@ -39,7 +45,8 @@
         "FACEBOOK_CALLBACK_URL",
         "WEB_UI_REDIRECT",
         "MOBILE_UI_REDIRECT",
-        "MINIO_ENDPOINT"
+        "MINIO_ENDPOINT",
+        "NODE_ENV"
       ],
       "outputs": ["dist/**"]
     },
@@ -55,13 +62,14 @@
         "AUTH_UI_REDIRECT",
         "FACEBOOK_CALLBACK_URL",
         "WEB_UI_REDIRECT",
-        "MOBILE_UI_REDIRECT"
+        "MOBILE_UI_REDIRECT",
+        "NODE_ENV"
       ]
     },
     "web#start": {
       "cache": false,
       "persistent": true,
-      "env": ["BACKEND_URL", "NEXT_PUBLIC_BACKEND_URL"]
+      "env": ["BACKEND_URL", "NEXT_PUBLIC_BACKEND_URL", "NODE_ENV"]
     },
     "database#build": {
       "dependsOn": ["^build"],

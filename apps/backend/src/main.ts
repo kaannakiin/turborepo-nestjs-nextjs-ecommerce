@@ -1,7 +1,7 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import cookieParser from 'cookie-parser';
 import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
+import cookieParser from 'cookie-parser';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,7 +15,7 @@ async function bootstrap() {
           'https://api.terravivashop.com', // Backend subdomain'i de ekle
         ]
       : ['http://localhost:3000', 'http://127.0.0.1:3000'];
-
+  console.log(allowedOrigins, configService.get<string>('NODE_ENV'));
   app.enableCors({
     origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
