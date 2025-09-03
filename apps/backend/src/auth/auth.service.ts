@@ -137,6 +137,7 @@ export class AuthService {
       secure: this.configService.get('NODE_ENV') === 'production',
       sameSite: 'none',
       maxAge: accessTokenExpirationMs,
+      domain: '.terravivashop.com',
     });
 
     response.cookie('refresh_token', refreshToken, {
@@ -144,6 +145,7 @@ export class AuthService {
       secure: this.configService.get('NODE_ENV') === 'production',
       sameSite: 'none',
       maxAge: refreshTokenExpirationMs,
+      domain: '.terravivashop.com',
     });
 
     if (redirect) {
