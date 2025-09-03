@@ -1,13 +1,14 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.use(cookieParser());
-
+  const configService = app.get<ConfigService>(ConfigService);
   const allowedOrigins =
-    process.env.NODE_ENV === 'production'
+    configService.get<string>('NODE_ENV') === 'production'
       ? [
           'https://terravivashop.com',
           'https://www.terravivashop.com',
@@ -22,6 +23,6 @@ async function bootstrap() {
     credentials: true,
   });
 
-  await app.listen(process.env.PORT ?? 3001, '0.0.0.0'); // 0.0.0.0 ekle
+  await app.listen(configService.get<string>('PORT') ?? 3001, '0.0.0.0'); // 0.0.0.0 ekle
 }
 bootstrap();
