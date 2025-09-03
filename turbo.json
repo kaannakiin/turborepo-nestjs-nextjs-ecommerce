@@ -43,6 +43,10 @@
       ],
       "outputs": ["dist/**"]
     },
+    "start": {
+      "cache": false,
+      "persistent": true
+    },
     "database#build": {
       "dependsOn": ["^build"],
       "env": ["DATABASE_URL"],
