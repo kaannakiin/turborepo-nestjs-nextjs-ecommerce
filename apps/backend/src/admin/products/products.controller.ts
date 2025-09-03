@@ -14,9 +14,9 @@ import {
 import { FilesInterceptor } from '@nestjs/platform-express';
 import {
   VariantGroupSchema,
-  VariantGroupZodType,
+  type VariantGroupZodType,
   VariantProductSchema,
-  VariantProductZodType,
+  type VariantProductZodType,
 } from '@repo/types';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
@@ -33,20 +33,7 @@ export class ProductsController {
 
   @Get('get-variants')
   async getVariants(): Promise<VariantGroupZodType[]> {
-    const data = await this.productsService.getVariants({
-      orderBy: {
-        createdAt: 'desc',
-      },
-      include: {
-        translations: true,
-        options: {
-          include: {
-            asset: { select: { url: true, type: true } },
-            translations: true,
-          },
-        },
-      },
-    });
+    const data = await this.productsService.getVariants();
     if (!data || data.length === 0) {
       return [];
     }

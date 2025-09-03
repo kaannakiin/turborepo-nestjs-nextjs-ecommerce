@@ -17,9 +17,8 @@ export class ProductsService {
     private minioClient: MinioService,
   ) {}
 
-  async getVariants(args: Prisma.VariantGroupFindManyArgs) {
+  async getVariants() {
     return this.prisma.variantGroup.findMany({
-      ...args,
       include: {
         translations: true,
         options: {

@@ -9,7 +9,7 @@ import { $Enums } from '@repo/database';
 import { createId } from '@repo/shared';
 import { type Client } from 'minio';
 import { NestMinioService } from 'nestjs-minio';
-import * as sharp from 'sharp';
+import sharp from 'sharp';
 
 interface UploadAssetProps {
   bucketName: string;

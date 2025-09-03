@@ -8,9 +8,13 @@ import {
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
-import { User } from '@repo/database';
-import { RegisterSchema, RegisterSchemaType, TokenPayload } from '@repo/types';
-import { Response } from 'express';
+import { type User } from '@repo/database';
+import {
+  RegisterSchema,
+  type RegisterSchemaType,
+  TokenPayload,
+} from '@repo/types';
+import { type Response } from 'express';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import { AuthService } from './auth.service';
@@ -57,9 +61,9 @@ export class AuthController {
     @Req() req: Request,
     @Res() response: Response,
   ) {
-    const userAgent = req.headers['user-agent'];
+    const userAgent = req.headers.get('user-agent');
     const isMobile = userAgent && userAgent.includes('Mobile');
-    await this.authService.login(user, response, true, isMobile);
+    await this.authService.login(user, response, true, isMobile || false);
   }
 
   @Get('facebook')
@@ -73,9 +77,9 @@ export class AuthController {
     @Req() req: Request,
     @Res() response: Response,
   ) {
-    const userAgent = req.headers['user-agent'];
+    const userAgent = req.headers.get('user-agent');
     const isMobile = userAgent && userAgent.includes('Mobile');
-    await this.authService.login(user, response, true, isMobile);
+    await this.authService.login(user, response, true, isMobile || false);
   }
 
   @Get('me')

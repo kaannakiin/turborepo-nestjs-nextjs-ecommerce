@@ -1,6 +1,6 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import {
-  GetUsersQueries,
+  type GetUsersQueries,
   getUsersQueries,
   GetUsersQueriesReturnType,
 } from '@repo/types';
