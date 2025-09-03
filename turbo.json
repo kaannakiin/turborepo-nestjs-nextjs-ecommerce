@@ -43,9 +43,25 @@
       ],
       "outputs": ["dist/**"]
     },
-    "start": {
+    "backend#start": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "env": [
+        "DATABASE_URL",
+        "JWT_ACCESS_TOKEN_SECRET",
+        "JWT_REFRESH_TOKEN_SECRET",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "AUTH_UI_REDIRECT",
+        "FACEBOOK_CALLBACK_URL",
+        "WEB_UI_REDIRECT",
+        "MOBILE_UI_REDIRECT"
+      ]
+    },
+    "web#start": {
+      "cache": false,
+      "persistent": true,
+      "env": ["BACKEND_URL", "NEXT_PUBLIC_BACKEND_URL"]
     },
     "database#build": {
       "dependsOn": ["^build"],
