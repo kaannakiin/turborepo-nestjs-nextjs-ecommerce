@@ -1,0 +1,694 @@
+"use client";
+import {
+  ActionIcon,
+  Avatar,
+  Badge,
+  Button,
+  ColorInput,
+  ColorSwatch,
+  Drawer,
+  DrawerProps,
+  Group,
+  Modal,
+  Popover,
+  Radio,
+  SimpleGrid,
+  Stack,
+  Tabs,
+  Text,
+  TextInput,
+  UnstyledButton,
+} from "@mantine/core";
+import {
+  Control,
+  Controller,
+  createId,
+  SubmitHandler,
+  useFieldArray,
+  useForm,
+  zodResolver,
+} from "@repo/shared";
+import { $Enums, VariantGroupSchema, VariantGroupZodType } from "@repo/types";
+import {
+  IconArrowBarToLeft,
+  IconDotsVertical,
+  IconEdit,
+  IconTrash,
+} from "@tabler/icons-react";
+import { useEffect, useRef, useState } from "react";
+import GlobalDropzone from "../../../../../components/GlobalDropzone";
+import classes from "./RadioCard.module.css";
+
+// @dnd-kit imports
+import {
+  closestCenter,
+  DndContext,
+  DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import GlobalLoadingOverlay from "../../../../../components/GlobalLoadingOverlay";
+import CreatableSelect from "./CreatableSelect";
+
+interface VariantGroupDrawerProps
+  extends Pick<DrawerProps, "opened" | "onClose"> {
+  onSubmit: SubmitHandler<VariantGroupZodType>;
+  defaultValues?: VariantGroupZodType;
+}
+
+// Sortable Item Component
+interface SortableVariantItemProps {
+  id: string;
+  index: number;
+  control: Control<VariantGroupZodType>;
+  onEdit: () => void;
+  onDelete: () => void;
+  type: $Enums.VariantGroupType;
+}
+
+const SortableVariantItem = ({
+  id,
+  index,
+  control,
+  onEdit,
+  onDelete,
+  type,
+}: SortableVariantItemProps) => {
+  const [deletePopoverOpened, setDeletePopoverOpened] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const handleDeleteConfirm = () => {
+    onDelete();
+    setDeletePopoverOpened(false);
+  };
+
+  // Watch ile field değerlerini alalım
+  const fieldFile = control._getWatch(`options.${index}.file`);
+  const fieldExistingImage = control._getWatch(
+    `options.${index}.existingImage`
+  );
+  const fieldHexValue = control._getWatch(`options.${index}.hexValue`);
+  const fieldTranslations = control._getWatch(`options.${index}.translations`);
+
+  // URL oluşturma fonksiyonu (file varsa)
+  const getImageUrl = () => {
+    if (fieldFile && typeof fieldFile !== "string") {
+      return URL.createObjectURL(fieldFile);
+    }
+    return fieldExistingImage || null;
+  };
+
+  const imageUrl = getImageUrl();
+
+  const renderVisual = () => {
+    if (type === "COLOR") {
+      if (imageUrl) {
+        return <Avatar src={imageUrl} size="sm" radius="xs" />;
+      } else if (fieldHexValue) {
+        return <ColorSwatch color={fieldHexValue} size={24} />;
+      }
+    }
+    return null;
+  };
+  return (
+    <div ref={setNodeRef} style={style}>
+      <Group
+        gap={"xs"}
+        align="center"
+        justify="space-between"
+        bg={"gray.1"}
+        p="xs"
+        style={{
+          borderRadius: "8px",
+          cursor: isDragging ? "grabbing" : "default",
+        }}
+      >
+        <Group gap={"xs"} align="center">
+          <Group gap="xs">
+            <ActionIcon
+              variant="transparent"
+              size={"lg"}
+              c={"admin"}
+              color="admin"
+              style={{ cursor: "grab" }}
+              {...attributes}
+              {...listeners}
+            >
+              <IconDotsVertical size={16} />
+            </ActionIcon>
+            {renderVisual()}
+          </Group>
+
+          {isEditing ? (
+            <Controller
+              control={control}
+              name={`options.${index}.translations.0.name`}
+              render={({ field, fieldState }) => (
+                <TextInput
+                  {...field}
+                  error={fieldState.error?.message}
+                  onChange={(value) => {
+                    if (value.currentTarget.value !== "") {
+                      field.onChange(value.currentTarget.value);
+                    }
+                  }}
+                  variant="filled"
+                  c={"admin"}
+                  autoFocus
+                  onBlur={() => setIsEditing(false)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === "Escape") {
+                      setIsEditing(false);
+                    }
+                  }}
+                />
+              )}
+            />
+          ) : (
+            <Text
+              style={{
+                cursor: "pointer",
+                flex: 1,
+                padding: "8px 12px",
+                borderRadius: "4px",
+                minHeight: "36px",
+                display: "flex",
+                alignItems: "center",
+              }}
+              onDoubleClick={() => setIsEditing(true)}
+            >
+              {fieldTranslations?.[0]?.name || ""}
+            </Text>
+          )}
+        </Group>
+        <Group gap={"md"} align="center" justify="flex-end">
+          <ActionIcon
+            size={"sm"}
+            variant={"transparent"}
+            color={"admin"}
+            onClick={onEdit}
+          >
+            <IconEdit />
+          </ActionIcon>
+
+          <Popover
+            position="top"
+            withArrow
+            shadow="md"
+            opened={deletePopoverOpened}
+            onChange={setDeletePopoverOpened}
+          >
+            <Popover.Target>
+              <ActionIcon
+                size={"sm"}
+                variant={"transparent"}
+                color={"admin"}
+                onClick={() => setDeletePopoverOpened(true)}
+              >
+                <IconTrash />
+              </ActionIcon>
+            </Popover.Target>
+            <Popover.Dropdown>
+              <Stack gap="xs" w={200}>
+                <Text size="sm">
+                  Varyant opsiyonunu silmek istiyor musunuz?
+                </Text>
+                <Group justify="flex-end" gap="xs">
+                  <Button
+                    size="xs"
+                    variant="light"
+                    color="gray"
+                    onClick={() => setDeletePopoverOpened(false)}
+                  >
+                    İptal
+                  </Button>
+                  <Button size="xs" color="red" onClick={handleDeleteConfirm}>
+                    Evet
+                  </Button>
+                </Group>
+              </Stack>
+            </Popover.Dropdown>
+          </Popover>
+        </Group>
+      </Group>
+    </div>
+  );
+};
+
+const VariantGroupDrawer = ({
+  onClose,
+  opened,
+  onSubmit,
+  defaultValues,
+}: VariantGroupDrawerProps) => {
+  const [variantError, setVariantError] = useState<string | null>(null);
+  const [variantName, setVariantName] = useState<string>("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [selectedVariantOptionModal, setSelectedVariantOptionModal] = useState<
+    string | null
+  >(null);
+  const [allDeleteVariantPopover, setAllDeleteVariantPopover] = useState(false);
+
+  // Default values tanımı
+  const initialValues = {
+    type: "LIST" as $Enums.VariantGroupType,
+    uniqueId: createId(),
+    options: [],
+    translations: [
+      {
+        locale: "TR" as $Enums.Locale,
+        name: "",
+        slug: "",
+      },
+    ],
+  };
+
+  const {
+    control,
+    watch,
+    handleSubmit,
+    formState: { isSubmitting, errors },
+    setValue,
+    reset,
+  } = useForm<VariantGroupZodType>({
+    resolver: zodResolver(VariantGroupSchema),
+    defaultValues: initialValues,
+  });
+
+  useEffect(() => {
+    if (opened) {
+      if (defaultValues) {
+        reset(defaultValues);
+      } else {
+        reset(initialValues);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opened, defaultValues, reset]);
+
+  const type = watch("type") || "LIST";
+  const uniqueId = watch("uniqueId");
+  const { fields, append, remove, move } = useFieldArray({
+    control,
+    name: "options",
+  });
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleAddVariant = () => {
+    if (!variantName.trim()) return;
+
+    const existingNames = fields
+      .map((field) =>
+        field.translations?.find((t) => t.locale === "TR")?.name.toLowerCase()
+      )
+      .filter(Boolean);
+    if (existingNames.includes(variantName.toLowerCase().trim())) {
+      setVariantError("Bu varyant zaten mevcut");
+
+      setTimeout(() => {
+        setVariantError(null);
+      }, 1000);
+
+      return;
+    }
+
+    setVariantError(null);
+
+    append({
+      translations: [
+        {
+          name: variantName.trim(),
+          locale: "TR",
+          slug: variantName
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, "-")
+            .replace(/[^a-z0-9-]/g, ""),
+        },
+      ],
+      uniqueId: createId(),
+      file: null,
+      hexValue: "#000000",
+    });
+
+    setVariantName("");
+
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      const oldIndex = fields.findIndex((field) => field.id === active.id);
+      const newIndex = fields.findIndex((field) => field.id === over?.id);
+
+      move(oldIndex, newIndex);
+    }
+  };
+
+  // selectedVariantOptionModal'ın field.id'sine karşılık gelen index'ini bulma
+  const getSelectedVariantIndex = () => {
+    if (!selectedVariantOptionModal) return -1;
+    return fields.findIndex((field) => field.id === selectedVariantOptionModal);
+  };
+
+  const selectedVariantIndex = getSelectedVariantIndex();
+
+  return (
+    <>
+      {isSubmitting && <GlobalLoadingOverlay />}
+
+      <Drawer.Root
+        opened={opened}
+        onClose={onClose}
+        position="right"
+        size={"lg"}
+        closeOnClickOutside={!selectedVariantOptionModal}
+        closeOnEscape={!selectedVariantOptionModal}
+      >
+        <Drawer.Overlay />
+        <Drawer.Content>
+          <Drawer.Header>
+            <Drawer.Title fw={700} fz={"lg"}>
+              Varyant
+            </Drawer.Title>
+
+            <Group gap={"md"}>
+              <Button variant="outline" color="gray" onClick={onClose}>
+                Vazgeç
+              </Button>
+              <Button
+                variant="filled"
+                onClick={() => {
+                  if (!uniqueId || uniqueId === "") {
+                    setValue("uniqueId", createId());
+                  }
+                  handleSubmit(onSubmit)();
+                }}
+              >
+                {defaultValues ? "Güncelle" : "Kaydet"}
+              </Button>
+            </Group>
+          </Drawer.Header>
+          <Drawer.Body>
+            <Stack gap={"lg"}>
+              <Group justify="flex-end"></Group>
+              <Controller
+                control={control}
+                name="translations.0.name"
+                render={({ field, fieldState }) => (
+                  <CreatableSelect
+                    {...field}
+                    value={field.value || ""}
+                    onChange={field.onChange}
+                    reset={reset}
+                    setValue={setValue}
+                    error={fieldState.error?.message}
+                    label="Varyant Türü Adı"
+                    data-autofocus={defaultValues ? false : true}
+                  />
+                )}
+              />
+              <Stack gap={"xs"}>
+                <Controller
+                  control={control}
+                  name="type"
+                  render={({ field, fieldState }) => {
+                    return (
+                      <Radio.Group
+                        {...field}
+                        onChange={(value) => {
+                          field.onChange(value as $Enums.VariantGroupType);
+                        }}
+                        error={fieldState.error?.message}
+                        label="Seçim Stili"
+                        withAsterisk
+                      >
+                        <SimpleGrid cols={{ xs: 1, sm: 2 }}>
+                          <Radio.Card
+                            value={$Enums.VariantGroupType.LIST}
+                            className={classes.root}
+                            radius="md"
+                          >
+                            <Group wrap="nowrap" gap={"xs"} align="flex-start">
+                              <Radio.Indicator c={"admin"} color="admin" />
+                              <Stack gap={"xs"}>
+                                <Text className={classes.label}>Liste</Text>
+                                <Group gap={"xs"}>
+                                  <Badge
+                                    variant="light"
+                                    size="xl"
+                                    radius={0}
+                                    color="gray"
+                                  >
+                                    XL
+                                  </Badge>
+                                  <Badge
+                                    variant="light"
+                                    size="lg"
+                                    radius={0}
+                                    color="gray"
+                                  >
+                                    L
+                                  </Badge>
+                                  <Badge
+                                    variant="light"
+                                    size="md"
+                                    radius={0}
+                                    color="gray"
+                                  >
+                                    M
+                                  </Badge>
+                                </Group>
+                              </Stack>
+                            </Group>
+                          </Radio.Card>
+                          <Radio.Card
+                            value={$Enums.VariantGroupType.COLOR}
+                            className={classes.root}
+                            radius="md"
+                            color="admin"
+                            c="admin"
+                          >
+                            <Group wrap="nowrap" gap={"xs"} align="flex-start">
+                              <Radio.Indicator c={"admin"} color="admin" />
+                              <Stack gap={"xs"}>
+                                <Text className={classes.label}>
+                                  Renk/Görsel
+                                </Text>
+                                <Group gap={"xs"}>
+                                  <ColorSwatch color="gray" />
+                                  <ColorSwatch color="white" />
+                                </Group>
+                              </Stack>
+                            </Group>
+                          </Radio.Card>
+                        </SimpleGrid>
+                      </Radio.Group>
+                    );
+                  }}
+                />
+              </Stack>
+              <TextInput
+                ref={inputRef}
+                labelProps={{
+                  className: "w-full",
+                }}
+                label={
+                  <Group justify="space-between">
+                    <Text>
+                      Varyantlar <span className="text-red-500">*</span>
+                    </Text>
+                    <Popover
+                      width={200}
+                      position="bottom"
+                      withArrow
+                      shadow="md"
+                      opened={allDeleteVariantPopover}
+                      onChange={setAllDeleteVariantPopover}
+                    >
+                      <Popover.Target>
+                        <UnstyledButton
+                          className="flex flex-row gap-1 text-xs text-red-500 text-center"
+                          onClick={() => setAllDeleteVariantPopover(true)}
+                        >
+                          <IconTrash size={16} />
+                          Tümünü Sil
+                        </UnstyledButton>
+                      </Popover.Target>
+                      <Popover.Dropdown>
+                        <Stack gap="xs">
+                          <Text size="sm">
+                            Tüm varyant opsiyonlarını silmek istiyor musunuz?
+                          </Text>
+                          <Group justify="flex-end">
+                            <Button
+                              size="xs"
+                              variant="light"
+                              color="gray"
+                              onClick={() => setAllDeleteVariantPopover(false)}
+                            >
+                              Hayır
+                            </Button>
+                            <Button
+                              size="xs"
+                              color="red"
+                              onClick={() => {
+                                setAllDeleteVariantPopover(false);
+                                fields.forEach((_, index) => remove(index));
+                              }}
+                            >
+                              Evet
+                            </Button>
+                          </Group>
+                        </Stack>
+                      </Popover.Dropdown>
+                    </Popover>
+                  </Group>
+                }
+                rightSection={<IconArrowBarToLeft />}
+                value={variantName}
+                onChange={(e) => setVariantName(e.currentTarget.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    handleAddVariant();
+                  }
+                }}
+                error={
+                  variantError
+                    ? variantError
+                    : errors.options?.message
+                      ? errors.options?.message
+                      : undefined
+                }
+                variant="filled"
+              />
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={fields.map((field) => field.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <Stack gap={"xs"}>
+                    {fields &&
+                      fields.map((field, index) => (
+                        <SortableVariantItem
+                          key={field.id}
+                          id={field.id}
+                          index={index}
+                          control={control}
+                          type={type}
+                          onEdit={() => setSelectedVariantOptionModal(field.id)}
+                          onDelete={() => remove(index)}
+                        />
+                      ))}
+                  </Stack>
+                </SortableContext>
+              </DndContext>
+            </Stack>
+          </Drawer.Body>
+        </Drawer.Content>
+      </Drawer.Root>
+
+      {selectedVariantOptionModal !== null && selectedVariantIndex !== -1 && (
+        <Modal
+          size={"lg"}
+          opened={selectedVariantOptionModal !== null}
+          onClose={() => setSelectedVariantOptionModal(null)}
+          centered
+          title="Varyant Seçeneği Düzenle"
+          classNames={{
+            title: "font-semibold text-lg",
+          }}
+        >
+          <Tabs defaultValue={"color"}>
+            <Tabs.List grow>
+              <Tabs.Tab value="color">Renk</Tabs.Tab>
+              <Tabs.Tab value="image">Görsel</Tabs.Tab>
+            </Tabs.List>
+            <Tabs.Panel value="color" pt="lg">
+              <Controller
+                control={control}
+                name={`options.${selectedVariantIndex}.hexValue`}
+                render={({ field, fieldState }) => (
+                  <ColorInput
+                    {...field}
+                    value={field.value || "#ab7676"}
+                    withPicker
+                    error={fieldState.error?.message}
+                    variant="filled"
+                    label="Renk"
+                    c={"admin"}
+                  />
+                )}
+              />
+            </Tabs.Panel>
+            <Tabs.Panel value="image" pt="lg">
+              <Controller
+                control={control}
+                name={`options.${selectedVariantIndex}.file`}
+                render={({ field, fieldState }) => (
+                  <GlobalDropzone
+                    accept={"IMAGE"}
+                    onDrop={(files) => {
+                      field.onChange(files[0]);
+                    }}
+                    {...field}
+                    value={field.value || []}
+                    cols={1}
+                    multiple={false}
+                    maxFiles={1}
+                    error={fieldState.error?.message}
+                    maxSize={10 * 1024 * 1024}
+                  />
+                )}
+              />
+            </Tabs.Panel>
+          </Tabs>
+        </Modal>
+      )}
+    </>
+  );
+};
+
+export default VariantGroupDrawer;

@@ -1,0 +1,315 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  USER
+}
+
+enum Locale {
+  TR
+  EN
+  DE
+}
+
+enum Currency {
+  TRY
+  USD
+  EUR
+  GBP
+}
+
+enum VariantGroupType {
+  LIST
+  COLOR
+}
+
+enum AssetType {
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+}
+
+enum ProductType {
+  DIGITAL
+  PHYSICAL
+}
+
+model Asset {
+  id   String    @id @default(cuid())
+  type AssetType @default(IMAGE)
+  url  String    @unique
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  variantOption VariantOption?
+  ProductAsset  ProductAsset[]
+
+  @@index([url])
+}
+
+model User {
+  id           String   @id @default(cuid())
+  role         UserRole @default(USER)
+  name         String
+  surname      String
+  email        String?  @unique
+  phone        String?  @unique
+  password     String?
+  imageUrl     String?
+  refreshToken String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([id, refreshToken, email, phone])
+}
+
+model VariantGroupTranslation {
+  id     String @id @default(cuid())
+  locale Locale @default(TR)
+  name   String
+  slug   String
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  VariantGroup   VariantGroup @relation(fields: [variantGroupId], references: [id], onDelete: Cascade)
+  variantGroupId String
+
+  @@unique([locale, variantGroupId])
+  @@unique([locale, slug])
+  @@index([locale, slug])
+  @@index([variantGroupId])
+}
+
+model VariantGroup {
+  id                   String                    @id @default(cuid())
+  type                 VariantGroupType          @default(LIST)
+  translations         VariantGroupTranslation[]
+  options              VariantOption[]
+  productVariantGroups ProductVariantGroup[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+}
+
+model VariantOptionTranslation {
+  id     String @id @default(cuid())
+  locale Locale @default(TR)
+  name   String
+  slug   String
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  variantOption   VariantOption @relation(fields: [variantOptionId], references: [id], onDelete: Cascade)
+  variantOptionId String
+
+  @@unique([variantOptionId, locale])
+  @@unique([locale, slug])
+  @@index([locale, slug])
+  @@index([variantOptionId])
+}
+
+model VariantOption {
+  id                    String                     @id @default(cuid())
+  hexValue              String?
+  asset                 Asset?                     @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  assetId               String?                    @unique
+  variantGroup          VariantGroup               @relation(fields: [variantGroupId], references: [id], onDelete: Cascade)
+  variantGroupId        String
+  translations          VariantOptionTranslation[]
+  productVariantOptions ProductVariantOption[]     @relation("ProductVariantOptions")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([variantGroupId])
+  @@index([hexValue])
+}
+
+model ProductTranslation {
+  id              String  @id @default(cuid())
+  locale          Locale  @default(TR)
+  name            String
+  slug            String
+  description     String? @db.Text
+  metaTitle       String?
+  metaDescription String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String?
+
+  @@unique([locale, productId])
+  @@unique([locale, slug])
+  @@index([locale, slug, productId])
+}
+
+model ProductPrice {
+  id              String   @id @default(cuid())
+  currency        Currency @default(TRY)
+  price           Float
+  buyedPrice      Float?
+  discountedPrice Float?
+
+  // Normal product için
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String?
+
+  // Variant combination için
+  combination   ProductVariantCombination? @relation(fields: [combinationId], references: [id], onDelete: Cascade)
+  combinationId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([productId, currency])
+  @@unique([combinationId, currency])
+  @@index([productId, currency])
+  @@index([combinationId, currency])
+}
+
+model ProductAsset {
+  id      String @id @default(cuid())
+  order   Int
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  assetId String
+
+  // Normal product için
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String?
+
+  // Variant combination için
+  combination   ProductVariantCombination? @relation(fields: [combinationId], references: [id], onDelete: Cascade)
+  combinationId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([productId, order])
+  @@unique([combinationId, order])
+  @@index([productId, order])
+  @@index([combinationId, order])
+}
+
+model Product {
+  id        String      @id @default(cuid())
+  type      ProductType @default(PHYSICAL)
+  isVariant Boolean     @default(false)
+
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
+  prices              ProductPrice[]
+  translations        ProductTranslation[]
+  assets              ProductAsset[]
+  variantGroups       ProductVariantGroup[]
+  variantCombinations ProductVariantCombination[]
+}
+
+model ProductVariantGroup {
+  id             String @id @default(cuid())
+  productId      String
+  variantGroupId String // Global VariantGroup'a referans
+  order          Int // Variant gruplarının görüntüleme sırası
+
+  product      Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantGroup VariantGroup           @relation(fields: [variantGroupId], references: [id], onDelete: Cascade)
+  options      ProductVariantOption[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([productId, variantGroupId])
+  @@unique([productId, order])
+  @@index([productId])
+  @@index([variantGroupId])
+  @@index([productId, order])
+}
+
+model ProductVariantOption {
+  id                    String @id @default(cuid())
+  productVariantGroupId String
+  variantOptionId       String // Global VariantOption'a referans
+  order                 Int // Bu grup içindeki seçeneklerin sırası
+
+  productVariantGroup ProductVariantGroup               @relation(fields: [productVariantGroupId], references: [id], onDelete: Cascade)
+  variantOption       VariantOption                     @relation("ProductVariantOptions", fields: [variantOptionId], references: [id], onDelete: Cascade)
+  combinations        ProductVariantCombinationOption[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([productVariantGroupId, variantOptionId])
+  @@unique([productVariantGroupId, order])
+  @@index([productVariantGroupId])
+  @@index([variantOptionId])
+  @@index([productVariantGroupId, order])
+}
+
+model ProductVariantCombination {
+  id        String  @id @default(cuid())
+  productId String
+  sku       String?
+  barcode   String?
+  stock     Int     @default(0)
+  active    Boolean @default(true)
+
+  product      Product                           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  options      ProductVariantCombinationOption[]
+  prices       ProductPrice[]
+  assets       ProductAsset[]
+  translations ProductVariantTranslation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([productId, sku])
+  @@unique([productId, barcode])
+  @@index([productId])
+  @@index([active])
+}
+
+model ProductVariantCombinationOption {
+  id                     String @id @default(cuid())
+  combinationId          String
+  productVariantOptionId String
+
+  combination          ProductVariantCombination @relation(fields: [combinationId], references: [id], onDelete: Cascade)
+  productVariantOption ProductVariantOption      @relation(fields: [productVariantOptionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([combinationId, productVariantOptionId])
+  @@index([combinationId])
+  @@index([productVariantOptionId])
+}
+
+model ProductVariantTranslation {
+  id              String  @id @default(cuid())
+  combinationId   String
+  locale          Locale  @default(TR)
+  description     String? @db.Text
+  metaTitle       String?
+  metaDescription String?
+
+  combination ProductVariantCombination @relation(fields: [combinationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([combinationId, locale])
+  @@index([combinationId, locale])
+}
