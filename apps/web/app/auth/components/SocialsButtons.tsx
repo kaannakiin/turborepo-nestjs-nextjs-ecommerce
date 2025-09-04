@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 
 const SocialsButtons = () => {
   const { push } = useRouter();
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
   return (
     <div className="flex items-center justify-center">
       <div className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl">
@@ -36,7 +38,7 @@ const SocialsButtons = () => {
             <ActionIcon
               variant="outline"
               onClick={() => {
-                push("http://localhost:3001/auth/google");
+                push(`${baseUrl}/auth/google`);
               }}
               size={48}
               radius="md"
@@ -60,7 +62,7 @@ const SocialsButtons = () => {
               size={48}
               radius="md"
               onClick={() => {
-                push("http://localhost:3001/auth/facebook");
+                push(`${baseUrl}/auth/facebook`);
               }}
               className="border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-colors"
               style={{

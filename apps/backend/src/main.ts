@@ -17,17 +17,17 @@ async function bootstrap() {
   const allowedOrigins =
     configService.get<string>('NODE_ENV') === 'production'
       ? [
-          'https://terravivashop.com',      // Ana frontend domain'iniz
-          'https://www.terravivashop.com',  // www ile ana frontend domain'iniz
+          'https://terravivashop.com', // Ana frontend domain'iniz
+          'https://www.terravivashop.com', // www ile ana frontend domain'iniz
           // 'https://api.terravivashop.com', // Backend'in kendi domain'i genellikle origin olarak eklenmez
-                                            // çünkü kendi kendisine istek yapmaz.
-                                            // Ancak eğer backend'iniz bir client gibi davranıp başka bir
-                                            // endpoint'ine istek yapıyorsa (ki bu nadirdir), ekleyebilirsiniz.
-                                            // Normal bir senaryoda bu satıra gerek yoktur.
+          // çünkü kendi kendisine istek yapmaz.
+          // Ancak eğer backend'iniz bir client gibi davranıp başka bir
+          // endpoint'ine istek yapıyorsa (ki bu nadirdir), ekleyebilirsiniz.
+          // Normal bir senaryoda bu satıra gerek yoktur.
         ]
       : [
-          'http://localhost:3000',          // Next.js geliştirme ortamı (varsayılan)
-          'http://127.0.0.1:3000',          // Next.js geliştirme ortamı (alternatif IP)
+          'http://localhost:3000', // Next.js geliştirme ortamı (varsayılan)
+          'http://127.0.0.1:3000', // Next.js geliştirme ortamı (alternatif IP)
         ];
 
   // Geliştirme veya üretim ortamında hangi origin'lerin kullanıldığını görmek için konsola yazdır.
@@ -40,8 +40,8 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // İzin verilen HTTP metotları
     allowedHeaders: ['Content-Type', 'Authorization'], // İstemciden gelen isteklere izin verilen başlıklar
     credentials: true, // Bu ÇOK ÖNEMLİ: Tarayıcının çerezleri cross-origin isteklerle göndermesine izin verir.
-                       // Hem frontend'den backend'e hem de backend'den frontend'e Set-Cookie başlığının
-                       // doğru şekilde işlenmesini sağlar.
+    // Hem frontend'den backend'e hem de backend'den frontend'e Set-Cookie başlığının
+    // doğru şekilde işlenmesini sağlar.
   });
 
   // Uygulamanın dinleyeceği portu ve IP adresini belirt.

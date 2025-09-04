@@ -75,7 +75,6 @@ export class AuthService {
         },
       });
     } catch (error) {
-      console.log(error);
       throw new InternalServerErrorException('Kullanıcı oluşturulamadı');
     }
   }
@@ -135,17 +134,17 @@ export class AuthService {
     response.cookie('token', accessToken, {
       httpOnly: true,
       secure: this.configService.get('NODE_ENV') === 'production',
-      sameSite: 'none',
+      sameSite: 'lax',
       maxAge: accessTokenExpirationMs,
-      domain: '.terravivashop.com',
+      // domain: '.terravivashop.com',
     });
 
     response.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: this.configService.get('NODE_ENV') === 'production',
-      sameSite: 'none',
+      sameSite: 'lax',
       maxAge: refreshTokenExpirationMs,
-      domain: '.terravivashop.com',
+      // domain: '.terravivashop.com',
     });
 
     if (redirect) {

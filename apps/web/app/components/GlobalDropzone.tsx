@@ -388,6 +388,7 @@ const GlobalDropzone = ({
       )}
 
       <Dropzone
+        multiple={multiple}
         onReject={handleReject}
         onDrop={handleDrop}
         maxSize={maxSize}

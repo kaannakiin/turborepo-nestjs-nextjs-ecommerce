@@ -5,3 +5,5 @@ export * from "./api/api-pipe-types";
 export * from "./auth/schemas";
 export * from "./products/product-schemas";
 export * from "./shared/shared-enum";
+export * from "./products/brand-schemas";
+export * from "./products/category-schema";

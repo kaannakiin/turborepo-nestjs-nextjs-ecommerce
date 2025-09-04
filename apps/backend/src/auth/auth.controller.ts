@@ -61,7 +61,7 @@ export class AuthController {
     @Req() req: Request,
     @Res() response: Response,
   ) {
-    const userAgent = req.headers.get('user-agent');
+    const userAgent = req.headers['user-agent'];
     const isMobile = userAgent && userAgent.includes('Mobile');
     await this.authService.login(user, response, true, isMobile || false);
   }
@@ -77,7 +77,7 @@ export class AuthController {
     @Req() req: Request,
     @Res() response: Response,
   ) {
-    const userAgent = req.headers.get('user-agent');
+    const userAgent = req.headers['user-agent'];
     const isMobile = userAgent && userAgent.includes('Mobile');
     await this.authService.login(user, response, true, isMobile || false);
   }

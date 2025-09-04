@@ -4,3 +4,4 @@ export enum SortAdminUserTable {
   createdAtAsc = "CREATED_AT_ASC",
   createdAtDesc = "CREATED_AT_DESC",
 }
+

@@ -1,4 +1,9 @@
 {
+  "dependencies": {
+    "@nestjs/mapped-types": "*",
+    "@repo/shared": "^0.0.0",
+    "date-fns": "^4.1.0"
+  },
   "name": "draft-turborepo",
   "private": true,
   "scripts": {

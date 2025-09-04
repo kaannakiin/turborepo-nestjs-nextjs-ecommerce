@@ -75,6 +75,36 @@ export const FileSchema = ({ type }: { type: AssetType[] | AssetType }) => {
       }
     );
 };
+
+export const htmlDescriptionSchema = z
+  .string()
+  .min(1, { message: "Açıklama zorunludur." })
+  .max(10000, { message: "Açıklama en fazla 10.000 karakter olabilir." })
+  .refine(
+    (value) => {
+      const dangerousTags =
+        /<(script|iframe|object|embed|form|input|button|meta|link|style)/i;
+      return !dangerousTags.test(value);
+    },
+    {
+      message: "Güvenlik nedeniyle bazı HTML etiketlerine izin verilmez.",
+    }
+  )
+  .refine(
+    (value) => {
+      const openTags = (value.match(/<[^\/][^>]*>/g) || []).length;
+      const closeTags = (value.match(/<\/[^>]*>/g) || []).length;
+      const selfClosingTags = (value.match(/<[^>]*\/>/g) || []).length;
+
+      return openTags - selfClosingTags <= closeTags;
+    },
+    {
+      message: "HTML etiketleri düzgün kapatılmalıdır.",
+    }
+  )
+  .optional()
+  .nullable();
+
 export const VariantOptionTranslationSchema = z.object({
   locale: z.enum(Locale),
   name: z
@@ -225,34 +255,7 @@ export const ProductTranslationSchema = z.object({
     .max(256, {
       error: "Ürün adı 256 karakterden uzun olamaz.",
     }),
-  description: z
-    .string()
-    .min(1, { message: "Açıklama zorunludur." })
-    .max(10000, { message: "Açıklama en fazla 10.000 karakter olabilir." })
-    .refine(
-      (value) => {
-        const dangerousTags =
-          /<(script|iframe|object|embed|form|input|button|meta|link|style)/i;
-        return !dangerousTags.test(value);
-      },
-      {
-        message: "Güvenlik nedeniyle bazı HTML etiketlerine izin verilmez.",
-      }
-    )
-    .refine(
-      (value) => {
-        const openTags = (value.match(/<[^\/][^>]*>/g) || []).length;
-        const closeTags = (value.match(/<\/[^>]*>/g) || []).length;
-        const selfClosingTags = (value.match(/<[^>]*\/>/g) || []).length;
-
-        return openTags - selfClosingTags <= closeTags;
-      },
-      {
-        message: "HTML etiketleri düzgün kapatılmalıdır.",
-      }
-    )
-    .optional()
-    .nullable(),
+  description: htmlDescriptionSchema,
   slug: z
     .string({
       error: "Slug zorunludur.",
@@ -456,8 +459,10 @@ export const VariantProductSchema = BaseProductSchema.omit({
   }),
 });
 
-export type VariantProductZodType = z.infer<typeof VariantProductSchema>;
+export const Cuid2Schema = z.cuid2({ error: "Geçersiz kimlik" });
 
+export type Cuid2ZodType = z.infer<typeof Cuid2Schema>;
+export type VariantProductZodType = z.infer<typeof VariantProductSchema>;
 export type VariantGroupTranslationZodType = z.infer<
   typeof VariantGroupTranslationSchema
 >;

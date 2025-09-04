@@ -52,7 +52,9 @@ model Asset {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   variantOption VariantOption?
-  ProductAsset  ProductAsset[]
+  productAsset  ProductAsset[]
+  brand         Brand?
+  category      Category?
 
   @@index([url])
 }
@@ -72,6 +74,86 @@ model User {
   updatedAt DateTime @updatedAt
 
   @@index([id, refreshToken, email, phone])
+}
+
+model CategoryTranslation {
+  id              String  @id @default(cuid())
+  locale          Locale  @default(TR)
+  name            String
+  slug            String
+  description     String? @db.Text
+  metaTitle       String?
+  metaDescription String?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId String
+
+  @@unique([locale, categoryId])
+  @@unique([locale, slug])
+}
+
+model Category {
+  id               String                @id @default(cuid())
+  image            Asset?                @relation(fields: [imageId], references: [id], onDelete: SetNull)
+  imageId          String?               @unique
+  parentCategory   Category?             @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id], onDelete: SetNull)
+  parentCategoryId String?
+  childCategories  Category[]            @relation("CategoryHierarchy")
+  products         ProductCategory[] // products yerine ProductCategory[] 
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  translations     CategoryTranslation[]
+
+  @@index([parentCategoryId])
+}
+
+model ProductCategory {
+  id         String @id @default(cuid())
+  productId  String
+  categoryId String
+
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([productId, categoryId])
+  @@index([productId])
+  @@index([categoryId])
+}
+
+model BrandTranslation {
+  id              String  @id @default(cuid())
+  locale          Locale  @default(TR)
+  name            String
+  slug            String
+  description     String? @db.Text
+  metaTitle       String?
+  metaDescription String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  brandId   String
+  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([locale, brandId])
+  @@unique([locale, slug])
+}
+
+model Brand {
+  id      String  @id @default(cuid())
+  image   Asset?  @relation(fields: [imageId], references: [id], onDelete: SetNull)
+  imageId String? @unique
+
+  parentBrandId String?
+  parentBrand   Brand?             @relation("BrandHierarchy", fields: [parentBrandId], references: [id], onDelete: SetNull)
+  childBrands   Brand[]            @relation("BrandHierarchy")
+  products      Product[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  translations  BrandTranslation[]
 }
 
 model VariantGroupTranslation {
@@ -216,6 +298,9 @@ model Product {
   assets              ProductAsset[]
   variantGroups       ProductVariantGroup[]
   variantCombinations ProductVariantCombination[]
+  brandId             String?
+  brand               Brand?                      @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  categories          ProductCategory[]
 }
 
 model ProductVariantGroup {

@@ -687,10 +687,6 @@ export class ProductsService {
                     active: combination.active,
                   },
                 });
-
-              console.log(
-                `Mevcut kombinasyon güncellendi: ${productCombination.id}, resimler korundu`,
-              );
             } else {
               // Yeni kombinasyon oluştur
               productCombination =
@@ -703,10 +699,6 @@ export class ProductsService {
                     active: combination.active,
                   },
                 });
-
-              console.log(
-                `Yeni kombinasyon oluşturuldu: ${productCombination.id}`,
-              );
             }
 
             // Prices güncelle
@@ -816,10 +808,6 @@ export class ProductsService {
           );
 
           for (const orphanedCombo of orphanedCombinations) {
-            console.log(
-              `Kullanılmayan kombinasyon siliniyor: ${orphanedCombo.id}`,
-            );
-
             // Önce ilişkili verileri sil
             await prisma.productVariantCombinationOption.deleteMany({
               where: { combinationId: orphanedCombo.id },

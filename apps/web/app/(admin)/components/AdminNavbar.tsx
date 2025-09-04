@@ -1,7 +1,7 @@
 "use client";
 
 import { Group, Stack, Text, Tooltip, UnstyledButton } from "@mantine/core";
-import { IconBrandProducthunt, IconHome2, IconUser } from "@tabler/icons-react";
+import { IconHome2, IconPackage, IconUser } from "@tabler/icons-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { NavbarButtonType } from "../../../types/GlobalTypes";
@@ -20,7 +20,7 @@ const data: NavbarButtonType[] = [
   },
   {
     label: "Ürünler",
-    icon: <IconBrandProducthunt size={24} stroke={2} />,
+    icon: <IconPackage size={24} stroke={2} />,
     sub: [
       {
         href: "/product-list",
@@ -36,6 +36,26 @@ const data: NavbarButtonType[] = [
         href: "/product-list/create-basic/new",
         icon: null,
         label: "Basit Ürün Oluştur",
+      },
+      {
+        href: "/product-list/brands",
+        icon: null,
+        label: "Markalar",
+      },
+      {
+        href: "/product-list/brands/new",
+        icon: null,
+        label: "Marka Oluştur",
+      },
+      {
+        href: "/product-list/categories",
+        icon: null,
+        label: "Kategoriler",
+      },
+      {
+        href: "/product-list/categories/new",
+        icon: null,
+        label: "Kategori Oluştur",
       },
     ],
   },
@@ -56,28 +76,44 @@ const data: NavbarButtonType[] = [
     ],
   },
 ];
-
-const AdminNavbar = () => {
+interface AdminNavbarProps {
+  onNavItemClick?: () => void;
+}
+const AdminNavbar = ({ onNavItemClick }: AdminNavbarProps) => {
   const [activeGroup, setActiveGroup] = useState<number>(0);
   const [activeHref, setActiveHref] = useState<string>("");
 
   const { push } = useRouter();
   const pathname = usePathname();
 
-  // Sayfa yüklendiğinde aktif href'i belirle
   useEffect(() => {
-    // pathname'den /admin kısmını çıkar
-    const currentPath = pathname.replace("/admin", "");
+    const adminPrefix = "/admin";
+    const currentPath = pathname.startsWith(adminPrefix)
+      ? pathname.slice(adminPrefix.length)
+      : pathname;
+
     setActiveHref(currentPath);
 
-    // Aktif grubu da belirle
+    let foundGroup = 0;
     data.forEach((group, groupIndex) => {
       group.sub.forEach((subItem) => {
         if (subItem.href === currentPath) {
-          setActiveGroup(groupIndex);
+          foundGroup = groupIndex;
+        } else if (
+          currentPath.startsWith(subItem.href) &&
+          subItem.href !== "/"
+        ) {
+          foundGroup = groupIndex;
+        } else if (
+          currentPath.startsWith("/users") &&
+          subItem.href.startsWith("/users")
+        ) {
+          foundGroup = groupIndex;
         }
       });
     });
+
+    setActiveGroup(foundGroup);
   }, [pathname]);
 
   const handleGroupClick = (index: number) => {
@@ -87,6 +123,7 @@ const AdminNavbar = () => {
   const handleSubItemClick = (href: string) => {
     push(`/admin${href}`);
     setActiveHref(href);
+    onNavItemClick?.(); // Mobilde navbar'ı kapat
   };
 
   return (

@@ -1,8 +1,8 @@
 "use client";
 import { AppShell, Avatar, Burger, Group, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import { useMediaQuery } from "@mantine/hooks";
 import { TokenPayload } from "@repo/types";
-
 import { ReactNode } from "react";
 import AdminNavbar from "./AdminNavbar";
 
@@ -13,8 +13,16 @@ const AdminAppShellLayout = ({
   children: ReactNode;
   session: TokenPayload;
 }) => {
-  const [mobileOpened, { toggle: toggleMobile }] = useDisclosure();
+  const [mobileOpened, { toggle: toggleMobile, close: closeMobile }] =
+    useDisclosure();
   const [desktopOpened, { toggle: toggleDesktop }] = useDisclosure(true);
+  const isMobile = useMediaQuery("(max-width: 768px)");
+
+  const handleNavItemClick = () => {
+    if (isMobile) {
+      closeMobile();
+    }
+  };
 
   return (
     <AppShell
@@ -27,6 +35,7 @@ const AdminAppShellLayout = ({
       }}
     >
       <AppShell.Header>
+        {/* Mevcut header kodunuz */}
         <Group h="100%" px="md" align="center" justify="space-between">
           <Group gap={"lg"} h={"100%"} align="center" justify="flex-start">
             <Burger
@@ -40,14 +49,13 @@ const AdminAppShellLayout = ({
               onClick={toggleDesktop}
               visibleFrom="sm"
               size="md"
-            />{" "}
+            />
             <Group wrap="nowrap" align="center" gap={"md"} visibleFrom="sm">
-              <Avatar radius="xl" />{" "}
+              <Avatar radius="xl" />
               <div style={{ flex: 1 }}>
                 <Text size="sm" fw={500}>
                   {session.name}
                 </Text>
-
                 <Text c="dimmed" size="xs">
                   {session.email ? session.email : session.phone}
                 </Text>
@@ -56,7 +64,6 @@ const AdminAppShellLayout = ({
           </Group>
           <div className="relative h-full w-24 py-2 flex items-center justify-center">
             <div className="flex items-center gap-2">
-              {/* Logo Icon */}
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
                 <div className="w-4 h-4 bg-white rounded-sm opacity-90"></div>
               </div>
@@ -72,7 +79,7 @@ const AdminAppShellLayout = ({
         </Group>
       </AppShell.Header>
       <AppShell.Navbar className="flex flex-col gap-4">
-        <AdminNavbar />
+        <AdminNavbar onNavItemClick={handleNavItemClick} />
       </AppShell.Navbar>
       <AppShell.Main>{children}</AppShell.Main>
     </AppShell>
