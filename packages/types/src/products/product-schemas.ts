@@ -343,6 +343,10 @@ export const BaseProductSchema = z
       .array(z.cuid2({ error: "Geçersiz kategori kimliği" }))
       .optional()
       .nullable(),
+    googleTaxonomyId: z
+      .cuid2({ error: "Geçersiz Google Taksonomi kimliği" })
+      .optional()
+      .nullable(),
   })
   .check(({ issues, value }) => {
     const assetLimit = 10;
@@ -476,3 +480,5 @@ export type VariantOptionZodType = z.infer<typeof VariantOptionSchema>;
 export type VariantOptionTranslationZodType = z.infer<
   typeof VariantOptionTranslationSchema
 >;
+
+export type BaseProductZodType = z.infer<typeof BaseProductSchema>;

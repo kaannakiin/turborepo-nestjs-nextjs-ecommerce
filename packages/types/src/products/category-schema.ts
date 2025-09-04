@@ -90,6 +90,30 @@ export type AdminCategoryTableData = Prisma.CategoryGetPayload<{
     };
   };
 }>;
+export type CategorySelectType = Prisma.CategoryGetPayload<{
+  select: {
+    id: true;
+    translations: {
+      select: {
+        locale: true;
+        name: true;
+      };
+    };
+  };
+}>;
+export interface TaxonomyCategoryWithChildren {
+  id: string;
+  googleId: string;
+  parentId: string | null;
+  path: string | null;
+  pathNames: string | null;
+  depth: number;
+  originalName: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  children?: TaxonomyCategoryWithChildren[];
+}
 
 export type Category = z.infer<typeof CategorySchema>;
 export type CategoryTranslation = z.infer<typeof CategoryTranslationSchema>;

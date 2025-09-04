@@ -109,6 +109,32 @@ model Category {
   @@index([parentCategoryId])
 }
 
+model TaxonomyCategory {
+  id       String @id @default(cuid())
+  googleId String @unique
+
+  parentId String?
+  parent   TaxonomyCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children TaxonomyCategory[] @relation("CategoryHierarchy")
+
+  path      String?
+  pathNames String?
+  depth     Int     @default(0)
+
+  originalName String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  products Product[]
+
+  @@index([googleId])
+  @@index([parentId])
+  @@index([path])
+  @@index([depth])
+  @@index([isActive])
+}
+
 model ProductCategory {
   id         String @id @default(cuid())
   productId  String
@@ -301,6 +327,8 @@ model Product {
   brandId             String?
   brand               Brand?                      @relation(fields: [brandId], references: [id], onDelete: SetNull)
   categories          ProductCategory[]
+  taxonomyCategory    TaxonomyCategory?           @relation(fields: [taxonomyCategoryId], references: [id])
+  taxonomyCategoryId  String?
 }
 
 model ProductVariantGroup {

@@ -91,6 +91,17 @@ export type AdminBrandTableData = Prisma.BrandGetPayload<{
   };
 }>;
 
+export type BrandSelectType = Prisma.BrandGetPayload<{
+  select: {
+    id: true;
+    translations: {
+      select: {
+        locale: true;
+        name: true;
+      };
+    };
+  };
+}>;
 export type BrandsResponse = {
   success: boolean;
   data: AdminBrandTableData[];

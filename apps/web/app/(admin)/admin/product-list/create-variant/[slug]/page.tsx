@@ -1,17 +1,51 @@
-import { VariantProductZodType } from "@repo/types";
+import { Button, Center, Paper, Stack, Text, Title } from "@mantine/core";
+import {
+  BrandSelectType,
+  CategorySelectType,
+  VariantProductZodType,
+} from "@repo/types";
+import { IconAlertCircle, IconArrowLeft } from "@tabler/icons-react";
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { Params } from "../../../../../../types/GlobalTypes";
 import VariantProductForm from "../components/VariantProductForm";
-import { Center, Title, Paper, Stack, Text, Button } from "@mantine/core";
-import { IconAlertCircle, IconArrowLeft } from "@tabler/icons-react";
-import Link from "next/link";
 
 const CreateVariantProductPage = async ({ params }: { params: Params }) => {
   const id = (await params).slug;
   const cookieStore = await cookies();
-
+  const token = cookieStore.get("token")?.value || "";
+  const brandResponse = await fetch(
+    `${process.env.BACKEND_URL}/admin/products/brands/get-all-brands-without-query`,
+    {
+      method: "GET",
+      headers: {
+        Cookie: `token=${token}`,
+      },
+      credentials: "include",
+      cache: "no-cache",
+    }
+  );
+  if (!brandResponse.ok) {
+    return <ErrorComponent message="Markalar yüklenirken hata oluştu" />;
+  }
+  const brands = (await brandResponse.json()) as BrandSelectType[];
+  const categoryResponse = await fetch(
+    `${process.env.BACKEND_URL}/admin/products/categories/get-all-categories-without-query`,
+    {
+      method: "GET",
+      headers: {
+        Cookie: `token=${token}`,
+      },
+      credentials: "include",
+      cache: "no-cache",
+    }
+  );
+  if (!categoryResponse.ok) {
+    return <ErrorComponent message="Kategoriler yüklenirken hata oluştu" />;
+  }
+  const categories = (await categoryResponse.json()) as CategorySelectType[];
   if (id === "new") {
-    return <VariantProductForm />;
+    return <VariantProductForm brands={brands} categoires={categories} />;
   }
 
   try {
@@ -22,7 +56,7 @@ const CreateVariantProductPage = async ({ params }: { params: Params }) => {
         credentials: "include",
         cache: "no-cache",
         headers: {
-          Cookie: `token=${cookieStore.get("token")?.value}`,
+          Cookie: `token=${token}`,
         },
       }
     );
@@ -58,7 +92,13 @@ const CreateVariantProductPage = async ({ params }: { params: Params }) => {
     if (!data) {
       return <ProductNotFound />;
     }
-    return <VariantProductForm defaultValues={data} />;
+    return (
+      <VariantProductForm
+        defaultValues={data}
+        brands={brands}
+        categoires={categories}
+      />
+    );
   } catch (error) {
     console.error("Fetch Error:", error);
     return <ErrorComponent message="Bağlantı hatası oluştu" />;

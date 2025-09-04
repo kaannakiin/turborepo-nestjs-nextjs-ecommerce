@@ -447,4 +447,17 @@ export class BrandsService {
       label: `${'  '.repeat(brand.level)}${brand.name}`, // Indentation ile hierarchy gösterimi
     }));
   }
+  async getAllBrandsWithoutQuery() {
+    return this.prisma.brand.findMany({
+      select: {
+        id: true,
+        translations: {
+          select: {
+            locale: true,
+            name: true,
+          },
+        },
+      },
+    });
+  }
 }

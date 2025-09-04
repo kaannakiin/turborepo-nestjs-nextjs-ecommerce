@@ -72,6 +72,10 @@ export class BrandsController {
       },
     };
   }
+  @Get('get-all-brands-without-query')
+  async getAllBrandsWithoutQuery() {
+    return this.brandsService.getAllBrandsWithoutQuery();
+  }
 
   @Delete('delete-brand/:id')
   async deleteBrand(@Param('id') id: Cuid2ZodType) {

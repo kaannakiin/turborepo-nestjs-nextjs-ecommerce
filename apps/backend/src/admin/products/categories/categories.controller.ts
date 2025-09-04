@@ -111,4 +111,8 @@ export class CategoriesController {
       data: categories,
     };
   }
+  @Get('get-all-categories-without-query')
+  async getAllCategoriesWithoutQuery() {
+    return this.categoriesService.getAllCategoriesWithoutQuery();
+  }
 }

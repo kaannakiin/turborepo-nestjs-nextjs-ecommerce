@@ -383,4 +383,19 @@ export class CategoriesService {
       label: `${'  '.repeat(category.level)}${category.name}`, // Indentation ile hierarchy gösterimi
     }));
   }
+
+  async getAllCategoriesWithoutQuery() {
+    return this.prisma.category.findMany({
+      select: {
+        translations: {
+          select: {
+            locale: true,
+            name: true,
+          },
+        },
+        id: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }

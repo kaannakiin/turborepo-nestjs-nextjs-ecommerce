@@ -2,10 +2,13 @@
 
 import {
   Button,
+  Card,
   Grid,
   Group,
   InputLabel,
+  MultiSelect,
   Select,
+  SimpleGrid,
   Stack,
   TextInput,
   Title,
@@ -21,16 +24,20 @@ import {
 } from "@repo/shared";
 import {
   $Enums,
+  BrandSelectType,
+  CategorySelectType,
   VariantProductSchema,
   VariantProductZodType,
 } from "@repo/types";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { getProductTypeLabel } from "../../../../../../lib/helpers";
 import GlobalDropzone from "../../../../../components/GlobalDropzone";
 import GlobalLoadingOverlay from "../../../../../components/GlobalLoadingOverlay";
 import GlobalSeoCard from "../../../../../components/GlobalSeoCard";
 import ExistingVariantCard from "./ExistingVariantCard";
-import { useRouter } from "next/navigation";
+import ProductDetailCard from "./ProductDetailCard";
+import GoogleTaxonomySelect from "./GoogleTaxonomySelect";
 
 const GlobalTextEditor = dynamic(
   () => import("../../../../../components/GlobalTextEditor"),
@@ -39,9 +46,15 @@ const GlobalTextEditor = dynamic(
 
 interface VariantProductFormProps {
   defaultValues?: VariantProductZodType;
+  categoires: CategorySelectType[];
+  brands: BrandSelectType[];
 }
 
-const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
+const VariantProductForm = ({
+  defaultValues,
+  brands,
+  categoires,
+}: VariantProductFormProps) => {
   const {
     control,
     formState: { isSubmitting, errors },
@@ -264,6 +277,18 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
           />
         </Grid.Col>
       </Grid>
+      <Controller
+        control={control}
+        name="translations.0.description"
+        render={({ field, fieldState }) => (
+          <GlobalTextEditor
+            label="Ürün Açıklaması"
+            {...field}
+            value={field.value ?? undefined}
+            error={fieldState.error?.message}
+          />
+        )}
+      />
       <Stack gap={"xs"}>
         <InputLabel>Ürün Görselleri</InputLabel>
         <Controller
@@ -314,18 +339,69 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
           )}
         />
       </Stack>
-      <Controller
-        control={control}
-        name="translations.0.description"
-        render={({ field, fieldState }) => (
-          <GlobalTextEditor
-            label="Ürün Açıklaması"
-            {...field}
-            value={field.value ?? undefined}
-            error={fieldState.error?.message}
+      <ProductDetailCard>
+        <SimpleGrid cols={{ xs: 1, sm: 3 }}>
+          <Controller
+            control={control}
+            name="brandId"
+            render={({ field }) => (
+              <Select
+                {...field}
+                label="Marka"
+                clearable
+                nothingFoundMessage="Marka bulunamadı"
+                searchable
+                data={
+                  brands &&
+                  brands.length > 0 &&
+                  brands.map((brand) => ({
+                    value: brand.id,
+                    label:
+                      brand.translations.find((t) => t.locale === "TR")?.name ||
+                      brand.translations[0]?.name ||
+                      "İsimsiz Marka",
+                  }))
+                }
+              />
+            )}
           />
-        )}
-      />
+          <Controller
+            control={control}
+            name="categories"
+            render={({ field }) => (
+              <MultiSelect
+                {...field}
+                label="Kategori"
+                clearable
+                searchable
+                nothingFoundMessage="Kategori bulunamadı"
+                data={
+                  categoires &&
+                  categoires.length > 0 &&
+                  categoires.map((cat) => ({
+                    value: cat.id,
+                    label:
+                      cat.translations.find((t) => t.locale === "TR")?.name ||
+                      cat.translations[0]?.name ||
+                      "İsimsiz Kategori",
+                  }))
+                }
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name="googleTaxonomyId"
+            render={({ field, fieldState }) => (
+              <GoogleTaxonomySelect
+                {...field}
+                error={fieldState.error?.message}
+                label="Google Ürün Kategorisi"
+              />
+            )}
+          />
+        </SimpleGrid>
+      </ProductDetailCard>
       <ExistingVariantCard
         control={control}
         errors={errors.existingVariants?.message}
