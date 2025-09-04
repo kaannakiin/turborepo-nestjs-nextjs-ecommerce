@@ -136,7 +136,7 @@ export class AuthService {
       secure: this.configService.get('NODE_ENV') === 'production',
       sameSite: 'lax',
       maxAge: accessTokenExpirationMs,
-      domain: this.configService.get('DOMAIN'),
+      domain: this.configService.get('DOMAIN') as string,
     });
 
     response.cookie('refresh_token', refreshToken, {
@@ -144,7 +144,7 @@ export class AuthService {
       secure: this.configService.get('NODE_ENV') === 'production',
       sameSite: 'lax',
       maxAge: refreshTokenExpirationMs,
-      domain: this.configService.get('DOMAIN'),
+      domain: this.configService.get('DOMAIN') as string,
     });
 
     if (redirect) {

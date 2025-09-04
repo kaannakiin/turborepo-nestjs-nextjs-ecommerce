@@ -49,5 +49,6 @@ async function bootstrap() {
   await app.listen(configService.get<number>('PORT') ?? 3001, '0.0.0.0');
 
   console.log(`Application is running on: ${await app.getUrl()}`);
+  console.log('All config:', this.configService.get()); // Tüm config değerlerini göster
 }
 bootstrap();
