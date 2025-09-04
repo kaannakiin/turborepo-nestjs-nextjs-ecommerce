@@ -143,7 +143,6 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
           productImageFormData.append("files", imageFile);
         });
 
-        // Controller'ınız body'de productId bekliyor. FormData ile gönderirken bu şekilde eklenir.
         productImageFormData.append("productId", productId);
 
         const productImageResponse = await fetch(

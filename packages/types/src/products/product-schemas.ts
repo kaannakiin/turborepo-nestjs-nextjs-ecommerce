@@ -338,6 +338,11 @@ export const BaseProductSchema = z
       .array(FileSchema({ type: ["IMAGE", "VIDEO"] }))
       .optional()
       .nullable(),
+    brandId: z.cuid2({ error: "Geçersiz marka kimliği" }).optional().nullable(),
+    categories: z
+      .array(z.cuid2({ error: "Geçersiz kategori kimliği" }))
+      .optional()
+      .nullable(),
   })
   .check(({ issues, value }) => {
     const assetLimit = 10;
