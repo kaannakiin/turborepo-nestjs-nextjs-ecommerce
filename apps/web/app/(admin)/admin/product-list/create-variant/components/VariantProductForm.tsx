@@ -46,14 +46,14 @@ const GlobalTextEditor = dynamic(
 
 interface VariantProductFormProps {
   defaultValues?: VariantProductZodType;
-  categoires: CategorySelectType[];
+  categories: CategorySelectType[];
   brands: BrandSelectType[];
 }
 
 const VariantProductForm = ({
   defaultValues,
   brands,
-  categoires,
+  categories,
 }: VariantProductFormProps) => {
   const {
     control,
@@ -376,9 +376,9 @@ const VariantProductForm = ({
                 searchable
                 nothingFoundMessage="Kategori bulunamadı"
                 data={
-                  categoires &&
-                  categoires.length > 0 &&
-                  categoires.map((cat) => ({
+                  categories &&
+                  categories.length > 0 &&
+                  categories.map((cat) => ({
                     value: cat.id,
                     label:
                       cat.translations.find((t) => t.locale === "TR")?.name ||

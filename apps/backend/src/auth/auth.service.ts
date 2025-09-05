@@ -122,15 +122,6 @@ export class AuthService {
       expiresIn: Math.floor(refreshTokenExpirationMs / 1000), // Saniyeye çevir
     });
 
-    await this.userService.updateUser({
-      where: {
-        id: user.id,
-      },
-      data: {
-        refreshToken: refreshToken, // Hash'lemeyi kaldırdık
-      },
-    });
-
     response.cookie('token', accessToken, {
       httpOnly: true,
       secure: this.configService.get('NODE_ENV') === 'production',
@@ -169,10 +160,6 @@ export class AuthService {
       });
 
       if (!user || !user.refreshToken) {
-        throw new UnauthorizedException('Invalid refresh token');
-      }
-
-      if (refreshToken !== user.refreshToken) {
         throw new UnauthorizedException('Invalid refresh token');
       }
 

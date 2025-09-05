@@ -1,13 +1,12 @@
-import { Button, Center, Paper, Stack, Text, Title } from "@mantine/core";
 import {
   BrandSelectType,
   CategorySelectType,
   VariantProductZodType,
 } from "@repo/types";
-import { IconAlertCircle, IconArrowLeft } from "@tabler/icons-react";
 import { cookies } from "next/headers";
-import Link from "next/link";
 import { Params } from "../../../../../../types/GlobalTypes";
+import ProductErrorComponent from "../../components/ProductErrorComponent";
+import ProductNotFound from "../../components/ProductNotFound";
 import VariantProductForm from "../components/VariantProductForm";
 
 const CreateVariantProductPage = async ({ params }: { params: Params }) => {
@@ -26,7 +25,7 @@ const CreateVariantProductPage = async ({ params }: { params: Params }) => {
     }
   );
   if (!brandResponse.ok) {
-    return <ErrorComponent message="Markalar yüklenirken hata oluştu" />;
+    return <ProductErrorComponent message="Markalar yüklenirken hata oluştu" />;
   }
   const brands = (await brandResponse.json()) as BrandSelectType[];
   const categoryResponse = await fetch(
@@ -41,11 +40,13 @@ const CreateVariantProductPage = async ({ params }: { params: Params }) => {
     }
   );
   if (!categoryResponse.ok) {
-    return <ErrorComponent message="Kategoriler yüklenirken hata oluştu" />;
+    return (
+      <ProductErrorComponent message="Kategoriler yüklenirken hata oluştu" />
+    );
   }
   const categories = (await categoryResponse.json()) as CategorySelectType[];
   if (id === "new") {
-    return <VariantProductForm brands={brands} categoires={categories} />;
+    return <VariantProductForm brands={brands} categories={categories} />;
   }
 
   try {
@@ -63,12 +64,14 @@ const CreateVariantProductPage = async ({ params }: { params: Params }) => {
 
     // 404 durumunda özel handling
     if (response.status === 404) {
-      return <ProductNotFound />;
+      return (
+        <ProductNotFound message="Aradığınız ürün varyantı sistemde mevcut değil veya silinmiş olabilir." />
+      );
     }
 
     if (!response.ok) {
       console.error("API Error:", response.statusText);
-      return <ErrorComponent message="Sunucu hatası oluştu" />;
+      return <ProductErrorComponent message="Sunucu hatası oluştu" />;
     }
 
     const responseText = await response.text();
@@ -78,7 +81,9 @@ const CreateVariantProductPage = async ({ params }: { params: Params }) => {
       responseText.trim() === "" ||
       responseText === "null"
     ) {
-      return <ProductNotFound />;
+      return (
+        <ProductNotFound message="Aradığınız ürün varyantı sistemde mevcut değil veya silinmiş olabilir." />
+      );
     }
 
     let data: VariantProductZodType | null;
@@ -86,75 +91,25 @@ const CreateVariantProductPage = async ({ params }: { params: Params }) => {
       data = JSON.parse(responseText);
     } catch (parseError) {
       console.error("JSON Parse Error:", parseError);
-      return <ErrorComponent message="Veri formatı hatası" />;
+      return <ProductErrorComponent message="Veri formatı hatası" />;
     }
 
     if (!data) {
-      return <ProductNotFound />;
+      return (
+        <ProductNotFound message="Aradığınız ürün varyantı sistemde mevcut değil veya silinmiş olabilir." />
+      );
     }
     return (
       <VariantProductForm
         defaultValues={data}
         brands={brands}
-        categoires={categories}
+        categories={categories}
       />
     );
   } catch (error) {
     console.error("Fetch Error:", error);
-    return <ErrorComponent message="Bağlantı hatası oluştu" />;
+    return <ProductErrorComponent message="Bağlantı hatası oluştu" />;
   }
 };
-
-// Ürün bulunamadı komponenti
-const ProductNotFound = () => (
-  <Center style={{ minHeight: "60vh" }}>
-    <Paper shadow="sm" p="xl" radius="md" withBorder>
-      <Stack align="center" gap="md">
-        <IconAlertCircle size={48} color="var(--mantine-color-red-6)" />
-        <Title order={2} ta="center" c="dimmed">
-          Ürün Varyantı Bulunamadı
-        </Title>
-        <Text ta="center" c="dimmed" size="lg">
-          Aradığınız ürün varyantı sistemde mevcut değil veya silinmiş olabilir.
-        </Text>
-        <Button
-          component={Link}
-          href="/admin/product-list"
-          leftSection={<IconArrowLeft size={16} />}
-          variant="light"
-          size="md"
-        >
-          Ürünler Listesine Dön
-        </Button>
-      </Stack>
-    </Paper>
-  </Center>
-);
-
-// Genel hata komponenti
-const ErrorComponent = ({ message }: { message: string }) => (
-  <Center style={{ minHeight: "60vh" }}>
-    <Paper shadow="sm" p="xl" radius="md" withBorder>
-      <Stack align="center" gap="md">
-        <IconAlertCircle size={48} color="var(--mantine-color-orange-6)" />
-        <Title order={2} ta="center" c="dimmed">
-          Bir Hata Oluştu
-        </Title>
-        <Text ta="center" c="dimmed" size="lg">
-          {message}
-        </Text>
-        <Button
-          component={Link}
-          href="/admin/product-list"
-          leftSection={<IconArrowLeft size={16} />}
-          variant="light"
-          size="md"
-        >
-          Ürünler Listesine Dön
-        </Button>
-      </Stack>
-    </Paper>
-  </Center>
-);
 
 export default CreateVariantProductPage;

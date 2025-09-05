@@ -111,7 +111,6 @@ const CombinatedVariantsFormDrawer = ({
               render={({ field, fieldState }) => (
                 <ProductPriceNumberInput
                   label="Satış Fiyatı"
-                  placeholder="0.00"
                   error={fieldState.error?.message}
                   {...field}
                 />
@@ -124,7 +123,6 @@ const CombinatedVariantsFormDrawer = ({
               render={({ field, fieldState }) => (
                 <ProductPriceNumberInput
                   label="İndirimli Fiyat"
-                  placeholder="0.00"
                   error={fieldState.error?.message}
                   {...field}
                   value={field.value || undefined}
@@ -138,7 +136,6 @@ const CombinatedVariantsFormDrawer = ({
               render={({ field, fieldState }) => (
                 <ProductPriceNumberInput
                   label="Alış Fiyatı"
-                  placeholder="0.00"
                   error={fieldState.error?.message}
                   {...field}
                   value={field.value || undefined}

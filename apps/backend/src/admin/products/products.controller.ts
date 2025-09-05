@@ -6,6 +6,7 @@ import {
   NotFoundException,
   Param,
   Post,
+  Query,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
@@ -13,6 +14,9 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import {
+  BaseProductSchema,
+  type BaseProductZodType,
+  type Cuid2ZodType,
   VariantGroupSchema,
   type VariantGroupZodType,
   VariantProductSchema,
@@ -118,8 +122,41 @@ export class ProductsController {
   ) {
     return this.productsService.uploadVariantImage(files, body.variantId);
   }
+
   @Delete('variant-image')
   async deleteVariantImage(@Body() body: { imageUrl: string }) {
     return this.productsService.deleteVariantImage(body.imageUrl);
+  }
+
+  @Post('create-or-update-basic-product')
+  @UsePipes(
+    new ZodValidationPipe(
+      BaseProductSchema.omit({
+        images: true,
+      }),
+    ),
+  )
+  async createOrUpdateBasicProduct(
+    @Body() data: Omit<BaseProductZodType, 'images'>,
+  ) {
+    return this.productsService.createOrUpdateBasicProduct(data);
+  }
+
+  @Get('get-basic-product/:id')
+  async getBasicProduct(@Param('id') id: Cuid2ZodType) {
+    const result = await this.productsService.getBasicProduct(id);
+    if (!result) {
+      throw new NotFoundException('Ürün bulunamadı');
+    }
+    return result;
+  }
+
+  @Get('get-products')
+  async getProducts(
+    @Query('search') search?: string,
+    @Query('page') pageParam?: string,
+  ) {
+    const page = pageParam ? parseInt(pageParam, 10) : 1;
+    return this.productsService.getProducts(search, page);
   }
 }

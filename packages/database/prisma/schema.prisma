@@ -313,10 +313,13 @@ model ProductAsset {
 }
 
 model Product {
-  id        String      @id @default(cuid())
-  type      ProductType @default(PHYSICAL)
-  isVariant Boolean     @default(false)
-
+  id                  String                      @id @default(cuid())
+  type                ProductType                 @default(PHYSICAL)
+  isVariant           Boolean                     @default(false)
+  active              Boolean                     @default(true)
+  stock               Int                         @default(0)
+  sku                 String?                     @unique
+  barcode             String?                     @unique
   createdAt           DateTime                    @default(now())
   updatedAt           DateTime                    @updatedAt
   prices              ProductPrice[]

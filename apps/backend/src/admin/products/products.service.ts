@@ -5,8 +5,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { $Enums, Prisma } from '@repo/database';
-import { slugify } from '@repo/shared';
-import { VariantGroupZodType, VariantProductZodType } from '@repo/types';
+import { generateProductCodes, slugify } from '@repo/shared';
+import {
+  AdminProductTableData,
+  BaseProductZodType,
+  Cuid2ZodType,
+  VariantGroupZodType,
+  VariantProductZodType,
+} from '@repo/types';
 import { MinioService, ProcessedAsset } from 'src/minio/minio.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -48,7 +54,6 @@ export class ProductsService {
         return await this.createVariantGroup({ options, translations, type });
       }
     } catch (error) {
-      console.log(error);
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         return this.handlePrismaError(error);
       }
@@ -1231,6 +1236,7 @@ export class ProductsService {
       );
     }
   }
+
   async uploadVariantImage(
     files: Array<Express.Multer.File>,
     combinationId: string,
@@ -1396,5 +1402,575 @@ export class ProductsService {
         'Varyant görseli silinirken bir hata oluştu.',
       );
     }
+  }
+
+  async createOrUpdateBasicProduct(data: Omit<BaseProductZodType, 'images'>) {
+    const {
+      uniqueId,
+      prices,
+      translations,
+      type,
+      brandId,
+      categories,
+      googleTaxonomyId,
+      sku,
+      barcode,
+      stock,
+      active,
+    } = data;
+
+    try {
+      // Mevcut ürünü kontrol et
+      const existingProduct = await this.prisma.product.findUnique({
+        where: { id: uniqueId },
+        include: {
+          variantCombinations: true,
+          variantGroups: true,
+          translations: true,
+          prices: true,
+          categories: true,
+        },
+      });
+
+      // Eğer ürün varsa ve varyantlı ürünse hata ver
+      if (
+        existingProduct &&
+        (existingProduct.variantCombinations.length > 0 ||
+          existingProduct.variantGroups.length > 0 ||
+          existingProduct.isVariant === true)
+      ) {
+        throw new BadRequestException(
+          'Bu ürün zaten varyantlı ürün olarak işlenmiş, temel ürün olarak güncellenemez.',
+        );
+      }
+
+      // SKU ve Barcode benzersizlik kontrolü
+      let finalSku = sku;
+      let finalBarcode = barcode;
+
+      if (!finalSku || !finalBarcode) {
+        const productName =
+          translations?.find((t) => t.locale === 'TR')?.name ||
+          translations?.[0]?.name ||
+          'Ürün';
+
+        const generatedCodes = generateProductCodes(productName);
+
+        if (!finalSku) finalSku = generatedCodes.sku;
+        if (!finalBarcode) finalBarcode = generatedCodes.barcode;
+
+        // Oluşturulan kodların benzersizliğini kontrol et
+        const [skuCheck, barcodeCheck] = await Promise.all([
+          this.prisma.product.findFirst({
+            where: {
+              sku: finalSku,
+              id: { not: uniqueId },
+            },
+          }),
+          this.prisma.product.findFirst({
+            where: {
+              barcode: finalBarcode,
+              id: { not: uniqueId },
+            },
+          }),
+        ]);
+
+        if (skuCheck) {
+          throw new BadRequestException(
+            `Oluşturulan SKU (${finalSku}) zaten kullanılıyor. Lütfen manuel bir SKU girin veya ürün adını değiştirin.`,
+          );
+        }
+
+        if (barcodeCheck) {
+          throw new BadRequestException(
+            `Oluşturulan barcode (${finalBarcode}) zaten kullanılıyor. Lütfen manuel bir barcode girin veya ürün adını değiştirin.`,
+          );
+        }
+      } else {
+        // Manuel girilen SKU ve barcode'ların benzersizliğini kontrol et
+        const [skuCheck, barcodeCheck] = await Promise.all([
+          this.prisma.product.findFirst({
+            where: {
+              sku: finalSku,
+              id: { not: uniqueId },
+            },
+          }),
+          this.prisma.product.findFirst({
+            where: {
+              barcode: finalBarcode,
+              id: { not: uniqueId },
+            },
+          }),
+        ]);
+
+        if (skuCheck) {
+          throw new BadRequestException(
+            `Bu SKU (${finalSku}) zaten kullanılıyor. Lütfen farklı bir SKU girin.`,
+          );
+        }
+
+        if (barcodeCheck) {
+          throw new BadRequestException(
+            `Bu barcode (${finalBarcode}) zaten kullanılıyor. Lütfen farklı bir barcode girin.`,
+          );
+        }
+      }
+
+      return await this.prisma.$transaction(async (tx) => {
+        // Ana ürünü upsert et
+        const product = await tx.product.upsert({
+          where: { id: uniqueId },
+          update: {
+            type,
+            isVariant: false,
+            sku: finalSku,
+            barcode: finalBarcode,
+            stock: stock || 0,
+            active: active !== undefined ? active : true,
+            ...(brandId
+              ? { brand: { connect: { id: brandId } } }
+              : { brand: { disconnect: true } }),
+            ...(googleTaxonomyId
+              ? { taxonomyCategory: { connect: { id: googleTaxonomyId } } }
+              : { taxonomyCategory: { disconnect: true } }),
+          },
+          create: {
+            id: uniqueId,
+            type,
+            isVariant: false,
+            sku: finalSku,
+            barcode: finalBarcode,
+            stock: stock || 0,
+            active: active !== undefined ? active : true,
+            ...(brandId && { brand: { connect: { id: brandId } } }),
+            ...(googleTaxonomyId && {
+              taxonomyCategory: { connect: { id: googleTaxonomyId } },
+            }),
+          },
+        });
+
+        // Çevirileri upsert et
+        if (translations && translations.length > 0) {
+          const translationPromises = translations.map((translation) =>
+            tx.productTranslation.upsert({
+              where: {
+                locale_productId: {
+                  locale: translation.locale,
+                  productId: uniqueId,
+                },
+              },
+              update: {
+                name: translation.name,
+                slug: translation.slug,
+                description: translation.description,
+                metaTitle: translation.metaTitle,
+                metaDescription: translation.metaDescription,
+              },
+              create: {
+                ...translation,
+                productId: uniqueId,
+              },
+            }),
+          );
+
+          await Promise.all(translationPromises);
+        }
+
+        // Fiyatları upsert et
+        if (prices && prices.length > 0) {
+          const pricePromises = prices.map((price) =>
+            tx.productPrice.upsert({
+              where: {
+                productId_currency: {
+                  productId: uniqueId,
+                  currency: price.currency,
+                },
+              },
+              update: {
+                price: price.price,
+                buyedPrice: price.buyedPrice || null,
+                discountedPrice: price.discountPrice || null,
+              },
+              create: {
+                currency: price.currency,
+                price: price.price,
+                buyedPrice: price.buyedPrice || null,
+                discountedPrice: price.discountPrice || null,
+                productId: uniqueId,
+              },
+            }),
+          );
+
+          await Promise.all(pricePromises);
+        }
+
+        // Kategorileri yönet
+        if (categories !== undefined) {
+          if (categories && categories.length > 0) {
+            const existingCategories = await tx.productCategory.findMany({
+              where: { productId: uniqueId },
+              select: { categoryId: true },
+            });
+
+            const existingCategoryIds = existingCategories.map(
+              (cat) => cat.categoryId,
+            );
+
+            const categoriesToDelete = existingCategoryIds.filter(
+              (existingId) => !categories.includes(existingId),
+            );
+
+            const categoriesToAdd = categories.filter(
+              (newId) => !existingCategoryIds.includes(newId),
+            );
+
+            if (categoriesToDelete.length > 0) {
+              await tx.productCategory.deleteMany({
+                where: {
+                  productId: uniqueId,
+                  categoryId: { in: categoriesToDelete },
+                },
+              });
+            }
+
+            if (categoriesToAdd.length > 0) {
+              await tx.productCategory.createMany({
+                data: categoriesToAdd.map((categoryId) => ({
+                  productId: uniqueId,
+                  categoryId,
+                })),
+              });
+            }
+          } else {
+            await tx.productCategory.deleteMany({
+              where: { productId: uniqueId },
+            });
+          }
+        }
+
+        return tx.product.findUnique({
+          where: { id: uniqueId },
+          include: {
+            translations: true,
+            prices: true,
+            categories: {
+              include: {
+                category: {
+                  include: {
+                    translations: true,
+                  },
+                },
+              },
+            },
+            brand: {
+              include: {
+                translations: true,
+              },
+            },
+            taxonomyCategory: true,
+          },
+        });
+      });
+    } catch (error) {
+      // Prisma constraint hataları için özel mesajlar
+      if (error.code === 'P2002') {
+        const target = error.meta?.target;
+        if (target?.includes('sku')) {
+          throw new BadRequestException('Bu SKU zaten kullanılıyor.');
+        }
+        if (target?.includes('barcode')) {
+          throw new BadRequestException('Bu barcode zaten kullanılıyor.');
+        }
+        if (target?.includes('slug')) {
+          throw new BadRequestException('Bu slug zaten kullanılıyor.');
+        }
+        if (target?.includes('productId_currency')) {
+          throw new BadRequestException(
+            'Aynı para birimi için birden fazla fiyat girilemez.',
+          );
+        }
+      }
+
+      if (error.code === 'P2025') {
+        throw new BadRequestException('İlişkili kayıt bulunamadı.');
+      }
+
+      // BadRequestException'ları olduğu gibi fırlat
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      // Diğer hatalar için genel mesaj
+      console.error('createOrUpdateBasicProduct error:', error);
+      throw new InternalServerErrorException(
+        'Ürün işlemi sırasında bir hata oluştu.',
+      );
+    }
+  }
+
+  async getBasicProduct(id: Cuid2ZodType): Promise<BaseProductZodType> {
+    const product = await this.prisma.product.findUnique({
+      where: { id, isVariant: false },
+      include: {
+        assets: {
+          orderBy: { order: 'asc' },
+          select: {
+            asset: { select: { url: true, type: true } },
+          },
+        },
+        prices: true,
+        categories: {
+          select: {
+            categoryId: true,
+          },
+        },
+        translations: true,
+      },
+    });
+    if (!product) {
+      throw new NotFoundException('Ürün bulunamadı');
+    }
+    return {
+      active: product.active,
+      prices: product.prices.map((p) => ({
+        currency: p.currency,
+        price: p.price,
+        buyedPrice: p.buyedPrice || undefined,
+        discountPrice: p.discountedPrice || undefined,
+      })),
+      barcode: product.barcode || undefined,
+      sku: product.sku || undefined,
+      translations: product.translations.map((t) => ({
+        locale: t.locale,
+        name: t.name,
+        slug: t.slug,
+        description: t.description,
+        metaDescription: t.metaDescription,
+        metaTitle: t.metaTitle,
+      })),
+      type: product.type,
+      brandId: product.brandId || undefined,
+      categories: product.categories.map((c) => c.categoryId),
+      googleTaxonomyId: product.taxonomyCategoryId || undefined,
+      uniqueId: product.id,
+      images: [],
+      existingImages: product.assets.map((a) => {
+        return {
+          type: a.asset.type,
+          url: a.asset.url,
+        };
+      }) as BaseProductZodType['existingImages'],
+      stock: product.stock,
+    };
+  }
+
+  async getProducts(
+    search?: string,
+    page: number = 1,
+  ): Promise<{
+    products: AdminProductTableData[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
+    const limit = 20;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.ProductWhereInput = {
+      ...(search && {
+        OR: [
+          {
+            isVariant: false,
+            translations: {
+              some: {
+                OR: [
+                  { name: { contains: search, mode: 'insensitive' } },
+                  { slug: { contains: slugify(search), mode: 'insensitive' } },
+                ],
+              },
+            },
+          },
+          {
+            isVariant: true,
+            translations: {
+              some: {
+                OR: [
+                  { name: { contains: search, mode: 'insensitive' } },
+                  { slug: { contains: slugify(search), mode: 'insensitive' } },
+                ],
+              },
+            },
+          },
+          {
+            isVariant: false,
+            OR: [
+              { sku: { contains: search, mode: 'insensitive' } },
+              { barcode: { contains: search, mode: 'insensitive' } },
+            ],
+          },
+          {
+            isVariant: true,
+            variantCombinations: {
+              some: {
+                OR: [
+                  { sku: { contains: search, mode: 'insensitive' } },
+                  { barcode: { contains: search, mode: 'insensitive' } },
+                ],
+              },
+            },
+          },
+          // Marka araması
+          {
+            brand: {
+              translations: {
+                some: {
+                  name: { contains: search, mode: 'insensitive' },
+                },
+              },
+            },
+          },
+        ],
+      }),
+    };
+
+    const [products, totalCount] = await Promise.all([
+      this.prisma.product.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          _count: {
+            select: {
+              variantCombinations: true,
+            },
+          },
+          assets: {
+            where: {
+              asset: { type: 'IMAGE' },
+            },
+            take: 1,
+            orderBy: { order: 'asc' },
+            select: {
+              asset: {
+                select: { url: true, type: true },
+              },
+            },
+          },
+          translations: {
+            where: { locale: 'TR' },
+            select: {
+              name: true,
+            },
+          },
+          prices: {
+            where: { currency: 'TRY' },
+            select: {
+              price: true,
+              discountedPrice: true,
+            },
+          },
+          variantCombinations: {
+            select: {
+              stock: true,
+              assets: {
+                where: {
+                  asset: { type: 'IMAGE' },
+                },
+                take: 1,
+                orderBy: { order: 'asc' },
+                select: {
+                  asset: {
+                    select: { url: true, type: true },
+                  },
+                },
+              },
+              prices: {
+                where: { currency: 'TRY' },
+                select: {
+                  price: true,
+                  discountedPrice: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+      this.prisma.product.count({ where }),
+    ]);
+
+    return {
+      products: products.map((product): AdminProductTableData => {
+        // Görsel öncelik sırası
+        const mainImage = product.assets[0]?.asset;
+        const variantImage = product.variantCombinations[0]?.assets[0]?.asset;
+        const finalImage = mainImage || variantImage;
+
+        // Fiyat hesaplama
+        let priceDisplay: string;
+        let stockDisplay: string;
+
+        if (product.isVariant && product.variantCombinations.length > 0) {
+          // Varyantlı ürün - min/max hesapla
+          const allPrices = product.variantCombinations
+            .flatMap((vc) => vc.prices)
+            .map((p) => p.discountedPrice || p.price)
+            .filter((p) => p > 0);
+
+          const allStocks = product.variantCombinations
+            .map((vc) => vc.stock)
+            .filter((s) => s >= 0);
+
+          if (allPrices.length > 0) {
+            const minPrice = Math.min(...allPrices);
+            const maxPrice = Math.max(...allPrices);
+
+            if (minPrice === maxPrice) {
+              priceDisplay = `₺${minPrice.toLocaleString('tr-TR')}`;
+            } else {
+              priceDisplay = `₺${minPrice.toLocaleString('tr-TR')} - ₺${maxPrice.toLocaleString('tr-TR')}`;
+            }
+          } else {
+            priceDisplay = '₺0';
+          }
+
+          if (allStocks.length > 0) {
+            const minStock = Math.min(...allStocks);
+            const maxStock = Math.max(...allStocks);
+
+            if (minStock === maxStock) {
+              stockDisplay = minStock.toString();
+            } else {
+              stockDisplay = `${minStock} - ${maxStock}`;
+            }
+          } else {
+            stockDisplay = '0';
+          }
+        } else {
+          // Basit ürün
+          const price = product.prices[0];
+          const finalPrice = price?.discountedPrice || price?.price || 0;
+          priceDisplay = `₺${finalPrice.toLocaleString('tr-TR')}`;
+          stockDisplay = product.stock.toString();
+        }
+
+        return {
+          ...product,
+          priceDisplay,
+          stockDisplay,
+          finalImage: finalImage?.url || null,
+          finalImageType: finalImage?.type || null,
+        };
+      }),
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+      },
+    };
   }
 }

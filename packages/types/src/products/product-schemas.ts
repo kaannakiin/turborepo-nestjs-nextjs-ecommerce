@@ -1,4 +1,11 @@
-import { $Enums, AssetType, Locale, VariantGroupType } from "@repo/database";
+import {
+  $Enums,
+  AssetType,
+  Locale,
+  Prisma,
+  ProductType,
+  VariantGroupType,
+} from "@repo/database";
 import * as z from "zod";
 
 export const MIME_TYPES = {
@@ -280,6 +287,28 @@ export const ProductTranslationSchema = z.object({
 
 export const BaseProductSchema = z
   .object({
+    uniqueId: z.cuid2(),
+    active: z.boolean(),
+    sku: z
+      .string({
+        error: "SKU zorunludur.",
+      })
+      .max(100, {
+        error: "SKU 100 karakterden uzun olamaz.",
+      }),
+    barcode: z
+      .string({
+        error: "Barkod zorunludur.",
+      })
+      .max(100, {
+        error: "Barkod 100 karakterden uzun olamaz.",
+      }),
+    stock: z
+      .number({ error: "Stok zorunludur." })
+      .min(0, { error: "Stok 0'dan küçük olamaz." })
+      .max(Number.MAX_SAFE_INTEGER, {
+        error: "Stok çok büyük",
+      }),
     type: z.enum($Enums.ProductType),
     translations: z
       .array(ProductTranslationSchema)
@@ -458,8 +487,11 @@ export const CombinatedVariantsSchema = z.object({
 
 export const VariantProductSchema = BaseProductSchema.omit({
   prices: true,
+  stock: true,
+  active: true,
+  barcode: true,
+  sku: true,
 }).safeExtend({
-  uniqueId: z.cuid2(),
   existingVariants: z.array(VariantGroupSchema).min(1, {
     error: "En az bir varyant grubu eklemelisiniz.",
   }),
@@ -482,3 +514,68 @@ export type VariantOptionTranslationZodType = z.infer<
 >;
 
 export type BaseProductZodType = z.infer<typeof BaseProductSchema>;
+
+export type AdminProductTableData = Prisma.ProductGetPayload<{
+  include: {
+    _count: {
+      select: {
+        variantCombinations: true;
+      };
+    };
+    assets: {
+      where: {
+        asset: { type: "IMAGE" };
+      };
+      take: 1;
+      orderBy: { order: "asc" };
+      select: {
+        asset: {
+          select: { url: true; type: true };
+        };
+      };
+    };
+    translations: {
+      where: { locale: "TR" };
+      select: {
+        name: true;
+      };
+    };
+    prices: {
+      where: { currency: "TRY" };
+      select: {
+        price: true;
+        discountedPrice: true;
+      };
+    };
+    variantCombinations: {
+      select: {
+        stock: true;
+        assets: {
+          where: {
+            asset: { type: "IMAGE" };
+          };
+          take: 1;
+          orderBy: { order: "asc" };
+          select: {
+            asset: {
+              select: { url: true; type: true };
+            };
+          };
+        };
+        prices: {
+          where: { currency: "TRY" };
+          select: {
+            price: true;
+            discountedPrice: true;
+          };
+        };
+      };
+    };
+  };
+}> & {
+  // Computed fields
+  priceDisplay: string;
+  stockDisplay: string;
+  finalImage: string | null;
+  finalImageType: AssetType | null;
+};

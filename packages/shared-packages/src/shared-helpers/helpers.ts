@@ -127,3 +127,153 @@ export class DateFormatter {
     });
   }
 }
+/**
+ * EAN-13 barcode için check digit hesaplar
+ */
+function calculateEAN13CheckDigit(digits: string): string {
+  let sum = 0;
+  for (let i = 0; i < 12; i++) {
+    const digit = parseInt(digits[i]);
+    sum += i % 2 === 0 ? digit : digit * 3;
+  }
+  const checkDigit = (10 - (sum % 10)) % 10;
+  return checkDigit.toString();
+}
+
+/**
+ * Rastgele sayı üretir
+ */
+function generateRandomNumber(length: number): string {
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += Math.floor(Math.random() * 10).toString();
+  }
+  return result;
+}
+
+/**
+ * Benzersiz SKU oluşturur
+ * Format: [PRODUCT_PREFIX]-[TIMESTAMP]-[RANDOM]
+ */
+export function generateSKU(
+  productName: string,
+  options?: {
+    prefix?: string;
+    maxLength?: number;
+    includeTimestamp?: boolean;
+  }
+): string {
+  const {
+    prefix = "",
+    maxLength = 20,
+    includeTimestamp = true,
+  } = options || {};
+
+  // Ürün adından prefix oluştur (mevcut slugify fonksiyonunu kullan)
+  const productSlug = slugify(productName);
+  const productPrefix = prefix || productSlug.substring(0, 6).toUpperCase();
+
+  // Timestamp (son 6 hanesi)
+  const timestamp = includeTimestamp ? Date.now().toString().slice(-6) : "";
+
+  // Rastgele 4 haneli sayı
+  const randomPart = generateRandomNumber(4);
+
+  // SKU'yu birleştir
+  let sku = [productPrefix, timestamp, randomPart]
+    .filter((part) => part.length > 0)
+    .join("-");
+
+  // Maksimum uzunluk kontrolü
+  if (sku.length > maxLength) {
+    const prefixLength = Math.min(productPrefix.length, 4);
+    const timestampLength = includeTimestamp ? 6 : 0;
+    const randomLength = 4;
+    const separatorLength = includeTimestamp ? 2 : 1; // Tire sayısı
+
+    const availableLength =
+      maxLength - timestampLength - randomLength - separatorLength;
+    const trimmedPrefix = productPrefix.substring(
+      0,
+      Math.max(availableLength, 3)
+    );
+
+    sku = [trimmedPrefix, timestamp, randomPart]
+      .filter((part) => part.length > 0)
+      .join("-");
+  }
+
+  return sku;
+}
+
+/**
+ * EAN-13 formatında barcode oluşturur
+ * Format: 869XXXXXXXXX (Türkiye ülke kodu 869)
+ */
+export function generateEAN13Barcode(
+  productName?: string,
+  options?: {
+    countryCode?: string;
+    companyCode?: string;
+  }
+): string {
+  const {
+    countryCode = "869", // Türkiye
+    companyCode = "",
+  } = options || {};
+
+  // Ülke kodu (3 hane)
+  const country = countryCode.padStart(3, "0");
+
+  // Şirket kodu (4-5 hane) - eğer belirtilmemişse rastgele oluştur
+  let company = companyCode;
+  if (!company) {
+    company = generateRandomNumber(4);
+  }
+  company = company.substring(0, 5).padStart(4, "0");
+
+  // Ürün kodu (4-5 hane) - ürün adından hash veya rastgele
+  let productCode = "";
+  if (productName) {
+    // Ürün adından basit hash oluştur
+    let hash = 0;
+    for (let i = 0; i < productName.length; i++) {
+      const char = productName.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash; // 32bit integer'a çevir
+    }
+    productCode = Math.abs(hash).toString().substring(0, 5).padStart(5, "0");
+  } else {
+    productCode = generateRandomNumber(5);
+  }
+
+  // İlk 12 haneyi birleştir
+  const first12Digits = country + company + productCode;
+
+  // 12 hane olacak şekilde ayarla
+  const barcode12 = first12Digits.substring(0, 12).padStart(12, "0");
+
+  // Check digit hesapla
+  const checkDigit = calculateEAN13CheckDigit(barcode12);
+
+  // Final barcode
+  return barcode12 + checkDigit;
+}
+
+/**
+ * Hem SKU hem barcode oluşturan ana fonksiyon
+ */
+export function generateProductCodes(
+  productName: string,
+  options?: {
+    skuOptions?: Parameters<typeof generateSKU>[1];
+    barcodeOptions?: Parameters<typeof generateEAN13Barcode>[1];
+  }
+) {
+  const { skuOptions, barcodeOptions } = options || {};
+
+  return {
+    sku: generateSKU(productName, skuOptions),
+    barcode: generateEAN13Barcode(productName, barcodeOptions),
+  };
+}
