@@ -114,3 +114,7 @@ export type BrandsResponse = {
 
 export type Brand = z.infer<typeof BrandSchema>;
 export type BrandTranslation = z.infer<typeof BrandTranslationSchema>;
+export type BrandIdAndName = {
+  id: string;
+  name: string;
+};

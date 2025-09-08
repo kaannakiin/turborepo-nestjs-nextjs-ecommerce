@@ -109,4 +109,8 @@ export class BrandsController {
       data: brands,
     };
   }
+  @Get('get-all-brands-only-id-and-name')
+  async getAllBrandsOnlyIdAndName() {
+    return this.brandsService.getAllBrandsOnlyIdAndName();
+  }
 }

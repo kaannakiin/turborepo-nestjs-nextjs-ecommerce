@@ -117,3 +117,8 @@ export interface TaxonomyCategoryWithChildren {
 
 export type Category = z.infer<typeof CategorySchema>;
 export type CategoryTranslation = z.infer<typeof CategoryTranslationSchema>;
+
+export type CategoryIdAndName = {
+  id: string;
+  name: string;
+};

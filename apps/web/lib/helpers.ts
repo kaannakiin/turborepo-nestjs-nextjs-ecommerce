@@ -37,6 +37,56 @@ export function getProductTypeLabel(type: $Enums.ProductType) {
       return "Fiziksel";
   }
 }
+export function getCurrencyLabel(currency: $Enums.Currency) {
+  switch (currency) {
+    case "TRY":
+      return "Türk Lirası (₺)";
+    case "USD":
+      return "ABD Doları ($)";
+    case "EUR":
+      return "Euro (€)";
+    case "GBP":
+      return "İngiliz Sterlini (£)";
+    default:
+      return currency;
+  }
+}
+export function getDiscountTypeLabel(type: $Enums.DiscountType) {
+  switch (type) {
+    case "BUY_X_GET_Y":
+      return "X Al Y Kazan";
+    case "PERCENTAGE":
+      return "Yüzdelik";
+    case "FIXED":
+      return "Sabit Tutar";
+    case "FREE_SHIPPING":
+      return "Ücretsiz Kargo";
+    default:
+      return type;
+  }
+}
+export function getCouponGenerationTypeLabel(
+  type: $Enums.CouponGenerationType
+) {
+  switch (type) {
+    case "MANUAL":
+      return "Manuel İndirim";
+    case "AUTOMATIC":
+      return "Otomatik İndirim";
+    default:
+      return type;
+  }
+}
+export function getCouponGenerationTypeTooltip(
+  type: $Enums.CouponGenerationType
+) {
+  switch (type) {
+    case "AUTOMATIC":
+      return "Koşul bazlı indirimlerdir. Belirli koşullar sağlandığında otomatik olarak uygulanır.";
+    case "MANUAL":
+      return "Kupon kodu gerektirir. Müşteriler kupon kodunu kullanarak indirimi alabilir.";
+  }
+}
 
 export function returnCombinateVariant({
   existingVariants,

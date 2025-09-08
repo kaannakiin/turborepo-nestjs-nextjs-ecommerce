@@ -26,4 +26,8 @@ export class UsersController {
       sortBy: queries.sortBy, // Zod'da default var
     });
   }
+  @Get('get-users-id-and-name')
+  async getUsersIdAndName() {
+    return this.usersService.getUsersIdAndName();
+  }
 }

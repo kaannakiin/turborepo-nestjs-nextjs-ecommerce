@@ -44,17 +44,33 @@ enum ProductType {
   PHYSICAL
 }
 
+// İndirim sistemi için enum - BUY_X_GET_Y eklendi
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+  FREE_SHIPPING
+  BUY_X_GET_Y
+}
+
+// Kupon oluşturma türü enum'ı
+enum CouponGenerationType {
+  MANUAL
+  AUTOMATIC
+}
+
 model Asset {
   id   String    @id @default(cuid())
   type AssetType @default(IMAGE)
   url  String    @unique
 
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  variantOption VariantOption?
-  productAsset  ProductAsset[]
-  brand         Brand?
-  category      Category?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  variantOption     VariantOption?
+  productAsset      ProductAsset[]
+  brand             Brand?
+  category          Category?
+  mobileSliderItem  SliderItemSchema[] @relation("MobileAsset")
+  desktopSliderItem SliderItemSchema[] @relation("DesktopAsset")
 
   @@index([url])
 }
@@ -70,8 +86,10 @@ model User {
   imageUrl     String?
   refreshToken String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  discountIncluded DiscountIncludedUser[]
+  discountUsage    CouponUsage[]
 
   @@index([id, refreshToken, email, phone])
 }
@@ -101,10 +119,14 @@ model Category {
   parentCategory   Category?             @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id], onDelete: SetNull)
   parentCategoryId String?
   childCategories  Category[]            @relation("CategoryHierarchy")
-  products         ProductCategory[] // products yerine ProductCategory[] 
+  products         ProductCategory[]
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
   translations     CategoryTranslation[]
+
+  // İndirim sistemi ilişkisi
+  discountIncluded DiscountIncludedCategory[]
+  sliderItems      SliderItemSchema[]
 
   @@index([parentCategoryId])
 }
@@ -180,6 +202,12 @@ model Brand {
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
   translations  BrandTranslation[]
+
+  // İndirim sistemi ilişkisi
+  discountIncluded DiscountIncludedBrand[]
+  sliderItems      SliderItemSchema[]
+
+  @@index([parentBrandId])
 }
 
 model VariantGroupTranslation {
@@ -332,13 +360,23 @@ model Product {
   categories          ProductCategory[]
   taxonomyCategory    TaxonomyCategory?           @relation(fields: [taxonomyCategoryId], references: [id])
   taxonomyCategoryId  String?
+
+  // İndirim sistemi ilişkisi
+  discountIncluded DiscountIncludedProduct[]
+  sliderItems      SliderItemSchema[]
+
+  @@index([brandId])
+  @@index([taxonomyCategoryId])
+  @@index([active])
+  @@index([sku])
+  @@index([barcode])
 }
 
 model ProductVariantGroup {
   id             String @id @default(cuid())
   productId      String
-  variantGroupId String // Global VariantGroup'a referans
-  order          Int // Variant gruplarının görüntüleme sırası
+  variantGroupId String
+  order          Int
 
   product      Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
   variantGroup VariantGroup           @relation(fields: [variantGroupId], references: [id], onDelete: Cascade)
@@ -357,8 +395,8 @@ model ProductVariantGroup {
 model ProductVariantOption {
   id                    String @id @default(cuid())
   productVariantGroupId String
-  variantOptionId       String // Global VariantOption'a referans
-  order                 Int // Bu grup içindeki seçeneklerin sırası
+  variantOptionId       String
+  order                 Int
 
   productVariantGroup ProductVariantGroup               @relation(fields: [productVariantGroupId], references: [id], onDelete: Cascade)
   variantOption       VariantOption                     @relation("ProductVariantOptions", fields: [variantOptionId], references: [id], onDelete: Cascade)
@@ -382,11 +420,12 @@ model ProductVariantCombination {
   stock     Int     @default(0)
   active    Boolean @default(true)
 
-  product      Product                           @relation(fields: [productId], references: [id], onDelete: Cascade)
-  options      ProductVariantCombinationOption[]
-  prices       ProductPrice[]
-  assets       ProductAsset[]
-  translations ProductVariantTranslation[]
+  product          Product                           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  options          ProductVariantCombinationOption[]
+  prices           ProductPrice[]
+  assets           ProductAsset[]
+  translations     ProductVariantTranslation[]
+  discountIncluded DiscountIncludedVariant[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -428,4 +467,376 @@ model ProductVariantTranslation {
 
   @@unique([combinationId, locale])
   @@index([combinationId, locale])
+}
+
+enum CountryType {
+  STATE
+  CITY
+}
+
+model CountryTranslation {
+  id        String   @id @default(cuid())
+  locale    Locale   @default(TR)
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Country   Country  @relation(fields: [countryId], references: [id])
+  countryId String
+
+  @@unique([locale, countryId])
+  @@index([countryId])
+  @@index([locale])
+  @@index([name])
+}
+
+model Country {
+  id           String               @id
+  name         String
+  iso2         String?
+  iso3         String?
+  phoneCode    String?
+  capital      String?
+  currency     String?
+  native       String?
+  region       String?
+  subregion    String?
+  emoji        String?
+  translations CountryTranslation[]
+  states       State[]
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  type         CountryType          @default(STATE)
+
+  @@index([name])
+  @@index([iso2])
+  @@index([iso3])
+  @@index([region])
+  @@index([subregion])
+  @@index([currency])
+}
+
+model StateTranslation {
+  id        String   @id @default(cuid())
+  locale    Locale   @default(TR)
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  State     State    @relation(fields: [stateId], references: [id])
+  stateId   String
+
+  @@unique([locale, stateId])
+  @@index([stateId])
+  @@index([locale])
+  @@index([name])
+}
+
+model State {
+  id           String             @id
+  name         String
+  stateCode    String?
+  countryId    String
+  Country      Country            @relation(fields: [countryId], references: [id])
+  translations StateTranslation[]
+  cities       City[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([countryId])
+  @@index([name])
+  @@index([stateCode])
+  @@index([countryId, name])
+}
+
+model CityTranslation {
+  id        String   @id @default(cuid())
+  locale    Locale   @default(TR)
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  City      City     @relation(fields: [cityId], references: [id])
+  cityId    String
+
+  @@unique([locale, cityId])
+  @@index([cityId])
+  @@index([locale])
+  @@index([name])
+}
+
+model City {
+  id           String            @id
+  name         String
+  latitude     String?
+  longitude    String?
+  countryId    String
+  stateId      String
+  State        State             @relation(fields: [stateId], references: [id])
+  translations CityTranslation[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([stateId])
+  @@index([countryId])
+  @@index([name])
+  @@index([stateId, name])
+  @@index([countryId, stateId])
+  @@index([latitude, longitude])
+}
+
+// İNDİRİM SİSTEMİ MODELLERİ
+
+model Discount {
+  id               String               @id @default(cuid())
+  type             DiscountType
+  isActive         Boolean              @default(true)
+  isDeleted        Boolean              @default(false)
+  // Kupon oluşturma türü
+  couponGeneration CouponGenerationType @default(MANUAL)
+
+  // Normal indirim detayları (tip bazında)
+  discountPercentage Decimal? // PERCENTAGE tipi için
+  discountAmount     Decimal? // FIXED tipi için
+  allowedCurrencies  Currency[]
+
+  // Buy X Get Y için basitleştirilmiş alanlar
+  buyQuantity  Int? // X - Alınması gereken adet
+  buyProductId String? // X için ürün ID
+  buyVariantId String? // X için varyant ID (combinationId)
+
+  getQuantity                Int? // Y - Kazanılacak adet
+  getProductId               String? // Y için ürün ID
+  getVariantId               String? // Y için varyant ID (combinationId)
+  buyXGetYDiscountPercentage Decimal? // Y ürünlerinde indirim yüzdesi
+
+  // İlişkiler
+  translations DiscountTranslation[]
+  coupons      DiscountCoupon[]
+  conditions   DiscountCondition?
+  usage        CouponUsage[]
+  // Audit alanları
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  createdBy    String? // User ID
+
+  @@index([type])
+  @@index([isActive])
+  @@index([couponGeneration])
+  @@index([buyProductId])
+  @@index([buyVariantId])
+  @@index([getProductId])
+  @@index([getVariantId])
+  @@index([createdAt])
+}
+
+// Çoklu Dil Desteği
+model DiscountTranslation {
+  id            String  @id @default(cuid())
+  locale        Locale
+  discountTitle String  @db.VarChar(255)
+  description   String? @db.Text
+
+  // İlişkiler
+  discount   Discount @relation(fields: [discountId], references: [id], onDelete: Cascade)
+  discountId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([locale, discountId])
+  @@index([discountId])
+  @@index([locale])
+}
+
+// Kupon Modeli
+model DiscountCoupon {
+  id           String @id @default(cuid())
+  code         String @db.VarChar(128)
+  limit        Int? // Toplam kullanım limiti
+  perUserLimit Int? // Kullanıcı başı limit
+  usedCount    Int    @default(0) // Kaç kez kullanıldı
+
+  // İlişkiler
+  discount   Discount @relation(fields: [discountId], references: [id], onDelete: Cascade)
+  discountId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([code])
+  @@index([discountId])
+  @@index([code])
+}
+
+// Kupon Kullanım Geçmişi
+model CouponUsage {
+  id      String   @id @default(cuid())
+  orderId String? // Sipariş ID
+  usedAt  DateTime @default(now())
+
+  // İlişkiler
+
+  userId     String? // Kullanıcı ID (anonim kullanıcılar için null)
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  discount   Discount @relation(fields: [discountId], references: [id])
+  discountId String
+
+  @@index([userId])
+  @@index([orderId])
+  @@index([usedAt])
+}
+
+model DiscountCondition {
+  id String @id @default(cuid())
+
+  // Ürün koşulları
+  allProducts Boolean @default(false)
+
+  // Kullanıcı koşulları
+  allUser             Boolean @default(false)
+  onlyRegisteredUsers Boolean @default(false)
+
+  // Sepet tutarı koşulları
+  hasAmountCondition Boolean  @default(false)
+  minimumAmount      Decimal?
+  maximumAmount      Decimal?
+
+  // Ürün adedi koşulları
+  hasQuantityCondition Boolean @default(false)
+  minimumQuantity      Int?
+  maximumQuantity      Int?
+
+  // Tarih koşulları
+  addStartDate Boolean   @default(false)
+  startDate    DateTime?
+  addEndDate   Boolean   @default(false)
+  endDate      DateTime?
+
+  // İlişkiler
+  discount           Discount                   @relation(fields: [discountId], references: [id], onDelete: Cascade)
+  discountId         String                     @unique
+  includedProducts   DiscountIncludedProduct[]
+  includedCategories DiscountIncludedCategory[]
+  includedBrands     DiscountIncludedBrand[]
+  includedUsers      DiscountIncludedUser[]
+  includedVariants   DiscountIncludedVariant[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([discountId])
+}
+
+model DiscountIncludedVariant {
+  id            String @id @default(cuid())
+  combinationId String // ProductVariantCombination ID
+
+  condition   DiscountCondition         @relation(fields: [conditionId], references: [id], onDelete: Cascade)
+  conditionId String
+  combination ProductVariantCombination @relation(fields: [combinationId], references: [id], onDelete: Cascade)
+
+  @@unique([combinationId, conditionId])
+  @@index([conditionId])
+  @@index([combinationId])
+}
+
+// Dahil Edilen Ürünler
+model DiscountIncludedProduct {
+  id        String @id @default(cuid())
+  productId String
+
+  condition   DiscountCondition @relation(fields: [conditionId], references: [id], onDelete: Cascade)
+  conditionId String
+  product     Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, conditionId])
+  @@index([conditionId])
+  @@index([productId])
+}
+
+// Dahil Edilen Kategoriler
+model DiscountIncludedCategory {
+  id         String @id @default(cuid())
+  categoryId String
+
+  condition   DiscountCondition @relation(fields: [conditionId], references: [id], onDelete: Cascade)
+  conditionId String
+  category    Category          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, conditionId])
+  @@index([conditionId])
+  @@index([categoryId])
+}
+
+// Dahil Edilen Markalar
+model DiscountIncludedBrand {
+  id      String @id @default(cuid())
+  brandId String
+
+  condition   DiscountCondition @relation(fields: [conditionId], references: [id], onDelete: Cascade)
+  conditionId String
+  brand       Brand             @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([brandId, conditionId])
+  @@index([conditionId])
+  @@index([brandId])
+}
+
+// Dahil Edilen Kullanıcılar
+model DiscountIncludedUser {
+  id     String @id @default(cuid())
+  userId String
+
+  condition   DiscountCondition @relation(fields: [conditionId], references: [id], onDelete: Cascade)
+  conditionId String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, conditionId])
+  @@index([conditionId])
+  @@index([userId])
+}
+
+model SliderItemSchema {
+  id        String    @id @default(cuid())
+  order     Int
+  isActive  Boolean   @default(true)
+  startDate DateTime?
+  endDate   DateTime?
+
+  // Asset ilişkileri
+  mobileAsset    Asset?  @relation("MobileAsset", fields: [mobileAssetId], references: [id], onDelete: SetNull)
+  mobileAssetId  String?
+  desktopAsset   Asset?  @relation("DesktopAsset", fields: [desktopAssetId], references: [id], onDelete: SetNull)
+  desktopAssetId String?
+
+  // Link alanları - sadece bir tanesi dolu olabilir
+  customLink   String? // URL string
+  productLink  String? // Product ID (cuid)
+  categoryLink String? // Category ID (cuid)  
+  brandLink    String? // Brand ID (cuid)
+
+  // İlişkiler
+  sliderSchema   SliderSchema @relation(fields: [sliderSchemaId], references: [id], onDelete: Cascade)
+  sliderSchemaId String
+
+  // Link referansları (opsiyonel foreign key'ler)
+  product  Product?  @relation(fields: [productLink], references: [id], onDelete: SetNull)
+  category Category? @relation(fields: [categoryLink], references: [id], onDelete: SetNull)
+  brand    Brand?    @relation(fields: [brandLink], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([sliderSchemaId, order])
+  @@index([sliderSchemaId])
+  @@index([isActive])
+  @@index([startDate, endDate])
+}
+
+model SliderSchema {
+  id               String             @id @default(cuid())
+  sliders          SliderItemSchema[]
+  isAutoPlay       Boolean            @default(false)
+  autoPlayInterval Int? // Otomatik oynatma aralığı (saniye cinsinden)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

@@ -5,8 +5,10 @@ import {
   MantineColorsTuple,
   MantineProvider,
 } from "@mantine/core";
+import { DatesProvider } from "@mantine/dates";
 import { Notifications } from "@mantine/notifications";
 import { QueryClient, QueryClientProvider } from "@repo/shared";
+import "dayjs/locale/tr";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 const primaryColor: MantineColorsTuple = [
@@ -39,17 +41,32 @@ const LayoutProviderWrapper = ({ children }: { children: ReactNode }) => {
   const theme = createTheme({
     colors: { primary: primaryColor, admin: adminPrimaryColor },
     primaryColor: pathname.startsWith("/admin") ? "admin" : "primary",
+    components: {
+      Modal: {
+        classNames: {
+          title: "text-lg font-semibold",
+        },
+        defaultProps: {
+          centered: true,
+          transitionProps: { transition: "scale", duration: 300 },
+        },
+      },
+    },
   });
   return (
     <QueryClientProvider client={new QueryClient()}>
-      <MantineProvider
-        defaultColorScheme="light"
-        forceColorScheme="light"
-        theme={theme}
+      <DatesProvider
+        settings={{ locale: "tr", firstDayOfWeek: 1, weekendDays: [5, 6] }}
       >
-        <Notifications />
-        {children}
-      </MantineProvider>
+        <MantineProvider
+          defaultColorScheme="light"
+          forceColorScheme="light"
+          theme={theme}
+        >
+          <Notifications position="bottom-right" />
+          {children}
+        </MantineProvider>
+      </DatesProvider>
     </QueryClientProvider>
   );
 };

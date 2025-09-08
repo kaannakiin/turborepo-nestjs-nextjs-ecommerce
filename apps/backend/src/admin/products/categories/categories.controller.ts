@@ -115,4 +115,8 @@ export class CategoriesController {
   async getAllCategoriesWithoutQuery() {
     return this.categoriesService.getAllCategoriesWithoutQuery();
   }
+  @Get('get-all-categories-only-id-and-name')
+  async getAllCategoriesOnlyIdAndName() {
+    return this.categoriesService.getAllCategoriesOnlyIdAndName();
+  }
 }

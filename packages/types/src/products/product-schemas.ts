@@ -61,7 +61,9 @@ export const FileSchema = ({ type }: { type: AssetType[] | AssetType }) => {
   const allowedMimeTypes = allowedTypes.flatMap(getMimeTypesForAssetType);
 
   return z
-    .instanceof(File)
+    .instanceof(File, {
+      error: "Geçerli bir dosya yükleyiniz.",
+    })
     .refine((file) => file.size > 0, {
       message: "Dosya boş olamaz.",
     })
@@ -501,7 +503,10 @@ export const VariantProductSchema = BaseProductSchema.omit({
 });
 
 export const Cuid2Schema = z.cuid2({ error: "Geçersiz kimlik" });
-
+export const BodyCuid2Schema = z.object({
+  id: Cuid2Schema,
+});
+export type BodyCuid2ZodType = z.infer<typeof BodyCuid2Schema>;
 export type Cuid2ZodType = z.infer<typeof Cuid2Schema>;
 export type VariantProductZodType = z.infer<typeof VariantProductSchema>;
 export type VariantGroupTranslationZodType = z.infer<

@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@repo/database';
-import { Category, Cuid2ZodType } from '@repo/types';
+import { Category, CategoryIdAndName, Cuid2ZodType } from '@repo/types';
 import { MinioService } from 'src/minio/minio.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -335,6 +335,7 @@ export class CategoriesService {
       );
     }
   }
+
   async getAllParentCategories(currentCategoryId?: Cuid2ZodType) {
     // Prisma ile recursive CTE kullanarak hierarchical query
     const result = await this.prisma.$queryRaw<
@@ -397,5 +398,26 @@ export class CategoriesService {
       },
       orderBy: { createdAt: 'desc' },
     });
+  }
+  async getAllCategoriesOnlyIdAndName(): Promise<CategoryIdAndName[]> {
+    const categories = await this.prisma.category.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        translations: {
+          select: {
+            name: true,
+            locale: true,
+          },
+        },
+      },
+    });
+    return categories.map((category) => ({
+      id: category.id,
+      name:
+        category.translations.find((t) => t.locale === 'TR')?.name ||
+        category.translations[0]?.name ||
+        'İsimsiz Kategori',
+    }));
   }
 }

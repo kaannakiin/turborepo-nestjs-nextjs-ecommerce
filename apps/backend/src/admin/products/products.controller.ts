@@ -159,4 +159,12 @@ export class ProductsController {
     const page = pageParam ? parseInt(pageParam, 10) : 1;
     return this.productsService.getProducts(search, page);
   }
+  @Get('get-products-and-variants')
+  async getProductsAndVariants() {
+    return this.productsService.getProductsAndVariants();
+  }
+  @Get('get-products-for-selection')
+  async getProductsForSelection() {
+    return this.productsService.getProductsForSelection();
+  }
 }

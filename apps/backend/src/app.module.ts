@@ -6,6 +6,8 @@ import { ConfigModule } from '@nestjs/config';
 import { AdminModule } from './admin/admin.module';
 import { NestMinioModule } from 'nestjs-minio';
 import { MinioModule } from './minio/minio.module';
+import { LocationsModule } from './locations/locations.module';
+import { DiscountsModule } from './discounts/discounts.module';
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { MinioModule } from './minio/minio.module';
       secretKey: 'Q3UIEr9TReqY0Seego5AMHPBOxu8iA57',
     }),
     MinioModule,
+    LocationsModule,
+    DiscountsModule,
   ],
   controllers: [],
   providers: [],

@@ -10,9 +10,11 @@ import {
   AdminProductTableData,
   BaseProductZodType,
   Cuid2ZodType,
+  ProductWithVariants,
   VariantGroupZodType,
   VariantProductZodType,
 } from '@repo/types';
+import { id } from 'date-fns/locale';
 import { MinioService, ProcessedAsset } from 'src/minio/minio.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -1971,6 +1973,136 @@ export class ProductsService {
         total: totalCount,
         totalPages: Math.ceil(totalCount / limit),
       },
+    };
+  }
+  async getProductsAndVariants(): Promise<ProductWithVariants[]> {
+    const products = await this.prisma.product.findMany({
+      where: { isVariant: false },
+      select: {
+        id: true,
+        translations: {
+          select: {
+            locale: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    const variants = await this.prisma.product.findMany({
+      where: {
+        isVariant: true,
+      },
+      select: {
+        id: true,
+        translations: {
+          select: {
+            locale: true,
+            name: true,
+          },
+        },
+        variantCombinations: {
+          select: {
+            id: true,
+            options: {
+              orderBy: {
+                productVariantOption: {
+                  productVariantGroup: {
+                    order: 'asc',
+                  },
+                },
+              },
+              select: {
+                productVariantOption: {
+                  select: {
+                    variantOption: {
+                      select: {
+                        variantGroup: {
+                          select: {
+                            translations: {
+                              select: {
+                                name: true,
+                                locale: true,
+                              },
+                            },
+                          },
+                        },
+                        translations: {
+                          select: {
+                            locale: true,
+                            name: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const formattedProducts: ProductWithVariants[] = products.map((p) => ({
+      productId: p.id,
+      isVariant: false,
+      productName:
+        p.translations.find((t) => t.locale === 'TR')?.name ||
+        p.translations[0]?.name ||
+        'İsimsiz Ürün',
+    }));
+
+    const formattedVariants: ProductWithVariants[] = variants.map((v) => ({
+      productId: v.id,
+      isVariant: true,
+      productName:
+        v.translations.find((t) => t.locale === 'TR')?.name ||
+        v.translations[0]?.name ||
+        'İsimsiz Ürün',
+      variantInfo: v.variantCombinations.map((vc) => ({
+        variantId: vc.id,
+        variants: vc.options.map((option) => ({
+          groupName:
+            option.productVariantOption.variantOption.variantGroup.translations.find(
+              (t) => t.locale === 'TR',
+            )?.name ||
+            option.productVariantOption.variantOption.variantGroup
+              .translations[0]?.name ||
+            'İsimsiz Grup',
+          optionName:
+            option.productVariantOption.variantOption.translations.find(
+              (t) => t.locale === 'TR',
+            )?.name ||
+            option.productVariantOption.variantOption.translations[0]?.name ||
+            'İsimsiz Seçenek',
+        })),
+      })),
+    }));
+
+    return [...formattedProducts, ...formattedVariants];
+  }
+  async getProductsForSelection(): Promise<{
+    products: { id: string; name: string }[];
+  }> {
+    const products = await this.prisma.product.findMany({
+      include: {
+        translations: {
+          select: {
+            locale: true,
+            name: true,
+          },
+        },
+      },
+    });
+    return {
+      products: products.map((p) => ({
+        id: p.id,
+        name:
+          p.translations.find((t) => t.locale === 'TR')?.name ||
+          p.translations[0]?.name ||
+          'İsimsiz Ürün',
+      })),
     };
   }
 }

@@ -3,10 +3,11 @@ import { AdminService } from './admin.service';
 import { AdminController } from './admin.controller';
 import { UsersModule } from './users/users.module';
 import { ProductsModule } from './products/products.module';
+import { ThemeModule } from './theme/theme.module';
 
 @Module({
   controllers: [AdminController],
   providers: [AdminService],
-  imports: [UsersModule, ProductsModule],
+  imports: [UsersModule, ProductsModule, ThemeModule],
 })
 export class AdminModule {}

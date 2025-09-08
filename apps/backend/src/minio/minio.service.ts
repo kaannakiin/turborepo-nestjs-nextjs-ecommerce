@@ -147,7 +147,7 @@ export class MinioService {
       thumbnail?: { buffer: Buffer; contentType: string };
     } = {
       main: {
-        buffer: await sharp(file.buffer).webp({ quality: 85 }).toBuffer(),
+        buffer: await sharp(file.buffer).toBuffer(),
         contentType: 'image/webp',
       },
     };
@@ -169,6 +169,7 @@ export class MinioService {
           .blur(1)
           .webp({ quality: 70 })
           .toBuffer(),
+
         contentType: 'image/webp',
       };
     }
@@ -252,8 +253,14 @@ export class MinioService {
             isNeedOg,
             isNeedThumbnail,
           );
-          const mainFileName =
-            this.generateFileName(file.originalname).split('.')[0] + '.webp';
+
+          // ÖNCE base dosya adını oluştur (bir kere)
+          const baseFileName = this.generateFileName(file.originalname).split(
+            '.',
+          )[0];
+
+          // Ana resim
+          const mainFileName = `${baseFileName}.webp`;
           processedAsset.url = await this.uploadToMinio(
             bucketName,
             mainFileName,
@@ -261,10 +268,9 @@ export class MinioService {
             processed.main.contentType,
           );
 
+          // OG resmi (aynı base isimle)
           if (processed.og) {
-            const ogFileName =
-              this.generateFileName(file.originalname, 'og').split('.')[0] +
-              '.jpg';
+            const ogFileName = `${baseFileName}-og.jpg`;
             processedAsset.ogUrl = await this.uploadToMinio(
               bucketName,
               ogFileName,
@@ -273,10 +279,9 @@ export class MinioService {
             );
           }
 
+          // Thumbnail (aynı base isimle)
           if (processed.thumbnail) {
-            const thumbnailFileName =
-              this.generateFileName(file.originalname, 'thumb').split('.')[0] +
-              '.webp';
+            const thumbnailFileName = `${baseFileName}-thumbnail.webp`;
             processedAsset.thumbnailUrl = await this.uploadToMinio(
               bucketName,
               thumbnailFileName,
@@ -289,8 +294,13 @@ export class MinioService {
 
         case $Enums.AssetType.VIDEO: {
           const processed = await this.processVideo(file, isNeedThumbnail);
-          const mainFileName =
-            this.generateFileName(file.originalname).split('.')[0] + '.webm';
+
+          const baseFileName = this.generateFileName(file.originalname).split(
+            '.',
+          )[0];
+
+          // Ana video
+          const mainFileName = `${baseFileName}.webm`;
           processedAsset.url = await this.uploadToMinio(
             bucketName,
             mainFileName,
@@ -298,10 +308,9 @@ export class MinioService {
             processed.main.contentType,
           );
 
+          // Thumbnail (aynı base isimle)
           if (processed.thumbnail) {
-            const thumbnailFileName =
-              this.generateFileName(file.originalname, 'thumb').split('.')[0] +
-              '.webp';
+            const thumbnailFileName = `${baseFileName}-thumbnail.webp`;
             processedAsset.thumbnailUrl = await this.uploadToMinio(
               bucketName,
               thumbnailFileName,

@@ -1,7 +1,13 @@
 "use client";
 
 import { Group, Stack, Text, Tooltip, UnstyledButton } from "@mantine/core";
-import { IconHome2, IconPackage, IconUser } from "@tabler/icons-react";
+import {
+  IconBrush,
+  IconBuildingWarehouse,
+  IconHome2,
+  IconPackage,
+  IconUser,
+} from "@tabler/icons-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { NavbarButtonType } from "../../../types/GlobalTypes";
@@ -57,6 +63,32 @@ const data: NavbarButtonType[] = [
         icon: null,
         label: "Kategori Oluştur",
       },
+      {
+        href: "/product-list/discounts",
+        icon: null,
+        label: "Kategori Oluştur",
+      },
+    ],
+  },
+  {
+    label: "Mağaza",
+    icon: <IconBuildingWarehouse size={24} stroke={2} />,
+    sub: [
+      {
+        href: "/store",
+        icon: null,
+        label: "Mağaza",
+      },
+      {
+        href: "/store/discounts",
+        icon: null,
+        label: "İndirimler",
+      },
+      {
+        href: "/store/discounts/new",
+        icon: null,
+        label: "Yeni İndirim",
+      },
     ],
   },
   {
@@ -72,6 +104,22 @@ const data: NavbarButtonType[] = [
         href: "/users/user-create",
         icon: null,
         label: "Kullanıcı Oluştur",
+      },
+    ],
+  },
+  {
+    label: "Tema",
+    icon: <IconBrush size={24} stroke={2} />,
+    sub: [
+      {
+        href: "/theme",
+        icon: null,
+        label: "Tema Ayarları",
+      },
+      {
+        href: "/theme/slider",
+        icon: null,
+        label: "Slider",
       },
     ],
   },

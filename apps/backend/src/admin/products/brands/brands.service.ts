@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@repo/database';
 import { slugify } from '@repo/shared';
-import { Brand, Cuid2ZodType } from '@repo/types';
+import { Brand, BrandIdAndName, Cuid2ZodType } from '@repo/types';
 import { MinioService } from 'src/minio/minio.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -459,5 +459,25 @@ export class BrandsService {
         },
       },
     });
+  }
+  async getAllBrandsOnlyIdAndName(): Promise<BrandIdAndName[]> {
+    const brands = await this.prisma.brand.findMany({
+      select: {
+        id: true,
+        translations: {
+          select: {
+            name: true,
+            locale: true,
+          },
+        },
+      },
+    });
+    return brands.map((brand) => ({
+      id: brand.id,
+      name:
+        brand.translations.find((t) => t.locale === 'TR')?.name ||
+        brand.translations[0]?.name ||
+        'İsimsiz Marka',
+    }));
   }
 }

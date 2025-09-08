@@ -141,3 +141,8 @@ export type TokenPayload = {
   phone?: string;
   image?: string;
 };
+
+export type UserIdAndName = {
+  id: string;
+  name: string;
+};
