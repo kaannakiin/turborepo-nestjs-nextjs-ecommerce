@@ -8,6 +8,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum LayoutComponentType {
+  MARQUEE
+  SLIDER
+}
+
 enum UserRole {
   OWNER
   ADMIN
@@ -56,6 +61,16 @@ enum DiscountType {
 enum CouponGenerationType {
   MANUAL
   AUTOMATIC
+}
+
+enum YAXISDIRECTION {
+  HORIZONTAL
+  VERTICAL
+}
+
+enum XAXISDIRECTION {
+  LTR
+  RTL
 }
 
 model Asset {
@@ -837,6 +852,60 @@ model SliderSchema {
   isAutoPlay       Boolean            @default(false)
   autoPlayInterval Int? // Otomatik oynatma aralığı (saniye cinsinden)
 
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  component LayoutComponent[]
+}
+
+model MarqueeItemSchema {
+  id   String @id @default(cuid())
+  text String
+
+  options   Json?
+  order     Int
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  locale          Locale[]
+  MarqueeSchema   MarqueeSchema @relation(fields: [marqueeSchemaId], references: [id])
+  marqueeSchemaId String
+
+  @@unique([marqueeSchemaId, order])
+}
+
+model MarqueeSchema {
+  id             String              @id @default(cuid())
+  items          MarqueeItemSchema[]
+  xaxisDirection XAXISDIRECTION      @default(LTR)
+  yaxisDirection YAXISDIRECTION      @default(HORIZONTAL)
+  pauseOnHover   Boolean             @default(false)
+  duration       Float               @default(10)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  components     LayoutComponent[]
+}
+
+model LayoutComponent {
+  id    String              @id @default(cuid())
+  type  LayoutComponentType
+  order Int
+
+  layout    Layout         @relation(fields: [layoutId], references: [id], onDelete: Cascade)
+  layoutId  String
+  slider    SliderSchema?  @relation(fields: [sliderId], references: [id], onDelete: SetNull)
+  sliderId  String?
+  marquee   MarqueeSchema? @relation(fields: [marqueeId], references: [id], onDelete: Cascade)
+  marqueeId String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@unique([layoutId, order])
+}
+
+model Layout {
+  id         String            @id @default(cuid())
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  components LayoutComponent[]
 }
