@@ -26,7 +26,8 @@
     "NEXT_PUBLIC_BASE_URL",
     "BACKEND_URL",
     "NEXT_PUBLIC_BACKEND_URL",
-    "ALLOWED_ORIGINS"
+    "ALLOWED_ORIGINS",
+    "MINIO_ENDPOINT_SETTINGS"
   ],
   "globalDependencies": ["**/.env.*local"],
   "tasks": {
@@ -68,7 +69,8 @@
         "PORT",
         "NODE_ENV",
         "DOMAIN",
-        "ALLOWED_ORIGINS"
+        "ALLOWED_ORIGINS",
+        "MINIO_ENDPOINT_SETTINGS"
       ],
       "outputs": ["dist/**"]
     },
@@ -97,7 +99,8 @@
         "PORT",
         "NODE_ENV",
         "DOMAIN",
-        "ALLOWED_ORIGINS"
+        "ALLOWED_ORIGINS",
+        "MINIO_ENDPOINT_SETTINGS"
       ]
     },
     "web#start": {
