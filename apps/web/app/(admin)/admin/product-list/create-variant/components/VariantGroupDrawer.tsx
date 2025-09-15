@@ -205,14 +205,16 @@ const SortableVariantItem = ({
           )}
         </Group>
         <Group gap={"md"} align="center" justify="flex-end">
-          <ActionIcon
-            size={"sm"}
-            variant={"transparent"}
-            color={"admin"}
-            onClick={onEdit}
-          >
-            <IconEdit />
-          </ActionIcon>
+          {type === "COLOR" && (
+            <ActionIcon
+              size={"sm"}
+              variant={"transparent"}
+              color={"admin"}
+              onClick={onEdit}
+            >
+              <IconEdit />
+            </ActionIcon>
+          )}
 
           <Popover
             position="top"

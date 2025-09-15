@@ -26,6 +26,7 @@ const CustomImage = ({
         fill
         alt={alt}
         src={src}
+        quality={100}
         className={`object-cover transition-opacity duration-200 ${
           isLoading ? "opacity-100 scale-110 blur-sm" : "opacity-0"
         }`}
@@ -53,6 +54,7 @@ const CustomImage = ({
         alt={alt}
         src={src}
         onClick={onClick}
+        quality={100}
         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         className={`object-cover transition-all duration-300 ease-out ${
           isLoading ? "opacity-0 scale-105" : "opacity-100 scale-100"
