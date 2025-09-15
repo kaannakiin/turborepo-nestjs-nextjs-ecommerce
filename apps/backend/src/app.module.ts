@@ -23,7 +23,7 @@ import { CartModule } from './cart/cart.module';
     NestMinioModule.registerAsync({
       isGlobal: true,
       useFactory: (configService: ConfigService) => ({
-        endPoint: configService.get<string>('MINIO_ENDPOINT'),
+        endPoint: configService.get<string>('MINIO_ENDPOINT_SETTINGS'),
         port: parseInt(configService.get<string>('MINIO_PORT')) || 443,
         useSSL: configService.get<string>('MINIO_USE_SSL') === 'true',
         accessKey: configService.get<string>('MINIO_ACCESS_KEY'),
