@@ -1,0 +1,74 @@
+/* carousel.module.css */
+.control {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border: 2px solid var(--mantine-primary-color-filled) !important;
+  color: var(--mantine-primary-color-filled) !important;
+  width: 48px !important;
+  height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+  backdrop-filter: blur(4px);
+  border-radius: 50% !important; /* Full radius */
+
+  &:hover {
+    background-color: var(--mantine-primary-color-filled) !important;
+    color: white !important;
+    transform: scale(1.1) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  &:active {
+    transform: scale(0.95) !important;
+  }
+
+  & svg {
+    width: 20px !important;
+    height: 20px !important;
+    stroke-width: 2.5 !important;
+  }
+
+  &[data-inactive] {
+    opacity: 0;
+    cursor: default;
+  }
+}
+
+.modalControls {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1000;
+}
+
+.modalControl {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border: 2px solid var(--mantine-primary-color-filled) !important;
+  color: var(--mantine-primary-color-filled) !important;
+  width: 48px !important;
+  height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+  backdrop-filter: blur(4px);
+  border-radius: 0%;
+}
+
+.modalControl:hover {
+  background-color: var(--mantine-primary-color-filled) !important;
+  color: white !important;
+  transform: scale(1.1) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+}
+
+.modalControl:active {
+  transform: scale(0.95) !important;
+}
+
+.modalControl svg {
+  width: 20px !important;
+  height: 20px !important;
+  stroke-width: 2.5 !important;
+}

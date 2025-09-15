@@ -104,6 +104,8 @@ export class CategoriesService {
     const uploadFile = await this.minio.uploadAsset({
       bucketName: 'categories',
       file,
+      isNeedOg: true,
+      isNeedThumbnail: true,
     });
     if (!uploadFile.success) {
       throw new InternalServerErrorException(

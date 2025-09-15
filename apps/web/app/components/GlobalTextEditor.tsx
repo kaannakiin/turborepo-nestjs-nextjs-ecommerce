@@ -20,6 +20,7 @@ const GlobalTextEditor = ({
 }: GlobalTextEditorProps) => {
   const editor = useCreateBlockNote({
     dictionary: tr,
+    initialContent: null,
   });
 
   const handleChange = async () => {

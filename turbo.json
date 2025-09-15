@@ -4,16 +4,28 @@
   "globalEnv": [
     "DATABASE_URL",
     "MINIO_ENDPOINT",
+    "MINIO_ACCESS_KEY",
+    "MINIO_SECRET_KEY",
+    "MINIO_PORT",
+    "MINIO_USE_SSL",
     "JWT_ACCESS_TOKEN_SECRET",
     "JWT_REFRESH_TOKEN_SECRET",
     "JWT_ACCESS_TOKEN_EXPIRATION_MS",
     "JWT_REFRESH_TOKEN_EXPIRATION_MS",
     "GOOGLE_CLIENT_ID",
     "GOOGLE_CLIENT_SECRET",
+    "AUTH_UI_REDIRECT",
     "FACEBOOK_APP_ID",
     "FACEBOOK_APP_SECRET",
+    "FACEBOOK_CALLBACK_URL",
+    "WEB_UI_REDIRECT",
+    "MOBILE_UI_REDIRECT",
+    "PORT",
     "NODE_ENV",
-    "DOMAIN"
+    "DOMAIN",
+    "NEXT_PUBLIC_BASE_URL",
+    "BACKEND_URL",
+    "NEXT_PUBLIC_BACKEND_URL"
   ],
   "globalDependencies": ["**/.env.*local"],
   "tasks": {
@@ -27,7 +39,8 @@
         "BACKEND_URL",
         "NEXT_PUBLIC_BACKEND_URL",
         "MINIO_ENDPOINT",
-        "NODE_ENV"
+        "NODE_ENV",
+        "NEXT_PUBLIC_BASE_URL"
       ],
       "outputs": [".next/**", "!.next/cache/**"]
     },
@@ -47,6 +60,11 @@
         "WEB_UI_REDIRECT",
         "MOBILE_UI_REDIRECT",
         "MINIO_ENDPOINT",
+        "MINIO_ACCESS_KEY",
+        "MINIO_SECRET_KEY",
+        "MINIO_PORT",
+        "MINIO_USE_SSL",
+        "PORT",
         "NODE_ENV",
         "DOMAIN"
       ],
@@ -59,12 +77,22 @@
         "DATABASE_URL",
         "JWT_ACCESS_TOKEN_SECRET",
         "JWT_REFRESH_TOKEN_SECRET",
+        "JWT_ACCESS_TOKEN_EXPIRATION_MS",
+        "JWT_REFRESH_TOKEN_EXPIRATION_MS",
         "GOOGLE_CLIENT_ID",
         "GOOGLE_CLIENT_SECRET",
         "AUTH_UI_REDIRECT",
+        "FACEBOOK_APP_ID",
+        "FACEBOOK_APP_SECRET",
         "FACEBOOK_CALLBACK_URL",
         "WEB_UI_REDIRECT",
         "MOBILE_UI_REDIRECT",
+        "MINIO_ENDPOINT",
+        "MINIO_ACCESS_KEY",
+        "MINIO_SECRET_KEY",
+        "MINIO_PORT",
+        "MINIO_USE_SSL",
+        "PORT",
         "NODE_ENV",
         "DOMAIN"
       ]
@@ -72,7 +100,13 @@
     "web#start": {
       "cache": false,
       "persistent": true,
-      "env": ["BACKEND_URL", "NEXT_PUBLIC_BACKEND_URL", "NODE_ENV"]
+      "env": [
+        "BACKEND_URL",
+        "NEXT_PUBLIC_BACKEND_URL",
+        "MINIO_ENDPOINT",
+        "NEXT_PUBLIC_BASE_URL",
+        "NODE_ENV"
+      ]
     },
     "database#build": {
       "dependsOn": ["^build"],
@@ -91,6 +125,9 @@
       "persistent": true
     },
     "db:deploy": {
+      "cache": false
+    },
+    "db:prisma": {
       "cache": false
     },
     "lint": {

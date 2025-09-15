@@ -1,9 +1,9 @@
 "use client";
-import { useState } from "react";
-import { Modal } from "@mantine/core";
-import Image from "next/image";
+import { AspectRatio, Modal } from "@mantine/core";
 import { $Enums } from "@repo/types";
-import { IconSearch, IconPhoto, IconVideo } from "@tabler/icons-react";
+import { IconPhoto, IconSearch, IconVideo } from "@tabler/icons-react";
+import { useState } from "react";
+import CustomImage from "../../components/CustomImage";
 
 interface TableAssetProps {
   url?: string;
@@ -50,21 +50,16 @@ const TableAsset = ({ url, type }: TableAssetProps) => {
     );
   }
 
-  // URL varsa tam özellikli component
   return (
     <>
       <div
-        className="relative w-full h-full min-h-16 cursor-pointer group"
+        className="relative w-full h-full min-h-12 cursor-pointer group"
         onClick={handleClick}
       >
         {type === "IMAGE" ? (
-          <Image
-            src={url}
-            alt="Asset"
-            fill
-            className="object-contain rounded-lg"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
+          <AspectRatio ratio={1} pos={"relative"}>
+            <CustomImage src={url} alt="Asset" />
+          </AspectRatio>
         ) : (
           <video
             src={url}
@@ -74,10 +69,9 @@ const TableAsset = ({ url, type }: TableAssetProps) => {
           />
         )}
 
-        {/* Hover overlay */}
-        <div className="absolute inset-0 hover:bg-gray-100 bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center rounded-lg">
+        <div className="absolute inset-0 hover:bg-gray-500 bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200 flex items-center justify-center ">
           <IconSearch
-            className="text-white group-hover:text-black opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"
             size={24}
           />
         </div>
@@ -94,16 +88,13 @@ const TableAsset = ({ url, type }: TableAssetProps) => {
           blur: 3,
         }}
       >
-        <div className="relative w-full" style={{ minHeight: "60vh" }}>
+        <AspectRatio
+          ratio={1}
+          className="relative"
+          style={{ minHeight: "60vh" }}
+        >
           {type === "IMAGE" ? (
-            <Image
-              src={url}
-              alt="Asset - Enlarged"
-              fill
-              className="object-contain"
-              sizes="90vw"
-              priority
-            />
+            <CustomImage src={url} alt="Asset - Enlarged" />
           ) : (
             <video
               src={url}
@@ -112,7 +103,7 @@ const TableAsset = ({ url, type }: TableAssetProps) => {
               autoPlay
             />
           )}
-        </div>
+        </AspectRatio>
       </Modal>
     </>
   );

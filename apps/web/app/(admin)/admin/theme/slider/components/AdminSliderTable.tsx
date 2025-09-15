@@ -106,7 +106,7 @@ const AdminSliderTable = () => {
     queryKey: ["admin-slider-items"],
     queryFn: async () => {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/theme/get-slider-items`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/theme/slider/get-slider-items`,
         {
           method: "GET",
           credentials: "include",
@@ -208,7 +208,7 @@ const AdminSliderTable = () => {
       }));
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/theme/update-sliders-order`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/theme/slider/update-sliders-order`,
         {
           method: "PATCH",
           headers: {
@@ -254,7 +254,7 @@ const AdminSliderTable = () => {
 
   const onSubmit: SubmitHandler<Slider> = async (data) => {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/theme/update-slider-settings`,
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/theme/slider/update-slider-settings`,
       {
         method: "PATCH",
         headers: {

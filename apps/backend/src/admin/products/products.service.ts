@@ -14,7 +14,6 @@ import {
   VariantGroupZodType,
   VariantProductZodType,
 } from '@repo/types';
-import { id } from 'date-fns/locale';
 import { MinioService, ProcessedAsset } from 'src/minio/minio.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -37,6 +36,28 @@ export class ProductsService {
         },
       },
     });
+  }
+  async deleteVariantOptionAsset(url: string) {
+    const assetExists = await this.prisma.asset.findUnique({
+      where: {
+        url,
+      },
+    });
+    if (!assetExists) {
+      throw new NotFoundException('Resim bulunamadı');
+    }
+    const deleteResult = await this.minioClient.deleteAsset(url);
+    if (!deleteResult.success) {
+      throw new InternalServerErrorException(
+        'Resim silinirken bir hata oluştu',
+      );
+    }
+    await this.prisma.asset.delete({
+      where: {
+        url,
+      },
+    });
+    return { success: true, message: 'Resim başarıyla silindi' };
   }
 
   async createOrUpdateVariants(data: VariantGroupZodType) {
@@ -246,14 +267,23 @@ export class ProductsService {
 
   async createOrUpdateVariantProduct(data: VariantProductZodType) {
     try {
-      const { existingVariants, combinatedVariants, ...productData } = data;
-
+      const {
+        existingVariants,
+        combinatedVariants,
+        brandId, // Bu alanları ekledik
+        categories, // Bu alanları ekledik
+        googleTaxonomyId, // Bu alanları ekledik
+        ...productData
+      } = data;
       return this.prisma.$transaction(
         async (prisma) => {
           // 1. Product oluştur veya güncelle
           let product = await this.prisma.product.findUnique({
             where: {
               id: productData.uniqueId,
+            },
+            include: {
+              categories: true, // Mevcut kategorileri de getir
             },
           });
 
@@ -262,6 +292,14 @@ export class ProductsService {
               data: {
                 type: productData.type,
                 isVariant: true,
+                // Brand ve taxonomy ilişkilerini kur
+                ...(brandId && { brand: { connect: { id: brandId } } }),
+                ...(googleTaxonomyId && {
+                  taxonomyCategory: { connect: { id: googleTaxonomyId } },
+                }),
+              },
+              include: {
+                categories: true,
               },
             });
 
@@ -281,6 +319,14 @@ export class ProductsService {
                 },
               });
             }
+            if (categories && categories.length > 0) {
+              await prisma.productCategory.createMany({
+                data: categories.map((categoryId) => ({
+                  productId: product.id,
+                  categoryId,
+                })),
+              });
+            }
           } else {
             // Mevcut product'ı güncelle
             await prisma.product.update({
@@ -288,9 +334,15 @@ export class ProductsService {
               data: {
                 type: productData.type,
                 isVariant: true,
+                // Brand ve taxonomy güncellemesi
+                ...(brandId
+                  ? { brand: { connect: { id: brandId } } }
+                  : { brand: { disconnect: true } }),
+                ...(googleTaxonomyId
+                  ? { taxonomyCategory: { connect: { id: googleTaxonomyId } } }
+                  : { taxonomyCategory: { disconnect: true } }),
               },
             });
-
             // Product translations güncelle
             for (const translation of productData.translations) {
               await prisma.productTranslation.upsert({
@@ -320,6 +372,52 @@ export class ProductsService {
                   metaTitle: translation.metaTitle,
                   metaDescription: translation.metaDescription,
                 },
+              });
+            }
+          }
+
+          if (categories !== undefined) {
+            if (categories && categories.length > 0) {
+              const existingCategories = await prisma.productCategory.findMany({
+                where: { productId: product.id },
+                select: { categoryId: true },
+              });
+
+              const existingCategoryIds = existingCategories.map(
+                (cat) => cat.categoryId,
+              );
+
+              const categoriesToDelete = existingCategoryIds.filter(
+                (existingId) => !categories.includes(existingId),
+              );
+
+              const categoriesToAdd = categories.filter(
+                (newId) => !existingCategoryIds.includes(newId),
+              );
+
+              // Silinmesi gereken kategorileri sil
+              if (categoriesToDelete.length > 0) {
+                await prisma.productCategory.deleteMany({
+                  where: {
+                    productId: product.id,
+                    categoryId: { in: categoriesToDelete },
+                  },
+                });
+              }
+
+              // Yeni kategorileri ekle
+              if (categoriesToAdd.length > 0) {
+                await prisma.productCategory.createMany({
+                  data: categoriesToAdd.map((categoryId) => ({
+                    productId: product.id,
+                    categoryId,
+                  })),
+                });
+              }
+            } else {
+              // Kategoriler boşsa, tüm kategorileri sil
+              await prisma.productCategory.deleteMany({
+                where: { productId: product.id },
               });
             }
           }
@@ -635,7 +733,6 @@ export class ProductsService {
                   },
                 });
               } else {
-                // Mevcut option'ın order'ını güncelle
                 await prisma.productVariantOption.update({
                   where: { id: existingProductOption.id },
                   data: { order: optionIndex },
@@ -975,6 +1072,15 @@ export class ProductsService {
             },
           },
         },
+        categories: {
+          include: {
+            category: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
       },
     });
     if (!product) {
@@ -984,6 +1090,9 @@ export class ProductsService {
       uniqueId: product.id,
       type: product.type,
       images: [],
+      brandId: product.brandId || null,
+      googleTaxonomyId: product.taxonomyCategoryId || null,
+      categories: product.categories.map((c) => c.category.id) || [],
       existingImages: product.assets.map((a) => {
         return {
           type: a.asset.type,
@@ -1032,7 +1141,7 @@ export class ProductsService {
             discountPrice: p.discountedPrice,
           })) as VariantProductZodType['combinatedVariants'][number]['prices'],
           sku: vc.sku,
-          stock: vc.stock,
+          stock: vc.stock || 0,
           translations: vc.translations.map((t) => ({
             locale: t.locale,
             description: t.description,
@@ -1051,7 +1160,7 @@ export class ProductsService {
           })) as VariantProductZodType['combinatedVariants'][number]['variantIds'],
         };
       }) as VariantProductZodType['combinatedVariants'],
-    };
+    } as VariantProductZodType;
     return data;
   }
 
@@ -1975,6 +2084,7 @@ export class ProductsService {
       },
     };
   }
+
   async getProductsAndVariants(): Promise<ProductWithVariants[]> {
     const products = await this.prisma.product.findMany({
       where: { isVariant: false },
@@ -2082,6 +2192,7 @@ export class ProductsService {
 
     return [...formattedProducts, ...formattedVariants];
   }
+
   async getProductsForSelection(): Promise<{
     products: { id: string; name: string }[];
   }> {
@@ -2103,6 +2214,60 @@ export class ProductsService {
           p.translations[0]?.name ||
           'İsimsiz Ürün',
       })),
+    };
+  }
+
+  async uploadVariantOptionAsset(file: Express.Multer.File, uniqueId: string) {
+    const variantOption = await this.prisma.variantOption.findUnique({
+      where: {
+        id: uniqueId,
+      },
+      select: {
+        asset: {
+          select: {
+            url: true,
+          },
+        },
+      },
+    });
+    if (!variantOption) {
+      throw new NotFoundException('Varyant seçeneği bulunamadı');
+    }
+    if (variantOption.asset) {
+      // Mevcut görseli sil
+      await this.minioClient.deleteAsset(variantOption.asset.url);
+      await this.prisma.asset.delete({
+        where: { url: variantOption.asset.url },
+      });
+    }
+    const uploadResult = await this.minioClient.uploadAsset({
+      bucketName: 'products',
+      file,
+      isNeedOg: false,
+      isNeedThumbnail: true,
+    });
+    if (!uploadResult.success || !uploadResult.data) {
+      throw new InternalServerErrorException('Dosya yüklenemedi');
+    }
+    const newAsset = await this.prisma.asset.create({
+      data: {
+        url: uploadResult.data.url,
+        type: uploadResult.data.type,
+      },
+    });
+    await this.prisma.variantOption.update({
+      where: { id: uniqueId },
+      data: {
+        assetId: newAsset.id,
+      },
+    });
+    return {
+      success: true,
+      message: 'Varyant seçeneği görseli başarıyla yüklendi',
+      asset: {
+        url: newAsset.url,
+        type: newAsset.type,
+      },
     };
   }
 }

@@ -277,3 +277,54 @@ export function generateProductCodes(
     barcode: generateEAN13Barcode(productName, barcodeOptions),
   };
 }
+
+export enum ProductPageSortOption {
+  NEWEST = "newest",
+  OLDEST = "oldest",
+  PRICE_DESC = "price-desc", // Azalan fiyat
+  PRICE_ASC = "price-asc", // Artan fiyat
+  BEST_SELLING = "best-selling", // En çok satan
+  A_Z = "a-z", // İsim A'dan Z'ye
+  Z_A = "z-a", // İsim Z'den A'ya
+}
+export function getSortProductPageLabel(sortOption: ProductPageSortOption) {
+  switch (sortOption) {
+    case ProductPageSortOption.NEWEST:
+      return "En Yeni";
+    case ProductPageSortOption.OLDEST:
+      return "En Eski";
+    case ProductPageSortOption.PRICE_DESC:
+      return "Fiyat: Yüksekten Düşüğe";
+    case ProductPageSortOption.PRICE_ASC:
+      return "Fiyat: Düşükten Yükseğe";
+    case ProductPageSortOption.BEST_SELLING:
+      return "En Çok Satan";
+    case ProductPageSortOption.A_Z:
+      return "İsim: A'dan Z'ye";
+    case ProductPageSortOption.Z_A:
+      return "İsim: Z'den A'ya";
+    default:
+      return "En Yeni";
+  }
+}
+
+export function getSortIndexFromQuery(index: number): ProductPageSortOption {
+  switch (index) {
+    case 0:
+      return ProductPageSortOption.NEWEST;
+    case 1:
+      return ProductPageSortOption.OLDEST;
+    case 2:
+      return ProductPageSortOption.PRICE_DESC;
+    case 3:
+      return ProductPageSortOption.PRICE_ASC;
+    case 4:
+      return ProductPageSortOption.BEST_SELLING;
+    case 5:
+      return ProductPageSortOption.A_Z;
+    case 6:
+      return ProductPageSortOption.Z_A;
+    default:
+      return ProductPageSortOption.NEWEST;
+  }
+}

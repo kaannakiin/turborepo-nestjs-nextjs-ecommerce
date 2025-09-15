@@ -121,6 +121,7 @@ const data: NavbarButtonType[] = [
         icon: null,
         label: "Slider",
       },
+      { href: "/theme/marquee", icon: null, label: "Marquee (Kayan Yazı)" },
     ],
   },
 ];

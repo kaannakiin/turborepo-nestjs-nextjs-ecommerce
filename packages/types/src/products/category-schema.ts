@@ -1,6 +1,10 @@
-import * as z from "zod";
-import { FileSchema, htmlDescriptionSchema } from "./product-schemas";
 import { $Enums, Prisma } from "@repo/database";
+import * as z from "zod";
+import {
+  FileSchema,
+  htmlDescriptionSchema,
+  ProductCardProps,
+} from "./product-schemas";
 
 export const CategoryTranslationSchema = z.object({
   locale: z.enum($Enums.Locale),
@@ -121,4 +125,239 @@ export type CategoryTranslation = z.infer<typeof CategoryTranslationSchema>;
 export type CategoryIdAndName = {
   id: string;
   name: string;
+};
+
+export type CategoryWithTranslations = Prisma.CategoryGetPayload<{
+  include: {
+    translations: true;
+    image: {
+      select: {
+        url: true;
+        type: true;
+      };
+    };
+  };
+}>;
+export type CategoryHeaderData = {
+  id: string;
+  translations: {
+    locale: $Enums.Locale;
+    name: string;
+    slug: string;
+  }[];
+  allChildCategories?: {
+    id: string;
+    translations: {
+      locale: $Enums.Locale;
+      name: string;
+      slug: string;
+    }[];
+  }[];
+  productImages: Array<{
+    url: string;
+    type: $Enums.AssetType;
+  }>;
+};
+export type CategoryPageChildCategories = {
+  parentId: string;
+  id: string;
+  level: number;
+  translations: Prisma.CategoryTranslationGetPayload<{
+    select: {
+      locale: true;
+      name: true;
+      slug: true;
+    };
+  }>[];
+  image: { url: string; type: $Enums.AssetType } | null;
+};
+export type CategoryPageParentCategories = {
+  parentId: string | null;
+  id: string;
+  level: number;
+  translations: Prisma.CategoryTranslationGetPayload<{
+    select: {
+      locale: true;
+      name: true;
+      slug: true;
+    };
+  }>[];
+  image: { url: string; type: $Enums.AssetType } | null;
+};
+
+export type CategoryPageDataType = {
+  id: string;
+  level: number;
+  translations: Prisma.CategoryTranslationGetPayload<{
+    select: {
+      locale: true;
+      metaTitle: true;
+      metaDescription: true;
+      name: true;
+      slug: true;
+      description: true;
+    };
+  }>[];
+  image: { url: string; type: $Enums.AssetType } | null;
+  childCategories: CategoryPageChildCategories[];
+  parentCategories: CategoryPageParentCategories[];
+};
+
+export type getCategoryParentsReturnType = Array<{
+  id: string;
+  parentCategoryId: string | null;
+  level: number;
+  name: string | null;
+  slug: string | null;
+  locale: $Enums.Locale | null;
+  imageId: string | null;
+  image_url: string | null;
+  image_type: $Enums.AssetType | null;
+}>;
+
+export type CategoryPageData = Prisma.CategoryGetPayload<{
+  include: {
+    translations: true;
+    products: { select: { productId: true } };
+
+    image: {
+      select: {
+        url: true;
+        type: true;
+      };
+    };
+  };
+}>;
+
+export type CategoryPageBrandType = Prisma.BrandGetPayload<{
+  select: {
+    id: true;
+    translations: true;
+    image: { select: { url: true; type: true } };
+  };
+}>;
+
+export type CategoryVariantGroupType = Prisma.VariantGroupGetPayload<{
+  select: {
+    id: true;
+    type: true;
+    translations: true;
+    options: {
+      select: {
+        id: true;
+        asset: { select: { url: true; type: true } };
+        hexValue: true;
+        translations: true;
+      };
+    };
+  };
+}>;
+
+export type GetCategoryPageReturnType = {
+  category: CategoryPageDataType;
+  variantGroups: CategoryVariantGroupType[];
+  brands: CategoryPageBrandType[];
+};
+export type CategoryPageProductsType = Prisma.ProductGetPayload<{
+  include: {
+    translations: true;
+    assets: {
+      orderBy: {
+        order: "asc";
+      };
+      select: {
+        asset: {
+          select: {
+            url: true;
+            type: true;
+          };
+        };
+      };
+    };
+    taxonomyCategory: true;
+    prices: true;
+    brand: {
+      select: {
+        translations: true;
+        image: {
+          select: {
+            url: true;
+            type: true;
+          };
+        };
+      };
+    };
+    variantGroups: {
+      orderBy: {
+        order: "asc";
+      };
+      take: 1;
+      include: {
+        options: {
+          orderBy: {
+            order: "asc";
+          };
+          include: {
+            combinations: {
+              take: 1;
+              orderBy: {
+                productVariantOption: {
+                  order: "asc";
+                };
+              };
+              include: {
+                combination: {
+                  include: {
+                    prices: true;
+                    translations: true;
+                    assets: {
+                      orderBy: {
+                        order: "asc";
+                      };
+                      select: {
+                        asset: {
+                          select: {
+                            url: true;
+                            type: true;
+                          };
+                        };
+                      };
+                    };
+                  };
+                };
+              };
+            };
+            variantOption: {
+              select: {
+                translations: true;
+                hexValue: true;
+                asset: {
+                  select: {
+                    url: true;
+                    type: true;
+                  };
+                };
+              };
+            };
+          };
+        };
+        variantGroup: {
+          include: {
+            translations: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
+export type CategoryPageProductsReturnType = {
+  products: ProductCardProps[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalProducts: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
 };

@@ -21,7 +21,7 @@ const CreateVariantProductPage = async ({ params }: { params: Params }) => {
         Cookie: `token=${token}`,
       },
       credentials: "include",
-      cache: "no-cache",
+      cache: "no-store",
     }
   );
   if (!brandResponse.ok) {
@@ -55,7 +55,7 @@ const CreateVariantProductPage = async ({ params }: { params: Params }) => {
       {
         method: "GET",
         credentials: "include",
-        cache: "no-cache",
+        cache: "no-store",
         headers: {
           Cookie: `token=${token}`,
         },

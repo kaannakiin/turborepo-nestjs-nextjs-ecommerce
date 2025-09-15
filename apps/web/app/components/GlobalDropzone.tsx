@@ -2,6 +2,7 @@
 import {
   ActionIcon,
   Alert,
+  AspectRatio,
   Box,
   Button,
   Group,
@@ -26,6 +27,7 @@ import {
 } from "@tabler/icons-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import CustomImage from "./CustomImage";
 import GlobalLoadingOverlay from "./GlobalLoadingOverlay";
 
 interface PreviewFile extends File {
@@ -291,15 +293,9 @@ const GlobalDropzone = ({
             backgroundColor: "var(--mantine-color-gray-0)",
           }}
         >
-          <Box pos="relative" h="240px" w="100%">
+          <AspectRatio ratio={1} pos="relative" w="100%">
             {image.type === $Enums.AssetType.IMAGE ? (
-              <Image
-                src={image.url}
-                alt="Existing image"
-                fill
-                style={{ objectFit: "contain" }}
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              />
+              <CustomImage src={image.url} alt="Existing image" />
             ) : (
               <Stack align="center" gap="xs" py="lg">
                 <IconFile size={40} />
@@ -308,12 +304,12 @@ const GlobalDropzone = ({
                 </Text>
               </Stack>
             )}
-          </Box>
+          </AspectRatio>
 
           {existingImagesDelete && (
             <Popover
               opened={openedPopover === uniqueKey}
-              onClose={() => setOpenedPopover(null)}
+              onChange={() => setOpenedPopover(null)}
               position="top"
               withArrow
               shadow="md"
@@ -480,7 +476,7 @@ const GlobalDropzone = ({
 
                 <Popover
                   opened={openedPopover === `new-${index}`}
-                  onClose={() => setOpenedPopover(null)}
+                  onChange={() => setOpenedPopover(null)}
                   position="top"
                   withArrow
                   shadow="md"

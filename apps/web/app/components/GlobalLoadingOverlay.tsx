@@ -13,7 +13,17 @@ const GlobalLoadingOverlay = ({ ...props }: GlobalLoadingOverlayProps) => {
       {...props}
       visible
       zIndex={1000}
-      overlayProps={{ radius: "sm", blur: 2 }}
+      overlayProps={{
+        pos: "fixed",
+        radius: "sm",
+        blur: 2,
+        style: {
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+        },
+      }}
       loaderProps={{
         color: pathname.includes("admin") ? "admin" : "primary",
         type: "bars",
