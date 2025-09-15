@@ -30,6 +30,21 @@
   ],
   "globalDependencies": ["**/.env.*local"],
   "tasks": {
+    "build": {
+      "dependsOn": ["^build", "db:generate"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", ".expo/**"]
+    },
+    "web#build": {
+      "dependsOn": ["^build"],
+      "env": [
+        "BACKEND_URL",
+        "NEXT_PUBLIC_BACKEND_URL",
+        "MINIO_ENDPOINT",
+        "NODE_ENV",
+        "NEXT_PUBLIC_BASE_URL"
+      ],
+      "outputs": [".next/**", "!.next/cache/**"]
+    },
     "backend#build": {
       "dependsOn": ["^build"],
       "env": [
@@ -84,6 +99,45 @@
         "DOMAIN",
         "ALLOWED_ORIGINS"
       ]
+    },
+    "web#start": {
+      "cache": false,
+      "persistent": true,
+      "env": [
+        "BACKEND_URL",
+        "NEXT_PUBLIC_BACKEND_URL",
+        "MINIO_ENDPOINT",
+        "NEXT_PUBLIC_BASE_URL",
+        "NODE_ENV"
+      ]
+    },
+    "database#build": {
+      "dependsOn": ["^build"],
+      "env": ["DATABASE_URL"],
+      "outputs": ["dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "db:generate": {
+      "cache": false
+    },
+    "db:migrate": {
+      "cache": false,
+      "persistent": true
+    },
+    "db:deploy": {
+      "cache": false
+    },
+    "db:prisma": {
+      "cache": false
+    },
+    "lint": {
+      "dependsOn": ["^lint"]
+    },
+    "check-types": {
+      "dependsOn": ["^check-types"]
     }
   }
 }
