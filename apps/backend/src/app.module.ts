@@ -24,8 +24,8 @@ import { CartModule } from './cart/cart.module';
       isGlobal: true,
       useFactory: (configService: ConfigService) => ({
         endPoint: configService.get<string>('MINIO_ENDPOINT'),
-        port: configService.get<number>('MINIO_PORT') || 443,
-        useSSL: configService.get<boolean>('MINIO_USE_SSL') || true,
+        port: parseInt(configService.get<string>('MINIO_PORT')) || 443,
+        useSSL: configService.get<string>('MINIO_USE_SSL') === 'true',
         accessKey: configService.get<string>('MINIO_ACCESS_KEY'),
         secretKey: configService.get<string>('MINIO_SECRET_KEY'),
       }),
