@@ -8,7 +8,8 @@
     "lint": "eslint . --max-warnings 0",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev --skip-generate",
-    "db:deploy": "prisma migrate deploy"
+    "db:deploy": "prisma migrate deploy",
+    "db:prisma": "prisma studio"
   },
   "exports": {
     ".": {

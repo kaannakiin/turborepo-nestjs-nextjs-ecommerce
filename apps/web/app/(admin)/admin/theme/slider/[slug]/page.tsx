@@ -18,7 +18,7 @@ const SliderItemFormPage = async ({ params }: { params: Params }) => {
     return <SliderItemForm />;
   } else {
     const res = await fetch(
-      `${process.env.BACKEND_URL}/theme/get-slider-item/${slug}`,
+      `${process.env.BACKEND_URL}/admin/theme/slider/get-slider-item/${slug}`,
       {
         method: "GET",
         cache: "no-store",

@@ -165,9 +165,8 @@ export class MinioService {
     if (isNeedThumbnail) {
       result.thumbnail = {
         buffer: await sharp(file.buffer)
-          .resize(300, 300, { fit: 'cover' })
           .blur(1)
-          .webp({ quality: 70 })
+          .webp({ quality: 10 })
           .toBuffer(),
 
         contentType: 'image/webp',

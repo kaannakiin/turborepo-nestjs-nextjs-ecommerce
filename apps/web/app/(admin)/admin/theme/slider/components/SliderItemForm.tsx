@@ -180,7 +180,7 @@ const SliderItemForm = ({ defaultValues }: SliderItemFormProps) => {
       const { desktopAsset, mobileAsset, ...rest } = data;
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/theme/create-or-update-slider-item`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/theme/slider/create-or-update-slider-item`,
         {
           method: "POST",
           body: JSON.stringify(rest),
@@ -210,7 +210,7 @@ const SliderItemForm = ({ defaultValues }: SliderItemFormProps) => {
         desktopFormData.append("id", data.uniqueId);
 
         const desktopResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/theme/create-or-update-desktop-asset`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/theme/slider/create-or-update-desktop-asset`,
           {
             method: "POST",
             body: desktopFormData,
@@ -238,7 +238,7 @@ const SliderItemForm = ({ defaultValues }: SliderItemFormProps) => {
         mobileFormData.append("id", data.uniqueId);
 
         const mobileResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/theme/create-or-update-mobile-asset`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/theme/slider/create-or-update-mobile-asset`,
           {
             method: "POST",
             body: mobileFormData,

@@ -38,6 +38,7 @@ import GlobalSeoCard from "../../../../../components/GlobalSeoCard";
 import ExistingVariantCard from "./ExistingVariantCard";
 import ProductDetailCard from "./ProductDetailCard";
 import GoogleTaxonomySelect from "./GoogleTaxonomySelect";
+import { fetchWrapper } from "../../../../../../lib/fetchWrapper";
 
 const GlobalTextEditor = dynamic(
   () => import("../../../../../components/GlobalTextEditor"),
@@ -91,6 +92,12 @@ const VariantProductForm = ({
       const cleanCombinatedVariants = combinatedVariants.map(
         ({ images: variantImages, existingImages, ...variant }) => variant
       );
+      const cleanExistingVariants = data.existingVariants.map(
+        ({ options, ...variant }) => ({
+          ...variant,
+          options: options.map(({ file, ...option }) => option),
+        })
+      );
 
       const mainDataResponse = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/create-or-update-variant-product`,
@@ -100,6 +107,7 @@ const VariantProductForm = ({
           body: JSON.stringify({
             ...productData,
             combinatedVariants: cleanCombinatedVariants,
+            existingVariants: cleanExistingVariants,
           }),
           credentials: "include",
         }
@@ -120,15 +128,16 @@ const VariantProductForm = ({
       const { productId, combinations: updatedCombinations } =
         responseData.data;
 
+      // TODO EXISTINGVARIANTSLAR ICIN RESIM YUKLEME ISLEMI YAP
       notifications.show({
         title: "Başarılı!",
         message: defaultValues
-          ? "Ürün başarıyla güncellendi. Resimler arka planda yükleniyor..."
-          : "Ürün başarıyla kaydedildi. Resimler arka planda yükleniyor...",
+          ? "Ürün başarıyla güncellendi."
+          : "Ürün başarıyla kaydedildi.",
         color: "green",
       });
 
-      uploadAllImagesInBackground(data, productId, updatedCombinations);
+      await uploadAllImagesInBackground(data, productId, updatedCombinations);
       push("/admin/product-list");
     } catch (error) {
       const errorMessage =
@@ -181,6 +190,7 @@ const VariantProductForm = ({
           const combinationInfo = updatedCombinations.find(
             (c) => c.sku === variant.sku
           );
+
           if (!combinationInfo) {
             console.warn(
               `SKU'su ${variant.sku} olan kombinasyon için ID bulunamadı, resimler yüklenemiyor.`
@@ -200,14 +210,30 @@ const VariantProductForm = ({
             `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/upload-variant-image`,
             {
               method: "POST",
-              body: variantImageFormData,
               credentials: "include",
+              body: variantImageFormData,
             }
           );
           if (!variantImageResponse.ok) {
             console.warn(
               `SKU'su ${variant.sku} olan varyantın resimleri yüklenemedi:`,
               await variantImageResponse.json()
+            );
+          }
+        }
+      }
+      for (const existingVariant of formData.existingVariants) {
+        for (const options of existingVariant.options) {
+          if (options.file) {
+            const optionFormData = new FormData();
+            optionFormData.append("file", options.file);
+            const fetchRes = await fetch(
+              `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/upload-option-asset/${options.uniqueId}`,
+              {
+                method: "POST",
+                credentials: "include",
+                body: optionFormData,
+              }
             );
           }
         }
@@ -225,12 +251,7 @@ const VariantProductForm = ({
           Varyantlı Ürün {defaultValues ? "Güncelle" : "Oluştur"}
         </Title>
         <Group gap="md" justify="end">
-          <Button
-            type="button"
-            onClick={handleSubmit(onSubmit)}
-            loading={isSubmitting}
-            disabled={isSubmitting}
-          >
+          <Button type="button" onClick={handleSubmit(onSubmit)}>
             {defaultValues ? "Güncelle" : "Kaydet"}
           </Button>
         </Group>

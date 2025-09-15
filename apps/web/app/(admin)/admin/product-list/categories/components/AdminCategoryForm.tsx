@@ -1,24 +1,24 @@
 "use client";
 
 import {
-    Button,
-    Group,
-    InputLabel,
-    Select,
-    SimpleGrid,
-    Stack,
-    TextInput,
-    Title,
+  Button,
+  Group,
+  InputLabel,
+  Select,
+  SimpleGrid,
+  Stack,
+  TextInput,
+  Title,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import {
-    Controller,
-    createId,
-    slugify,
-    SubmitHandler,
-    useForm,
-    useQuery,
-    zodResolver,
+  Controller,
+  createId,
+  slugify,
+  SubmitHandler,
+  useForm,
+  useQuery,
+  zodResolver,
 } from "@repo/shared";
 import { Category, CategorySchema } from "@repo/types";
 import { useRouter } from "next/navigation";
@@ -280,7 +280,6 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
                 });
                 setValue("existingImage", null);
               }}
-              cols={1}
               error={fieldState.error?.message}
               multiple={false}
               maxFiles={1}

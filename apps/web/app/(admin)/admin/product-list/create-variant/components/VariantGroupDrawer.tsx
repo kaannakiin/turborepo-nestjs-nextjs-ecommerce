@@ -108,9 +108,8 @@ const SortableVariantItem = ({
 
   // Watch ile field değerlerini alalım
   const fieldFile = control._getWatch(`options.${index}.file`);
-  const fieldExistingImage = control._getWatch(
-    `options.${index}.existingImage`
-  );
+  const fieldExistingFile = control._getWatch(`options.${index}.existingFile`);
+
   const fieldHexValue = control._getWatch(`options.${index}.hexValue`);
   const fieldTranslations = control._getWatch(`options.${index}.translations`);
 
@@ -119,7 +118,7 @@ const SortableVariantItem = ({
     if (fieldFile && typeof fieldFile !== "string") {
       return URL.createObjectURL(fieldFile);
     }
-    return fieldExistingImage || null;
+    return fieldExistingFile || null;
   };
 
   const imageUrl = getImageUrl();
@@ -273,7 +272,6 @@ const VariantGroupDrawer = ({
   >(null);
   const [allDeleteVariantPopover, setAllDeleteVariantPopover] = useState(false);
 
-  // Default values tanımı
   const initialValues = {
     type: "LIST" as $Enums.VariantGroupType,
     uniqueId: createId(),
@@ -672,6 +670,35 @@ const VariantGroupDrawer = ({
                     accept={"IMAGE"}
                     onDrop={(files) => {
                       field.onChange(files[0]);
+                    }}
+                    existingImages={
+                      fields[selectedVariantIndex].existingFile
+                        ? [
+                            {
+                              url: fields[selectedVariantIndex].existingFile,
+                              type: "IMAGE",
+                            },
+                          ]
+                        : []
+                    }
+                    existingImagesDelete={async (imageUrl) => {
+                      const fetchRes = await fetch(
+                        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/delete-option-asset/${encodeURIComponent(imageUrl)}`,
+                        { method: "DELETE", credentials: "include" }
+                      );
+                      if (!fetchRes.ok) {
+                        console.warn("Görsel silinirken bir hata oluştu.");
+                      } else {
+                        const currentOptions = watch("options");
+                        const updatedOptions = [...currentOptions];
+                        updatedOptions[selectedVariantIndex] = {
+                          ...updatedOptions[selectedVariantIndex],
+                          existingFile: null,
+                        };
+                        setValue("options", updatedOptions, {
+                          shouldDirty: true,
+                        });
+                      }
                     }}
                     {...field}
                     value={field.value || []}

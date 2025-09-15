@@ -3,11 +3,11 @@ import {
   AssetType,
   Locale,
   Prisma,
-  ProductType,
   VariantGroupType,
 } from "@repo/database";
+import { parseDocument } from "htmlparser2";
 import * as z from "zod";
-
+import { CategoryPageProductsType } from "./category-schema";
 export const MIME_TYPES = {
   IMAGE: [
     "image/jpeg", // .jpg, .jpeg - En yaygın
@@ -101,15 +101,14 @@ export const htmlDescriptionSchema = z
   )
   .refine(
     (value) => {
-      const openTags = (value.match(/<[^\/][^>]*>/g) || []).length;
-      const closeTags = (value.match(/<\/[^>]*>/g) || []).length;
-      const selfClosingTags = (value.match(/<[^>]*\/>/g) || []).length;
-
-      return openTags - selfClosingTags <= closeTags;
+      try {
+        parseDocument(value);
+        return true; // parse başarılıysa HTML geçerli
+      } catch {
+        return false;
+      }
     },
-    {
-      message: "HTML etiketleri düzgün kapatılmalıdır.",
-    }
+    { message: "HTML etiketleri düzgün kapatılmalıdır." }
   )
   .optional()
   .nullable();
@@ -584,3 +583,245 @@ export type AdminProductTableData = Prisma.ProductGetPayload<{
   finalImage: string | null;
   finalImageType: AssetType | null;
 };
+
+export type ProductPageDataType = Prisma.ProductGetPayload<{
+  include: {
+    prices: true;
+    assets: {
+      orderBy: {
+        order: "asc";
+      };
+      select: {
+        asset: {
+          select: {
+            url: true;
+            type: true;
+          };
+        };
+      };
+    };
+    brand: {
+      select: {
+        translations: {
+          select: {
+            name: true;
+            locale: true;
+            metaDescription: true;
+            metaTitle: true;
+            slug: true;
+          };
+        };
+      };
+    };
+    taxonomyCategory: true;
+    translations: {
+      select: {
+        name: true;
+        locale: true;
+        metaDescription: true;
+        metaTitle: true;
+        slug: true;
+        description: true;
+      };
+    };
+    variantGroups: {
+      orderBy: {
+        order: "asc";
+      };
+      where: {
+        product: {
+          translations: {
+            some: {
+              slug: { contains: string; mode: "insensitive" };
+            };
+          };
+        };
+      };
+      include: {
+        options: {
+          where: {
+            productVariantGroup: {
+              product: {
+                translations: {
+                  some: {
+                    slug: { contains: string; mode: "insensitive" };
+                  };
+                };
+              };
+            };
+          };
+          orderBy: {
+            order: "asc";
+          };
+          include: {
+            variantOption: {
+              include: {
+                asset: { select: { url: true; type: true } };
+                translations: true;
+              };
+            };
+          };
+        };
+        variantGroup: {
+          include: {
+            translations: true;
+          };
+        };
+      };
+    };
+    variantCombinations: {
+      where: {
+        AND: [
+          {
+            stock: {
+              gt: 0;
+            };
+          },
+          { active: true },
+        ];
+      };
+      include: {
+        translations: {
+          select: {
+            locale: true;
+            metaDescription: true;
+            metaTitle: true;
+            description: true;
+          };
+        };
+        prices: {
+          select: {
+            price: true;
+            currency: true;
+            discountedPrice: true;
+          };
+        };
+        assets: {
+          orderBy: {
+            order: "asc";
+          };
+          select: {
+            asset: {
+              select: {
+                url: true;
+                type: true;
+              };
+            };
+          };
+        };
+        options: {
+          where: {
+            combination: {
+              AND: [
+                {
+                  active: true;
+                },
+                {
+                  stock: { gt: 0 };
+                },
+              ];
+            };
+
+            productVariantOption: {
+              productVariantGroup: {
+                product: {
+                  translations: {
+                    some: {
+                      slug: { contains: string; mode: "insensitive" };
+                    };
+                  };
+                };
+              };
+            };
+          };
+          orderBy: {
+            productVariantOption: {
+              productVariantGroup: {
+                order: "asc";
+              };
+            };
+          };
+          include: {
+            productVariantOption: {
+              select: {
+                variantOption: {
+                  select: {
+                    asset: { select: { url: true; type: true } };
+                    translations: {
+                      select: {
+                        locale: true;
+                        name: true;
+                        slug: true;
+                      };
+                    };
+                    hexValue: true;
+                    variantGroup: {
+                      select: {
+                        translations: {
+                          select: {
+                            name: true;
+                            slug: true;
+                            locale: true;
+                          };
+                        };
+                        type: true;
+                      };
+                    };
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+    categories: {
+      where: {
+        product: {
+          translations: {
+            some: {
+              slug: { contains: string; mode: "insensitive" };
+            };
+          };
+        };
+      };
+      include: {
+        category: {
+          select: {
+            translations: true;
+            childCategories: true;
+            parentCategory: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+export interface ProductCardProps {
+  productId: string;
+  productTranslation: CategoryPageProductsType["translations"];
+  firstAsset: CategoryPageProductsType["assets"][number] | null;
+  secondAsset: CategoryPageProductsType["assets"][number] | null;
+  productPrices: CategoryPageProductsType["prices"] | null;
+  productBrand: CategoryPageProductsType["brand"] | null;
+  productStock: number;
+  productSlug: string;
+  combinationInfo?: {
+    variantId: string;
+    variantSlug: string;
+    variantPrices: CategoryPageProductsType["variantGroups"][number]["options"][number]["combinations"][number]["combination"]["prices"];
+    variantGroups: {
+      variantGroupId: string;
+      translations: CategoryPageProductsType["variantGroups"][number]["variantGroup"]["translations"];
+      type: $Enums.VariantGroupType;
+      options: CategoryPageProductsType["variantGroups"][number]["options"][number]["variantOption"];
+    }[];
+    variantFirstAsset:
+      | CategoryPageProductsType["variantGroups"][number]["options"][number]["combinations"][number]["combination"]["assets"][number]
+      | null;
+    variantSecondAsset:
+      | CategoryPageProductsType["variantGroups"][number]["options"][number]["combinations"][number]["combination"]["assets"][number]
+      | null;
+    variantTranslations: CategoryPageProductsType["variantGroups"][number]["options"][number]["combinations"][number]["combination"]["translations"];
+  };
+}

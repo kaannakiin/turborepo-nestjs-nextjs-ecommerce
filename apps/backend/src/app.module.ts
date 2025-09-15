@@ -2,12 +2,14 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from './prisma/prisma.module';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AdminModule } from './admin/admin.module';
 import { NestMinioModule } from 'nestjs-minio';
 import { MinioModule } from './minio/minio.module';
 import { LocationsModule } from './locations/locations.module';
 import { DiscountsModule } from './discounts/discounts.module';
+import { UserPageModule } from './user-page/user-page.module';
+import { CartModule } from './cart/cart.module';
 
 @Module({
   imports: [
@@ -18,15 +20,22 @@ import { DiscountsModule } from './discounts/discounts.module';
       isGlobal: true,
     }),
     AdminModule,
-    NestMinioModule.register({
+    NestMinioModule.registerAsync({
       isGlobal: true,
-      endPoint: 'cdn.wellnessclubbyoyku.com',
-      accessKey: 'mJjuqqxwBBcD32ns',
-      secretKey: 'Q3UIEr9TReqY0Seego5AMHPBOxu8iA57',
+      useFactory: (configService: ConfigService) => ({
+        endPoint: configService.get<string>('MINIO_ENDPOINT'),
+        port: configService.get<number>('MINIO_PORT') || 443,
+        useSSL: configService.get<boolean>('MINIO_USE_SSL') || true,
+        accessKey: configService.get<string>('MINIO_ACCESS_KEY'),
+        secretKey: configService.get<string>('MINIO_SECRET_KEY'),
+      }),
+      inject: [ConfigService],
     }),
     MinioModule,
     LocationsModule,
     DiscountsModule,
+    UserPageModule,
+    CartModule,
   ],
   controllers: [],
   providers: [],

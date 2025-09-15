@@ -54,7 +54,17 @@ const LayoutProviderWrapper = ({ children }: { children: ReactNode }) => {
     },
   });
   return (
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider
+      client={
+        new QueryClient({
+          defaultOptions: {
+            queries: {
+              refetchOnWindowFocus: false,
+            },
+          },
+        })
+      }
+    >
       <DatesProvider
         settings={{ locale: "tr", firstDayOfWeek: 1, weekendDays: [5, 6] }}
       >

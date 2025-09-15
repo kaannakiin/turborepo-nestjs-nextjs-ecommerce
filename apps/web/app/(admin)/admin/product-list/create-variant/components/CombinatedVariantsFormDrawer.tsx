@@ -12,7 +12,7 @@ import {
   Title,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { Control, Controller, UseFormSetValue, useWatch } from "@repo/shared";
+import { Control, Controller, UseFormSetValue } from "@repo/shared";
 import { VariantProductZodType } from "@repo/types";
 import GlobalDropzone from "../../../../../components/GlobalDropzone";
 import GlobalSeoCard from "../../../../../components/GlobalSeoCard";
@@ -39,15 +39,11 @@ const CombinatedVariantsFormDrawer = ({
     onClose();
   };
   const existingImages =
-    useWatch({
-      control,
-      name: `combinatedVariants.${selectedIndex}.existingImages`,
-    }) || [];
+    control._getWatch(`combinatedVariants.${selectedIndex}.existingImages`) ||
+    [];
+  const images =
+    control._getWatch(`combinatedVariants.${selectedIndex}.images`) || [];
 
-  const images = useWatch({
-    control,
-    name: `combinatedVariants.${selectedIndex}.images`,
-  });
   const currentImageCount =
     (images?.length || 0) + (existingImages?.length || 0);
   return (
@@ -63,7 +59,6 @@ const CombinatedVariantsFormDrawer = ({
       title="Varyant Kombinasyonu Düzenle"
     >
       <Stack gap="lg">
-        {/* Temel Bilgiler */}
         <div>
           <Title order={4} mb="md">
             Temel Bilgiler
@@ -180,12 +175,10 @@ const CombinatedVariantsFormDrawer = ({
                   });
                   return;
                 }
-                if (existingImages) {
-                  setValue(
-                    `combinatedVariants.${selectedIndex}.existingImages`,
-                    existingImages.filter((img) => img.url !== imageUrl)
-                  );
-                }
+                setValue(
+                  `combinatedVariants.${selectedIndex}.existingImages`,
+                  existingImages.filter((img) => img.url !== imageUrl)
+                );
               }}
               accept={["IMAGE", "VIDEO"]}
               multiple

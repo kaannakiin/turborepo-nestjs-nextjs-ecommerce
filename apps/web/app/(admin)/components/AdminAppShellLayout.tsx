@@ -1,10 +1,12 @@
 "use client";
 import { AppShell, Avatar, Burger, Group, Text } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
+import { useDisclosure, useLocalStorage } from "@mantine/hooks";
 import { useMediaQuery } from "@mantine/hooks";
 import { TokenPayload } from "@repo/types";
 import { ReactNode } from "react";
 import AdminNavbar from "./AdminNavbar";
+import { usePathname } from "next/navigation";
+import AdminThemeAside from "./AdminThemeAside";
 
 const AdminAppShellLayout = ({
   children,
@@ -15,7 +17,13 @@ const AdminAppShellLayout = ({
 }) => {
   const [mobileOpened, { toggle: toggleMobile, close: closeMobile }] =
     useDisclosure();
-  const [desktopOpened, { toggle: toggleDesktop }] = useDisclosure(true);
+
+  // localStorage ile navbar durumunu kaydet
+  const [navbarState, setNavbarState] = useLocalStorage({
+    key: "admin-navbar-opened",
+    defaultValue: true,
+  });
+
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   const handleNavItemClick = () => {
@@ -24,6 +32,13 @@ const AdminAppShellLayout = ({
     }
   };
 
+  const toggleDesktop = () => {
+    setNavbarState(!navbarState);
+  };
+
+  const pathname = usePathname();
+  const isThemeAdmin = pathname.startsWith("/admin/theme");
+
   return (
     <AppShell
       padding="md"
@@ -31,11 +46,15 @@ const AdminAppShellLayout = ({
       navbar={{
         width: 300,
         breakpoint: "sm",
-        collapsed: { mobile: !mobileOpened, desktop: !desktopOpened },
+        collapsed: { mobile: !mobileOpened, desktop: !navbarState },
+      }}
+      aside={{
+        width: isThemeAdmin ? 300 : 0,
+        breakpoint: "md",
+        collapsed: { desktop: false, mobile: true },
       }}
     >
       <AppShell.Header>
-        {/* Mevcut header kodunuz */}
         <Group h="100%" px="md" align="center" justify="space-between">
           <Group gap={"lg"} h={"100%"} align="center" justify="flex-start">
             <Burger
@@ -45,43 +64,27 @@ const AdminAppShellLayout = ({
               size="md"
             />
             <Burger
-              opened={desktopOpened}
+              opened={navbarState}
               onClick={toggleDesktop}
               visibleFrom="sm"
               size="md"
             />
-            <Group wrap="nowrap" align="center" gap={"md"} visibleFrom="sm">
-              <Avatar radius="xl" />
-              <div style={{ flex: 1 }}>
-                <Text size="sm" fw={500}>
-                  {session.name}
-                </Text>
-                <Text c="dimmed" size="xs">
-                  {session.email ? session.email : session.phone}
-                </Text>
-              </div>
-            </Group>
+            {/* Rest of header */}
           </Group>
-          <div className="relative h-full w-24 py-2 flex items-center justify-center">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
-                <div className="w-4 h-4 bg-white rounded-sm opacity-90"></div>
-              </div>
-              <Text
-                size="lg"
-                fw={700}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
-              >
-                Admin
-              </Text>
-            </div>
-          </div>
         </Group>
       </AppShell.Header>
+
       <AppShell.Navbar className="flex flex-col gap-4">
         <AdminNavbar onNavItemClick={handleNavItemClick} />
       </AppShell.Navbar>
+
       <AppShell.Main>{children}</AppShell.Main>
+
+      {isThemeAdmin && (
+        <AppShell.Aside p="md">
+          <AdminThemeAside />
+        </AppShell.Aside>
+      )}
     </AppShell>
   );
 };

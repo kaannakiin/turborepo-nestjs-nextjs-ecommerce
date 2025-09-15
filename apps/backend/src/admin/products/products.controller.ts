@@ -7,12 +7,13 @@ import {
   Param,
   Post,
   Query,
+  UploadedFile,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import {
   BaseProductSchema,
   type BaseProductZodType,
@@ -126,6 +127,27 @@ export class ProductsController {
   @Delete('variant-image')
   async deleteVariantImage(@Body() body: { imageUrl: string }) {
     return this.productsService.deleteVariantImage(body.imageUrl);
+  }
+
+  @Post('upload-option-asset/:optionUniqueId')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadOptionAsset(
+    @UploadedFile(
+      new FilesValidationPipe({
+        maxSize: 10 * 1024 * 1024,
+        types: ['IMAGE'],
+      }),
+    )
+    file: Express.Multer.File,
+    @Param('optionUniqueId') optionUniqueId: string,
+  ) {
+    return this.productsService.uploadVariantOptionAsset(file, optionUniqueId);
+  }
+
+  @Delete('delete-option-asset/:url')
+  async deleteOptionAsset(@Param('url') url: string) {
+    const decodedUrl = decodeURIComponent(url);
+    return this.productsService.deleteVariantOptionAsset(decodedUrl);
   }
 
   @Post('create-or-update-basic-product')

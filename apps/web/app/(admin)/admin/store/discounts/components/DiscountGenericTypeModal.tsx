@@ -42,7 +42,7 @@ const DiscountGenericTypeModal = ({
           radius="md"
           withBorder
           style={{ cursor: "pointer", transition: "all 0.2s ease" }}
-          className="hover:shadow-md hover:border-[var(--mantine-primary-color-9)]"
+          className="hover:shadow-md hover:border-[var(--mantine-primary-color-5)]"
           onClick={() => {
             close();
             push("/admin/store/discounts/new?type=MANUAL");
@@ -82,7 +82,7 @@ const DiscountGenericTypeModal = ({
           radius="md"
           withBorder
           style={{ cursor: "pointer", transition: "all 0.2s ease" }}
-          className="hover:shadow-md hover:border-[var(--mantine-primary-color-9)]"
+          className="hover:shadow-md hover:border-[var(--mantine-primary-color-5)]"
           onClick={() => {
             close();
             push("/admin/store/discounts/new?type=AUTOMATIC");

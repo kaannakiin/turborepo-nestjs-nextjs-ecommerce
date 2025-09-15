@@ -8,4 +8,6 @@ export * from "./shared/shared-enum";
 export * from "./products/brand-schemas";
 export * from "./products/category-schema";
 export * from "./products/discount-schemas";
+export * from "./products/cart-schemas";
 export * from "./admin-ui/slider-schemas";
+export * from "./admin-ui/marquee-schemas";

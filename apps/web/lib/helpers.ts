@@ -1,5 +1,11 @@
 import { $Enums, UserRole } from "@repo/database";
-import { SortAdminUserTable, VariantProductZodType } from "@repo/types";
+import {
+  CategoryPageProductsReturnType,
+  ProductCardProps,
+  ProductPageDataType,
+  SortAdminUserTable,
+  VariantProductZodType,
+} from "@repo/types";
 
 export function getUserRoleLabels(role: UserRole) {
   switch (role) {
@@ -65,6 +71,22 @@ export function getDiscountTypeLabel(type: $Enums.DiscountType) {
       return type;
   }
 }
+
+export function getCurrencyIntlFormat(currency: $Enums.Currency) {
+  switch (currency) {
+    case "TRY":
+      return "tr-TR";
+    case "USD":
+      return "en-US";
+    case "EUR":
+      return "de-DE";
+    case "GBP":
+      return "en-GB";
+    default:
+      return "tr-TR";
+  }
+}
+
 export function getCouponGenerationTypeLabel(
   type: $Enums.CouponGenerationType
 ) {
@@ -86,6 +108,66 @@ export function getCouponGenerationTypeTooltip(
     case "MANUAL":
       return "Kupon kodu gerektirir. Müşteriler kupon kodunu kullanarak indirimi alabilir.";
   }
+}
+
+export function buildVariantOrProductUrl(
+  productInfos: ProductPageDataType["translations"],
+  variantInfos?: ProductPageDataType["variantCombinations"][number]["options"][number][],
+  locale: $Enums.Locale = "TR"
+) {
+  const productTranslation =
+    productInfos.find((tr) => tr.locale === locale) || productInfos[0];
+
+  if (!productTranslation) return null;
+
+  const baseSlug = productTranslation.slug;
+
+  // Variant bilgileri varsa query parametreleriyle URL oluştur
+  if (variantInfos && variantInfos.length > 0) {
+    const searchParams = new URLSearchParams();
+
+    variantInfos.forEach((variant) => {
+      const variantTranslation =
+        variant.productVariantOption.variantOption.translations.find(
+          (t) => t.locale === locale
+        ) || variant.productVariantOption.variantOption.translations[0];
+
+      const variantGroupTranslation =
+        variant.productVariantOption.variantOption.variantGroup.translations.find(
+          (t) => t.locale === locale
+        ) ||
+        variant.productVariantOption.variantOption.variantGroup.translations[0];
+
+      if (variantTranslation && variantGroupTranslation) {
+        searchParams.set(variantGroupTranslation.slug, variantTranslation.slug);
+      }
+    });
+
+    return `/${baseSlug}?${searchParams.toString()}`;
+  }
+
+  // Variant yoksa sadece temel slug'ı return et
+  return `/${baseSlug}`;
+}
+
+export function buildVariantUrl(
+  baseSlug: string,
+  currentParams: Record<string, string | undefined>,
+  newVariantOptions: Record<string, string>
+) {
+  const params = new URLSearchParams();
+
+  Object.entries(currentParams).forEach(([key, value]) => {
+    if (value) {
+      params.set(key, value);
+    }
+  });
+
+  Object.entries(newVariantOptions).forEach(([groupSlug, optionSlug]) => {
+    params.set(groupSlug, optionSlug);
+  });
+
+  return `/${baseSlug}?${params.toString()}`;
 }
 
 export function returnCombinateVariant({

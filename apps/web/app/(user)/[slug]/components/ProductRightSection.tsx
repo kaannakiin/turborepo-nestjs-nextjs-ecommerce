@@ -1,0 +1,280 @@
+"use client";
+import {
+  Accordion,
+  AspectRatio,
+  Badge,
+  Button,
+  ColorSwatch,
+  Group,
+  Stack,
+  Text,
+  Title,
+  Tooltip,
+  Typography,
+} from "@mantine/core";
+import { slugify } from "@repo/shared";
+import { $Enums, ProductPageDataType } from "@repo/types";
+import { useRouter, useSearchParams } from "next/navigation";
+import CustomImage from "../../../components/CustomImage";
+import AddToCartButton from "../../../components/AddToCartButton";
+
+interface ProductRightSectionProps {
+  productId: string;
+  groups: ProductPageDataType["variantGroups"];
+  selectedVariant: ProductPageDataType["variantCombinations"][number];
+  selectedVariantPrice:
+    | ProductPageDataType["variantCombinations"][number]["prices"][number]
+    | null;
+  productTranslation: ProductPageDataType["translations"][number];
+  selectedVariantTranslation:
+    | ProductPageDataType["variantCombinations"][number]["translations"][number]
+    | null;
+}
+
+const ProductRightSection = ({
+  groups,
+  selectedVariant,
+  selectedVariantPrice,
+  productId,
+  productTranslation,
+  selectedVariantTranslation,
+}: ProductRightSectionProps) => {
+  const locale: $Enums.Locale = "TR";
+
+  const selectedOptionIds = selectedVariant.options.map(
+    (option) => option.productVariantOptionId
+  );
+
+  const searchParams = useSearchParams();
+  const { replace } = useRouter();
+
+  const isOptionSelected = (optionId: string) => {
+    return selectedOptionIds.includes(optionId);
+  };
+
+  const onClick = (
+    group: ProductPageDataType["variantGroups"][number],
+    option: ProductPageDataType["variantGroups"][number]["options"][number]
+  ) => {
+    const groupTranslation = group.variantGroup.translations.find(
+      (tr) => tr.locale === locale
+    )!;
+    const optionTranslation = option.variantOption.translations.find(
+      (tr) => tr.locale === locale
+    )!;
+
+    const paramKey = groupTranslation.slug || slugify(groupTranslation.name);
+    const paramValue =
+      optionTranslation.slug || slugify(optionTranslation.name);
+
+    const newSearchParams = new URLSearchParams(searchParams.toString());
+
+    const isSelected = isOptionSelected(option.id);
+
+    if (isSelected) {
+      // Eğer zaten seçiliyse, parametreyi kaldır
+      newSearchParams.delete(paramKey);
+    } else {
+      // Seçili değilse, bu option'ı seç
+      newSearchParams.set(paramKey, paramValue);
+    }
+
+    const queryString = newSearchParams.toString();
+    replace(`?${queryString}`);
+  };
+
+  return (
+    <Stack gap={"lg"}>
+      <Title order={1} tt={"capitalize"}>
+        {productTranslation.name}
+      </Title>
+      {selectedVariantPrice && (
+        <Group gap={"lg"}>
+          {selectedVariantPrice.discountedPrice ? (
+            <>
+              <Badge
+                variant="filled"
+                radius={0}
+                py={"lg"}
+                size="lg"
+                color={"red.7"}
+              >
+                <Text fw={700}>%50.1</Text>
+              </Badge>
+              <Stack gap={"1px"}>
+                <Text td="line-through" fz={"sm"} c={"dimmed"} fw={700}>
+                  {selectedVariantPrice.price.toLocaleString("tr-TR", {
+                    style: "currency",
+                    currency: selectedVariantPrice.currency,
+                  })}
+                </Text>
+                <Text fw={700} fz={"xl"}>
+                  {selectedVariantPrice.discountedPrice.toLocaleString(
+                    "tr-TR",
+                    {
+                      style: "currency",
+                      currency: selectedVariantPrice.currency,
+                    }
+                  )}
+                </Text>
+              </Stack>
+            </>
+          ) : (
+            <Text fw={700} fz={"xl"}>
+              {selectedVariantPrice.price.toLocaleString("tr-TR", {
+                style: "currency",
+                currency: selectedVariantPrice.currency,
+              })}
+            </Text>
+          )}
+        </Group>
+      )}
+      {groups.map((group) => {
+        const groupTranslation =
+          group.variantGroup.translations.find((tr) => tr.locale === locale) ||
+          group.variantGroup.translations[0];
+
+        return (
+          <div key={group.id}>
+            <Title order={5} tt={"capitalize"} mb="sm">
+              {groupTranslation.name}
+            </Title>
+            <Group gap={"sm"} align="center">
+              {group.options.map((option) => {
+                const optionTranslation =
+                  option.variantOption.translations.find(
+                    (tr) => tr.locale === locale
+                  ) || option.variantOption.translations[0];
+
+                const isAssetExists =
+                  option.variantOption.asset && option.variantOption.asset.url;
+
+                const isSelected = isOptionSelected(option.id);
+
+                if (group.variantGroup.type === "COLOR") {
+                  if (isAssetExists) {
+                    return (
+                      <Tooltip
+                        key={option.id}
+                        label={optionTranslation.name}
+                        position="top"
+                        withArrow
+                      >
+                        <div
+                          className={`cursor-pointer p-[1px] rounded-md ${
+                            isSelected
+                              ? "ring-2 ring-[var(--mantine-primary-color-5)]"
+                              : ""
+                          }`}
+                          onClick={() => onClick(group, option)}
+                        >
+                          <AspectRatio
+                            ratio={1}
+                            style={{ width: 48, height: 48 }}
+                          >
+                            <CustomImage
+                              src={option.variantOption.asset.url}
+                              alt={optionTranslation.name}
+                              className="rounded-md"
+                            />
+                          </AspectRatio>
+                        </div>
+                      </Tooltip>
+                    );
+                  } else if (option.variantOption.hexValue) {
+                    // Asset yoksa hexValue ile ColorSwatch render et
+                    return (
+                      <Tooltip
+                        key={option.id}
+                        label={optionTranslation.name}
+                        position="top"
+                        withArrow
+                      >
+                        <div
+                          className={`cursor-pointer p-[1px] rounded-full ${
+                            isSelected
+                              ? "ring-2 ring-[var(--mantine-primary-color-5)]"
+                              : ""
+                          }`}
+                          onClick={() => onClick(group, option)}
+                        >
+                          <ColorSwatch
+                            color={option.variantOption.hexValue}
+                            size={48}
+                          />
+                        </div>
+                      </Tooltip>
+                    );
+                  } else {
+                    // Ne asset ne hexValue varsa fallback olarak badge
+                    return (
+                      <Badge
+                        key={option.id}
+                        onClick={() => onClick(group, option)}
+                        variant={isSelected ? "filled" : "outline"}
+                        size="md"
+                        className="cursor-pointer"
+                      >
+                        {optionTranslation.name}
+                      </Badge>
+                    );
+                  }
+                } else {
+                  return (
+                    <Badge
+                      key={option.id}
+                      variant={isSelected ? "filled" : "outline"}
+                      className="cursor-pointer"
+                      size="xl"
+                      w={80}
+                      h={50}
+                      onClick={() => onClick(group, option)}
+                      radius={"sm"}
+                    >
+                      {optionTranslation.name}
+                    </Badge>
+                  );
+                }
+              })}
+            </Group>
+          </div>
+        );
+      })}
+      <AddToCartButton
+        productId={productId}
+        variantId={selectedVariant.id}
+        quantity={1}
+      />
+      {(selectedVariantTranslation.description ||
+        productTranslation.description) &&
+        productTranslation.description !== "<p></p>" && (
+          <Accordion
+            mt="md"
+            color="dimmed"
+            defaultValue="description"
+            variant="separated"
+          >
+            <Accordion.Item value="description">
+              <Accordion.Control>
+                <Title order={4}>Ürün Açıklaması</Title>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Typography>
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        selectedVariantTranslation?.description ||
+                        productTranslation.description ||
+                        "",
+                    }}
+                  />
+                </Typography>
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion>
+        )}
+    </Stack>
+  );
+};
+
+export default ProductRightSection;
