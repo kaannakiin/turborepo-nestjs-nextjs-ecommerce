@@ -124,14 +124,17 @@
       "persistent": true
     },
     "db:generate": {
-      "cache": false
+      "cache": false,
+      "dependsOn": ["db:deploy"],
+      "env": ["DATABASE_URL"]
     },
     "db:migrate": {
       "cache": false,
       "persistent": true
     },
     "db:deploy": {
-      "cache": false
+      "cache": false,
+      "env": ["DATABASE_URL"]
     },
     "db:prisma": {
       "cache": false
