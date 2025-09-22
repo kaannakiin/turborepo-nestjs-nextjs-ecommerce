@@ -1,3 +1,4 @@
+//apps/backend/src/admin/products/products.module.ts
 import { Module } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { ProductsController } from './products.controller';
@@ -9,5 +10,6 @@ import { GoogleCategoriesModule } from './google-categories/google-categories.mo
   controllers: [ProductsController],
   providers: [ProductsService],
   imports: [BrandsModule, CategoriesModule, GoogleCategoriesModule],
+  exports: [ProductsService],
 })
 export class ProductsModule {}

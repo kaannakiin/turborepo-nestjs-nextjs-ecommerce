@@ -20,27 +20,7 @@ const setCookieFromParsed = (response: NextResponse, cookie: Cookie) => {
   });
 };
 
-// Cookie'leri temizleyen helper function
 const clearAuthCookies = (response: NextResponse) => {
-  // Token ve refresh token'ı temizle
-  response.cookies.set("token", "", {
-    httpOnly: true,
-    secure: false,
-    sameSite: "strict",
-    path: "/",
-    expires: new Date(0), // Geçmişe tarih vererek sil
-    maxAge: 0,
-  });
-
-  response.cookies.set("refresh_token", "", {
-    httpOnly: true,
-    secure: false,
-    sameSite: "strict",
-    path: "/",
-    expires: new Date(0), // Geçmişe tarih vererek sil
-    maxAge: 0,
-  });
-
   return response;
 };
 

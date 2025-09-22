@@ -125,7 +125,6 @@
     },
     "db:generate": {
       "cache": false,
-      "dependsOn": ["db:deploy"],
       "env": ["DATABASE_URL"]
     },
     "db:migrate": {

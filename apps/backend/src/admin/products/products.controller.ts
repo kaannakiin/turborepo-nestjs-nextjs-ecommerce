@@ -181,12 +181,26 @@ export class ProductsController {
     const page = pageParam ? parseInt(pageParam, 10) : 1;
     return this.productsService.getProducts(search, page);
   }
+
   @Get('get-products-and-variants')
   async getProductsAndVariants() {
     return this.productsService.getProductsAndVariants();
   }
+
   @Get('get-products-for-selection')
   async getProductsForSelection() {
     return this.productsService.getProductsForSelection();
+  }
+
+  @Get('get-product-and-variants-for-modal')
+  async getProductAndVariantsForModal(@Query('search') search: string) {
+    return this.productsService.getProductAndVariantsForModal(search);
+  }
+
+  @Post('get-selected-products')
+  async getSelectedProducts(
+    @Body() body: { selectedItems: { productId: string; variantId: string }[] },
+  ) {
+    return this.productsService.getSelectedProductsForModal(body.selectedItems);
   }
 }

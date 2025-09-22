@@ -10,6 +10,7 @@ import {
   AdminProductTableData,
   BaseProductZodType,
   Cuid2ZodType,
+  ModalProductCardForAdmin,
   ProductWithVariants,
   VariantGroupZodType,
   VariantProductZodType,
@@ -2269,5 +2270,445 @@ export class ProductsService {
         type: newAsset.type,
       },
     };
+  }
+
+  convertToModalProductCard(
+    products: Prisma.ProductGetPayload<{
+      include: {
+        translations: true;
+        assets: {
+          take: 1;
+          orderBy: { order: 'asc' };
+          select: { asset: { select: { url: true; type: true } } };
+        };
+        brand: {
+          select: { translations: true };
+        };
+        prices: true;
+        variantCombinations: {
+          orderBy: { createdAt: 'asc' };
+          where: { active: true; stock: { gt: 0 } };
+          include: {
+            assets: {
+              take: 1;
+              orderBy: { order: 'asc' };
+              select: { asset: { select: { url: true; type: true } } };
+            };
+            translations: true;
+            prices: true;
+            options: {
+              orderBy: {
+                productVariantOption: {
+                  productVariantGroup: { order: 'asc' };
+                };
+              };
+              select: {
+                productVariantOption: {
+                  select: {
+                    variantOption: {
+                      select: {
+                        id: true;
+                        hexValue: true;
+                        asset: { select: { url: true; type: true } };
+                        translations: true;
+                      };
+                    };
+                    productVariantGroup: {
+                      select: {
+                        variantGroup: {
+                          include: { translations: true };
+                        };
+                      };
+                    };
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    }>[],
+  ): ModalProductCardForAdmin[] {
+    const cards: ModalProductCardForAdmin[] = [];
+
+    products.forEach((product) => {
+      const brandTranslation =
+        product.brand?.translations.find((t) => t.locale === 'TR') ||
+        product.brand?.translations[0];
+
+      const productTranslation =
+        product.translations.find((t) => t.locale === 'TR') ||
+        product.translations[0];
+
+      const brandName = brandTranslation ? brandTranslation.name : null;
+      const productName = productTranslation
+        ? productTranslation.name
+        : 'İsimsiz';
+      const productSlug = productTranslation ? productTranslation.slug : '';
+
+      if (product.isVariant && product.variantCombinations.length > 0) {
+        // Variantlı ürün: Her variantCombination'ı ayrı ürün olarak ekle
+        product.variantCombinations.forEach((combination) => {
+          // Variant için fiyat (önce combination'dan, yoksa product'tan)
+          const combinationPrice =
+            combination.prices.find((p) => p.currency === 'TRY') ||
+            combination.prices[0];
+          const productPrice =
+            product.prices.find((p) => p.currency === 'TRY') ||
+            product.prices[0];
+          const price = combinationPrice || productPrice;
+
+          // Variant için resim (önce combination'dan, yoksa product'tan)
+          const combinationImage = combination.assets[0]?.asset || null;
+          const productImage = product.assets[0]?.asset || null;
+          const image = combinationImage || productImage;
+
+          // Variant options'ları düzenle
+          const variants = combination.options.map((option) => {
+            const variantOptionTranslation =
+              option.productVariantOption.variantOption.translations.find(
+                (t) => t.locale === 'TR',
+              ) || option.productVariantOption.variantOption.translations[0];
+
+            const variantGroupTranslation =
+              option.productVariantOption.productVariantGroup.variantGroup.translations.find(
+                (t) => t.locale === 'TR',
+              ) ||
+              option.productVariantOption.productVariantGroup.variantGroup
+                .translations[0];
+
+            return {
+              productVariantGroupId:
+                option.productVariantOption.productVariantGroup.variantGroup.id,
+              productVariantGroupName: variantGroupTranslation?.name || '',
+              productVariantGroupSlug: variantGroupTranslation?.slug || '',
+              productVariantOptionId:
+                option.productVariantOption.variantOption.id,
+              productVariantOptionName: variantOptionTranslation?.name || '',
+              productVariantOptionSlug: variantOptionTranslation?.slug || '',
+              hexValue: option.productVariantOption.variantOption.hexValue,
+              asset: option.productVariantOption.variantOption.asset,
+            };
+          });
+
+          cards.push({
+            productId: product.id,
+            variantId: combination.id,
+            productName,
+            productSlug,
+            brandName,
+            isVariant: true,
+            price: price?.price || 0,
+            discountedPrice: price?.discountedPrice || null,
+            currency: price?.currency || 'TRY',
+            image,
+            variants,
+          });
+        });
+      } else {
+        // Normal ürün (variantsız)
+        const productPrice =
+          product.prices.find((p) => p.currency === 'TRY') || product.prices[0];
+        const productImage = product.assets[0]?.asset || null;
+
+        cards.push({
+          productId: product.id,
+          variantId: null,
+          productName,
+          productSlug,
+          brandName,
+          isVariant: false,
+          price: productPrice?.price || 0,
+          discountedPrice: productPrice?.discountedPrice || null,
+          currency: productPrice?.currency || 'TRY',
+          image: productImage,
+          variants: null,
+        });
+      }
+    });
+
+    return cards;
+  }
+
+  async getProductAndVariantsForModal(search: string) {
+    const searchTerm = search.trim();
+
+    const where: Prisma.ProductWhereInput = {
+      active: true,
+      ...(searchTerm
+        ? {
+            OR: [
+              // 1. Normal ürünlerde (isVariant: false) sadece ürün adı/slug'ında ara
+              {
+                isVariant: false,
+                stock: { gt: 0 },
+                translations: {
+                  some: {
+                    OR: [
+                      { name: { contains: searchTerm, mode: 'insensitive' } },
+                      { slug: { contains: searchTerm, mode: 'insensitive' } },
+                    ],
+                  },
+                },
+              },
+              // 2. Variant ürünlerde ürün adı/slug'ında ara
+              {
+                isVariant: true,
+                translations: {
+                  some: {
+                    OR: [
+                      { name: { contains: searchTerm, mode: 'insensitive' } },
+                      { slug: { contains: searchTerm, mode: 'insensitive' } },
+                    ],
+                  },
+                },
+              },
+              // 3. Variant ürünlerde variant group/option isimlerinde ara
+              {
+                isVariant: true,
+                variantGroups: {
+                  some: {
+                    OR: [
+                      {
+                        variantGroup: {
+                          translations: {
+                            some: {
+                              OR: [
+                                {
+                                  name: {
+                                    contains: searchTerm,
+                                    mode: 'insensitive',
+                                  },
+                                },
+                                {
+                                  slug: {
+                                    contains: searchTerm,
+                                    mode: 'insensitive',
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                      {
+                        options: {
+                          some: {
+                            variantOption: {
+                              translations: {
+                                some: {
+                                  OR: [
+                                    {
+                                      name: {
+                                        contains: searchTerm,
+                                        mode: 'insensitive',
+                                      },
+                                    },
+                                    {
+                                      slug: {
+                                        contains: searchTerm,
+                                        mode: 'insensitive',
+                                      },
+                                    },
+                                  ],
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+          }
+        : { active: true }),
+    };
+
+    const products = await this.prisma.product.findMany({
+      where,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 20,
+      include: {
+        translations: true,
+        assets: {
+          take: 1,
+          orderBy: {
+            order: 'asc',
+          },
+          select: { asset: { select: { url: true, type: true } } },
+        },
+        brand: {
+          select: {
+            translations: true,
+          },
+        },
+        prices: true,
+        variantCombinations: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+          where: {
+            active: true,
+            stock: {
+              gt: 0,
+            },
+          },
+          include: {
+            assets: {
+              take: 1,
+              orderBy: {
+                order: 'asc',
+              },
+              select: { asset: { select: { url: true, type: true } } },
+            },
+            translations: true,
+            prices: true,
+            options: {
+              orderBy: {
+                productVariantOption: {
+                  productVariantGroup: {
+                    order: 'asc',
+                  },
+                },
+              },
+              select: {
+                productVariantOption: {
+                  select: {
+                    variantOption: {
+                      select: {
+                        id: true,
+                        hexValue: true,
+                        asset: { select: { url: true, type: true } },
+                        translations: true,
+                      },
+                    },
+                    productVariantGroup: {
+                      select: {
+                        variantGroup: {
+                          include: {
+                            translations: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    return this.convertToModalProductCard(products);
+  }
+
+  async getSelectedProductsForModal(
+    selectedItems: { productId: string; variantId: string }[],
+  ) {
+    if (!selectedItems || selectedItems.length === 0) {
+      return [];
+    }
+
+    const orConditions = selectedItems.map((item) => ({
+      id: item.productId,
+      ...(item.variantId && item.variantId !== 'main'
+        ? {
+            variantCombinations: {
+              some: {
+                id: item.variantId,
+                active: true,
+              },
+            },
+          }
+        : {
+            isVariant: false,
+          }),
+    }));
+
+    const products = await this.prisma.product.findMany({
+      where: {
+        active: true,
+        OR: orConditions,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        translations: true,
+        assets: {
+          take: 1,
+          orderBy: {
+            order: 'asc',
+          },
+          select: { asset: { select: { url: true, type: true } } },
+        },
+        brand: {
+          select: {
+            translations: true,
+          },
+        },
+        prices: true,
+        variantCombinations: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+          where: {
+            active: true,
+            stock: {
+              gt: 0,
+            },
+          },
+          include: {
+            assets: {
+              take: 1,
+              orderBy: {
+                order: 'asc',
+              },
+              select: { asset: { select: { url: true, type: true } } },
+            },
+            translations: true,
+            prices: true,
+            options: {
+              orderBy: {
+                productVariantOption: {
+                  productVariantGroup: {
+                    order: 'asc',
+                  },
+                },
+              },
+              select: {
+                productVariantOption: {
+                  select: {
+                    variantOption: {
+                      select: {
+                        id: true,
+                        hexValue: true,
+                        asset: { select: { url: true, type: true } },
+                        translations: true,
+                      },
+                    },
+                    productVariantGroup: {
+                      select: {
+                        variantGroup: {
+                          include: {
+                            translations: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return this.convertToModalProductCard(products);
   }
 }

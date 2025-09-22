@@ -361,3 +361,16 @@ export type CategoryPageProductsReturnType = {
     hasPreviousPage: boolean;
   };
 };
+
+export type CategoryGridComponentReturnData = Prisma.CategoryGetPayload<{
+  select: {
+    image: {
+      select: {
+        url: true;
+        type: true;
+      };
+    };
+    translations: true;
+    id: true;
+  };
+}>;

@@ -23,8 +23,7 @@ async function cleanupDatabase() {
     await prisma.$transaction(
       async (tx) => {
         await tx.sliderItemSchema.deleteMany({});
-        await tx.sliderSchema.deleteMany({});
-        await tx.marqueeItemSchema.deleteMany({});
+        await tx.sliderSettings.deleteMany({});
         await tx.marqueeSchema.deleteMany({});
       },
       { timeout: 10000 }

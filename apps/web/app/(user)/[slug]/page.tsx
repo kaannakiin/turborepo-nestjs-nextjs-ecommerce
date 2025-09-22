@@ -463,8 +463,6 @@ const UserProductPage = async ({
   });
 
   if (!data || (!data.isVariant && !data.variantCombinations.length)) {
-    console.log(JSON.stringify(data, null, 2));
-    console.log("Product not found or no variants available.");
     return notFound();
   }
 

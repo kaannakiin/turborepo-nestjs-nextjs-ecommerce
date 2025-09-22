@@ -12,13 +12,32 @@ interface FileValidationOptions {
 export class FilesValidationPipe implements PipeTransform {
   constructor(private readonly options: FileValidationOptions) {}
 
-  transform(value: Express.Multer.File | Express.Multer.File[]) {
+  transform(value: any) {
     if (!value) {
-      throw new BadRequestException('No file uploaded.');
+      throw new BadRequestException('No files uploaded.');
     }
 
-    // Gelen dosyayı array’e normalize et
-    const files = Array.isArray(value) ? value : [value];
+    const files: Express.Multer.File[] = [];
+
+    // 1. Tek file (FileInterceptor)
+    if (value.fieldname && value.originalname && value.mimetype) {
+      files.push(value);
+    }
+    // 2. Array of files (FilesInterceptor)
+    else if (Array.isArray(value)) {
+      files.push(...value);
+    }
+    // 3. Nested object (FileFieldsInterceptor)
+    else if (typeof value === 'object' && value !== null) {
+      Object.values(value).forEach((fieldFiles: any) => {
+        if (Array.isArray(fieldFiles)) {
+          files.push(...fieldFiles);
+        } else if (fieldFiles?.fieldname && fieldFiles?.originalname) {
+          // Tek file nested olarak gelmiş
+          files.push(fieldFiles);
+        }
+      });
+    }
 
     if (files.length === 0) {
       throw new BadRequestException('At least one file must be uploaded.');
@@ -54,7 +73,7 @@ export class FilesValidationPipe implements PipeTransform {
       }
     }
 
-    // Eğer tek file gönderilmişse yine tek file dön
-    return Array.isArray(value) ? files : files[0];
+    // Orijinal yapıyı koru
+    return value;
   }
 }

@@ -703,8 +703,6 @@ export class DiscountsService {
     ) {
       throw error;
     }
-
-    console.log(error);
     throw new InternalServerErrorException(
       'İndirim kaydedilirken beklenmeyen bir hata oluştu',
     );
