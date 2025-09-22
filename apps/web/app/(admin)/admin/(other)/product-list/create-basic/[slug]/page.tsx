@@ -4,10 +4,10 @@ import {
   CategorySelectType,
 } from "@repo/types";
 import { cookies } from "next/headers";
-import { Params } from "../../../../../../types/GlobalTypes";
 import ProductErrorComponent from "../../components/ProductErrorComponent";
 import ProductNotFound from "../../components/ProductNotFound";
 import BasicProductForm from "./components/BasicProductForm";
+import { Params } from "types/GlobalTypes";
 
 const BasicProductFormPage = async ({ params }: { params: Params }) => {
   const { slug } = await params;

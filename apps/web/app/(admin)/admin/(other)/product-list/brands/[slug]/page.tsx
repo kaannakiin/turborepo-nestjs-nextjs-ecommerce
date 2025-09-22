@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
-import { Params } from "../../../../../../types/GlobalTypes";
 import BrandForm from "../components/BrandForm";
 import { Brand } from "@repo/types";
 import { Button } from "@mantine/core";
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { Params } from "types/GlobalTypes";
 
 interface BrandFormPageProps {
   params: Params;
