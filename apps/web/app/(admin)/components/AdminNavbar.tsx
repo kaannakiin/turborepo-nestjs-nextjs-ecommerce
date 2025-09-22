@@ -63,11 +63,7 @@ const data: NavbarButtonType[] = [
         icon: null,
         label: "Kategori Oluştur",
       },
-      {
-        href: "/product-list/discounts",
-        icon: null,
-        label: "Kategori Oluştur",
-      },
+    
     ],
   },
   {

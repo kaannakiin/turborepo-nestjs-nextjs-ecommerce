@@ -28,7 +28,6 @@ const getCategoryData = async (
         `/users/categories/get-category-page/${slug}?${searchParams.toString()}`
       );
       if (res.error) {
-        console.log(res.error);
         return null;
       }
       return res.data as GetCategoryPageReturnType;

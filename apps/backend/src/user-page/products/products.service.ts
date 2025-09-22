@@ -1,10 +1,14 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { ProductPageDataType } from '@repo/types';
+import { ProductListComponentType, ProductPageDataType } from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { ProductsService as AdminProductService } from '../../admin/products/products.service';
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly adminProductService: AdminProductService,
+  ) {}
 
   async getProductBySlug(slug: string): Promise<ProductPageDataType> {
     const product = await this.prisma.product.findFirst({
@@ -1168,5 +1172,123 @@ export class ProductsService {
           return rest;
         }),
     };
+  }
+
+  async getProductsByIdsForProductListCarousel(
+    items: ProductListComponentType['items'],
+  ) {
+    const mainProductItems = items.filter((item) => !item.variantId);
+    const variantItems = items.filter((item) => item.variantId);
+
+    const uniqueProductIds = [...new Set(items.map((item) => item.productId))];
+    const requestedVariantIds = variantItems.map((item) => item.variantId);
+
+    const products = await this.prisma.product.findMany({
+      where: {
+        id: {
+          in: uniqueProductIds, // ✅ Sadece unique product ID'leri kullan
+        },
+      },
+      include: {
+        translations: true,
+        assets: {
+          take: 1,
+          orderBy: {
+            order: 'asc',
+          },
+          select: {
+            asset: {
+              select: {
+                url: true,
+                type: true,
+              },
+            },
+          },
+        },
+        brand: {
+          select: {
+            translations: true,
+          },
+        },
+        prices: true,
+        variantCombinations: {
+          where: {
+            AND: [
+              { active: true },
+              { stock: { gt: 0 } },
+              // ✅ Eğer bu ürün için varyant istenmişse sadece istenen varyantları getir
+              // Eğer main product istenmişse de en az 1 varyant getir (varsayılan için)
+              requestedVariantIds.length > 0
+                ? {
+                    OR: [
+                      { id: { in: requestedVariantIds } },
+                      // Main product için de varsayılan varyant
+                      ...(mainProductItems.some(
+                        (item) => item.productId === uniqueProductIds[0],
+                      )
+                        ? [{}] // Boş condition - tüm aktif varyantları getir
+                        : []),
+                    ],
+                  }
+                : {}, // Hiç spesifik varyant istenmemişse tüm aktif varyantları getir
+            ],
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+          include: {
+            assets: {
+              take: 1,
+              orderBy: {
+                order: 'asc',
+              },
+              select: {
+                asset: {
+                  select: {
+                    url: true,
+                    type: true,
+                  },
+                },
+              },
+            },
+            translations: true,
+            prices: true,
+            options: {
+              orderBy: {
+                productVariantOption: {
+                  productVariantGroup: {
+                    order: 'asc',
+                  },
+                },
+              },
+              select: {
+                productVariantOption: {
+                  select: {
+                    variantOption: {
+                      select: {
+                        id: true,
+                        hexValue: true,
+                        asset: { select: { url: true, type: true } },
+                        translations: true,
+                      },
+                    },
+                    productVariantGroup: {
+                      select: {
+                        variantGroup: {
+                          include: {
+                            translations: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    return this.adminProductService.convertToModalProductCard(products);
   }
 }

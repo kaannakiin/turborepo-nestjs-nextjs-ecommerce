@@ -1,12 +1,10 @@
 "use client";
-import { AppShell, Avatar, Burger, Group, Text } from "@mantine/core";
-import { useDisclosure, useLocalStorage } from "@mantine/hooks";
-import { useMediaQuery } from "@mantine/hooks";
+import { AppShell, Burger, Group } from "@mantine/core";
+import { useDisclosure, useLocalStorage, useMediaQuery } from "@mantine/hooks";
 import { TokenPayload } from "@repo/types";
+import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 import AdminNavbar from "./AdminNavbar";
-import { usePathname } from "next/navigation";
-import AdminThemeAside from "./AdminThemeAside";
 
 const AdminAppShellLayout = ({
   children,
@@ -37,7 +35,6 @@ const AdminAppShellLayout = ({
   };
 
   const pathname = usePathname();
-  const isThemeAdmin = pathname.startsWith("/admin/theme");
 
   return (
     <AppShell
@@ -47,11 +44,6 @@ const AdminAppShellLayout = ({
         width: 300,
         breakpoint: "sm",
         collapsed: { mobile: !mobileOpened, desktop: !navbarState },
-      }}
-      aside={{
-        width: isThemeAdmin ? 300 : 0,
-        breakpoint: "md",
-        collapsed: { desktop: false, mobile: true },
       }}
     >
       <AppShell.Header>
@@ -79,12 +71,6 @@ const AdminAppShellLayout = ({
       </AppShell.Navbar>
 
       <AppShell.Main>{children}</AppShell.Main>
-
-      {isThemeAdmin && (
-        <AppShell.Aside p="md">
-          <AdminThemeAside />
-        </AppShell.Aside>
-      )}
     </AppShell>
   );
 };

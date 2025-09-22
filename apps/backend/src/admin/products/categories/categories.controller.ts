@@ -87,6 +87,7 @@ export class CategoriesController {
       },
     };
   }
+
   @Delete('delete-category/:id')
   async deleteCategory(
     @Param('id', new ZodValidationPipe(Cuid2Schema)) id: Cuid2ZodType,

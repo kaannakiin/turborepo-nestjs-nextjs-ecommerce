@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@repo/database';
 import {
   $Enums,
+  CategoryGridComponentReturnData,
   CategoryPageChildCategories,
   CategoryPageDataType,
   CategoryPageParentCategories,
@@ -192,7 +193,33 @@ export class CategoriesService {
     const children: CategoryPageChildCategories[] = [];
 
     const directChildren = await this.prisma.category.findMany({
-      where: { parentCategoryId: categoryId },
+      where: {
+        parentCategoryId: categoryId,
+        products: {
+          some: {
+            product: {
+              OR: [
+                {
+                  active: true,
+                  isVariant: false,
+                  stock: {
+                    gt: 0,
+                  },
+                },
+                {
+                  active: true,
+                  variantCombinations: {
+                    some: {
+                      active: true,
+                      stock: { gt: 0 },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      },
       include: {
         translations: {
           select: {
@@ -712,5 +739,51 @@ export class CategoriesService {
         hasPreviousPage: page > 1,
       },
     };
+  }
+
+  async getCategoriesByIds(
+    categoryIds: string[],
+  ): Promise<CategoryGridComponentReturnData[]> {
+    const categories = await this.prisma.category.findMany({
+      where: {
+        imageId: { not: null },
+        id: { in: categoryIds },
+        products: {
+          some: {
+            product: {
+              OR: [
+                {
+                  active: true,
+                  isVariant: false,
+                  stock: {
+                    gt: 0,
+                  },
+                },
+                {
+                  active: true,
+                  variantCombinations: {
+                    some: {
+                      active: true,
+                      stock: { gt: 0 },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      },
+      select: {
+        image: {
+          select: {
+            url: true,
+            type: true,
+          },
+        },
+        translations: true,
+        id: true,
+      },
+    });
+    return categories;
   }
 }

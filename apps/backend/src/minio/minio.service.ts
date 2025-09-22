@@ -110,8 +110,6 @@ export class MinioService {
       }
     }
 
-    // DEĞİŞİKLİK 2: Bucket oluşturulduktan veya varlığı onaylandıktan sonra
-    // politikanın doğru olduğundan emin ol.
     await this.ensurePublicReadOnlyPolicy(bucketName);
 
     await this.minioClient.putObject(

@@ -8,6 +8,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { UserRole } from '@repo/database';
 import { Observable } from 'rxjs';
+import { IS_PUBLIC_KEY } from 'src/reflectors/public.decorator';
 import { Roles } from 'src/reflectors/roles.decorator';
 
 @Injectable()
@@ -17,6 +18,16 @@ export class RolesGuard implements CanActivate {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
+    // Public endpoint kontrolü - en başta yapıyoruz
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isPublic) {
+      return true; // Public endpoint ise direkt geç
+    }
+
     const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(Roles, [
       context.getHandler(),
       context.getClass(),

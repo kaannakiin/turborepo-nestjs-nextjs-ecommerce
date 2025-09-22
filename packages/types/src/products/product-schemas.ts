@@ -72,17 +72,7 @@ export const FileSchema = ({ type }: { type: AssetType[] | AssetType }) => {
     })
     .refine((file) => allowedMimeTypes.includes(file.type), {
       message: `Sadece ${getAssetTypeMessage(allowedTypes)} yükleyebilirsiniz.`,
-    })
-    .refine(
-      (file) => {
-        // Dosya adı kontrolü (opsiyonel)
-        const fileName = file.name;
-        return fileName.length > 0 && fileName.length <= 255;
-      },
-      {
-        message: "Dosya adı 1-255 karakter arasında olmalıdır.",
-      }
-    );
+    });
 };
 
 export const htmlDescriptionSchema = z
@@ -825,3 +815,28 @@ export interface ProductCardProps {
     variantTranslations: CategoryPageProductsType["variantGroups"][number]["options"][number]["combinations"][number]["combination"]["translations"];
   };
 }
+
+export type ModalProductCardForAdmin = {
+  productId: string;
+  variantId: string | null;
+  productName: string;
+  productSlug: string;
+  brandName: string | null;
+  isVariant: boolean;
+  price: number;
+  discountedPrice: number | null;
+  currency: $Enums.Currency;
+  image: { url: string; type: $Enums.AssetType } | null;
+  variants:
+    | {
+        productVariantGroupId: string;
+        productVariantGroupName: string;
+        productVariantGroupSlug: string;
+        productVariantOptionId: string;
+        productVariantOptionName: string;
+        productVariantOptionSlug: string;
+        hexValue: string | null;
+        asset: { url: string; type: $Enums.AssetType } | null;
+      }[]
+    | null;
+};
