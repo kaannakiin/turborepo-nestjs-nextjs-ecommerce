@@ -2,18 +2,13 @@
 
 import {
   ActionIcon,
-  Alert,
   Badge,
-  Box,
   Button,
-  Card,
   Group,
-  Modal,
   Popover,
   Stack,
   Table,
   Text,
-  ThemeIcon,
   Title,
   Tooltip,
 } from "@mantine/core";
@@ -21,25 +16,17 @@ import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { DateFormatter, useQuery } from "@repo/shared";
 import { Cuid2ZodType, DiscountTableData } from "@repo/types";
-import {
-  IconChevronRight,
-  IconEdit,
-  IconInfoCircle,
-  IconSparkles,
-  IconTicket,
-  IconTrash,
-  IconX,
-} from "@tabler/icons-react";
+import { IconEdit, IconTrash, IconX } from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import CustomSearchInput from "@/components/CustomSearchInput";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import DiscountGenericTypeModal from "./DiscountGenericTypeModal";
 import {
   getCouponGenerationTypeLabel,
   getCouponGenerationTypeTooltip,
   getDiscountTypeLabel,
-} from "../../../../../../lib/helpers";
-import CustomSearchInput from "../../../../../components/CustomSearchInput";
-import GlobalLoadingOverlay from "../../../../../components/GlobalLoadingOverlay";
-import DiscountGenericTypeModal from "./DiscountGenericTypeModal";
+} from "@lib/helpers";
 
 const DiscountTable = () => {
   const searchParams = useSearchParams();

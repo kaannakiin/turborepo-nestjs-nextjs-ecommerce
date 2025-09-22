@@ -4,10 +4,10 @@ import {
   VariantProductZodType,
 } from "@repo/types";
 import { cookies } from "next/headers";
-import { Params } from "../../../../../../types/GlobalTypes";
 import ProductErrorComponent from "../../components/ProductErrorComponent";
 import ProductNotFound from "../../components/ProductNotFound";
 import VariantProductForm from "../components/VariantProductForm";
+import { Params } from "types/GlobalTypes";
 
 const CreateVariantProductPage = async ({ params }: { params: Params }) => {
   const id = (await params).slug;

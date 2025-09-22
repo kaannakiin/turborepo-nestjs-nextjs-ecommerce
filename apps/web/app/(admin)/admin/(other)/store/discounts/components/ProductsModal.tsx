@@ -24,7 +24,7 @@ import {
   IconInfoCircle,
 } from "@tabler/icons-react";
 import { useState, useEffect } from "react";
-import GlobalLoadingOverlay from "../../../../../components/GlobalLoadingOverlay";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 
 type SelectionMode = "multiple" | "single";
 

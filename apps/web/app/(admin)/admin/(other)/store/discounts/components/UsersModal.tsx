@@ -1,9 +1,9 @@
 "use client";
 
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import { Checkbox, Modal, ScrollArea, Stack } from "@mantine/core";
 import { useQuery } from "@repo/shared";
 import { UserIdAndName } from "@repo/types";
-import GlobalLoadingOverlay from "../../../../../components/GlobalLoadingOverlay";
 
 interface UsersModalProps {
   opened: boolean;

@@ -1,5 +1,9 @@
 "use client";
 
+import CustomPagination from "@/components/CustomPagination";
+import CustomSearchInput from "@/components/CustomSearchInput";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import { getSortAdminUserTableLabels, getUserRoleLabels } from "@lib/helpers";
 import {
   Badge,
   Button,
@@ -13,13 +17,6 @@ import { useQuery } from "@repo/shared";
 import { GetUsersQueriesReturnType, SortAdminUserTable } from "@repo/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import {
-  getSortAdminUserTableLabels,
-  getUserRoleLabels,
-} from "../../../../../lib/helpers";
-import CustomSearchInput from "../../../../components/CustomSearchInput";
-import GlobalLoadingOverlay from "../../../../components/GlobalLoadingOverlay";
-import CustomPagination from "../../../../components/CustomPagination";
 
 const UserTable = () => {
   const SEARCH_PARAM_KEY = "search";

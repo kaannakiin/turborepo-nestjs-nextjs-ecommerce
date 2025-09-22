@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
-import { Params } from "../../../../../../types/GlobalTypes";
 import AdminCategoryForm from "../components/AdminCategoryForm";
+import { Params } from "types/GlobalTypes";
 
 const AdminCategoriesFormPage = async ({ params }: { params: Params }) => {
   const { slug } = await params;

@@ -13,7 +13,7 @@ import {
 import { useQuery } from "@repo/shared";
 import { BrandIdAndName } from "@repo/types";
 import { useEffect, useState } from "react";
-import GlobalLoadingOverlay from "../../../../../components/GlobalLoadingOverlay";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 
 interface BrandsModalProps {
   opened: boolean;

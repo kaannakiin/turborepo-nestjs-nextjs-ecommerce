@@ -14,7 +14,7 @@ import { useQuery } from "@repo/shared";
 import { CategoryIdAndName } from "@repo/types";
 import { IconCategory } from "@tabler/icons-react";
 import { useState, useEffect } from "react";
-import GlobalLoadingOverlay from "../../../../../components/GlobalLoadingOverlay";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 
 interface CategoriesModalProps {
   opened: boolean;

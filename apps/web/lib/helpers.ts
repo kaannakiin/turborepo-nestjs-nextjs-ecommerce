@@ -38,21 +38,19 @@ export function getMantineSizeLabel(size: MantineSize) {
 
 export function getMantineFontWeightLabel(weight: MantineFontWeight) {
   switch (weight) {
-    case MantineFontWeight.thin:
+    case "thin":
       return "İnce";
-    case MantineFontWeight.normal:
+    case "normal":
       return "Normal";
-    case MantineFontWeight.bold:
+    case "bold":
       return "Kalın";
-    case MantineFontWeight.extrabold:
-      return "Ekstra Kalın";
-    case MantineFontWeight.extralight:
+    case "extralight":
       return "Ekstra İnce";
-    case MantineFontWeight.light:
+    case "light":
       return "Hafif";
-    case MantineFontWeight.semibold:
+    case "semibold":
       return "Yarı Kalın";
-    case MantineFontWeight.medium:
+    case "medium":
       return "Normal";
   }
 }

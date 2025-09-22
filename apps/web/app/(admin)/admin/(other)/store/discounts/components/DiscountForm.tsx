@@ -55,14 +55,14 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
-import ProductPriceNumberInput from "../../../product-list/create-variant/components/ProductPriceNumberInput";
+import FormCard from "@/(admin)/components/FormCard";
+import GlobalLoadingOverlay from "@components/GlobalLoadingOverlay";
+import { getCurrencyLabel } from "@lib/helpers";
 import BrandsModal from "./BrandsModal";
 import CategoriesModal from "./CategoriesModal";
 import ProductsModal from "./ProductsModal";
 import UsersModal from "./UsersModal";
-import FormCard from "../../../../../components/FormCard";
-import GlobalLoadingOverlay from "../../../../../../components/GlobalLoadingOverlay";
-import { getCurrencyLabel } from "../../../../../../../lib/helpers";
+import ProductPriceNumberInput from "../../../product-list/create-variant/components/ProductPriceNumberInput";
 
 interface DiscountFormProps {
   defaultValues?: DiscountZodType;

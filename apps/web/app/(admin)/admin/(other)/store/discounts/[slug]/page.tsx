@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
-import { Params } from "../../../../../../types/GlobalTypes";
 import DiscountForm from "../components/DiscountForm";
 import { notFound } from "next/navigation";
+import { Params } from "types/GlobalTypes";
 
 const DiscountFormPage = async ({ params }: { params: Params }) => {
   const { slug } = await params;
