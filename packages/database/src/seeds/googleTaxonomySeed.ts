@@ -1,230 +1,134 @@
 import { PrismaClient } from "../../generated/prisma";
+import fetch from "node-fetch";
+import iconv from "iconv-lite";
 
 const prisma = new PrismaClient();
 
-interface CountryData {
-  id: string;
-  name: string;
-  locationTranslations: {
-    tr: string;
-    en: string;
-  };
-  iso2: string;
-  iso3: string;
-  phoneCode: string;
-  capital: string;
-  currency: string;
-  native: string;
-  region: string;
-  subregion: string;
-  emoji: string;
-  emojiString: string;
-}
+async function seedTaxonomyCategories() {
+  console.log("Starting taxonomy seeding process...");
 
-interface StateData {
-  id: string;
-  name: string;
-  stateCode: string;
-  countryId: string;
-}
+  // Önce mevcut taxonomy verilerini temizle
+  await prisma.taxonomyCategory.deleteMany({});
+  console.log("Cleared existing taxonomy categories");
 
-async function fetchCountries() {
   try {
-    // Mevcut verileri temizle
-    await prisma.stateTranslation.deleteMany();
-    await prisma.state.deleteMany();
-    await prisma.countryTranslation.deleteMany();
-    await prisma.country.deleteMany();
-
-    console.log("Ülke verileri çekiliyor...");
-
-    const countryQuery = {
-      query: `{
-        listCountry {
-          id
-          name
-          locationTranslations {
-            tr
-            en
-          }
-          iso2
-          iso3
-          phoneCode
-          capital
-          currency
-          native
-          region
-          subregion
-          emoji
-          emojiString
-        }
-      }`,
-    };
-
-    const countryResponse = await fetch(
-      "https://api.myikas.com/api/v1/admin/graphql",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(countryQuery),
-      }
+    // Google taxonomy dosyasını fetch et
+    const response = await fetch(
+      "https://www.google.com/basepages/producttype/taxonomy.tr-TR.txt"
     );
 
-    if (!countryResponse.ok) {
-      throw new Error(`HTTP error! status: ${countryResponse.status}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const countryData = (await countryResponse.json()) as {
-      data: {
-        listCountry: CountryData[];
-      };
-    };
+    // Buffer olarak al ve UTF-8'e çevir
+    const buffer = await response.buffer();
+    const textContent = iconv.decode(buffer, "utf8");
 
-    const countries = countryData.data.listCountry;
-    console.log(`${countries.length} ülke bulundu, kaydediliyor...`);
+    console.log("Successfully fetched and decoded taxonomy file");
 
-    // Ülkeleri kaydet
-    for (const countryData of countries) {
-      await prisma.country.create({
-        data: {
-          id: countryData.id,
-          name: countryData.name,
-          iso2: countryData.iso2 || null,
-          iso3: countryData.iso3 || null,
-          phoneCode: countryData.phoneCode || null,
-          capital: countryData.capital || null,
-          currency: countryData.currency || null,
-          native: countryData.native || null,
-          region: countryData.region || null,
-          subregion: countryData.subregion || null,
-          emoji: countryData.emoji || null,
-          translations: {
-            create: [
-              {
-                locale: "TR",
-                name: countryData.locationTranslations.tr,
-              },
-              {
-                locale: "EN",
-                name: countryData.locationTranslations.en,
-              },
-            ],
-          },
-        },
+    // Satırlara ayır ve boş satırları, yorum satırlarını ve version bilgisini filtrele
+    const lines = textContent
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => {
+        // Boş satırları filtrele
+        if (line.length === 0) return false;
+        // # ile başlayan yorum satırlarını ve version bilgisini filtrele
+        if (line.startsWith("#")) return false;
+        // Sadece taxonomy verilerini al (> içeren satırlar)
+        return (
+          line.includes(">") || !line.startsWith("Google_Product_Taxonomy")
+        );
       });
+
+    console.log(
+      `Found ${lines.length} taxonomy lines to process (after filtering comments and version info)`
+    );
+
+    // Her kategori için parent-child ilişkilerini takip etmek için bir map
+    const categoryMap = new Map<string, string>(); // path -> categoryId mapping
+
+    for (let index = 0; index < lines.length; index++) {
+      const line = lines[index];
+      console.log(
+        `Processing line ${index + 1}/${lines.length}: ${line.substring(0, 50)}...`
+      );
+
+      // ">" ile kategori hiyerarşisini ayır
+      const categoryParts = line.split(">").map((part) => part.trim());
+
+      // Her level için kategori oluştur
+      let currentPath = "";
+      let parentId: string | null = null;
+
+      for (let depth = 0; depth < categoryParts.length; depth++) {
+        const categoryName = categoryParts[depth];
+        const previousPath = currentPath;
+        currentPath = currentPath
+          ? `${currentPath} > ${categoryName}`
+          : categoryName;
+
+        // Bu path için kategori zaten var mı kontrol et
+        if (categoryMap.has(currentPath)) {
+          parentId = categoryMap.get(currentPath)!;
+          continue;
+        }
+
+        // Google ID'sini oluştur (basit bir hash veya index kullanabiliriz)
+        const googleId = `google_${Buffer.from(currentPath).toString("base64").slice(0, 20)}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+        // Kategoriyi oluştur
+        const category = await prisma.taxonomyCategory.create({
+          data: {
+            googleId: googleId,
+            originalName: categoryName,
+            path: currentPath,
+            pathNames: categoryParts.slice(0, depth + 1).join(" > "),
+            depth: depth,
+            parentId: parentId,
+            isActive: true,
+          },
+        });
+
+        // Map'e ekle
+        categoryMap.set(currentPath, category.id);
+        parentId = category.id;
+
+        console.log(
+          `  Created category at depth ${depth}: ${categoryName} (ID: ${category.id})`
+        );
+      }
     }
 
-    console.log(`${countries.length} ülke başarıyla kaydedildi.`);
+    console.log("Taxonomy seeding completed successfully!");
+    console.log(`Total categories created: ${categoryMap.size}`);
 
-    await fetchStatesForAllCountries(countries);
+    // İstatistikleri yazdır
+    const stats = await prisma.taxonomyCategory.groupBy({
+      by: ["depth"],
+      _count: {
+        id: true,
+      },
+      orderBy: {
+        depth: "asc",
+      },
+    });
 
-    console.log("Tüm veriler başarıyla kaydedildi.");
+    console.log("\nCategory distribution by depth:");
+    stats.forEach((stat) => {
+      console.log(`  Depth ${stat.depth}: ${stat._count.id} categories`);
+    });
   } catch (error) {
-    console.error("Veriler kaydedilirken hata oluştu:", error);
+    console.error("Error during taxonomy seeding:", error);
     throw error;
   } finally {
     await prisma.$disconnect();
   }
 }
 
-async function fetchStatesForAllCountries(countries: CountryData[]) {
-  console.log("State verileri çekiliyor...");
-
-  let totalStates = 0;
-
-  for (let i = 0; i < countries.length; i++) {
-    const country = countries[i];
-    console.log(
-      `State'ler çekiliyor: ${country.name} (${i + 1}/${countries.length})`
-    );
-
-    try {
-      const stateQuery = {
-        query: `{
-          listState(countryId: { eq: "${country.id}" }) {
-            id
-            name
-            stateCode
-            countryId
-          }
-        }`,
-      };
-
-      const stateResponse = await fetch(
-        "https://api.myikas.com/api/v1/admin/graphql",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(stateQuery),
-        }
-      );
-
-      if (!stateResponse.ok) {
-        console.warn(
-          `${country.name} için state verileri alınamadı: ${stateResponse.status}`
-        );
-        continue;
-      }
-
-      const stateData = (await stateResponse.json()) as {
-        data: {
-          listState: StateData[];
-        };
-      };
-
-      const states = stateData.data.listState;
-
-      if (states && states.length > 0) {
-        console.log(`  ${country.name}: ${states.length} state bulundu`);
-
-        // State'leri kaydet
-        for (const state of states) {
-          await prisma.state.create({
-            data: {
-              id: state.id,
-              name: state.name,
-              stateCode: state.stateCode || null,
-              countryId: state.countryId,
-              translations: {
-                create: [
-                  {
-                    locale: "TR",
-                    name: state.name, // TR çevirisi yoksa aynı ismi kullan
-                  },
-                  {
-                    locale: "EN",
-                    name: state.name, // EN çevirisi yoksa aynı ismi kullan
-                  },
-                ],
-              },
-            },
-          });
-        }
-
-        totalStates += states.length;
-      } else {
-        console.log(`  ${country.name}: State bulunamadı`);
-      }
-
-      // Rate limiting için kısa bekleme
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    } catch (error) {
-      console.error(`${country.name} için state'ler alınırken hata:`, error);
-      continue; // Bir ülke başarısız olsa bile diğerlerine devam et
-    }
-  }
-
-  console.log(`Toplam ${totalStates} state kaydedildi.`);
-}
-
-fetchCountries()
-  .then(() => {
-    console.log("İşlem tamamlandı.");
-  })
-  .catch((error) => {
-    console.error("İşlem başarısız:", error);
-  });
+// Script'i çalıştır
+seedTaxonomyCategories().catch((error) => {
+  console.error("Fatal error:", error);
+  process.exit(1);
+});

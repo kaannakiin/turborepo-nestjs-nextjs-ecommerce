@@ -120,4 +120,8 @@ export class CategoriesController {
   async getAllCategoriesOnlyIdAndName() {
     return this.categoriesService.getAllCategoriesOnlyIdAndName();
   }
+  @Get('get-all-categories-only-id-name-image')
+  async getAllCategoriesOnlyIdNameImage() {
+    return this.categoriesService.getAllCategoriesOnlyIdNameImage();
+  }
 }

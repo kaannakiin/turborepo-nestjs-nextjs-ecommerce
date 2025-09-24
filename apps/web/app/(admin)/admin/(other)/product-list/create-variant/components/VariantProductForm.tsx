@@ -35,7 +35,7 @@ import GlobalDropzone from "../../../../../../components/GlobalDropzone";
 import GlobalLoadingOverlay from "../../../../../../components/GlobalLoadingOverlay";
 import GlobalSeoCard from "../../../../../../components/GlobalSeoCard";
 import ExistingVariantCard from "./ExistingVariantCard";
-import GoogleTaxonomySelect from "./GoogleTaxonomySelect";
+import GoogleTaxonomySelectV2 from "./GoogleTaxonomySelectV2";
 import ProductDetailCard from "./ProductDetailCard";
 
 const GlobalTextEditor = dynamic(
@@ -408,14 +408,14 @@ const VariantProductForm = ({
               />
             )}
           />
+
           <Controller
             control={control}
             name="googleTaxonomyId"
             render={({ field, fieldState }) => (
-              <GoogleTaxonomySelect
+              <GoogleTaxonomySelectV2
                 {...field}
                 error={fieldState.error?.message}
-                label="Google Ürün Kategorisi"
               />
             )}
           />

@@ -1,12 +1,5 @@
 "use client";
-import {
-  ActionIcon,
-  AppShell,
-  Box,
-  Burger,
-  Group,
-  ScrollArea,
-} from "@mantine/core";
+import { ActionIcon, AppShell, Burger, Group, ScrollArea } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { SubmitHandler, useForm, zodResolver } from "@repo/shared";
@@ -37,13 +30,15 @@ const AdminThemeLayoutShell = ({
   const [mobileOpened, { toggle: toggleMobile }] = useDisclosure();
   const [desktopOpened, { toggle: toggleDesktop }] = useDisclosure(true);
 
-  const { control, handleSubmit, formState, watch } =
+  const { control, handleSubmit, formState, watch, setValue } =
     useForm<MainPageComponentsType>({
       resolver: zodResolver(MainPageComponentsSchema),
       defaultValues: defaultValues || {
         primaryColor: "#f06e27",
         secondaryColor: "#6672af",
         fontFamily: FontFamily.mantineDefault,
+        components: [],
+        footer: null,
       },
     });
 
@@ -222,7 +217,10 @@ const AdminThemeLayoutShell = ({
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ components: otherComponents }), // components olarak gönder
+          body: JSON.stringify({
+            components: otherComponents,
+            footer: data.footer || undefined,
+          }),
           credentials: "include",
           cache: "no-store",
         }
@@ -238,7 +236,9 @@ const AdminThemeLayoutShell = ({
 
   return (
     <AppShell
-      padding="md"
+      pt={"md"}
+      px={"md"}
+      pb={0}
       header={{ height: 60 }}
       navbar={{
         width: 400,
@@ -304,6 +304,7 @@ const AdminThemeLayoutShell = ({
           <AdminThemeAside
             control={control}
             data={data}
+            setValue={setValue}
             onSubmit={onSubmit}
             handleSubmit={handleSubmit}
             formState={formState}
@@ -311,7 +312,7 @@ const AdminThemeLayoutShell = ({
         </ScrollArea.Autosize>
       </AppShell.Navbar>
       <AppShell.Main>
-        <ScrollArea style={containerStyles} className="bg-white pb-5 relative">
+        <ScrollArea style={containerStyles} className="bg-white  relative">
           <AdminThemeViewer data={data} />
         </ScrollArea>
       </AppShell.Main>

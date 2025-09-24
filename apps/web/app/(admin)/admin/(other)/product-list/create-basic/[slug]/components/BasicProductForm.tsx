@@ -36,9 +36,9 @@ import { getProductTypeLabel } from "../../../../../../../../lib/helpers";
 import GlobalDropzone from "../../../../../../../components/GlobalDropzone";
 import GlobalLoadingOverlay from "../../../../../../../components/GlobalLoadingOverlay";
 import GlobalSeoCard from "../../../../../../../components/GlobalSeoCard";
-import GoogleTaxonomySelect from "../../../create-variant/components/GoogleTaxonomySelect";
 import ProductDetailCard from "../../../create-variant/components/ProductDetailCard";
 import ProductPriceNumberInput from "../../../create-variant/components/ProductPriceNumberInput";
+import GoogleTaxonomySelectV2 from "../../../create-variant/components/GoogleTaxonomySelectV2";
 
 const GlobalTextEditor = dynamic(
   () => import("../../../../../../../components/GlobalTextEditor"),
@@ -448,10 +448,9 @@ const BasicProductForm = ({
             control={control}
             name="googleTaxonomyId"
             render={({ field, fieldState }) => (
-              <GoogleTaxonomySelect
+              <GoogleTaxonomySelectV2
                 {...field}
                 error={fieldState.error?.message}
-                label="Google Ürün Kategorisi"
               />
             )}
           />

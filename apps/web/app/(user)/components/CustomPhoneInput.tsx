@@ -84,7 +84,6 @@ const CustomPhoneInput = ({
       radius={radius}
       styles={styles}
       size={size}
-      variant="filled"
       leftSection={
         <Combobox
           store={combobox}

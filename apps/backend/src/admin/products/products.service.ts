@@ -2711,4 +2711,68 @@ export class ProductsService {
 
     return this.convertToModalProductCard(products);
   }
+
+  async getAllProductsIdNameImage(): Promise<
+    Array<{
+      id: string;
+      name: string;
+      image: { url: string; type: $Enums.AssetType } | null;
+    }>
+  > {
+    const products = await this.prisma.product.findMany({
+      where: {
+        OR: [
+          {
+            active: true,
+            isVariant: false,
+            stock: {
+              gt: 0,
+            },
+          },
+          {
+            active: true,
+            isVariant: true,
+            variantCombinations: {
+              some: {
+                stock: {
+                  gt: 0,
+                },
+                active: true,
+              },
+            },
+          },
+        ],
+      },
+      select: {
+        id: true,
+        translations: {
+          select: {
+            name: true,
+            locale: true,
+          },
+        },
+        assets: {
+          orderBy: {
+            order: 'asc',
+          },
+          select: {
+            asset: {
+              select: {
+                url: true,
+                type: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    return products.map((p) => ({
+      id: p.id,
+      name:
+        p.translations.find((t) => t.locale === 'TR')?.name ||
+        p.translations.find((t) => t.locale === 'EN')?.name ||
+        p.translations[0]?.name,
+      image: p.assets[0]?.asset || null,
+    }));
+  }
 }

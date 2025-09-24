@@ -143,6 +143,7 @@ model Category {
   discountIncluded        DiscountIncludedCategory[]
   categoryGridComponent   CategoryGridComponent?     @relation(fields: [categoryGridComponentId], references: [id])
   categoryGridComponentId String?
+  footerLinks             FooterLinks[]
 
   @@index([parentCategoryId])
 }
@@ -221,6 +222,7 @@ model Brand {
 
   // İndirim sistemi ilişkisi
   discountIncluded DiscountIncludedBrand[]
+  footerLinks      FooterLinks[]
 
   @@index([parentBrandId])
 }
@@ -380,6 +382,7 @@ model Product {
   brandId             String?
   taxonomyCategory    TaxonomyCategory?           @relation(fields: [taxonomyCategoryId], references: [id])
   taxonomyCategoryId  String?
+  footerLinks         FooterLinks[]
 
   @@index([brandId])
   @@index([taxonomyCategoryId])
@@ -837,6 +840,48 @@ model DiscountIncludedUser {
   @@unique([userId, conditionId])
   @@index([conditionId])
   @@index([userId])
+}
+
+model FooterLinks {
+  id      String @id @default(cuid())
+  order   Int
+  title   String
+  options Json?
+
+  customLink        String?
+  product           Product?         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId         String?
+  category          Category?        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId        String?
+  brand             Brand?           @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId           String?
+  footerLinkGroup   FooterLinkGroups @relation(fields: [footerLinkGroupId], references: [id], onDelete: Cascade)
+  footerLinkGroupId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FooterLinkGroups {
+  id      String @id @default(cuid())
+  order   Int
+  title   String
+  options Json?
+
+  footer   Footer        @relation(fields: [footerId], references: [id], onDelete: Cascade)
+  footerId String
+  links    FooterLinks[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Footer {
+  id         String             @id @default(cuid())
+  options    Json?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  linkGroups FooterLinkGroups[]
 }
 
 model SliderItemSchema {

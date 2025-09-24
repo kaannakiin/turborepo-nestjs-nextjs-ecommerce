@@ -2,11 +2,23 @@
 import MainPageProductList from "@/users-ui-components/MainPageProductList";
 import { Stack } from "@mantine/core";
 import { MainPageComponentsType } from "@repo/types";
+import dynamic from "next/dynamic";
 import { useMemo } from "react";
-import MainPageMarquee from "../../../../users-ui-components/MainPageMarquee";
-import MainPageSliderCarousel from "../../../../users-ui-components/MainPageSliderCarousel";
-import CategoryGridComponent from "@/users-ui-components/CategoryGridComponent";
+import FooterComponent from "./FooterComponent";
 
+const MainPageSliderCarousel = dynamic(
+  () => import("@/users-ui-components/MainPageSliderCarousel"),
+  { ssr: false }
+);
+const MainPageMarquee = dynamic(
+  () => import("@/users-ui-components/MainPageMarquee"),
+  { ssr: false }
+);
+
+const CategoryGridComponent = dynamic(
+  () => import("@/users-ui-components/CategoryGridComponent"),
+  { ssr: false }
+);
 interface AdminThemeViewerProps {
   data: MainPageComponentsType;
 }
@@ -56,9 +68,12 @@ const AdminThemeViewer = ({ data }: AdminThemeViewerProps) => {
   };
 
   return (
-    <Stack gap={"xl"} className="w-full lg:mx-auto">
-      {sortedComponents.map(renderComponent).filter(Boolean)}
-    </Stack>
+    <>
+      <Stack gap={"xl"} className="w-full lg:mx-auto">
+        {sortedComponents.map(renderComponent).filter(Boolean)}
+        {data.footer && <FooterComponent footerData={data.footer} />}
+      </Stack>
+    </>
   );
 };
 

@@ -87,13 +87,18 @@ export class ThemeController {
     new ZodValidationPipe(
       MainPageComponentsSchema.pick({
         components: true,
+        footer: true,
       }),
     ),
   )
   async updateLayout(
-    @Body() body: { components: MainPageComponentsType['components'] },
+    @Body()
+    body: {
+      components: MainPageComponentsType['components'];
+      footer?: MainPageComponentsType['footer'];
+    },
   ) {
-    return this.themeService.updateLayout(body.components);
+    return this.themeService.updateLayout(body.components, body.footer);
   }
 
   @Public()

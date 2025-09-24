@@ -359,7 +359,81 @@ export class ThemeService {
       });
   }
 
-  async updateLayout(components: MainPageComponentsType['components']) {
+  async updateLayout(
+    components: MainPageComponentsType['components'],
+    footer?: MainPageComponentsType['footer'],
+  ) {
+    if (footer) {
+      this.prisma.$transaction(async (tx) => {
+        // Önce mevcut footer'ı bul veya oluştur
+        let existingFooter = await tx.footer.findFirst();
+
+        if (!existingFooter) {
+          existingFooter = await tx.footer.create({
+            data: {
+              options: footer.backgroundColor
+                ? { backgroundColor: footer.backgroundColor }
+                : null,
+            },
+          });
+        } else {
+          // Mevcut footer'ın options'ını güncelle
+          await tx.footer.update({
+            where: { id: existingFooter.id },
+            data: {
+              options: footer.backgroundColor
+                ? { backgroundColor: footer.backgroundColor }
+                : null,
+            },
+          });
+        }
+
+        // Mevcut tüm footer link groups ve links'leri sil
+        await tx.footerLinks.deleteMany({
+          where: {
+            footerLinkGroup: {
+              footerId: existingFooter.id,
+            },
+          },
+        });
+
+        await tx.footerLinkGroups.deleteMany({
+          where: {
+            footerId: existingFooter.id,
+          },
+        });
+
+        for (const group of footer.linkGroups) {
+          const createdGroup = await tx.footerLinkGroups.create({
+            data: {
+              order: group.order,
+              title: group.title,
+              footerId: existingFooter.id,
+              ...(group.fontSize
+                ? { options: { fontSize: group.fontSize } }
+                : {}),
+            },
+          });
+
+          if (group.links && group.links.length > 0) {
+            const linksData: Prisma.FooterLinksCreateManyInput[] =
+              group.links.map((link) => ({
+                order: link.order,
+                title: link.title,
+                customLink: link.customLink || null,
+                productId: link.productId || null,
+                categoryId: link.categoryId || null,
+                brandId: link.brandId || null,
+                footerLinkGroupId: createdGroup.id,
+              }));
+
+            await tx.footerLinks.createMany({
+              data: linksData,
+            });
+          }
+        }
+      });
+    }
     return this.prisma.$transaction(
       async (tx) => {
         let layout = await tx.layout.findFirst();
@@ -511,7 +585,10 @@ export class ThemeService {
     });
   }
 
-  async getLayout(): Promise<MainPageComponentsType['components']> {
+  async getLayout(): Promise<{
+    components: MainPageComponentsType['components'];
+    footer: MainPageComponentsType['footer'] | null;
+  }> {
     const layout = await this.prisma.layout.findFirst({
       include: {
         components: {
@@ -574,7 +651,10 @@ export class ThemeService {
     });
 
     if (!layout || !layout.components) {
-      return [];
+      return {
+        components: [],
+        footer: null,
+      };
     }
 
     const returnData = layout.components.map((component) => {
@@ -643,43 +723,125 @@ export class ThemeService {
           };
       }
     });
-    if (sliders && sliders.items && sliders.items.length > 0) {
-      return [
-        {
-          type: 'SLIDER',
-          layoutOrder: 1,
-          data:
-            sliders && sliders.items && sliders.items.length > 0
-              ? sliders.items
-                  .filter(
-                    (data) =>
-                      data.desktopAsset !== null || data.mobileAsset !== null,
-                  )
-                  .map((item, index) => ({
-                    uniqueId: item.id,
-                    customLink: item.customLink,
-                    order: index + 1,
-                    existingDesktopAsset: item.desktopAsset
-                      ? {
-                          url: item.desktopAsset.url,
-                          type: item.desktopAsset.type,
-                        }
-                      : null,
-                    existingMobileAsset: item.mobileAsset
-                      ? {
-                          url: item.mobileAsset.url,
-                          type: item.mobileAsset.type,
-                        }
-                      : null,
-                    desktopAsset: null,
-                    mobileAsset: null,
-                  }))
-              : [],
+
+    const footer = await this.prisma.footer.findFirst({
+      include: {
+        linkGroups: {
+          orderBy: {
+            order: 'asc',
+          },
+          include: {
+            links: {
+              orderBy: {
+                order: 'asc',
+              },
+              include: {
+                brand: {
+                  select: { id: true },
+                },
+                category: {
+                  select: { id: true },
+                },
+                product: {
+                  select: {
+                    id: true,
+                  },
+                },
+              },
+            },
+          },
         },
-        ...returnData,
-      ];
+      },
+    });
+
+    if (sliders && sliders.items && sliders.items.length > 0) {
+      return {
+        components: [
+          {
+            type: 'SLIDER',
+            layoutOrder: 1,
+            data:
+              sliders && sliders.items && sliders.items.length > 0
+                ? sliders.items
+                    .filter(
+                      (data) =>
+                        data.desktopAsset !== null || data.mobileAsset !== null,
+                    )
+                    .map((item, index) => ({
+                      uniqueId: item.id,
+                      customLink: item.customLink,
+                      order: index + 1,
+                      existingDesktopAsset: item.desktopAsset
+                        ? {
+                            url: item.desktopAsset.url,
+                            type: item.desktopAsset.type,
+                          }
+                        : null,
+                      existingMobileAsset: item.mobileAsset
+                        ? {
+                            url: item.mobileAsset.url,
+                            type: item.mobileAsset.type,
+                          }
+                        : null,
+                      desktopAsset: null,
+                      mobileAsset: null,
+                    }))
+                : [],
+          },
+          ...returnData,
+        ],
+        footer: footer
+          ? {
+              // backgroundColor: footer.options?.backgroundColor || null,
+              backgroundColor: '#ffffff',
+              linkGroups:
+                footer.linkGroups.map((group) => ({
+                  // fontSize: (group.options?.fontSize as MantineSize) || null,
+                  fontSize: 'md' as MantineSize,
+                  links: group.links.map((link) => ({
+                    order: link.order,
+                    title: link.title,
+                    uniqueId: link.id,
+                    customLink: link.customLink || '',
+                    productId: link.productId || null,
+                    categoryId: link.categoryId || null,
+                    brandId: link.brandId || null,
+                  })) as MainPageComponentsType['footer']['linkGroups'][number]['links'],
+                  order: group.order,
+                  title: group.title,
+                  uniqueId: group.id,
+                })) || [],
+            }
+          : null,
+      };
     } else {
-      return returnData;
+      return {
+        components: returnData,
+        footer: footer
+          ? {
+              //TODO: Burayı parse'ı düzgün etmemiz lazım
+              // backgroundColor: footer.options?.backgroundColor || null,
+              backgroundColor: '#ffffff',
+              linkGroups:
+                footer.linkGroups.map((group) => ({
+                  // fontSize: (group.options?.fontSize as MantineSize) || null,
+                  fontSize: 'md' as MantineSize,
+                  links: group.links.map((link) => ({
+                    order: link.order,
+                    title: link.title,
+                    uniqueId: link.id,
+                    customLink: link.customLink || '',
+                    productId: link.productId || null,
+                    categoryId: link.categoryId || null,
+                    brandId: link.brandId || null,
+                  })) as MainPageComponentsType['footer']['linkGroups'][number]['links'],
+                  order: group.order,
+                  title: group.title,
+                  uniqueId: group.id,
+                })) || [],
+            }
+          : null,
+      };
     }
   }
 }

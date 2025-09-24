@@ -1,9 +1,8 @@
-import { PrismaClient, Locale, CountryType } from "../../generated/prisma";
+import { CountryType, Locale, PrismaClient } from "../../generated/prisma";
 
 const prisma = new PrismaClient();
 
 async function fetchCountries() {
-  // Önce child tablolardan başlayarak sil
   await prisma.cityTranslation.deleteMany({});
   await prisma.city.deleteMany({});
   await prisma.stateTranslation.deleteMany({});
@@ -118,24 +117,29 @@ async function fetchCountries() {
       };
     };
 
-    // Ülke tipini belirle
+    // Ülke tipini belirle ve şehir çekme durumunu kontrol et
     let countryType: CountryType;
     let shouldFetchCities = false;
 
     if (stateData.data.listState.length === 0) {
       console.log(`No states found for country ${country.name}, skipping...`);
       continue;
-    } else if (stateData.data.listState.length === 1) {
-      // Sadece 1 state varsa, tip CITY olacak ve şehirleri çekeceğiz
+    } else if (
+      stateData.data.listState.length === 1 &&
+      stateData.data.listState[0].name === "Default"
+    ) {
+      // Sadece 1 state varsa VE adı "Default" ise, tip CITY olacak ve şehirleri çekeceğiz
       countryType = CountryType.CITY;
       shouldFetchCities = true;
-      console.log(`${country.name} has only 1 state, setting type to CITY`);
+      console.log(
+        `${country.name} has only 1 state with name "Default", setting type to CITY`
+      );
     } else {
-      // Birden fazla state varsa, tip STATE kalacak ve şehir çekmeyeceğiz
+      // Birden fazla state varsa VEYA tek state'in adı "Default" değilse, tip STATE kalacak ve şehir çekmeyeceğiz
       countryType = CountryType.STATE;
       shouldFetchCities = false;
       console.log(
-        `${country.name} has ${stateData.data.listState.length} states, setting type to STATE`
+        `${country.name} has ${stateData.data.listState.length} states or state name is not "Default", setting type to STATE`
       );
     }
 
@@ -153,7 +157,7 @@ async function fetchCountries() {
         phoneCode: country.phoneCode,
         region: country.region,
         subregion: country.subregion,
-        type: countryType, // Burada tipi belirliyoruz
+        type: countryType,
         translations: {
           createMany: {
             data: [
@@ -182,14 +186,16 @@ async function fetchCountries() {
       console.log(`Created state: ${state.name}`);
     }
 
-    // Eğer ülke tipi CITY ise, tek state için şehirleri çek
-    if (shouldFetchCities && stateData.data.listState.length === 1) {
-      const singleState = stateData.data.listState[0];
-      console.log(`Fetching cities for ${country.name} (${singleState.name})`);
+    // Eğer tek state varsa ve adı "Default" ise, o state için şehirleri çek
+    if (shouldFetchCities) {
+      const defaultState = stateData.data.listState[0];
+      console.log(
+        `Fetching cities for ${country.name} (Default state: ${defaultState.name})`
+      );
 
       const cityQuery = {
         query: `{
-          listCity(stateId: { eq: "${singleState.id}" }) {
+          listCity(stateId: { eq: "${defaultState.id}" }) {
             id
             countryId
             stateId

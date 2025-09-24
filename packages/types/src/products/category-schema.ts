@@ -118,6 +118,28 @@ export interface TaxonomyCategoryWithChildren {
   updatedAt: Date;
   children?: TaxonomyCategoryWithChildren[];
 }
+export type GoogleTaxonomyCategory = Prisma.TaxonomyCategoryGetPayload<{
+  select: {
+    id: true;
+    originalName: true;
+    _count: {
+      select: {
+        children: true;
+      };
+    };
+    children: {
+      select: {
+        id: true;
+        originalName: true;
+        _count: {
+          select: {
+            children: true;
+          };
+        };
+      };
+    };
+  };
+}>;
 
 export type Category = z.infer<typeof CategorySchema>;
 export type CategoryTranslation = z.infer<typeof CategoryTranslationSchema>;

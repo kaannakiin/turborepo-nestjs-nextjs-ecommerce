@@ -51,7 +51,7 @@ export function getMantineFontWeightLabel(weight: MantineFontWeight) {
     case "semibold":
       return "Yarı Kalın";
     case "medium":
-      return "Normal";
+      return "Medium";
   }
 }
 

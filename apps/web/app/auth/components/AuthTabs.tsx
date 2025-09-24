@@ -38,7 +38,7 @@ const AuthTabs = ({ tab }: AuthTabsProps) => {
   return (
     <div className=" flex items-center justify-center ">
       <div className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className=" rounded-xl shadow-sm border border-gray-200 overflow-hidden bg-[var(--mantine-primary-color-0)]">
           <Tabs
             value={activeTab}
             onChange={(value) => {
@@ -51,11 +51,11 @@ const AuthTabs = ({ tab }: AuthTabsProps) => {
             }}
             className="w-full"
           >
-            <div className="border-b border-gray-100">
-              <Tabs.List grow className="border-0 bg-transparent h-14">
+            <div className="border-b border-gray-100 ">
+              <Tabs.List grow className="border-0 bg-transparent h-14 ">
                 <Tabs.Tab
                   value="login"
-                  className="text-sm font-medium border-0 data-[active=true]:border-b-2  text-gray-600 hover:text-gray-800 rounded-none h-full"
+                  className="text-sm font-bold border-0 data-[active=true]:border-b-2  text-gray-600 hover:text-gray-800 rounded-none h-full"
                   style={{
                     backgroundColor: "transparent",
                   }}
@@ -64,7 +64,7 @@ const AuthTabs = ({ tab }: AuthTabsProps) => {
                 </Tabs.Tab>
                 <Tabs.Tab
                   value="register"
-                  className="text-sm font-medium border-0 data-[active=true]:border-b-2  text-gray-600 hover:text-gray-800 rounded-none h-full"
+                  className="text-sm font-bold border-0 data-[active=true]:border-b-2  text-gray-600 hover:text-gray-800 rounded-none h-full"
                   style={{
                     backgroundColor: "transparent",
                   }}

@@ -1,5 +1,5 @@
 import { QueryClient } from "@repo/shared";
-import { FontFamily } from "@repo/types";
+import { FontFamily, MainPageComponentsType } from "@repo/types";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import AdminThemeLayoutShell from "../components/AdminThemeLayoutShell";
@@ -26,7 +26,10 @@ const page = async () => {
         console.error("Failed to fetch sliders:", res.statusText, res.status);
         return null;
       }
-      const data = await res.json();
+      const data = (await res.json()) as {
+        components: MainPageComponentsType["components"];
+        footer: MainPageComponentsType["footer"] | null;
+      } | null;
       return data;
     },
     gcTime: 0,
@@ -38,7 +41,8 @@ const page = async () => {
     <>
       <AdminThemeLayoutShell
         defaultValues={{
-          components: data,
+          components: data?.components || [],
+          footer: data?.footer || null,
           primaryColor: "#f06e27",
           secondaryColor: "#6672af",
           fontFamily: FontFamily.mantineDefault,

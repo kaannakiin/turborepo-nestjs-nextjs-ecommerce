@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { TaxonomyCategoryWithChildren } from '@repo/types';
+import { Prisma } from '@repo/database';
+import {
+  GoogleTaxonomyCategory,
+  TaxonomyCategoryWithChildren,
+} from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -48,5 +52,51 @@ export class GoogleCategoriesService {
     }
 
     return roots;
+  }
+
+  async getTaxonomiesHaveNoParent(
+    id?: string,
+  ): Promise<GoogleTaxonomyCategory[]> {
+    const where: Prisma.TaxonomyCategoryWhereInput = {
+      ...(id
+        ? {
+            id,
+          }
+        : {
+            parentId: null,
+          }),
+    };
+
+    return this.prisma.taxonomyCategory.findMany({
+      where,
+      select: {
+        id: true,
+        originalName: true,
+        _count: {
+          select: {
+            children: true,
+          },
+        },
+        children: {
+          select: {
+            id: true,
+            originalName: true,
+            _count: {
+              select: {
+                children: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+  async getParentId(id: string): Promise<{ parentId: string | null }> {
+    const category = await this.prisma.taxonomyCategory.findUnique({
+      where: { id },
+      select: { parentId: true },
+    });
+
+    return { parentId: category?.parentId || null };
   }
 }

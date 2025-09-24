@@ -7,7 +7,7 @@
     "esModuleInterop": true,
     "incremental": false,
     "module": "commonjs",
-    "moduleResolution": "Node10",
+    "moduleResolution": "node", // Node10 yerine "node" kullanın
     "outDir": "dist",
     "baseUrl": "src"
   },

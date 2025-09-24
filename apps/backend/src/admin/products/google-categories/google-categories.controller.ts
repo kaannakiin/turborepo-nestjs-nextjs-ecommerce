@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { GoogleCategoriesService } from './google-categories.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
@@ -15,5 +15,14 @@ export class GoogleCategoriesController {
   @Get('taxonomy')
   async getTaxonomy() {
     return this.googleCategoriesService.getTaxonomy();
+  }
+
+  @Get('get-taxonomies-have-no-parent')
+  async getTaxonomiesHaveNoParent(@Query('id') id?: string) {
+    return this.googleCategoriesService.getTaxonomiesHaveNoParent(id);
+  }
+  @Get('get-parent-id')
+  async getParentId(@Query('id') id: string) {
+    return this.googleCategoriesService.getParentId(id);
   }
 }

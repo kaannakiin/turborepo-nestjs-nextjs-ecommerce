@@ -77,7 +77,6 @@ const LoginForm = () => {
               size="md"
               radius={"md"}
               type="email"
-              variant="filled"
               error={fieldState.error?.message}
             />
           )}
@@ -106,7 +105,6 @@ const LoginForm = () => {
             error={fieldState.error?.message}
             size="md"
             radius={"md"}
-            variant="filled"
             placeholder="Şifre"
           />
         )}

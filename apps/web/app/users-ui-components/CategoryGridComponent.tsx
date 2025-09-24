@@ -131,8 +131,8 @@ const CategoryGridComponent = ({ data }: CategoryGridComponentProps) => {
                         order={3}
                         mt={"xs"}
                         style={{
-                          color: data.textColor,
                           fontWeight: data.fontWeight,
+                          color: data.textColor,
                           textAlign:
                             data.textAlign === TextAlign.left
                               ? "left"

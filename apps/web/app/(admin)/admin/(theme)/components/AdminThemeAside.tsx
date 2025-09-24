@@ -1,5 +1,6 @@
 "use client";
 import CategoryGridForm from "@/(admin)/components/AdminThemeAsideForms/CategoryGridForm";
+import FooterForm from "@/(admin)/components/AdminThemeAsideForms/FooterForm";
 import {
   closestCenter,
   DndContext,
@@ -35,6 +36,7 @@ import {
   SubmitHandler,
   useFieldArray,
   UseFormHandleSubmit,
+  UseFormSetValue,
 } from "@repo/shared";
 import {
   CategoryGridComponentType,
@@ -44,7 +46,12 @@ import {
   ProductListComponentType,
   SliderType,
 } from "@repo/types";
-import { IconEdit, IconGripVertical, IconTrash } from "@tabler/icons-react";
+import {
+  IconEdit,
+  IconGripVertical,
+  IconLayoutBottombarFilled,
+  IconTrash,
+} from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { getFontFamilyLabel } from "../../../../../lib/helpers";
 import MarqueeForm from "../../../components/AdminThemeAsideForms/MarqueeForm";
@@ -57,7 +64,8 @@ type ComponentState =
   | "product_list"
   | "category_grid"
   | "add"
-  | "edit";
+  | "edit"
+  | "footer";
 
 type SliderComponent = {
   type: typeof $Enums.LayoutComponentType.SLIDER;
@@ -95,6 +103,7 @@ interface AdminThemeAsideProps {
   onSubmit: SubmitHandler<MainPageComponentsType>;
   handleSubmit: UseFormHandleSubmit<MainPageComponentsType>;
   formState: FormState<MainPageComponentsType>;
+  setValue: UseFormSetValue<MainPageComponentsType>;
 }
 
 const getUniqueId = (comp: LayoutComponent): string => {
@@ -195,6 +204,7 @@ const AdminThemeAside = ({
   control,
   data: parentData,
   onSubmit,
+  setValue,
   handleSubmit,
   formState,
 }: AdminThemeAsideProps) => {
@@ -582,11 +592,7 @@ const AdminThemeAside = ({
           <Group justify="flex-end" align="center" gap={"xs"}>
             <Button
               onClick={handleSubmit(onSubmit)}
-              disabled={
-                !formState.isValid ||
-                formState.isSubmitting ||
-                formState.isDirty === false
-              }
+              disabled={!formState.isValid || formState.isSubmitting}
             >
               Kaydet
             </Button>
@@ -635,6 +641,17 @@ const AdminThemeAside = ({
               />
             )}
           />
+          <Button
+            variant="outline"
+            leftSection={<IconLayoutBottombarFilled />}
+            justify="center"
+            fullWidth
+            onClick={() => {
+              setComponent("footer");
+            }}
+          >
+            Footer Düzenle
+          </Button>
         </>
       )}
 
@@ -792,6 +809,16 @@ const AdminThemeAside = ({
           defaultValues={
             editingItem?.type === "category_grid" ? editingItem.data : undefined
           }
+        />
+      )}
+
+      {component === "footer" && (
+        <FooterForm
+          onSubmit={(data) => {
+            setValue("footer", data);
+            setComponent("add");
+          }}
+          defaultValues={parentData.footer || undefined}
         />
       )}
     </Stack>

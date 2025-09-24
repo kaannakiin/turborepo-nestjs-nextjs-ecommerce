@@ -111,6 +111,7 @@ const CategoryGridForm = ({
               onChangeEnd={onChange}
               {...field}
               label="Arka Plan Rengi"
+              error={fieldState.error?.message}
             />
           )}
         />
@@ -118,7 +119,12 @@ const CategoryGridForm = ({
           control={control}
           name="textColor"
           render={({ field: { onChange, ...field }, fieldState }) => (
-            <ColorInput onChangeEnd={onChange} {...field} label="Yazı Rengi" />
+            <ColorInput
+              onChangeEnd={onChange}
+              {...field}
+              label="Yazı Rengi"
+              error={fieldState.error?.message}
+            />
           )}
         />
         <Controller

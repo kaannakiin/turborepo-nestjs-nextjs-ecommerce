@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@repo/database';
+import { $Enums, Prisma } from '@repo/database';
 import { slugify } from '@repo/shared';
 import { Brand, BrandIdAndName, Cuid2ZodType } from '@repo/types';
 import { MinioService } from 'src/minio/minio.service';
@@ -478,6 +478,39 @@ export class BrandsService {
         brand.translations.find((t) => t.locale === 'TR')?.name ||
         brand.translations[0]?.name ||
         'İsimsiz Marka',
+    }));
+  }
+  async getAllBrandsOnlyIdNameImage(): Promise<
+    Array<
+      BrandIdAndName & { image: { url: string; type: $Enums.AssetType } | null }
+    >
+  > {
+    const brands = await this.prisma.brand.findMany({
+      select: {
+        id: true,
+        image: {
+          select: {
+            url: true,
+            type: true,
+          },
+        },
+        translations: {
+          select: {
+            name: true,
+            locale: true,
+          },
+        },
+      },
+    });
+    return brands.map((brand) => ({
+      id: brand.id,
+      name:
+        brand.translations.find((t) => t.locale === 'TR')?.name ||
+        brand.translations[0]?.name ||
+        'İsimsiz Marka',
+      image: brand.image
+        ? { url: brand.image.url, type: brand.image.type }
+        : null,
     }));
   }
 }

@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@repo/database';
+import { $Enums, Prisma } from '@repo/database';
 import { Category, CategoryIdAndName, Cuid2ZodType } from '@repo/types';
 import { MinioService } from 'src/minio/minio.service';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -420,6 +420,42 @@ export class CategoriesService {
         category.translations.find((t) => t.locale === 'TR')?.name ||
         category.translations[0]?.name ||
         'İsimsiz Kategori',
+    }));
+  }
+  async getAllCategoriesOnlyIdNameImage(): Promise<
+    Array<
+      CategoryIdAndName & {
+        image: { url: string; type: $Enums.AssetType } | null;
+      }
+    >
+  > {
+    const categories = await this.prisma.category.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        image: {
+          select: {
+            url: true,
+            type: true,
+          },
+        },
+        translations: {
+          select: {
+            name: true,
+            locale: true,
+          },
+        },
+      },
+    });
+    return categories.map((category) => ({
+      id: category.id,
+      name:
+        category.translations.find((t) => t.locale === 'TR')?.name ||
+        category.translations[0]?.name ||
+        'İsimsiz Kategori',
+      image: category.image
+        ? { url: category.image.url, type: category.image.type }
+        : null,
     }));
   }
 }

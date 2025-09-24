@@ -113,4 +113,8 @@ export class BrandsController {
   async getAllBrandsOnlyIdAndName() {
     return this.brandsService.getAllBrandsOnlyIdAndName();
   }
+  @Get('get-all-brands-only-id-name-image')
+  async getAllBrandsOnlyIdNameImage() {
+    return this.brandsService.getAllBrandsOnlyIdNameImage();
+  }
 }

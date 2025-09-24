@@ -203,4 +203,9 @@ export class ProductsController {
   ) {
     return this.productsService.getSelectedProductsForModal(body.selectedItems);
   }
+
+  @Get('get-all-products-id-name-image')
+  async getAllProductsIdNameImage() {
+    return this.productsService.getAllProductsIdNameImage();
+  }
 }

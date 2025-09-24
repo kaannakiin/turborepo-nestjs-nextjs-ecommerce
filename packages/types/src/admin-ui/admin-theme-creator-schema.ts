@@ -17,6 +17,10 @@ const colorSchema = z
     },
     { error: "Geçersiz renk kodu" }
   );
+const fontSizeSchema = z.enum(MantineSize, {
+  error: "Geçersiz boyut",
+});
+
 export const SliderSchema = z
   .object({
     uniqueId: z.cuid2({
@@ -162,12 +166,7 @@ export const MarqueeSchema = z.object({
     .max(60, { error: "Süre en fazla 60 saniye olabilir." })
     .optional()
     .nullable(),
-  fontSize: z
-    .enum(MantineSize, {
-      error: "Geçersiz boyut",
-    })
-    .optional()
-    .nullable(),
+  fontSize: fontSizeSchema.optional().nullable(),
   paddingY: z
     .enum(MantineSize, {
       error: "Geçersiz boyut",
@@ -228,9 +227,7 @@ export const ProductListComponentSchema = z.object({
   backgroundColor: colorSchema,
   titleColor: colorSchema,
   textColor: colorSchema,
-  titleFontSize: z.enum(MantineSize, {
-    error: "Geçersiz boyut",
-  }),
+  titleFontSize: fontSizeSchema,
 });
 
 export type ProductListComponentType = z.infer<
@@ -330,12 +327,184 @@ export const LayoutComponentSchema = z.discriminatedUnion("type", [
 
 export type LayoutComponentType = z.infer<typeof LayoutComponentSchema>;
 
+export const FooterLinkSchema = z
+  .object({
+    uniqueId: z.cuid2({
+      error: "Geçersiz ID",
+    }),
+    title: z
+      .string({
+        error: "Başlık zorunludur",
+      })
+      .min(1, { error: "Başlık en az 1 karakter olmalıdır" })
+      .max(256, { error: "Başlık en fazla 256 karakter olmalıdır" }),
+    //optionslar gelecek şimdilik optionssız halledelim
+    customLink: z
+      .string()
+      .optional()
+      .refine((val) => {
+        if (!val) return true;
+        try {
+          const url = new URL(val);
+          return url.protocol === "http:" || url.protocol === "https:";
+        } catch {
+          return false;
+        }
+      }, "Geçerli bir URL giriniz (http:// veya https://) ile başlamalıdır."),
+    productId: z
+      .cuid2({
+        error: "Geçersiz ürün kimliği",
+      })
+      .optional()
+      .nullable(),
+    categoryId: z
+      .cuid2({
+        error: "Geçersiz kategori kimliği",
+      })
+      .optional()
+      .nullable(),
+    brandId: z
+      .cuid2({
+        error: "Geçersiz marka kimliği",
+      })
+      .optional()
+      .nullable(),
+  })
+  .refine(
+    (data) => {
+      const links = [
+        data.customLink,
+        data.productId,
+        data.categoryId,
+        data.brandId,
+      ].filter(Boolean);
+      return links.length === 1;
+    },
+    {
+      error: "Tam olarak bir bağlantı türü seçmelisiniz.",
+    }
+  );
+
+export type FooterLinkType = z.infer<typeof FooterLinkSchema>;
+
+export const FooterLinkGroupSchema = z.object({
+  uniqueId: z.cuid2({
+    error: "Geçersiz ID",
+  }),
+  links: z
+    .array(
+      FooterLinkSchema.safeExtend({
+        order: z
+          .number({
+            error: "Sıra zorunlu",
+          })
+          .int({ message: "Sıra tam sayı olmalı" })
+          .min(0, { error: "Sıra 0 veya daha büyük olmalı" }),
+      })
+    )
+    .min(1, { error: "En az bir link eklemelisiniz" })
+    .refine(
+      (links) => {
+        // Ürün ID'leri kontrolü
+        const productIds = links
+          .map((link) => link.productId)
+          .filter(Boolean) as string[];
+
+        const uniqueProductIds = new Set(productIds);
+        if (productIds.length !== uniqueProductIds.size) {
+          return false;
+        }
+
+        // Kategori ID'leri kontrolü
+        const categoryIds = links
+          .map((link) => link.categoryId)
+          .filter(Boolean) as string[];
+
+        const uniqueCategoryIds = new Set(categoryIds);
+        if (categoryIds.length !== uniqueCategoryIds.size) {
+          return false;
+        }
+
+        // Marka ID'leri kontrolü
+        const brandIds = links
+          .map((link) => link.brandId)
+          .filter(Boolean) as string[];
+
+        const uniqueBrandIds = new Set(brandIds);
+        if (brandIds.length !== uniqueBrandIds.size) {
+          return false;
+        }
+
+        // Özel linkler kontrolü
+        const customLinks = links
+          .map((link) => link.customLink)
+          .filter(Boolean) as string[];
+
+        const uniqueCustomLinks = new Set(customLinks);
+        if (customLinks.length !== uniqueCustomLinks.size) {
+          return false;
+        }
+
+        return true;
+      },
+      {
+        error:
+          "Aynı ürün, kategori, marka veya özel link birden fazla kez eklenemez",
+      }
+    )
+    .refine(
+      (links) => {
+        // Her linkin sadece bir tipte olduğunu kontrol et
+        return links.every((link) => {
+          const linkTypes = [
+            link.productId,
+            link.categoryId,
+            link.brandId,
+            link.customLink,
+          ].filter(Boolean);
+
+          return linkTypes.length === 1;
+        });
+      },
+      {
+        error:
+          "Her link sadece bir tip (ürün, kategori, marka veya özel link) olmalıdır",
+      }
+    ),
+  fontSize: fontSizeSchema,
+  title: z
+    .string({
+      error: "Başlık zorunludur",
+    })
+    .min(1, { error: "Başlık en az 1 karakter olmalıdır" })
+    .max(256, { error: "Başlık en fazla 256 karakter olmalıdır" }),
+});
+
+export type FooterLinkGroupType = z.infer<typeof FooterLinkGroupSchema>;
+
+export const FooterSchema = z.object({
+  linkGroups: z.array(
+    FooterLinkGroupSchema.safeExtend({
+      order: z
+        .number({
+          error: "Sıra zorunlu",
+        })
+        .int({ message: "Sıra tam sayı olmalı" })
+        .min(0, { error: "Sıra 0 veya daha büyük olmalı" }),
+    })
+  ),
+  backgroundColor: colorSchema,
+});
+
+export type FooterType = z.infer<typeof FooterSchema>;
+
 export const MainPageComponentsSchema = z.object({
   primaryColor: colorSchema,
   secondaryColor: colorSchema,
   fontFamily: z.enum(FontFamily, {
     error: "Geçersiz font ailesi",
   }),
+  footer: FooterSchema.optional().nullable(),
   components: z
     .array(LayoutComponentSchema, {
       error: " Bileşenler dizisi zorunludur",
