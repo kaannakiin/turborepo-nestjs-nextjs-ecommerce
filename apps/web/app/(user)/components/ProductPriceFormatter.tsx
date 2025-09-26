@@ -6,12 +6,13 @@ import { $Enums } from "@repo/types";
 
 interface ProductPriceFormatterProps extends TextProps {
   price: number;
+  currency?: $Enums.Currency;
 }
 const ProductPriceFormatter = ({
   price,
+  currency = "TRY",
   ...props
 }: ProductPriceFormatterProps) => {
-  const currency: $Enums.Currency = "TRY";
   return (
     <Text {...props}>
       {price.toLocaleString(getCurrencyIntlFormat(currency), {

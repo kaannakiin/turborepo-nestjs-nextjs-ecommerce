@@ -96,7 +96,6 @@ const NonAuthUserCheckoutPage = ({
               }
             );
             if (!res.ok) {
-              console.log(await res.text());
               notifications.show({
                 message: "Adres kaydedilirken bir hata oluştu",
                 color: "red",

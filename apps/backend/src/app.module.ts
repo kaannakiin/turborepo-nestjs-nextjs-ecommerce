@@ -10,6 +10,7 @@ import { LocationsModule } from './locations/locations.module';
 import { DiscountsModule } from './discounts/discounts.module';
 import { UserPageModule } from './user-page/user-page.module';
 import { CartModule } from './cart/cart.module';
+import { ShippingModule } from './shipping/shipping.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { CartModule } from './cart/cart.module';
     DiscountsModule,
     UserPageModule,
     CartModule,
+    ShippingModule,
   ],
   controllers: [],
   providers: [],

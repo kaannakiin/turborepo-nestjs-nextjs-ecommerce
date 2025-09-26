@@ -32,13 +32,13 @@ const AdminCard = ({ item }: { item: AdminHoverCardProps }) => {
       withBorder
       p="xl"
       radius="lg"
-      className="cursor-pointer transition-all duration-300 hover:shadow-xl hover:shadow-var(--mantine-admin-color-9)"
+      className="cursor-pointer transition-all duration-300 hover:shadow-xl hover:shadow-var(--mantine-primary-color-9)"
       style={{
         background: hovered
-          ? "linear-gradient(135deg, var(--mantine-admin-color-0) 0%, var(--mantine-admin-color-1) 100%)"
+          ? "linear-gradient(135deg, var(--mantine-primary-color-0) 0%, var(--mantine-primary-color-1) 100%)"
           : "white",
         borderColor: hovered
-          ? "var(--mantine-admin-color-3)"
+          ? "var(--mantine-primary-color-3)"
           : "var(--mantine-color-gray-3)",
         transform: hovered ? "translateY(-4px)" : "translateY(0px)",
       }}
@@ -51,7 +51,7 @@ const AdminCard = ({ item }: { item: AdminHoverCardProps }) => {
               variant="light"
               size="xl"
               radius="md"
-              color="var(--mantine-color-admin-6)"
+              color="var(--mantine-color-primary-6)"
               style={{
                 backgroundColor: hovered
                   ? "var(--mantine-color-admin-1)"

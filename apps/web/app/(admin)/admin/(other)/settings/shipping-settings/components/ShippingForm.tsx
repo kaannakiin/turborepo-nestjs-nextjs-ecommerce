@@ -1,14 +1,16 @@
 "use client";
 
 import ActionPopover from "@/(admin)/components/ActionPopoverr";
+import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 import GlobalLoader from "@/components/GlobalLoader";
-import { getSelectionTextShipping } from "@lib/helpers";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import { getConditionText, getSelectionTextShipping } from "@lib/helpers";
 import {
   ActionIcon,
+  Alert,
   Button,
   Card,
   Checkbox,
-  Divider,
   Group,
   Modal,
   ScrollArea,
@@ -18,14 +20,23 @@ import {
   Title,
 } from "@mantine/core";
 import { useDebouncedState, useDisclosure } from "@mantine/hooks";
-import { useFieldArray, useForm, useQuery, zodResolver } from "@repo/shared";
+import { notifications } from "@mantine/notifications";
+import {
+  createId,
+  SubmitHandler,
+  useFieldArray,
+  useForm,
+  useQuery,
+  zodResolver,
+} from "@repo/shared";
 import {
   CargoZoneConfigSchema,
   CargoZoneType,
   GetAllCountryReturnType,
   LocationType,
 } from "@repo/types";
-import { IconEdit, IconTrash } from "@tabler/icons-react";
+import { IconEdit, IconInfoCircle, IconTrash } from "@tabler/icons-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import ShippingLocationDrawer from "./ShippingLocationDrawer";
 import ShippingRuleDrawer from "./ShippingRuleDrawer";
@@ -43,7 +54,7 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
   );
   const [openedRuleModal, { open: openRuleModal, close: closeRuleModal }] =
     useDisclosure();
-
+  const [editingRule, setEditingRule] = useState<number | null>(null);
   const handleEditLocation = (location: LocationType) => {
     setEditingLocation(location);
     openDrawer();
@@ -70,11 +81,12 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
   const {
     control,
     handleSubmit,
-    formState: { isSubmitting },
+    formState: { isSubmitting, errors },
     watch,
   } = useForm<CargoZoneType>({
     resolver: zodResolver(CargoZoneConfigSchema),
     defaultValues: defaultValues || {
+      uniqueId: createId(),
       locations: [],
       rules: [],
     },
@@ -118,7 +130,6 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
       return data;
     },
     refetchOnMount: false,
-    enabled: opened,
   });
   const locations = watch("locations");
   const filteredCountries =
@@ -131,13 +142,69 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
             .includes(countryFilters.trim().toLowerCase())
         )
       : countries;
+
+  const { push } = useRouter();
+
+  const onSubmit: SubmitHandler<CargoZoneType> = async (
+    data: CargoZoneType
+  ) => {
+    const req = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/shipping/create-or-update-cargo-zone`,
+      {
+        method: "POST",
+        credentials: "include",
+        body: JSON.stringify(data),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (!req.ok) {
+      notifications.show({
+        title: "Hata",
+        message: "Bölge kaydedilirken bir hata oluştu",
+        color: "red",
+      });
+      return;
+    }
+    const res = (await req.json()) as { success: boolean; message: string };
+    if (res.success) {
+      notifications.show({
+        title: "Başarılı",
+        message: res.message,
+        color: "green",
+      });
+      push("/admin/settings/shipping-settings");
+    }
+  };
+
   return (
     <>
+      {isSubmitting && <GlobalLoadingOverlay />}
       <div className="flex flex-col gap-5">
+        <Group justify="end">
+          <Button onClick={handleSubmit(onSubmit)}>Kaydet</Button>
+        </Group>
+        <Alert
+          icon={<IconInfoCircle />}
+          variant="outline"
+          title="Bilgilendirme"
+        >
+          Kural setinde seçeceğiniz para birimleri, bölgeye özel olarak
+          ayarlanacaktır. Eğer bir bölge için para birimi seçilmezse, o bölgeye
+          gönderim sağlanmayacaktır.
+        </Alert>
         <Card p={"xs"} withBorder>
           <Card.Section className="border-b border-b-gray-400">
             <Group justify="space-between" p={"md"}>
-              <Title order={4}>Bölgeler</Title>
+              <Stack gap={"xs"}>
+                <Title order={4}>Bölgeler</Title>
+                {errors.locations && (
+                  <Text c={"red"} size="sm">
+                    {errors.locations.message}
+                  </Text>
+                )}
+              </Stack>
               {locationFields && locationFields.length > 0 && (
                 <Button onClick={open} disabled={countriesIsLoading}>
                   Bölge Düzenle
@@ -202,17 +269,75 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
         <Card p={"xs"} withBorder>
           <Card.Section className="border-b border-b-gray-400">
             <Group justify="space-between" p={"md"}>
-              <Title order={4}>Kurallar</Title>
+              <Stack gap={"xs"}>
+                <Title order={4}>Kurallar</Title>
+                {errors.rules && (
+                  <Text c={"red"} size="sm">
+                    {errors.rules.message}
+                  </Text>
+                )}
+              </Stack>
               {ruleFields && ruleFields.length > 0 && (
-                <Button onClick={openRuleModal}>Kural Ekle</Button>
+                <Button
+                  onClick={() => {
+                    setEditingRule(null);
+                    openRuleModal();
+                  }}
+                >
+                  Kural Ekle
+                </Button>
               )}
             </Group>
           </Card.Section>
           <div className="flex-1 flex flex-col ">
             {ruleFields && ruleFields.length > 0 ? (
-              <ScrollArea py="sm" mah={500} className="flex flex-col gap-3">
+              <ScrollArea py="sm" mah={500} className="space-y-2">
                 {ruleFields.map((rule, index) => (
-                  <Group key={rule.id}>{rule.name}</Group>
+                  <Group
+                    className="hover:bg-gray-100 transition-colors duration-200 ease-in-out px-3 py-2 rounded"
+                    key={rule.id}
+                    justify="space-between"
+                    mb={index === ruleFields.length - 1 ? 0 : "xs"}
+                    align="center"
+                  >
+                    <Stack gap={"xs"}>
+                      <Group fz={"md"} c={"black"}>
+                        <Text>{rule.name}</Text>
+                        {rule.shippingPrice > 0 ? (
+                          <Group gap={"1px"} wrap="nowrap" align="center">
+                            <ProductPriceFormatter
+                              fz={"xs"}
+                              price={rule.shippingPrice}
+                              currency={rule.currency}
+                            />
+                            <Text fz={"xs"}> - Kargo Ücreti</Text>
+                          </Group>
+                        ) : (
+                          <Text fz={"xs"}>Ücretsiz Kargo</Text>
+                        )}
+                      </Group>
+                      <Text fz={"md"} c={"dimmed"}>
+                        {getConditionText(rule)}
+                      </Text>
+                    </Stack>
+                    <Group>
+                      <ActionIcon
+                        variant="transparent"
+                        size={"xs"}
+                        onClick={() => {
+                          setEditingRule(index);
+                          openRuleModal();
+                        }}
+                      >
+                        <IconEdit />
+                      </ActionIcon>
+                      <ActionPopover
+                        targetIcon={<IconTrash color="red" />}
+                        text="Bu kuralı silmek istediğinize emin misiniz ?"
+                        onConfirm={() => removeRule(index)}
+                      />
+                    </Group>
+                  </Group>
                 ))}
               </ScrollArea>
             ) : (
@@ -307,8 +432,25 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
         </Modal.Content>
       </Modal.Root>
       <ShippingRuleDrawer
-        closeRuleModal={closeRuleModal}
+        closeRuleModal={() => {
+          setEditingRule(null);
+          closeRuleModal();
+        }}
         openedRuleModal={openedRuleModal}
+        defaultValues={
+          ruleFields.find((_, i) => i === editingRule) || undefined
+        }
+        onSubmit={(data) => {
+          const isExists = ruleFields.findIndex(
+            (rule) => rule.uniqueId === data.uniqueId
+          );
+          if (isExists !== -1) {
+            updateRule(isExists, data);
+          } else {
+            appendRule(data);
+          }
+          closeRuleModal();
+        }}
       />
       {editingLocation && (
         <ShippingLocationDrawer

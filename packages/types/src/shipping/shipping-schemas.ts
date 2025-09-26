@@ -1,10 +1,5 @@
-import { CountryType, Currency } from "@repo/database";
+import { $Enums, CountryType, Currency, Prisma } from "@repo/database";
 import * as z from "zod";
-
-const RuleType = {
-  SalesPrice: "SalesPrice",
-  ProductWeight: "ProductWeight",
-} as const;
 
 export const LocationSchema = z
   .object({
@@ -49,13 +44,37 @@ export const LocationSchema = z
   });
 
 export const ShippingRuleSchema = z.object({
+  uniqueId: z.cuid2({
+    error: "Geçersiz kural kimliği",
+  }),
   currency: z.enum(Currency),
-  name: z.string().min(1).max(256),
-  shippingPrice: z.number().int().min(0),
+  name: z
+    .string({
+      error: "Geçersiz kural adı",
+    })
+    .min(1, { error: "Kural adı minimum 1 karakter içermelidir." })
+    .max(256, {
+      error: "Kural adı maksimum 256 karakter içermelidir.",
+    }),
+  shippingPrice: z
+    .number({
+      error: "Geçersiz kargo fiyatı",
+    })
+    .int({
+      error: "Geçersiz kargo fiyatı",
+    })
+    .min(0, {
+      error: "Kargo fiyatı 0 veya daha büyük olmalıdır",
+    })
+    .max(Number.MAX_SAFE_INTEGER, {
+      error: "Kargo fiyatı çok büyük olamaz",
+    })
+    .nullable()
+    .optional(),
   condition: z.discriminatedUnion("type", [
     z
       .object({
-        type: z.literal(RuleType.SalesPrice),
+        type: z.literal($Enums.RuleType.SalesPrice),
         minSalesPrice: z
           .number({
             error: "Geçersiz minimum satış fiyatı",
@@ -94,7 +113,7 @@ export const ShippingRuleSchema = z.object({
 
     z
       .object({
-        type: z.literal(RuleType.ProductWeight),
+        type: z.literal($Enums.RuleType.ProductWeight),
         minProductWeight: z
           .number({
             error: "Geçersiz minimum ürün ağırlığı",
@@ -135,6 +154,7 @@ export const ShippingRuleSchema = z.object({
   ]),
 });
 export const CargoZoneConfigSchema = z.object({
+  uniqueId: z.cuid2({}),
   locations: z.array(LocationSchema).min(1, "En az bir lokasyon gereklidir"),
   rules: z.array(ShippingRuleSchema).min(1, "En az bir kural gereklidir"),
 });
@@ -142,3 +162,18 @@ export const CargoZoneConfigSchema = z.object({
 export type CargoZoneType = z.infer<typeof CargoZoneConfigSchema>;
 export type LocationType = z.infer<typeof LocationSchema>;
 export type ShippingRuleType = z.infer<typeof ShippingRuleSchema>;
+
+export type CargoZones = Prisma.CargoZoneGetPayload<{
+  include: {
+    locations: {
+      include: {
+        country: {
+          include: {
+            translations: true;
+          };
+        };
+      };
+    };
+    rules: true;
+  };
+}>;

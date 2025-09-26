@@ -510,24 +510,26 @@ model CountryTranslation {
 }
 
 model Country {
-  id            String               @id
-  name          String
-  iso2          String?
-  iso3          String?
-  phoneCode     String?
-  capital       String?
-  currency      String?
-  native        String?
-  region        String?
-  subregion     String?
-  emoji         String?
-  translations  CountryTranslation[]
-  states        State[]
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
-  type          CountryType          @default(STATE)
-  addressSchema AddressSchema[]
-  cities        City[]
+  id                 String                  @id
+  name               String
+  iso2               String?
+  iso3               String?
+  phoneCode          String?
+  capital            String?
+  currency           String?
+  native             String?
+  region             String?
+  subregion          String?
+  emoji              String?
+  translations       CountryTranslation[]
+  states             State[]
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  type               CountryType             @default(STATE)
+  addressSchema      AddressSchema[]
+  cities             City[]
+  countryCurrencyMap CountryDefaultSettings?
+  cargoLocation      Location[]
 
   @@index([name])
   @@index([iso2])
@@ -1010,4 +1012,64 @@ model AddressSchema {
   @@index([countryId])
   @@index([stateId])
   @@index([cityId])
+}
+
+enum RuleType {
+  SalesPrice
+  ProductWeight
+}
+
+model CountryDefaultSettings {
+  id           String   @id @default(cuid())
+  country      Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  countryId    String   @unique
+  currency     Currency @default(TRY)
+  locale       Locale   @default(TR)
+  translations Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model CargoZone {
+  id String @id @default(cuid())
+
+  locations Location[]
+  rules     CargoRule[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model Location {
+  id          String    @id @default(cuid())
+  cargoZone   CargoZone @relation(fields: [cargoZoneId], references: [id], onDelete: Cascade)
+  cargoZoneId String
+
+  // Lokasyon Detayları
+  countryId String
+  country   Country  @relation(fields: [countryId], references: [id])
+  stateIds  String[] @default([]) // Boş array = tüm ülke
+  cityIds   String[] @default([]) // Boş array = tüm ülke/state
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Aynı ülke için aynı tip location tekrar etmemeli
+  @@unique([cargoZoneId, countryId])
+}
+
+model CargoRule {
+  id   String @id @default(cuid())
+  name String
+
+  ruleType    RuleType   @default(SalesPrice)
+  minValue    Float?
+  maxValue    Float?
+  price       Float?
+  currency    Currency   @default(TRY)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  CargoZone   CargoZone? @relation(fields: [cargoZoneId], references: [id])
+  cargoZoneId String?
+
+  @@index([ruleType])
 }

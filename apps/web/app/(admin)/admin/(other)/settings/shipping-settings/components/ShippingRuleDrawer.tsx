@@ -1,7 +1,13 @@
 "use client";
 
-import { getCurrencyLabel } from "@lib/helpers";
+import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 import {
+  getConditionText,
+  getCurrencyLabel,
+  getCurrencySymbol,
+} from "@lib/helpers";
+import {
+  Button,
   Card,
   Divider,
   Group,
@@ -13,43 +19,75 @@ import {
   Text,
   TextInput,
 } from "@mantine/core";
-import { Controller, useForm, zodResolver } from "@repo/shared";
+import {
+  Controller,
+  createId,
+  SubmitHandler,
+  useForm,
+  zodResolver,
+} from "@repo/shared";
 import { $Enums, ShippingRuleSchema, ShippingRuleType } from "@repo/types";
 import { IconPackage } from "@tabler/icons-react";
+import { useEffect } from "react";
 import ProductPriceNumberInput from "../../../product-list/create-variant/components/ProductPriceNumberInput";
 
 interface ShippingRuleDrawerProps {
   openedRuleModal: boolean;
   closeRuleModal: () => void;
   defaultValues?: ShippingRuleType;
+  onSubmit: SubmitHandler<ShippingRuleType>;
 }
 
 const ShippingRuleDrawer = ({
   openedRuleModal,
   closeRuleModal,
   defaultValues,
+  onSubmit,
 }: ShippingRuleDrawerProps) => {
-  const { control, handleSubmit, watch } = useForm<ShippingRuleType>({
-    resolver: zodResolver(ShippingRuleSchema),
-    defaultValues: defaultValues || {
-      condition: {
-        type: "SalesPrice",
-        minSalesPrice: 0,
-        maxSalesPrice: 0,
+  const { control, handleSubmit, watch, setValue, reset } =
+    useForm<ShippingRuleType>({
+      resolver: zodResolver(ShippingRuleSchema),
+      defaultValues: defaultValues || {
+        uniqueId: createId(),
+        condition: {
+          type: "SalesPrice",
+          minSalesPrice: null,
+          maxSalesPrice: null,
+        },
+        currency: "TRY",
+        name: "",
+        shippingPrice: null,
       },
-      currency: "TRY",
-      name: "",
-      shippingPrice: 0,
-    },
-  });
+    });
+  useEffect(() => {
+    if (openedRuleModal) {
+      if (defaultValues) {
+        // Edit mode - mevcut değerlerle reset et
+        reset(defaultValues);
+      } else {
+        // Add mode - boş değerlerle reset et
+        reset({
+          uniqueId: createId(),
+          condition: {
+            type: "SalesPrice",
+            minSalesPrice: null,
+            maxSalesPrice: null,
+          },
+          currency: "TRY",
+          name: "",
+          shippingPrice: null,
+        });
+      }
+    }
+  }, [openedRuleModal, defaultValues, reset]);
 
-  const conditionType = watch("condition.type");
   const data = watch();
   const price = watch("shippingPrice");
+
   const getSubLabel = () => {
     if (!data.name?.trim()) return "Aşağıdaki alanları doldurun";
 
-    return conditionType === "SalesPrice"
+    return data.condition.type === "SalesPrice"
       ? "Satış fiyatına göre kargo kuralı"
       : "Ürün ağırlığına göre kargo kuralı";
   };
@@ -77,12 +115,12 @@ const ShippingRuleDrawer = ({
               <Group justify="space-between">
                 <Text fz={"xs"} c="white">
                   Kural{" "}
-                  {conditionType === "ProductWeight"
+                  {data.condition.type === "ProductWeight"
                     ? "(Ağırlık)"
                     : "(Satış Fiyatı)"}
                 </Text>
                 <Text fz={"xs"} c={"white"}>
-                  buraya 1000 tl ve üzeri gelecek
+                  {getConditionText(data)}
                 </Text>
               </Group>
               <Divider my={"xs"} />
@@ -93,11 +131,23 @@ const ShippingRuleDrawer = ({
                     {data.name?.trim() ? data.name : getSubLabel()}
                   </Text>
                 </Group>
-                <Text fz={"xs"} c={"white"}>
-                  {price > 0
-                    ? ` - Kargo Ücreti: ${getCurrencyLabel(data.currency)}${price}`
-                    : " Ücretsiz Kargo"}
-                </Text>
+                {price > 0 ? (
+                  <Group gap={"1px"} wrap="nowrap" align="center">
+                    <ProductPriceFormatter
+                      fz={"xs"}
+                      c={"white"}
+                      price={price}
+                    />
+                    <Text fz={"xs"} c={"white"}>
+                      {" "}
+                      - Kargo Ücreti
+                    </Text>
+                  </Group>
+                ) : (
+                  <Text fz={"xs"} c={"white"}>
+                    Ücretsiz Kargo
+                  </Text>
+                )}
               </Group>
             </Card>
 
@@ -107,6 +157,7 @@ const ShippingRuleDrawer = ({
               render={({ field, fieldState }) => (
                 <TextInput
                   {...field}
+                  data-autofocus
                   error={fieldState.error?.message}
                   label="Kural Adı"
                   withAsterisk
@@ -139,6 +190,17 @@ const ShippingRuleDrawer = ({
                 render={({ field }) => (
                   <ProductPriceNumberInput
                     {...field}
+                    onChange={(value) => {
+                      if (
+                        value === "" ||
+                        value === null ||
+                        value === undefined
+                      ) {
+                        field.onChange(null);
+                      } else {
+                        field.onChange(Number(value));
+                      }
+                    }}
                     label="Kargo Fiyatı"
                     size="xs"
                   />
@@ -153,6 +215,22 @@ const ShippingRuleDrawer = ({
               render={({ field }) => (
                 <Radio.Group
                   {...field}
+                  onChange={(value) => {
+                    field.onChange(value as "SalesPrice" | "ProductWeight");
+                    if (value === "SalesPrice") {
+                      setValue("condition", {
+                        type: "SalesPrice",
+                        minSalesPrice: null,
+                        maxSalesPrice: null,
+                      });
+                    } else {
+                      setValue("condition", {
+                        type: "ProductWeight",
+                        minProductWeight: null,
+                        maxProductWeight: null,
+                      });
+                    }
+                  }}
                   label={
                     <Text fz={"md"} fw={700} mb={"xs"}>
                       Kurallar
@@ -183,7 +261,7 @@ const ShippingRuleDrawer = ({
               )}
             />
             <SimpleGrid cols={2}>
-              {conditionType === "ProductWeight" ? (
+              {data.condition.type === "ProductWeight" ? (
                 <>
                   <Controller
                     control={control}
@@ -193,6 +271,17 @@ const ShippingRuleDrawer = ({
                         label="Minimum Ağırlık (g)"
                         size="xs"
                         {...field}
+                        onChange={(value) => {
+                          if (
+                            value === "" ||
+                            value === null ||
+                            value === undefined
+                          ) {
+                            field.onChange(null);
+                          } else {
+                            field.onChange(Number(value));
+                          }
+                        }}
                         error={fieldState.error?.message}
                       />
                     )}
@@ -202,7 +291,18 @@ const ShippingRuleDrawer = ({
                     name="condition.maxProductWeight"
                     render={({ field, fieldState }) => (
                       <ProductPriceNumberInput
-                        label="Maximum Ağırlık (g)"
+                        label="Maksimum Ağırlık (g)"
+                        onChange={(value) => {
+                          if (
+                            value === "" ||
+                            value === null ||
+                            value === undefined
+                          ) {
+                            field.onChange(null);
+                          } else {
+                            field.onChange(Number(value));
+                          }
+                        }}
                         size="xs"
                         {...field}
                         error={fieldState.error?.message}
@@ -220,6 +320,17 @@ const ShippingRuleDrawer = ({
                         label="Minimum Satış Fiyatı"
                         size="xs"
                         {...field}
+                        onChange={(value) => {
+                          if (
+                            value === "" ||
+                            value === null ||
+                            value === undefined
+                          ) {
+                            field.onChange(null);
+                          } else {
+                            field.onChange(Number(value));
+                          }
+                        }}
                         error={fieldState.error?.message}
                       />
                     )}
@@ -229,9 +340,20 @@ const ShippingRuleDrawer = ({
                     name="condition.maxSalesPrice"
                     render={({ field, fieldState }) => (
                       <ProductPriceNumberInput
-                        label="Maximum Satış Fiyatı"
+                        label="Maksimum Satış Fiyatı"
                         size="xs"
                         {...field}
+                        onChange={(value) => {
+                          if (
+                            value === "" ||
+                            value === null ||
+                            value === undefined
+                          ) {
+                            field.onChange(null);
+                          } else {
+                            field.onChange(Number(value));
+                          }
+                        }}
                         error={fieldState.error?.message}
                       />
                     )}
@@ -239,6 +361,14 @@ const ShippingRuleDrawer = ({
                 </>
               )}
             </SimpleGrid>
+            <Group justify="end">
+              <Button variant="default" onClick={closeRuleModal}>
+                İptal
+              </Button>
+              <Button variant="filled" onClick={handleSubmit(onSubmit)}>
+                Kaydet
+              </Button>
+            </Group>
           </Stack>
         </Modal.Body>
       </Modal.Content>
