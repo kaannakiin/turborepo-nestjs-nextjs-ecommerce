@@ -146,7 +146,12 @@ export async function middleware(req: NextRequest) {
 
   // Cookie temizliği gerekiyorsa ve protected route'daysa login'e yönlendir
   if (shouldClearCookies && (isAdminRoute(pathname) || isUserRoute(pathname))) {
-    return createRedirectResponse("/auth", req, [], true);
+    return createRedirectResponse(
+      `/auth?redirectUri=${encodeURIComponent(pathname)}`,
+      req,
+      [],
+      true
+    );
   }
 
   // Cookie temizliği gerekiyorsa ve auth route'daysa cookie'leri temizle ama kalsın
@@ -168,7 +173,11 @@ export async function middleware(req: NextRequest) {
 
   // 2. Giriş yapmamış kullanıcı protected routes'lara erişemez
   if (!isLoggedIn && (isAdminRoute(pathname) || isUserRoute(pathname))) {
-    return createRedirectResponse("/auth", req, newCookies);
+    return createRedirectResponse(
+      `/auth?redirectUri=${encodeURIComponent(pathname)}`,
+      req,
+      newCookies
+    );
   }
 
   // 3. Admin routes - sadece ADMIN veya OWNER erişebilir

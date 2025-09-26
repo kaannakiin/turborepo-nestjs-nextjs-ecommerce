@@ -326,9 +326,7 @@ const ShoppingBagDrawer = () => {
                     size="md"
                     onClick={() => {
                       close();
-                      push(
-                        `/checkout${cart?.cartId ? `?cartId=${cart.cartId}` : ""}`
-                      );
+                      push(`/checkout${cart?.cartId ? `/${cart.cartId}` : ""}`);
                     }}
                   >
                     Ödeme Yap

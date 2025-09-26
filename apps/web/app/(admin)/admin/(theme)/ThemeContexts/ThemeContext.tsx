@@ -25,19 +25,13 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
   const [media, setMedia] = useState<Media>("desktop");
 
-  // Pathname'e göre default değer belirleme veya media query ile otomatik tespit
   useEffect(() => {
-    if (pathname.startsWith("/admin/theme")) {
-      setMedia("desktop");
+    if (isMobile) {
+      setMedia("mobile");
+    } else if (isTablet) {
+      setMedia("tablet");
     } else {
-      // Diğer sayfalarda media query ile otomatik tespit
-      if (isMobile) {
-        setMedia("mobile");
-      } else if (isTablet) {
-        setMedia("tablet");
-      } else {
-        setMedia("desktop");
-      }
+      setMedia("desktop");
     }
   }, [pathname, isMobile, isTablet]);
 

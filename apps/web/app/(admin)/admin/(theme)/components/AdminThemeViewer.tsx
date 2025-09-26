@@ -4,7 +4,6 @@ import { Stack } from "@mantine/core";
 import { MainPageComponentsType } from "@repo/types";
 import dynamic from "next/dynamic";
 import { useMemo } from "react";
-import FooterComponent from "./FooterComponent";
 
 const MainPageSliderCarousel = dynamic(
   () => import("@/users-ui-components/MainPageSliderCarousel"),
@@ -19,6 +18,11 @@ const CategoryGridComponent = dynamic(
   () => import("@/users-ui-components/CategoryGridComponent"),
   { ssr: false }
 );
+
+const FooterComponent = dynamic(() => import("./FooterComponent"), {
+  ssr: false,
+});
+
 interface AdminThemeViewerProps {
   data: MainPageComponentsType;
 }

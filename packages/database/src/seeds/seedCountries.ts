@@ -3,9 +3,7 @@ import { CountryType, Locale, PrismaClient } from "../../generated/prisma";
 const prisma = new PrismaClient();
 
 async function fetchCountries() {
-  await prisma.cityTranslation.deleteMany({});
   await prisma.city.deleteMany({});
-  await prisma.stateTranslation.deleteMany({});
   await prisma.state.deleteMany({});
   await prisma.countryTranslation.deleteMany({});
   await prisma.country.deleteMany({});
@@ -117,80 +115,134 @@ async function fetchCountries() {
       };
     };
 
-    // Ülke tipini belirle ve şehir çekme durumunu kontrol et
+    // Ülke tipini belirle
     let countryType: CountryType;
     let shouldFetchCities = false;
+    let shouldCreateStates = false;
 
     if (stateData.data.listState.length === 0) {
-      console.log(`No states found for country ${country.name}, skipping...`);
-      continue;
+      console.log(
+        `No states found for country ${country.name}, setting type to NONE`
+      );
+      countryType = CountryType.NONE;
     } else if (
       stateData.data.listState.length === 1 &&
       stateData.data.listState[0].name === "Default"
     ) {
-      // Sadece 1 state varsa VE adı "Default" ise, tip CITY olacak ve şehirleri çekeceğiz
+      // Tek state varsa VE adı "Default" ise, tip CITY olacak ve şehirleri direkt country'ye bağlayacağız
       countryType = CountryType.CITY;
       shouldFetchCities = true;
+      shouldCreateStates = false; // Default state'i kaydetmeyeceğiz
       console.log(
-        `${country.name} has only 1 state with name "Default", setting type to CITY`
+        `${country.name} has only 1 default state, setting type to CITY and will fetch cities directly`
       );
     } else {
-      // Birden fazla state varsa VEYA tek state'in adı "Default" değilse, tip STATE kalacak ve şehir çekmeyeceğiz
+      // Birden fazla state varsa VEYA tek state'in adı "Default" değilse, tip STATE kalacak
       countryType = CountryType.STATE;
-      shouldFetchCities = false;
+      shouldCreateStates = true;
       console.log(
-        `${country.name} has ${stateData.data.listState.length} states or state name is not "Default", setting type to STATE`
+        `${country.name} has ${stateData.data.listState.length} real states, setting type to STATE`
       );
     }
 
     // Ülkeyi veritabanına kaydet
-    await prisma.country.create({
-      data: {
+    try {
+      console.log(
+        `Creating country: ${country.name} with type: ${countryType}`
+      );
+      console.log(`Country data:`, {
         id: country.id,
         name: country.name,
-        capital: country.capital,
-        currency: country.currency,
-        emoji: country.emoji,
-        iso2: country.iso2,
-        iso3: country.iso3,
-        native: country.native,
-        phoneCode: country.phoneCode,
-        region: country.region,
-        subregion: country.subregion,
         type: countryType,
         translations: {
-          createMany: {
-            data: [
-              ...(country.locationTranslations.tr
-                ? [{ locale: Locale.TR, name: country.locationTranslations.tr }]
-                : []),
-              ...(country.locationTranslations.en
-                ? [{ locale: Locale.EN, name: country.locationTranslations.en }]
-                : []),
-            ],
-          },
-        },
-      },
-    });
-
-    // State'leri kaydet
-    for (const state of stateData.data.listState) {
-      await prisma.state.create({
-        data: {
-          id: state.id,
-          name: state.name,
-          stateCode: state.stateCode,
-          countryId: state.countryId,
+          tr: country.locationTranslations.tr,
+          en: country.locationTranslations.en,
         },
       });
-      console.log(`Created state: ${state.name}`);
+
+      await prisma.country.create({
+        data: {
+          id: country.id,
+          name: country.name,
+          capital: country.capital,
+          currency: country.currency,
+          emoji: country.emoji,
+          iso2: country.iso2,
+          iso3: country.iso3,
+          native: country.native,
+          phoneCode: country.phoneCode,
+          region: country.region,
+          subregion: country.subregion,
+          type: countryType,
+          translations: {
+            createMany: {
+              data: [
+                ...(country.locationTranslations.tr
+                  ? [
+                      {
+                        locale: Locale.TR,
+                        name: country.locationTranslations.tr,
+                      },
+                    ]
+                  : []),
+                ...(country.locationTranslations.en
+                  ? [
+                      {
+                        locale: Locale.EN,
+                        name: country.locationTranslations.en,
+                      },
+                    ]
+                  : []),
+              ],
+            },
+          },
+        },
+      });
+      console.log(`Successfully created country: ${country.name}`);
+    } catch (error) {
+      console.error(`❌ Error creating country ${country.name}:`, error);
+      console.error(
+        `Country data that failed:`,
+        JSON.stringify(country, null, 2)
+      );
+      throw error; // Re-throw to stop execution
     }
 
-    // Eğer tek state varsa ve adı "Default" ise, o state için şehirleri çek
+    // Sadece gerçek state'leri kaydet (Default state'leri değil)
+    if (shouldCreateStates) {
+      console.log(
+        `Creating ${stateData.data.listState.length} states for ${country.name}`
+      );
+      for (const state of stateData.data.listState) {
+        try {
+          await prisma.state.create({
+            data: {
+              id: state.id,
+              name: state.name,
+              stateCode: state.stateCode,
+              countryId: state.countryId,
+            },
+          });
+          console.log(`✅ Created state: ${state.name} for ${country.name}`);
+        } catch (error) {
+          console.error(
+            `❌ Error creating state ${state.name} for ${country.name}:`,
+            error
+          );
+          console.error(
+            `State data that failed:`,
+            JSON.stringify(state, null, 2)
+          );
+          throw error;
+        }
+      }
+    }
+
+    // CITY tipindeki ülkeler için şehirleri direkt country'ye bağla
     if (shouldFetchCities) {
       const defaultState = stateData.data.listState[0];
       console.log(
-        `Fetching cities for ${country.name} (Default state: ${defaultState.name})`
+        `Fetching cities for ${country.name} from default state: ${defaultState.name} (ID: ${defaultState.id})`
       );
 
       const cityQuery = {
@@ -206,57 +258,83 @@ async function fetchCountries() {
         }`,
       };
 
-      const cityResponse = await fetch(
-        "https://api.myikas.com/api/v1/admin/graphql",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(cityQuery),
-        }
-      );
-
-      if (cityResponse.ok) {
-        const cityData = (await cityResponse.json()) as {
-          data: {
-            listCity: Array<{
-              id: string;
-              countryId: string;
-              stateId: string;
-              name: string;
-              latitude: string | null;
-              longitude: string | null;
-            }>;
-          };
-        };
-
-        console.log(
-          `Found ${cityData.data.listCity.length} cities for ${country.name}`
-        );
-
-        // Şehirleri kaydet
-        for (const city of cityData.data.listCity) {
-          await prisma.city.create({
-            data: {
-              id: city.id,
-              name: city.name,
-              latitude: city.latitude,
-              longitude: city.longitude,
-              countryId: city.countryId,
-              stateId: city.stateId,
+      try {
+        const cityResponse = await fetch(
+          "https://api.myikas.com/api/v1/admin/graphql",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
             },
-          });
-        }
-        console.log(
-          `Created ${cityData.data.listCity.length} cities for ${country.name}`
+            body: JSON.stringify(cityQuery),
+          }
         );
-      } else {
-        console.log(`Failed to fetch cities for ${country.name}`);
+
+        if (!cityResponse.ok) {
+          console.error(
+            `❌ Failed to fetch cities for ${country.name}. Status: ${cityResponse.status}`
+          );
+          console.error(`Response text:`, await cityResponse.text());
+        } else {
+          const cityData = (await cityResponse.json()) as {
+            data: {
+              listCity: Array<{
+                id: string;
+                countryId: string;
+                stateId: string;
+                name: string;
+                latitude: string | null;
+                longitude: string | null;
+              }>;
+            };
+          };
+
+          console.log(
+            `Found ${cityData.data.listCity.length} cities for ${country.name}`
+          );
+
+          // Şehirleri direkt country'ye bağla
+          for (const city of cityData.data.listCity) {
+            try {
+              console.log(
+                `Creating city: ${city.name} for country: ${country.name}`
+              );
+              await prisma.city.create({
+                data: {
+                  id: city.id,
+                  name: city.name,
+                  latitude: city.latitude,
+                  longitude: city.longitude,
+                  countryId: city.countryId, // Direkt country'ye bağla
+                },
+              });
+              console.log(`✅ Created city: ${city.name}`);
+            } catch (error) {
+              console.error(
+                `❌ Error creating city ${city.name} for ${country.name}:`,
+                error
+              );
+              console.error(
+                `City data that failed:`,
+                JSON.stringify(city, null, 2)
+              );
+              throw error;
+            }
+          }
+          console.log(
+            `✅ Created ${cityData.data.listCity.length} cities directly linked to ${country.name}`
+          );
+        }
+      } catch (error) {
+        console.error(
+          `❌ Error fetching/processing cities for ${country.name}:`,
+          error
+        );
+        // Continue processing other countries instead of throwing
       }
     }
 
-    console.log(`Completed processing ${country.name}`);
+    console.log(`Completed processing ${country.name} (type: ${countryType})`);
   }
 
   console.log("Seed completed successfully!");

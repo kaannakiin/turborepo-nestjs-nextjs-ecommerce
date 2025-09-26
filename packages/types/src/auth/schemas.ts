@@ -20,29 +20,29 @@ export const RegisterSchema = z
   .object({
     name: z
       .string()
-      .min(2, "Name must be at least 2 characters")
-      .max(50, "Name cannot exceed 50 characters"),
+      .min(2, "İsim en az 2 karakter olmalıdır")
+      .max(50, "İsim en fazla 50 karakter olabilir"),
     surname: z
       .string()
-      .min(2, "Surname must be at least 2 characters")
-      .max(50, "Surname cannot exceed 50 characters"),
-    email: z.string().email("Invalid email address").optional().nullable(),
+      .min(2, "Soyisim en az 2 karakter olmalıdır")
+      .max(50, "Soyisim en fazla 50 karakter olabilir"),
+    email: z.email("Geçersiz e-posta adresi").optional().nullable(),
     phone: z.string().optional().nullable(),
     password: z
       .string()
-      .min(6, "Password must be at least 6 characters")
-      .max(50, "Password cannot exceed 50 characters"),
+      .min(6, "Şifre en az 6 karakter olmalıdır")
+      .max(50, "Şifre en fazla 50 karakter olabilir"),
     confirmPassword: z
       .string()
-      .min(6, "Confirm password must be at least 6 characters")
-      .max(50, "Confirm password cannot exceed 50 characters"),
+      .min(6, "Onay şifresi en az 6 karakter olmalıdır")
+      .max(50, "Onay şifresi en fazla 50 karakter olabilir"),
   })
   .superRefine((data, ctx) => {
     // Password match validation
     if (data.password !== data.confirmPassword) {
       ctx.addIssue({
         code: "custom",
-        message: "Passwords do not match",
+        message: "Şifreler eşleşmiyor",
         path: ["confirmPassword"],
       });
     }
@@ -60,7 +60,7 @@ export const RegisterSchema = z
     if (!isEmailProvided && !isPhoneProvided) {
       ctx.addIssue({
         code: "custom",
-        message: "Either email or phone number is required",
+        message: "E-posta adresi veya telefon numarası gereklidir",
         path: ["email"],
       });
       return;
@@ -72,14 +72,14 @@ export const RegisterSchema = z
         if (!isValidPhoneNumber(phoneValue)) {
           ctx.addIssue({
             code: "custom",
-            message: "Invalid phone number",
+            message: "Geçersiz telefon numarası",
             path: ["phone"],
           });
         }
       } catch (error) {
         ctx.addIssue({
           code: "custom",
-          message: "Invalid phone number",
+          message: "Geçersiz telefon numarası",
           path: ["phone"],
         });
       }

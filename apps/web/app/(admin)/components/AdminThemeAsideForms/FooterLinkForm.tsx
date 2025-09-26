@@ -186,7 +186,6 @@ const FooterLinkForm = ({
     setValue("brandId", null);
     setValue("categoryId", null);
     setValue("productId", null);
-
     switch (type) {
       case "brand":
         setValue("brandId", id);

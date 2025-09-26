@@ -2,9 +2,11 @@ import { MantineColorsTuple } from "@mantine/core";
 import { $Enums, UserRole } from "@repo/database";
 import {
   FontFamily,
+  LocationType,
   MantineFontWeight,
   MantineSize,
   ProductPageDataType,
+  ShippingRuleType,
   SortAdminUserTable,
   TextAlign,
   VariantProductZodType,
@@ -94,6 +96,22 @@ export function getCurrencyLabel(currency: $Enums.Currency) {
       return currency;
   }
 }
+
+export function getCurrencySymbol(currency: $Enums.Currency) {
+  switch (currency) {
+    case "TRY":
+      return "₺";
+    case "USD":
+      return "$";
+    case "EUR":
+      return "€";
+    case "GBP":
+      return "£";
+    default:
+      return currency;
+  }
+}
+
 export function getDiscountTypeLabel(type: $Enums.DiscountType) {
   switch (type) {
     case "BUY_X_GET_Y":
@@ -652,3 +670,109 @@ export function getFontFamilyLabel(fontFamily: FontFamily): string {
       return "Bilinmeyen Font";
   }
 }
+
+export function getSelectionTextShipping(data: LocationType) {
+  if (data.countryType === "NONE") {
+    return "Tüm ülke";
+  }
+
+  if (data.countryType === "STATE") {
+    if (!data.stateIds || data.stateIds.length === 0) {
+      return "Tüm ülke";
+    }
+
+    const selectedCount = data.stateIds.length;
+    if (selectedCount === 0) {
+      return "Tüm ülke";
+    }
+
+    return `${selectedCount} eyalet`;
+  }
+
+  if (data.countryType === "CITY") {
+    if (!data.cityIds || data.cityIds.length === 0) {
+      return "Tüm ülke";
+    }
+
+    const selectedCount = data.cityIds.length;
+    if (selectedCount === 0) {
+      return "Tüm ülke";
+    }
+
+    return `${selectedCount} şehir`;
+  }
+
+  return "Tüm ülke";
+}
+
+export const getRuleLabel = (data: ShippingRuleType) => {
+  const { name, shippingPrice, currency, condition } = data;
+
+  if (!name?.trim()) return "Kural adı giriniz";
+
+  const currencySymbol = getCurrencySymbol(currency);
+  const isFreeSampling = shippingPrice === 0;
+
+  // Kural adını başta göster
+  const ruleName = `"${name}"`;
+
+  if (condition.type === "SalesPrice") {
+    const minPrice = condition.minSalesPrice || 0;
+    const maxPrice = condition.maxSalesPrice || 0;
+
+    if (minPrice === 0 && maxPrice === 0) {
+      return isFreeSampling
+        ? `${ruleName}: Tüm siparişlerde ücretsiz kargo`
+        : `${ruleName}: Tüm siparişlerde ${shippingPrice} ${currencySymbol} kargo`;
+    }
+
+    if (minPrice > 0 && maxPrice === 0) {
+      return isFreeSampling
+        ? `${ruleName}: ${minPrice} ${currencySymbol} ve üzeri siparişlerde ücretsiz kargo`
+        : `${ruleName}: ${minPrice} ${currencySymbol} ve üzeri siparişlerde ${shippingPrice} ${currencySymbol} kargo`;
+    }
+
+    if (minPrice === 0 && maxPrice > 0) {
+      return isFreeSampling
+        ? `${ruleName}: ${maxPrice} ${currencySymbol}'ye kadar siparişlerde ücretsiz kargo`
+        : `${ruleName}: ${maxPrice} ${currencySymbol}'ye kadar siparişlerde ${shippingPrice} ${currencySymbol} kargo`;
+    }
+
+    if (minPrice > 0 && maxPrice > 0) {
+      return isFreeSampling
+        ? `${ruleName}: ${minPrice} - ${maxPrice} ${currencySymbol} arası siparişlerde ücretsiz kargo`
+        : `${ruleName}: ${minPrice} - ${maxPrice} ${currencySymbol} arası siparişlerde ${shippingPrice} ${currencySymbol} kargo`;
+    }
+  }
+
+  if (condition.type === "ProductWeight") {
+    const minWeight = condition.minProductWeight || 0;
+    const maxWeight = condition.maxProductWeight || 0;
+
+    if (minWeight === 0 && maxWeight === 0) {
+      return isFreeSampling
+        ? `${ruleName}: Tüm ağırlıklarda ücretsiz kargo`
+        : `${ruleName}: Tüm ağırlıklarda ${shippingPrice} ${currencySymbol} kargo`;
+    }
+
+    if (minWeight > 0 && maxWeight === 0) {
+      return isFreeSampling
+        ? `${ruleName}: ${minWeight}g ve üzeri ürünlerde ücretsiz kargo`
+        : `${ruleName}: ${minWeight}g ve üzeri ürünlerde ${shippingPrice} ${currencySymbol} kargo`;
+    }
+
+    if (minWeight === 0 && maxWeight > 0) {
+      return isFreeSampling
+        ? `${ruleName}: ${maxWeight}g'a kadar ürünlerde ücretsiz kargo`
+        : `${ruleName}: ${maxWeight}g'a kadar ürünlerde ${shippingPrice} ${currencySymbol} kargo`;
+    }
+
+    if (minWeight > 0 && maxWeight > 0) {
+      return isFreeSampling
+        ? `${ruleName}: ${minWeight} - ${maxWeight}g arası ürünlerde ücretsiz kargo`
+        : `${ruleName}: ${minWeight} - ${maxWeight}g arası ürünlerde ${shippingPrice} ${currencySymbol} kargo`;
+    }
+  }
+
+  return `${ruleName}: Kural önizlemesi`;
+};

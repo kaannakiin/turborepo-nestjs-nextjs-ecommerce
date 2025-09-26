@@ -420,9 +420,7 @@ const ClientCartPage = () => {
                     radius="xl"
                     fullWidth
                     onClick={() =>
-                      push(
-                        `/checkout${cart?.cartId ? `?cartId=${cart.cartId}` : ""}`
-                      )
+                      push(`/checkout${cart?.cartId ? `/${cart.cartId}` : ""}`)
                     }
                   >
                     Ödemeye Geç

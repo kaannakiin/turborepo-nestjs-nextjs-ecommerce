@@ -105,6 +105,7 @@ model User {
   discountIncluded DiscountIncludedUser[]
   discountUsage    CouponUsage[]
   carts            Cart[]
+  addressSchema    AddressSchema[]
 
   @@index([id, refreshToken, email, phone])
 }
@@ -488,6 +489,7 @@ model ProductVariantTranslation {
 }
 
 enum CountryType {
+  NONE
   STATE
   CITY
 }
@@ -508,22 +510,24 @@ model CountryTranslation {
 }
 
 model Country {
-  id           String               @id
-  name         String
-  iso2         String?
-  iso3         String?
-  phoneCode    String?
-  capital      String?
-  currency     String?
-  native       String?
-  region       String?
-  subregion    String?
-  emoji        String?
-  translations CountryTranslation[]
-  states       State[]
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-  type         CountryType          @default(STATE)
+  id            String               @id
+  name          String
+  iso2          String?
+  iso3          String?
+  phoneCode     String?
+  capital       String?
+  currency      String?
+  native        String?
+  region        String?
+  subregion     String?
+  emoji         String?
+  translations  CountryTranslation[]
+  states        State[]
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  type          CountryType          @default(STATE)
+  addressSchema AddressSchema[]
+  cities        City[]
 
   @@index([name])
   @@index([iso2])
@@ -533,31 +537,15 @@ model Country {
   @@index([currency])
 }
 
-model StateTranslation {
-  id        String   @id @default(cuid())
-  locale    Locale   @default(TR)
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  State     State    @relation(fields: [stateId], references: [id])
-  stateId   String
-
-  @@unique([locale, stateId])
-  @@index([stateId])
-  @@index([locale])
-  @@index([name])
-}
-
 model State {
-  id           String             @id
-  name         String
-  stateCode    String?
-  countryId    String
-  Country      Country            @relation(fields: [countryId], references: [id])
-  translations StateTranslation[]
-  cities       City[]
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
+  id            String          @id
+  name          String
+  stateCode     String?
+  countryId     String
+  Country       Country         @relation(fields: [countryId], references: [id])
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  addressSchema AddressSchema[]
 
   @@index([countryId])
   @@index([name])
@@ -565,38 +553,19 @@ model State {
   @@index([countryId, name])
 }
 
-model CityTranslation {
-  id        String   @id @default(cuid())
-  locale    Locale   @default(TR)
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  City      City     @relation(fields: [cityId], references: [id])
-  cityId    String
-
-  @@unique([locale, cityId])
-  @@index([cityId])
-  @@index([locale])
-  @@index([name])
-}
-
 model City {
-  id           String            @id
-  name         String
-  latitude     String?
-  longitude    String?
-  countryId    String
-  stateId      String
-  State        State             @relation(fields: [stateId], references: [id])
-  translations CityTranslation[]
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  id            String          @id
+  name          String
+  latitude      String?
+  longitude     String?
+  countryId     String
+  country       Country         @relation(fields: [countryId], references: [id])
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  addressSchema AddressSchema[]
 
-  @@index([stateId])
   @@index([countryId])
   @@index([name])
-  @@index([stateId, name])
-  @@index([countryId, stateId])
   @@index([latitude, longitude])
 }
 
@@ -622,9 +591,15 @@ model Cart {
   type     CartStatus @default(ACTIVE)
   currency Currency   @default(TRY)
   locale   Locale     @default(TR)
-  user     User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userId   String?
 
+  shippingAddress   AddressSchema? @relation("CartShippingAddress", fields: [shippingAddressId], references: [id], onDelete: SetNull)
+  shippingAddressId String?
+
+  billingAddress   AddressSchema? @relation("CartBillingAddress", fields: [billingAddressId], references: [id], onDelete: SetNull)
+  billingAddressId String?
+
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   items     CartItem[]
@@ -1004,4 +979,35 @@ model Layout {
   updatedAt     DateTime          @updatedAt
   otherSettings Json?
   components    LayoutComponent[]
+}
+
+model AddressSchema {
+  id                  String      @id @default(cuid())
+  email               String?
+  addressTitle        String?
+  phone               String
+  name                String
+  surname             String
+  addressLine1        String
+  addressLine2        String?
+  zipCode             String?
+  country             Country     @relation(fields: [countryId], references: [id])
+  countryId           String
+  state               State?      @relation(fields: [stateId], references: [id])
+  stateId             String?
+  city                City?       @relation(fields: [cityId], references: [id])
+  cityId              String?
+  user                User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId              String?
+  addressLocationType CountryType
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  shippingCarts Cart[] @relation("CartShippingAddress")
+  billingCarts  Cart[] @relation("CartBillingAddress")
+
+  @@index([userId])
+  @@index([countryId])
+  @@index([stateId])
+  @@index([cityId])
 }

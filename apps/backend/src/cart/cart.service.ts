@@ -4,7 +4,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { $Enums, Prisma } from '@repo/database';
-import { AddCartItemToCartBodyType, CartItemType, CartType } from '@repo/types';
+import {
+  AddCartItemToCartBodyType,
+  CartItemType,
+  CartType,
+  CheckoutPageCartType,
+  NonAuthUserAddressZodType,
+} from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -1132,5 +1138,212 @@ export class CartService {
         'Sepet temizlenirken bir hata oluştu',
       );
     }
+  }
+
+  async getCartById(
+    cartId: string,
+  ): Promise<{ cart: CheckoutPageCartType | null }> {
+    const cart = await this.prisma.cart.findUnique({
+      where: {
+        id: cartId,
+      },
+      include: {
+        items: {
+          include: {
+            product: {
+              include: {
+                assets: {
+                  take: 1,
+                  orderBy: {
+                    order: 'asc',
+                  },
+                  select: {
+                    asset: {
+                      select: {
+                        url: true,
+                        type: true,
+                      },
+                    },
+                  },
+                },
+                prices: true,
+                translations: true,
+              },
+            },
+            variant: {
+              include: {
+                assets: {
+                  take: 1,
+                  orderBy: {
+                    order: 'asc',
+                  },
+                  select: {
+                    asset: {
+                      select: {
+                        url: true,
+                        type: true,
+                      },
+                    },
+                  },
+                },
+                translations: true,
+                prices: true,
+                options: {
+                  orderBy: {
+                    productVariantOption: {
+                      productVariantGroup: {
+                        order: 'asc',
+                      },
+                    },
+                  },
+                  include: {
+                    productVariantOption: {
+                      select: {
+                        variantOption: {
+                          select: {
+                            translations: true,
+                            asset: {
+                              select: {
+                                url: true,
+                                type: true,
+                              },
+                            },
+                            hexValue: true,
+                          },
+                        },
+                        productVariantGroup: {
+                          select: {
+                            variantGroup: {
+                              select: {
+                                translations: true,
+                                type: true,
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        billingAddress: {
+          include: {
+            city: { select: { id: true, name: true } },
+            country: { select: { id: true, translations: true } },
+            state: { select: { id: true, name: true } },
+          },
+        },
+        shippingAddress: {
+          include: {
+            city: { select: { id: true, name: true } },
+            country: { select: { id: true, translations: true } },
+            state: { select: { id: true, name: true } },
+          },
+        },
+        user: true,
+      },
+    });
+
+    if (!cart) {
+      return {
+        cart: null,
+      };
+    }
+    return {
+      cart: cart,
+    };
+  }
+
+  async setUnAuthShippingAddressToCart(
+    cartId: string,
+    addressData: NonAuthUserAddressZodType,
+  ) {
+    const cart = await this.prisma.cart.findUnique({
+      where: {
+        id: cartId,
+      },
+    });
+
+    if (!cart) {
+      throw new NotFoundException('Sepet Bulunamadı');
+    }
+
+    const newAddress = await this.prisma.addressSchema.upsert({
+      where: {
+        id: addressData.id,
+      },
+      create: {
+        addressLine1: addressData.addressLine1,
+        addressLine2: addressData.addressLine2,
+        addressLocationType: addressData.addressType,
+        countryId: addressData.countryId,
+        ...(addressData.addressType === 'CITY'
+          ? {
+              cityId: addressData.cityId,
+            }
+          : addressData.addressType === 'STATE'
+            ? {
+                stateId: addressData.stateId,
+              }
+            : {
+                cityId: null,
+                stateId: null,
+              }),
+        zipCode: addressData.postalCode,
+        name: addressData.name,
+        phone: addressData.phone,
+        surname: addressData.surname,
+        email: addressData.email,
+        shippingCarts: {
+          connect: {
+            id: cartId,
+          },
+        },
+        billingCarts: {
+          connect: {
+            id: cartId,
+          },
+        },
+      },
+      update: {
+        addressLine1: addressData.addressLine1,
+        addressLine2: addressData.addressLine2,
+        addressLocationType: addressData.addressType,
+        countryId: addressData.countryId,
+        ...(addressData.addressType === 'CITY'
+          ? {
+              cityId: addressData.cityId,
+              stateId: null,
+            }
+          : addressData.addressType === 'STATE'
+            ? {
+                stateId: addressData.stateId,
+                cityId: null,
+              }
+            : {
+                cityId: null,
+                stateId: null,
+              }),
+        zipCode: addressData.postalCode,
+        name: addressData.name,
+        phone: addressData.phone,
+        surname: addressData.surname,
+        email: addressData.email,
+        shippingCarts: {
+          connect: {
+            id: cartId,
+          },
+        },
+        billingCarts: {
+          connect: {
+            id: cartId,
+          },
+        },
+      },
+    });
+    return newAddress;
   }
 }

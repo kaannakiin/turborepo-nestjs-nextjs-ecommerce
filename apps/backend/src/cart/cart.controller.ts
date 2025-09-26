@@ -2,6 +2,8 @@ import { Body, Controller, Get, Param, Post, UsePipes } from '@nestjs/common';
 import {
   $Enums,
   AddCartItemToCartBody,
+  NonAuthUserAddressSchema,
+  type NonAuthUserAddressZodType,
   type AddCartItemToCartBodyType,
 } from '@repo/types';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
@@ -60,5 +62,19 @@ export class CartController {
   @Post('clear-cart/:cartId')
   async clearCart(@Body() data: { cartId: string }) {
     return this.cartService.clearCart(data.cartId);
+  }
+
+  @Get('get-cart-by-id/:cartId')
+  async getCartById(@Param('cartId') cartId: string) {
+    return this.cartService.getCartById(cartId);
+  }
+
+  @Post('set-unauth-shipping-address-to-cart/:cartId')
+  // @UsePipes(new ZodValidationPipe(NonAuthUserAddressSchema))
+  async setUnAuthShippingAddressToCart(
+    @Param('cartId') cartId: string,
+    @Body() data: NonAuthUserAddressZodType,
+  ) {
+    return this.cartService.setUnAuthShippingAddressToCart(cartId, data);
   }
 }

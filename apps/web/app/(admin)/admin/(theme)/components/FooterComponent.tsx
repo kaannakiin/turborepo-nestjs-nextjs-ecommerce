@@ -1,12 +1,11 @@
 "use client";
 import {
   Accordion,
+  Group,
   SimpleGrid,
   Stack,
   Text,
   Title,
-  Divider,
-  Group,
 } from "@mantine/core";
 import { MainPageComponentsType } from "@repo/types";
 import { useRouter } from "next/navigation";
@@ -25,7 +24,6 @@ const FooterComponent = ({ footerData }: FooterComponentProps) => {
       <div className="w-full bg-[var(--mantine-primary-color-9)] text-white">
         <div className="max-w-[1500px] mx-auto">
           <div className="flex flex-col">
-            {/* Main Footer Content */}
             <div className="py-16 px-8">
               <SimpleGrid cols={5} spacing="xl">
                 {footerData.linkGroups
