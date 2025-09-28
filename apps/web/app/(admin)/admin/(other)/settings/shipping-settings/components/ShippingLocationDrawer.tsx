@@ -154,7 +154,6 @@ const ShippingLocationDrawer = ({
   const isStateMode = countryType === "STATE";
   const currentData = isStateMode ? filteredStates : filteredCities;
   const selectedItems = isStateMode ? selectedStateIds : selectedCityIds;
-  console.log(errors);
   return (
     <>
       <Drawer

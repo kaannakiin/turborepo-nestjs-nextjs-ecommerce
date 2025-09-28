@@ -119,12 +119,6 @@ const data: NavbarButtonType[] = [
         icon: null,
         label: "Tema Ayarları",
       },
-      {
-        href: "/theme/slider",
-        icon: null,
-        label: "Slider",
-      },
-      { href: "/theme/marquee", icon: null, label: "Marquee (Kayan Yazı)" },
     ],
   },
   {

@@ -37,6 +37,7 @@
     "next": "^15.5.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
+    "react-imask": "^7.6.1",
     "react-international-phone": "^4.6.0",
     "schema-dts": "^1.1.5",
     "set-cookie-parser": "^2.7.1",

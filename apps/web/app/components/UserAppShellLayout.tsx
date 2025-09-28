@@ -65,9 +65,9 @@ const UserAppShellLayout = ({
                 visibleFrom="sm"
                 onClick={() => {
                   if (session) {
-                    push("/account");
+                    push("/dashboard");
                   } else {
-                    push("/auth/login");
+                    push("/auth");
                   }
                 }}
               >

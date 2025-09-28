@@ -1,11 +1,11 @@
 "use client";
 import {
+  Box,
   Group,
   Stack,
+  Text,
   ThemeIcon,
   UnstyledButton,
-  Text,
-  Box,
 } from "@mantine/core";
 import { CheckoutPageCartType } from "@repo/types";
 import { IconCheck } from "@tabler/icons-react";
@@ -16,11 +16,12 @@ interface AddressCardProps {
 }
 
 const AddressCard = ({ data, onEdit }: AddressCardProps) => {
+  if (!data) return null;
   return (
-    <Box p="md">
+    <>
       <Box hiddenFrom="sm">
         <Group justify="space-between" align="center" mb="md">
-          <Group gap="sm">
+          <Group gap="sm" align="center">
             <ThemeIcon radius="xl" color="black" size="lg">
               <IconCheck />
             </ThemeIcon>
@@ -62,10 +63,9 @@ const AddressCard = ({ data, onEdit }: AddressCardProps) => {
         </Stack>
       </Box>
 
-      {/* Desktop Layout - sm ve üzeri (2. fotoğraf gibi) */}
       <Box visibleFrom="sm">
         <Group justify="space-between" align="flex-start">
-          <Group gap="sm" align="flex-start">
+          <Group gap="sm" align="center">
             <ThemeIcon radius="xl" color="black" size="lg">
               <IconCheck />
             </ThemeIcon>
@@ -109,7 +109,7 @@ const AddressCard = ({ data, onEdit }: AddressCardProps) => {
           </UnstyledButton>
         </Group>
       </Box>
-    </Box>
+    </>
   );
 };
 

@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@repo/database';
-import { CargoZoneType } from '@repo/types';
+import { $Enums, Prisma } from '@repo/database';
+import {
+  CargoRuleWithDetails,
+  CargoZoneType,
+  CartItemWithPrices,
+  LocationWithCargoZone,
+  ShippingMethodsResponse,
+} from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -101,6 +107,7 @@ export class ShippingService {
       data: cargoZone,
     };
   }
+
   async getAllCargoZones() {
     const cargoZones = await this.prisma.cargoZone.findMany({
       include: {
@@ -169,6 +176,201 @@ export class ShippingService {
               },
       })),
       uniqueId: cargoZone.id,
+    };
+  }
+
+  private calculateCartTotal(
+    cartItems: CartItemWithPrices[],
+    currency: $Enums.Currency = 'TRY',
+  ): number {
+    let total = 0;
+
+    for (const item of cartItems) {
+      if (item.variant && item.variant.prices.length > 0) {
+        const priceObj = item.variant.prices.find(
+          (p) => p.currency === currency,
+        );
+        if (priceObj) {
+          if (priceObj.discountedPrice && priceObj.discountedPrice > 0) {
+            total += priceObj.discountedPrice * item.quantity;
+          } else {
+            total += priceObj.price * item.quantity;
+          }
+        }
+      } else if (item.product && item.product.prices.length > 0) {
+        const priceObj = item.product.prices.find(
+          (p) => p.currency === currency,
+        );
+        if (priceObj) {
+          if (priceObj.discountedPrice && priceObj.discountedPrice > 0) {
+            total += priceObj.discountedPrice * item.quantity;
+          } else {
+            total += priceObj.price * item.quantity;
+          }
+        }
+      }
+    }
+    return total;
+  }
+
+  private async findMatchingCargoZone(
+    countryId: string,
+    stateId: string | null,
+    cityId: string | null,
+    currency: $Enums.Currency,
+    cartTotal: number,
+  ): Promise<{
+    rules: CargoRuleWithDetails[];
+  } | null> {
+    const locations = await this.prisma.location.findMany({
+      where: {
+        countryId,
+      },
+      include: {
+        country: {
+          select: {
+            type: true,
+          },
+        },
+        cargoZone: {
+          select: {
+            rules: {
+              where: {
+                currency: currency,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (locations.length === 0) {
+      return null;
+    }
+
+    const matchingLocation = this.findBestMatchingLocation(
+      locations,
+      stateId,
+      cityId,
+    );
+
+    if (!matchingLocation) {
+      return null;
+    }
+
+    const applicableRules = matchingLocation.cargoZone.rules.filter((rule) => {
+      return this.isRuleApplicable(rule, cartTotal);
+    });
+
+    return {
+      rules: applicableRules,
+    };
+  }
+
+  private findBestMatchingLocation(
+    locations: LocationWithCargoZone[],
+    stateId: string | null,
+    cityId: string | null,
+  ): LocationWithCargoZone | null {
+    if (cityId) {
+      const cityMatch = locations.find(
+        (loc) => loc.cityIds.length > 0 && loc.cityIds.includes(cityId),
+      );
+      if (cityMatch) return cityMatch;
+    }
+
+    if (stateId) {
+      const stateMatch = locations.find(
+        (loc) => loc.stateIds.length > 0 && loc.stateIds.includes(stateId),
+      );
+      if (stateMatch) return stateMatch;
+    }
+
+    const countryWideMatch = locations.find(
+      (loc) => loc.stateIds.length === 0 && loc.cityIds.length === 0,
+    );
+
+    return countryWideMatch || null;
+  }
+
+  private isRuleApplicable(
+    rule: CargoRuleWithDetails,
+    cartTotal: number,
+  ): boolean {
+    if (rule.ruleType === 'SalesPrice') {
+      if (rule.minValue !== null && cartTotal < rule.minValue) {
+        return false;
+      }
+      if (rule.maxValue !== null && cartTotal > rule.maxValue) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  async getAvailableShippingMethods(
+    cartId: string,
+  ): Promise<ShippingMethodsResponse> {
+    const cart = await this.prisma.cart.findUnique({
+      where: { id: cartId },
+      include: {
+        shippingAddress: {
+          select: {
+            countryId: true,
+            addressLocationType: true,
+            stateId: true,
+            cityId: true,
+          },
+        },
+        items: {
+          select: {
+            variant: { select: { prices: true } },
+            product: { select: { prices: true } },
+            quantity: true,
+          },
+        },
+      },
+    });
+
+    if (!cart || !cart.shippingAddress || cart.items.length === 0) {
+      return {
+        success: false,
+        message: 'Geçersiz sepet veya eksik gönderim adresi.',
+      };
+    }
+
+    const cartTotal = this.calculateCartTotal(cart.items, cart.currency);
+
+    const matchingZone = await this.findMatchingCargoZone(
+      cart.shippingAddress.countryId,
+      cart.shippingAddress.addressLocationType === 'STATE'
+        ? cart.shippingAddress.stateId
+        : null,
+      cart.shippingAddress.addressLocationType === 'CITY'
+        ? cart.shippingAddress.cityId
+        : null,
+      cart.currency,
+      cartTotal,
+    );
+
+    if (!matchingZone) {
+      return {
+        success: false,
+        message: 'Bu bölge için kargo hizmeti bulunmuyor.',
+      };
+    }
+
+    if (matchingZone.rules.length === 0) {
+      return {
+        success: false,
+        message: 'Bu sepet tutarı için uygun kargo seçeneği bulunmuyor.',
+      };
+    }
+
+    return {
+      success: true,
+      shippingMethods: matchingZone,
     };
   }
 }

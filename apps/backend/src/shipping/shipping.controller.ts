@@ -39,4 +39,9 @@ export class ShippingController {
   async getCargoZone(@Param('id') id: string) {
     return this.shippingService.getCargoZone(id);
   }
+
+  @Get('get-available-shipping-methods/:cartId')
+  async getAvailableShippingMethods(@Param('cartId') cartId: string) {
+    return this.shippingService.getAvailableShippingMethods(cartId);
+  }
 }

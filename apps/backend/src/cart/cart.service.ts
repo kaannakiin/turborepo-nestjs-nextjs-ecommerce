@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -6,16 +7,21 @@ import {
 import { $Enums, Prisma } from '@repo/database';
 import {
   AddCartItemToCartBodyType,
+  BillingAddressZodType,
   CartItemType,
   CartType,
   CheckoutPageCartType,
   NonAuthUserAddressZodType,
 } from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { ShippingService } from 'src/shipping/shipping.service';
 
 @Injectable()
 export class CartService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly shippingService: ShippingService,
+  ) {}
 
   private returnCartType(
     dbCart: Prisma.CartGetPayload<{
@@ -247,6 +253,7 @@ export class CartService {
         });
 
         if (!cartExists) {
+          //TODO burada yeni kart oluşturulacak eklenecek ve dönecek
           throw new NotFoundException('Sepet Bulunamadı');
         }
 
@@ -1243,6 +1250,7 @@ export class CartService {
             state: { select: { id: true, name: true } },
           },
         },
+        cargoRule: true,
         user: true,
       },
     });
@@ -1302,11 +1310,6 @@ export class CartService {
             id: cartId,
           },
         },
-        billingCarts: {
-          connect: {
-            id: cartId,
-          },
-        },
       },
       update: {
         addressLine1: addressData.addressLine1,
@@ -1337,6 +1340,114 @@ export class CartService {
             id: cartId,
           },
         },
+      },
+    });
+    return newAddress;
+  }
+
+  async setShippingRuleToCart(cartId: string, ruleId: string) {
+    const rules =
+      await this.shippingService.getAvailableShippingMethods(cartId);
+    if (!rules.success) {
+      throw new BadRequestException(rules.message);
+    }
+    const ruleExists = rules.shippingMethods.rules.find((r) => r.id === ruleId);
+
+    if (!ruleExists) {
+      throw new BadRequestException('Geçersiz kargo seçeneği');
+    }
+
+    const updateCart = await this.prisma.cart.update({
+      where: { id: cartId },
+      data: {
+        cargoRule: {
+          connect: {
+            id: ruleExists.id,
+          },
+        },
+      },
+    });
+    return updateCart;
+  }
+
+  async setBillingAddressToCart(
+    cartId: string,
+    addressData: BillingAddressZodType,
+  ) {
+    const cart = await this.prisma.cart.findUnique({
+      where: {
+        id: cartId,
+      },
+    });
+
+    if (!cart) {
+      throw new NotFoundException('Sepet Bulunamadı');
+    }
+    console.log(JSON.stringify(addressData, null, 2));
+    const newAddress = await this.prisma.addressSchema.upsert({
+      where: {
+        id: addressData.id,
+      },
+      create: {
+        addressLine1: addressData.addressLine1,
+        addressLine2: addressData.addressLine2,
+        addressLocationType: addressData.addressType,
+        countryId: addressData.countryId,
+        ...(addressData.addressType === 'CITY'
+          ? {
+              cityId: addressData.cityId,
+            }
+          : addressData.addressType === 'STATE'
+            ? {
+                stateId: addressData.stateId,
+              }
+            : {
+                cityId: null,
+                stateId: null,
+              }),
+        zipCode: addressData.postalCode,
+        name: addressData.name,
+        phone: addressData.phone,
+        surname: addressData.surname,
+        isBillingAddress: true,
+        taxNumber: addressData.taxNumber,
+        isCorporateInvoice: addressData.isCorporateInvoice,
+        companyRegistrationAddress: addressData.companyRegistrationAddress,
+        companyName: addressData.companyName,
+        billingCarts: {
+          connect: {
+            id: cartId,
+          },
+        },
+      },
+      update: {
+        addressLine1: addressData.addressLine1,
+        addressLine2: addressData.addressLine2,
+        addressLocationType: addressData.addressType,
+        countryId: addressData.countryId,
+        ...(addressData.addressType === 'CITY'
+          ? {
+              cityId: addressData.cityId,
+              stateId: null,
+            }
+          : addressData.addressType === 'STATE'
+            ? {
+                stateId: addressData.stateId,
+                cityId: null,
+              }
+            : {
+                cityId: null,
+                stateId: null,
+              }),
+        zipCode: addressData.postalCode,
+        name: addressData.name,
+        phone: addressData.phone,
+        surname: addressData.surname,
+        isBillingAddress: true,
+        taxNumber: addressData.taxNumber,
+        isCorporateInvoice: addressData.isCorporateInvoice,
+        companyRegistrationAddress: addressData.companyRegistrationAddress,
+        companyName: addressData.companyName,
         billingCarts: {
           connect: {
             id: cartId,
@@ -1344,6 +1455,7 @@ export class CartService {
         },
       },
     });
+
     return newAddress;
   }
 }

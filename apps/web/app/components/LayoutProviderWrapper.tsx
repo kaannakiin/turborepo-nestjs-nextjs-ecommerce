@@ -2,8 +2,10 @@
 
 import {
   createTheme,
+  InputWrapper,
   MantineColorsTuple,
   MantineProvider,
+  Modal,
 } from "@mantine/core";
 import { DatesProvider } from "@mantine/dates";
 import { Notifications } from "@mantine/notifications";
@@ -42,7 +44,7 @@ const LayoutProviderWrapper = ({ children }: { children: ReactNode }) => {
     colors: { primary: primaryColor, admin: adminPrimaryColor },
     primaryColor: pathname.startsWith("/admin") ? "admin" : "primary",
     components: {
-      Modal: {
+      Modal: Modal.extend({
         classNames: {
           title: "text-lg font-semibold",
         },
@@ -50,7 +52,7 @@ const LayoutProviderWrapper = ({ children }: { children: ReactNode }) => {
           centered: true,
           transitionProps: { transition: "scale", duration: 300 },
         },
-      },
+      }),
     },
   });
   return (

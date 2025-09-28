@@ -177,3 +177,50 @@ export type CargoZones = Prisma.CargoZoneGetPayload<{
     rules: true;
   };
 }>;
+
+export type CartItemWithPrices = Prisma.CartItemGetPayload<{
+  select: {
+    quantity: true;
+    variant: { select: { prices: true } };
+    product: { select: { prices: true } };
+  };
+}>;
+
+export type LocationWithCargoZone = Prisma.LocationGetPayload<{
+  include: {
+    country: {
+      select: {
+        type: true;
+      };
+    };
+    cargoZone: {
+      select: {
+        rules: {
+          where: {
+            currency: $Enums.Currency;
+          };
+        };
+      };
+    };
+  };
+}>;
+
+export type CargoRuleWithDetails = Prisma.CargoRuleGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    price: true;
+    currency: true;
+    ruleType: true;
+    minValue: true;
+    maxValue: true;
+  };
+}>;
+
+export type ShippingMethodsResponse = {
+  success: boolean;
+  message?: string;
+  shippingMethods?: {
+    rules: CargoRuleWithDetails[];
+  };
+};

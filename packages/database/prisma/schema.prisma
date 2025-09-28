@@ -106,6 +106,7 @@ model User {
   discountUsage    CouponUsage[]
   carts            Cart[]
   addressSchema    AddressSchema[]
+  orders           Order[]
 
   @@index([id, refreshToken, email, phone])
 }
@@ -384,6 +385,7 @@ model Product {
   taxonomyCategory    TaxonomyCategory?           @relation(fields: [taxonomyCategoryId], references: [id])
   taxonomyCategoryId  String?
   footerLinks         FooterLinks[]
+  orderItems          OrderItem[]
 
   @@index([brandId])
   @@index([taxonomyCategoryId])
@@ -448,6 +450,7 @@ model ProductVariantCombination {
   createdAt        DateTime                          @default(now())
   updatedAt        DateTime                          @updatedAt
   cartItems        CartItem[]
+  orderItems       OrderItem[]
 
   @@unique([productId, sku])
   @@unique([productId, barcode])
@@ -600,11 +603,16 @@ model Cart {
   billingAddress   AddressSchema? @relation("CartBillingAddress", fields: [billingAddressId], references: [id], onDelete: SetNull)
   billingAddressId String?
 
+  cargoRule   CargoRule? @relation(fields: [cargoRuleId], references: [id], onDelete: SetNull)
+  cargoRuleId String?
+
   user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId    String?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   items     CartItem[]
+
+  order Order?
 }
 
 // İNDİRİM SİSTEMİ MODELLERİ
@@ -984,26 +992,32 @@ model Layout {
 }
 
 model AddressSchema {
-  id                  String      @id @default(cuid())
-  email               String?
-  addressTitle        String?
-  phone               String
-  name                String
-  surname             String
-  addressLine1        String
-  addressLine2        String?
-  zipCode             String?
-  country             Country     @relation(fields: [countryId], references: [id])
-  countryId           String
-  state               State?      @relation(fields: [stateId], references: [id])
-  stateId             String?
-  city                City?       @relation(fields: [cityId], references: [id])
-  cityId              String?
-  user                User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId              String?
-  addressLocationType CountryType
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
+  id                         String      @id @default(cuid())
+  email                      String?
+  addressTitle               String?
+  phone                      String
+  name                       String
+  surname                    String
+  addressLine1               String
+  addressLine2               String?
+  zipCode                    String?
+  country                    Country     @relation(fields: [countryId], references: [id])
+  countryId                  String
+  state                      State?      @relation(fields: [stateId], references: [id])
+  stateId                    String?
+  city                       City?       @relation(fields: [cityId], references: [id])
+  cityId                     String?
+  user                       User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                     String?
+  addressLocationType        CountryType
+  isBillingAddress           Boolean     @default(false)
+  isCorporateInvoice         Boolean     @default(false)
+  companyName                String?
+  taxNumber                  String?
+  companyRegistrationAddress String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   shippingCarts Cart[] @relation("CartShippingAddress")
   billingCarts  Cart[] @relation("CartBillingAddress")
@@ -1070,6 +1084,108 @@ model CargoRule {
   updatedAt   DateTime   @updatedAt
   CargoZone   CargoZone? @relation(fields: [cargoZoneId], references: [id])
   cargoZoneId String?
+  carts       Cart[]
 
   @@index([ruleType])
+}
+
+enum OrderStatus {
+  PENDING // Beklemede
+  CONFIRMED // Onaylandı
+  PROCESSING // Hazırlanıyor
+  SHIPPED // Kargoya verildi
+  DELIVERED // Teslim edildi
+  CANCELLED // İptal edildi
+  REFUNDED // İade edildi
+}
+
+enum PaymentStatus {
+  PENDING // Ödeme bekliyor
+  PAID // Ödendi
+  FAILED // Ödeme başarısız
+  REFUNDED // İade edildi
+  PARTIAL_REFUND // Kısmi iade
+}
+
+model OrderItem {
+  id String @id @default(cuid()) // Benzersiz sipariş kalemi ID'si
+
+  // Fiyat Bilgileri
+  buyedPrice    Float // Müşterinin ödediği birim fiyat (indirimli)
+  originalPrice Float? // İndirim öncesi orijinal birim fiyat
+  quantity      Int    @default(1) // Sipariş edilen adet
+  totalPrice    Float // quantity * buyedPrice (kalem toplam tutarı)
+
+  // Ürün Bilgileri (Sipariş anındaki snapshot)
+  buyedVariants Json? // Satın alınan varyant bilgileri (renk, beden vs.)
+
+  // Ödeme Takibi
+  transactionId String? // Ödeme sağlayıcısından gelen işlem ID'si
+
+  // İlişkiler
+  product   Product                    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String // Ana ürün referansı
+  variant   ProductVariantCombination? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  variantId String? // Varyant referansı (null ise ana ürün)
+  order     Order                      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String // Hangi siparişe ait olduğu
+
+  // Audit Alanları
+  createdAt DateTime @default(now()) // Kayıt oluşturma tarihi
+  updatedAt DateTime @updatedAt // Son güncelleme tarihi
+
+  @@index([orderId]) // Sipariş ID'sine göre hızlı arama
+  @@index([productId]) // Ürün ID'sine göre hızlı arama
+}
+
+model Order {
+  id String @id @default(cuid()) // Benzersiz sipariş ID'si
+
+  // Ödeme Bilgileri
+  paymentId      String  @unique // İyzico'dan gelen ödeme ID'si
+  conversationId String? // İyzico conversation ID (signature doğrulama için)
+  orderNumber    String  @unique // Müşteriye gösterilen sipariş numarası
+
+  // Durum Bilgileri
+  orderStatus   OrderStatus   @default(PENDING) // Sipariş durumu
+  paymentStatus PaymentStatus @default(PENDING) // Ödeme durumu
+
+  // Bölgesel Ayarlar
+  currency Currency @default(TRY) // Para birimi
+  locale   Locale   @default(TR) // Dil/bölge
+
+  // Fiyat Bilgileri
+  subtotal       Float // Ürünlerin toplam tutarı
+  totalAmount    Float // Müşterinin ödediği genel toplam
+  taxAmount      Float? // KDV tutarı (varsa)
+  shippingCost   Float? // Kargo ücreti
+  discountAmount Float? // İndirim tutarı
+
+  // Notlar
+  customerNotes String? @db.Text // Müşteri notu
+  adminNotes    String? @db.Text // Admin/operasyon notu
+
+  // Tarih Takibi
+  confirmedAt DateTime? // Sipariş onaylanma tarihi
+  shippedAt   DateTime? // Kargoya verilme tarihi
+  deliveredAt DateTime? // Teslim tarihi
+  cancelledAt DateTime? // İptal tarihi
+
+  // İlişkiler
+  orderItems OrderItem[] // Sipariş kalemleri
+
+  // Adres Bilgileri (JSON olarak saklanıyor - sipariş anındaki snapshot)
+  shippingAddress Json? // Teslimat adresi
+  billingAddress  Json? // Fatura adresi
+
+  // Kullanıcı İlişkisi
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId String? // Kullanıcı ID'si (misafir siparişlerde null)
+
+  // Sepet İlişkisi (Hangi sepetten oluşturuldu)
+  cartId String? @unique // Kaynak sepet ID'si
+  cart   Cart?   @relation(fields: [cartId], references: [id], onDelete: SetNull)
+
+  // Hızlı arama için indeksler
+  @@index([paymentId, orderNumber, paymentStatus, orderStatus])
 }

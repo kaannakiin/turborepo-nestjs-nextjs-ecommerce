@@ -11,6 +11,7 @@ import { DiscountsModule } from './discounts/discounts.module';
 import { UserPageModule } from './user-page/user-page.module';
 import { CartModule } from './cart/cart.module';
 import { ShippingModule } from './shipping/shipping.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { ShippingModule } from './shipping/shipping.module';
     UserPageModule,
     CartModule,
     ShippingModule,
+    PaymentModule,
   ],
   controllers: [],
   providers: [],

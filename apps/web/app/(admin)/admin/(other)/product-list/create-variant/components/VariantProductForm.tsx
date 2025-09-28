@@ -126,7 +126,6 @@ const VariantProductForm = ({
       const { productId, combinations: updatedCombinations } =
         responseData.data;
 
-      // TODO EXISTINGVARIANTSLAR ICIN RESIM YUKLEME ISLEMI YAP
       notifications.show({
         title: "Başarılı!",
         message: defaultValues

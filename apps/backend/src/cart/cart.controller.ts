@@ -2,9 +2,11 @@ import { Body, Controller, Get, Param, Post, UsePipes } from '@nestjs/common';
 import {
   $Enums,
   AddCartItemToCartBody,
+  BillingAddressSchema,
   NonAuthUserAddressSchema,
-  type NonAuthUserAddressZodType,
   type AddCartItemToCartBodyType,
+  type BillingAddressZodType,
+  type NonAuthUserAddressZodType,
 } from '@repo/types';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import { CartService } from './cart.service';
@@ -70,11 +72,27 @@ export class CartController {
   }
 
   @Post('set-unauth-shipping-address-to-cart/:cartId')
-  // @UsePipes(new ZodValidationPipe(NonAuthUserAddressSchema))
   async setUnAuthShippingAddressToCart(
     @Param('cartId') cartId: string,
-    @Body() data: NonAuthUserAddressZodType,
+    @Body(new ZodValidationPipe(NonAuthUserAddressSchema))
+    data: NonAuthUserAddressZodType,
   ) {
     return this.cartService.setUnAuthShippingAddressToCart(cartId, data);
+  }
+
+  @Post('set-shipping-address-to-cart')
+  async setShippingAddressToCart(
+    @Body('body') body: { cartId: string; ruleId: string },
+  ) {
+    return this.cartService.setShippingRuleToCart(body.cartId, body.ruleId);
+  }
+
+  @Post('set-billing-address-to-cart/:cartId')
+  async setBillingAddressToCart(
+    @Param('cartId') cartId: string,
+    @Body(new ZodValidationPipe(BillingAddressSchema))
+    data: BillingAddressZodType,
+  ) {
+    return this.cartService.setBillingAddressToCart(cartId, data);
   }
 }

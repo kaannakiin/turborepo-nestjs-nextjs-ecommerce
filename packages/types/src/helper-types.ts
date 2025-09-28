@@ -97,6 +97,7 @@ export type CheckoutPageCartType = Prisma.CartGetPayload<{
         state: { select: { id: true; name: true } };
       };
     };
+    cargoRule: true;
     user: true;
   };
 }>;

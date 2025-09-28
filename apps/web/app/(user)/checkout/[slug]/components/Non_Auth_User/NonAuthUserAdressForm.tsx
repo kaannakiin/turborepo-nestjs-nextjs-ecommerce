@@ -2,7 +2,6 @@
 
 import CustomPhoneInput from "@/(user)/components/CustomPhoneInput";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import { TURKEY_DB_ID } from "@lib/constants";
 import {
   Button,
   Checkbox,
@@ -17,7 +16,6 @@ import {
 } from "@mantine/core";
 import {
   Controller,
-  createId,
   SubmitHandler,
   useForm,
   useQuery,
@@ -134,14 +132,14 @@ const NonAuthUserAddressForm = ({
       {(countriesIsLoading || citiesIsLoading || statesIsLoading) && (
         <GlobalLoadingOverlay />
       )}
-      <Group gap={"lg"} align="start">
+      <Group gap={"sm"} align="start">
         <ThemeIcon radius={"xl"} color="black" size={"lg"}>
           <Text fz={"xl"} fw={700} ta={"center"}>
             1
           </Text>
         </ThemeIcon>
         <Stack gap={"lg"} className="flex-1">
-          <Text fz={"xl"} fw={700}>
+          <Text fz={"lg"} fw={600}>
             Adres
           </Text>
           <Stack gap={"xl"}>
@@ -193,7 +191,7 @@ const NonAuthUserAddressForm = ({
                 Teslimat Bilgileri
               </Text>
 
-              <SimpleGrid cols={2}>
+              <SimpleGrid cols={{ xs: 1, sm: 1, md: 2 }}>
                 <Controller
                   control={control}
                   name="name"
@@ -360,7 +358,13 @@ const NonAuthUserAddressForm = ({
                 )}
               />
             </div>
-            <Button size="lg" radius={"md"} onClick={handleSubmit(onSubmit)}>
+            <Button
+              size="lg"
+              radius={"md"}
+              variant="filled"
+              color="black"
+              onClick={handleSubmit(onSubmit)}
+            >
               {"Kargo ile Devam Et"}
             </Button>
           </Stack>

@@ -138,3 +138,68 @@ export type GetAllStateReturnType = Prisma.StateGetPayload<{
     name: true;
   };
 }>;
+
+export const BillingAddressSchema = BaseAddressSchema.safeExtend({
+  isCorporateInvoice: z.boolean({
+    error: ' "Kurumsal Fatura seçeneği gereklidir",',
+  }),
+  companyName: z
+    .string({
+      error: "Firma Adı gereklidir",
+    })
+    .min(2, "Firma Adı en az 2 karakter olmalıdır")
+    .max(256, "Firma Adı en fazla 256 karakter olabilir")
+    .optional()
+    .nullable(),
+  taxNumber: z
+    .string({
+      error: ' "Vergi Numarası gereklidir",',
+    })
+    .min(2, "Vergi Numarası en az 2 karakter olmalıdır")
+    .max(50, "Vergi Numarası en fazla 50 karakter olabilir")
+    .optional()
+    .nullable(),
+  companyRegistrationAddress: z
+    .string({
+      error: ' "Vergi dairesi gereklidir",',
+    })
+    .min(2, "Vergi dairesi en az 2 karakter olmalıdır")
+    .max(256, "Vergi dairesi en fazla 256 karakter olabilir")
+    .optional()
+    .nullable(),
+}).check(({ value, issues }) => {
+  // ✅ Sadece kurumsal fatura seçiliyse validasyon yap
+  if (value.isCorporateInvoice) {
+    if (!value.companyName || value.companyName.trim().length === 0) {
+      issues.push({
+        code: "custom",
+        message: "Firma Adı gereklidir",
+        path: ["companyName"],
+        input: ["companyName"],
+      });
+    }
+
+    if (!value.taxNumber || value.taxNumber.trim().length === 0) {
+      issues.push({
+        code: "custom",
+        message: "Vergi Numarası gereklidir",
+        path: ["taxNumber"],
+        input: ["taxNumber"],
+      });
+    }
+
+    if (
+      !value.companyRegistrationAddress ||
+      value.companyRegistrationAddress.trim().length === 0
+    ) {
+      issues.push({
+        code: "custom",
+        message: "Vergi dairesi gereklidir",
+        path: ["companyRegistrationAddress"],
+        input: ["companyRegistrationAddress"],
+      });
+    }
+  }
+});
+
+export type BillingAddressZodType = z.infer<typeof BillingAddressSchema>;

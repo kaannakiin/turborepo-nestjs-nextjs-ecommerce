@@ -41,7 +41,7 @@ const AdminAppShellLayout = ({
       padding="md"
       header={{ height: 60 }}
       navbar={{
-        width: 250,
+        width: 280,
         breakpoint: "sm",
         collapsed: { mobile: !mobileOpened, desktop: !navbarState },
       }}
