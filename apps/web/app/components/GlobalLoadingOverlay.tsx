@@ -1,3 +1,4 @@
+"use client";
 import { LoadingOverlay, LoadingOverlayProps } from "@mantine/core";
 import { usePathname } from "next/navigation";
 

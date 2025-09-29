@@ -2,7 +2,7 @@
 
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import { TURKEY_DB_ID } from "@lib/constants";
-import { Divider, Stack } from "@mantine/core";
+import { Divider, Group, Stack, Text, ThemeIcon } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { createId, useQuery } from "@repo/shared";
 import { CheckoutPageCartType } from "@repo/types";
@@ -53,68 +53,91 @@ const NonAuthUserCheckoutPage = ({
   return (
     <Stack gap="lg" mt={"lg"}>
       {step === "info" ? (
-        <NonAuthUserAddressForm
-          defaultValues={
-            data.cart?.shippingAddress
-              ? {
-                  addressLine1: shippingAddress.addressLine1,
-                  addressLine2: shippingAddress.addressLine2,
-                  cityId: shippingAddress.cityId || null,
-                  countryId: shippingAddress.countryId || null,
-                  email: shippingAddress.email || "",
-                  addressType: shippingAddress.addressLocationType,
-                  campaignCheckbox: true,
-                  id: shippingAddress.id,
-                  name: shippingAddress.name,
-                  phone: shippingAddress.phone,
-                  surname: shippingAddress.surname,
-                  postalCode: null,
-                  stateId: shippingAddress.stateId || null,
-                }
-              : {
-                  addressType: "CITY",
-                  email: "",
-                  name: "",
-                  phone: "",
-                  surname: "",
-                  cityId: null,
-                  stateId: null,
-                  countryId: TURKEY_DB_ID,
-                  id: createId(),
-                  addressLine1: "",
-                  addressLine2: null,
-                  postalCode: null,
-                  campaignCheckbox: true,
-                }
-          }
-          onSubmit={async (body) => {
-            const res = await fetch(
-              `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart/set-unauth-shipping-address-to-cart/${cartId}`,
-              {
-                method: "POST",
-                body: JSON.stringify(body), // { data } yerine sadece data
-                credentials: "include",
-                headers: {
-                  "Content-Type": "application/json", // Bu satırı ekleyin
-                },
-              }
-            );
-            if (!res.ok) {
-              notifications.show({
-                message: "Adres kaydedilirken bir hata oluştu",
-                color: "red",
-                title: "Hata",
-                position: "bottom-right",
-              });
-              return;
+        <>
+          <NonAuthUserAddressForm
+            defaultValues={
+              data.cart?.shippingAddress
+                ? {
+                    addressLine1: shippingAddress.addressLine1,
+                    addressLine2: shippingAddress.addressLine2,
+                    cityId: shippingAddress.cityId || null,
+                    countryId: shippingAddress.countryId || null,
+                    email: shippingAddress.email || "",
+                    addressType: shippingAddress.addressLocationType,
+                    campaignCheckbox: true,
+                    id: shippingAddress.id,
+                    name: shippingAddress.name,
+                    phone: shippingAddress.phone,
+                    surname: shippingAddress.surname,
+                    postalCode: null,
+                    stateId: shippingAddress.stateId || null,
+                  }
+                : {
+                    addressType: "CITY",
+                    email: "",
+                    name: "",
+                    phone: "",
+                    surname: "",
+                    cityId: null,
+                    stateId: null,
+                    countryId: TURKEY_DB_ID,
+                    id: createId(),
+                    addressLine1: "",
+                    addressLine2: null,
+                    postalCode: null,
+                    campaignCheckbox: true,
+                  }
             }
+            onSubmit={async (body) => {
+              const res = await fetch(
+                `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart/set-unauth-shipping-address-to-cart/${cartId}`,
+                {
+                  method: "POST",
+                  body: JSON.stringify(body), // { data } yerine sadece data
+                  credentials: "include",
+                  headers: {
+                    "Content-Type": "application/json", // Bu satırı ekleyin
+                  },
+                }
+              );
+              if (!res.ok) {
+                notifications.show({
+                  message: "Adres kaydedilirken bir hata oluştu",
+                  color: "red",
+                  title: "Hata",
+                  position: "bottom-right",
+                });
+                return;
+              }
 
-            const params = new URLSearchParams(searchParams.toString());
-            params.set("step", "shipping" as CheckoutStep);
-            replace(`?${params.toString()}`, { scroll: false });
-            refetch();
-          }}
-        />
+              const params = new URLSearchParams(searchParams.toString());
+              params.set("step", "shipping" as CheckoutStep);
+              replace(`?${params.toString()}`, { scroll: false });
+              refetch();
+            }}
+          />
+          <Group gap={"sm"}>
+            <ThemeIcon radius={"xl"} color="gray" size={"lg"}>
+              <Text fz={"xl"} fw={700} ta={"center"} c={"white"}>
+                2
+              </Text>
+            </ThemeIcon>
+            <Text fz={"lg"} fw={600} c={"dimmed"}>
+              Kargo
+            </Text>
+          </Group>
+          <Divider />
+          <Group gap={"sm"}>
+            <ThemeIcon radius={"xl"} color="gray" size={"lg"}>
+              <Text fz={"xl"} fw={700} ta={"center"} c={"white"}>
+                3
+              </Text>
+            </ThemeIcon>
+            <Text fz={"lg"} fw={600} c={"dimmed"}>
+              Ödeme
+            </Text>
+          </Group>
+        </>
       ) : step === "shipping" ? (
         <>
           <AddressCard

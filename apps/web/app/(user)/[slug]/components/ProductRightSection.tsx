@@ -17,6 +17,7 @@ import { $Enums, ProductPageDataType } from "@repo/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import CustomImage from "../../../components/CustomImage";
 import AddToCartButton from "../../../components/AddToCartButton";
+import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 
 interface ProductRightSectionProps {
   productId: string;
@@ -102,30 +103,25 @@ const ProductRightSection = ({
                 <Text fw={700}>%50.1</Text>
               </Badge>
               <Stack gap={"1px"}>
-                <Text td="line-through" fz={"sm"} c={"dimmed"} fw={700}>
-                  {selectedVariantPrice.price.toLocaleString("tr-TR", {
-                    style: "currency",
-                    currency: selectedVariantPrice.currency,
-                  })}
-                </Text>
-                <Text fw={700} fz={"xl"}>
-                  {selectedVariantPrice.discountedPrice.toLocaleString(
-                    "tr-TR",
-                    {
-                      style: "currency",
-                      currency: selectedVariantPrice.currency,
-                    }
-                  )}
-                </Text>
+                <ProductPriceFormatter
+                  price={selectedVariantPrice.price}
+                  fz={"sm"}
+                  fw={700}
+                  c={"dimmed"}
+                />
+                <ProductPriceFormatter
+                  price={selectedVariantPrice.discountedPrice}
+                  fw={700}
+                  fz={"xl"}
+                />
               </Stack>
             </>
           ) : (
-            <Text fw={700} fz={"xl"}>
-              {selectedVariantPrice.price.toLocaleString("tr-TR", {
-                style: "currency",
-                currency: selectedVariantPrice.currency,
-              })}
-            </Text>
+            <ProductPriceFormatter
+              price={selectedVariantPrice.price}
+              fw={700}
+              fz={"xl"}
+            />
           )}
         </Group>
       )}
@@ -226,8 +222,7 @@ const ProductRightSection = ({
                       variant={isSelected ? "filled" : "outline"}
                       className="cursor-pointer"
                       size="xl"
-                      w={80}
-                      h={50}
+                      py={"lg"}
                       onClick={() => onClick(group, option)}
                       radius={"sm"}
                     >

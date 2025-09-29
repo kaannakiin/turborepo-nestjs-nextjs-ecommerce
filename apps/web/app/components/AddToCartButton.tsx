@@ -1,7 +1,7 @@
 "use client";
 
+import { useCartV2 } from "@/context/cart-context/CartContextV2";
 import { Button } from "@mantine/core";
-import { useCart } from "../context/cart-context/CartContext";
 
 interface AddToCartButtonProps {
   productId: string;
@@ -14,7 +14,7 @@ const AddToCartButton = ({
   variantId,
   quantity = 1,
 }: AddToCartButtonProps) => {
-  const { addItem } = useCart();
+  const { addItem } = useCartV2();
   return (
     <Button
       fullWidth
@@ -23,8 +23,7 @@ const AddToCartButton = ({
           productId,
           variantId,
           quantity,
-          cartId: null,
-          userId: null,
+          whereAdded: "PRODUCT_PAGE",
         });
       }}
       radius={"xl"}

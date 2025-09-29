@@ -158,6 +158,49 @@ export interface ThreeDSFailureResponse {
 }
 
 export type ThreeDSResponse = ThreeDSSuccessResponse | ThreeDSFailureResponse;
+export interface NonThreeDSRequest
+  extends Omit<ThreeDSRequest, "callbackUrl"> {}
+
+// Başarılı Non-ThreeDS Response
+export interface NonThreeDSSuccessResponse {
+  status: "success";
+  locale: IyzLocale;
+  systemTime: number;
+  conversationId: string;
+  price: number;
+  paidPrice: number;
+  installment: number;
+  paymentId: string;
+  fraudStatus: number;
+  merchantCommissionRate: number;
+  merchantCommissionRateAmount: number;
+  iyziCommissionRateAmount: number;
+  iyziCommissionFee: number;
+  cardType: CardType;
+  cardAssociation: CardAssociation;
+  cardFamily: CardFamilyName;
+  binNumber: string;
+  lastFourDigits: string;
+  basketId: string;
+  currency: $Enums.Currency;
+  itemTransactions: ItemTransaction[];
+  authCode: string;
+  phase: string;
+  hostReference: string;
+  signature: string;
+}
+export interface NonThreeDSFailureResponse {
+  status: "failure";
+  locale: IyzLocale;
+  systemTime: number;
+  conversationId: string;
+  errorCode: string;
+  errorMessage: string;
+}
+
+export type NonThreeDSResponse =
+  | NonThreeDSSuccessResponse
+  | NonThreeDSFailureResponse;
 export interface SignatureValidationData {
   paymentId?: string;
   conversationId: string;

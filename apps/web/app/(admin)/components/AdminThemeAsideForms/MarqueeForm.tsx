@@ -5,7 +5,6 @@ import {
   ColorInput,
   Group,
   NumberInput,
-  Select,
   SimpleGrid,
   Stack,
   Switch,
@@ -24,10 +23,8 @@ import {
   MarqueeSchema,
   MarqueeType,
 } from "@repo/types";
-import {
-  getMantineFontWeightLabel,
-  getMantineSizeLabel,
-} from "../../../../lib/helpers";
+import FontSizeSelect from "./CustomSelects/FontSizeSelect";
+import FontWeightSelect from "./CustomSelects/FontWeightSelect";
 
 interface MarqueeFormProps {
   defaultValues?: MarqueeType;
@@ -111,45 +108,25 @@ const MarqueeForm = ({ defaultValues, onSubmit }: MarqueeFormProps) => {
       <Controller
         control={control}
         name="fontSize"
-        render={({ field }) => (
-          <Select
-            {...field}
-            label="Yazı Boyutu"
-            allowDeselect={false}
-            data={Object.values(MantineSize).map((size) => ({
-              value: size,
-              label: getMantineSizeLabel(size),
-            }))}
-          />
+        render={({ field, fieldState }) => (
+          <FontSizeSelect {...field} error={fieldState.error?.message} />
         )}
       />
       <Controller
         control={control}
         name="fontWeight"
-        render={({ field }) => (
-          <Select
-            {...field}
-            label="Yazı Ağırlığı"
-            allowDeselect={false}
-            data={Object.values(MantineFontWeight).map((weight) => ({
-              value: weight,
-              label: getMantineFontWeightLabel(weight),
-            }))}
-          />
+        render={({ field, fieldState }) => (
+          <FontWeightSelect {...field} error={fieldState.error?.message} />
         )}
       />
       <Controller
         control={control}
         name="paddingY"
-        render={({ field }) => (
-          <Select
+        render={({ field, fieldState }) => (
+          <FontSizeSelect
             {...field}
-            allowDeselect={false}
-            label="Y Ekseni boşluğu"
-            data={Object.values(MantineSize).map((size) => ({
-              value: size,
-              label: getMantineSizeLabel(size),
-            }))}
+            label="Dikey Padding"
+            error={fieldState.error?.message}
           />
         )}
       />

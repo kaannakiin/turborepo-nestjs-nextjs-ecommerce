@@ -1,4 +1,5 @@
 "use client";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import MainPageProductList from "@/users-ui-components/MainPageProductList";
 import { Stack } from "@mantine/core";
 import { MainPageComponentsType } from "@repo/types";
@@ -7,20 +8,24 @@ import { useMemo } from "react";
 
 const MainPageSliderCarousel = dynamic(
   () => import("@/users-ui-components/MainPageSliderCarousel"),
-  { ssr: false }
+  { ssr: false, loading: () => <GlobalLoadingOverlay visible /> }
 );
 const MainPageMarquee = dynamic(
   () => import("@/users-ui-components/MainPageMarquee"),
-  { ssr: false }
+  { ssr: false, loading: () => <GlobalLoadingOverlay visible /> }
 );
 
 const CategoryGridComponent = dynamic(
   () => import("@/users-ui-components/CategoryGridComponent"),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => <GlobalLoadingOverlay visible />,
+  }
 );
 
 const FooterComponent = dynamic(() => import("./FooterComponent"), {
   ssr: false,
+  loading: () => <GlobalLoadingOverlay visible />,
 });
 
 interface AdminThemeViewerProps {
@@ -28,7 +33,6 @@ interface AdminThemeViewerProps {
 }
 
 const AdminThemeViewer = ({ data }: AdminThemeViewerProps) => {
-  // Memoized sorted components - null check burada yapılıyor
   const sortedComponents = useMemo(() => {
     const safeComponents = data?.components || [];
     return safeComponents

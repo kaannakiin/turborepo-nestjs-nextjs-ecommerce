@@ -1,4 +1,5 @@
 "use client";
+import GlobalDropzone from "@/components/GlobalDropzone";
 import {
   ActionIcon,
   Avatar,
@@ -36,10 +37,10 @@ import {
   IconTrash,
 } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
-import GlobalDropzone from "@/components/GlobalDropzone";
 import classes from "./RadioCard.module.css";
 
 // @dnd-kit imports
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import {
   closestCenter,
   DndContext,
@@ -56,7 +57,6 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import CreatableSelect from "./CreatableSelect";
 
 interface VariantGroupDrawerProps
@@ -64,6 +64,10 @@ interface VariantGroupDrawerProps
   onSubmit: SubmitHandler<VariantGroupZodType>;
   defaultValues?: VariantGroupZodType;
 }
+
+// ✅ Doğru type tanımı
+type VariantOption = VariantGroupZodType["options"][number];
+type DeletedVariant = Omit<VariantOption, "id">;
 
 // Sortable Item Component
 interface SortableVariantItemProps {
@@ -106,14 +110,11 @@ const SortableVariantItem = ({
     setDeletePopoverOpened(false);
   };
 
-  // Watch ile field değerlerini alalım
   const fieldFile = control._getWatch(`options.${index}.file`);
   const fieldExistingFile = control._getWatch(`options.${index}.existingFile`);
-
   const fieldHexValue = control._getWatch(`options.${index}.hexValue`);
   const fieldTranslations = control._getWatch(`options.${index}.translations`);
 
-  // URL oluşturma fonksiyonu (file varsa)
   const getImageUrl = () => {
     if (fieldFile && typeof fieldFile !== "string") {
       return URL.createObjectURL(fieldFile);
@@ -133,6 +134,7 @@ const SortableVariantItem = ({
     }
     return null;
   };
+
   return (
     <div ref={setNodeRef} style={style}>
       <Group
@@ -274,7 +276,10 @@ const VariantGroupDrawer = ({
   >(null);
   const [allDeleteVariantPopover, setAllDeleteVariantPopover] = useState(false);
 
-  const initialValues = {
+  // ✅ Silinen varyantları sakla (ID'siz)
+  const [deletedVariants, setDeletedVariants] = useState<DeletedVariant[]>([]);
+
+  const initialValues: VariantGroupZodType = {
     type: "LIST" as $Enums.VariantGroupType,
     uniqueId: createId(),
     options: [],
@@ -306,6 +311,8 @@ const VariantGroupDrawer = ({
       } else {
         reset(initialValues);
       }
+      // Drawer açıldığında silinen varyantları temizle
+      setDeletedVariants([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opened, defaultValues, reset]);
@@ -316,6 +323,7 @@ const VariantGroupDrawer = ({
     control,
     name: "options",
   });
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -335,13 +343,12 @@ const VariantGroupDrawer = ({
         field.translations?.find((t) => t.locale === "TR")?.name.toLowerCase()
       )
       .filter(Boolean);
+
     if (existingNames.includes(variantName.toLowerCase().trim())) {
       setVariantError("Bu varyant zaten mevcut");
-
       setTimeout(() => {
         setVariantError(null);
       }, 1000);
-
       return;
     }
 
@@ -378,11 +385,54 @@ const VariantGroupDrawer = ({
       const oldIndex = fields.findIndex((field) => field.id === active.id);
       const newIndex = fields.findIndex((field) => field.id === over?.id);
 
-      move(oldIndex, newIndex);
+      if (oldIndex !== -1 && newIndex !== -1) {
+        move(oldIndex, newIndex);
+      }
     }
   };
 
-  // selectedVariantOptionModal'ın field.id'sine karşılık gelen index'ini bulma
+  // ✅ Tek bir varyant silme işlemi
+  const handleDeleteSingleVariant = (index: number) => {
+    const variantData = fields[index];
+    const { id, ...variantWithoutId } = variantData as VariantOption & {
+      id: string;
+    };
+
+    // Mevcut silinen varyantlara ekle
+    setDeletedVariants((prev) => [...prev, variantWithoutId]);
+    remove(index);
+  };
+
+  // ✅ Tüm varyantları silme işlemi
+  const handleDeleteAllVariants = () => {
+    // Mevcut field'ları al (ID'siz)
+    const allVariants = fields.map((field) => {
+      const { id, ...rest } = field as VariantOption & { id: string };
+      return rest;
+    });
+
+    // Mevcut silinen varyantlarla birleştir
+    setDeletedVariants((prev) => [...prev, ...allVariants]);
+
+    // Geriye doğru sil (index shift problemini önlemek için)
+    for (let i = fields.length - 1; i >= 0; i--) {
+      remove(i);
+    }
+
+    setAllDeleteVariantPopover(false);
+  };
+
+  // ✅ Silinen varyantları geri getir
+  const handleRestoreDeletedVariants = () => {
+    // Tüm silinen varyantları sırayla ekle
+    deletedVariants.forEach((variant) => {
+      append(variant);
+    });
+
+    // Silinen varyantlar listesini temizle
+    setDeletedVariants([]);
+  };
+
   const getSelectedVariantIndex = () => {
     if (!selectedVariantOptionModal) return -1;
     return fields.findIndex((field) => field.id === selectedVariantOptionModal);
@@ -428,7 +478,6 @@ const VariantGroupDrawer = ({
           </Drawer.Header>
           <Drawer.Body>
             <Stack gap={"lg"}>
-              <Group justify="flex-end"></Group>
               <Controller
                 control={control}
                 name="translations.0.name"
@@ -445,6 +494,7 @@ const VariantGroupDrawer = ({
                   />
                 )}
               />
+
               <Stack gap={"xs"}>
                 <Controller
                   control={control}
@@ -525,6 +575,7 @@ const VariantGroupDrawer = ({
                   }}
                 />
               </Stack>
+
               <TextInput
                 ref={inputRef}
                 labelProps={{
@@ -535,51 +586,65 @@ const VariantGroupDrawer = ({
                     <Text>
                       Varyantlar <span className="text-red-500">*</span>
                     </Text>
-                    <Popover
-                      width={200}
-                      position="bottom"
-                      withArrow
-                      shadow="md"
-                      opened={allDeleteVariantPopover}
-                      onChange={setAllDeleteVariantPopover}
-                    >
-                      <Popover.Target>
-                        <UnstyledButton
-                          className="flex flex-row gap-1 text-xs text-red-500 text-center"
-                          onClick={() => setAllDeleteVariantPopover(true)}
+                    <Stack align="end" gap="xs">
+                      {fields.length > 0 && (
+                        <Popover
+                          width={200}
+                          position="bottom"
+                          withArrow
+                          shadow="md"
+                          opened={allDeleteVariantPopover}
+                          onChange={setAllDeleteVariantPopover}
                         >
-                          <IconTrash size={16} />
-                          Tümünü Sil
-                        </UnstyledButton>
-                      </Popover.Target>
-                      <Popover.Dropdown>
-                        <Stack gap="xs">
-                          <Text size="sm">
-                            Tüm varyant opsiyonlarını silmek istiyor musunuz?
-                          </Text>
-                          <Group justify="flex-end">
-                            <Button
-                              size="xs"
-                              variant="light"
-                              color="gray"
-                              onClick={() => setAllDeleteVariantPopover(false)}
+                          <Popover.Target>
+                            <UnstyledButton
+                              className="flex flex-row gap-1 text-xs text-red-500 text-center"
+                              onClick={() => setAllDeleteVariantPopover(true)}
                             >
-                              Hayır
-                            </Button>
-                            <Button
-                              size="xs"
-                              color="red"
-                              onClick={() => {
-                                setAllDeleteVariantPopover(false);
-                                fields.forEach((_, index) => remove(index));
-                              }}
-                            >
-                              Evet
-                            </Button>
-                          </Group>
-                        </Stack>
-                      </Popover.Dropdown>
-                    </Popover>
+                              <IconTrash size={16} />
+                              Tümünü Sil
+                            </UnstyledButton>
+                          </Popover.Target>
+                          <Popover.Dropdown>
+                            <Stack gap="xs">
+                              <Text size="sm">
+                                Tüm varyant opsiyonlarını silmek istiyor
+                                musunuz?
+                              </Text>
+                              <Group justify="flex-end">
+                                <Button
+                                  size="xs"
+                                  variant="light"
+                                  color="gray"
+                                  onClick={() =>
+                                    setAllDeleteVariantPopover(false)
+                                  }
+                                >
+                                  Hayır
+                                </Button>
+                                <Button
+                                  size="xs"
+                                  color="red"
+                                  onClick={handleDeleteAllVariants}
+                                >
+                                  Evet
+                                </Button>
+                              </Group>
+                            </Stack>
+                          </Popover.Dropdown>
+                        </Popover>
+                      )}
+
+                      {deletedVariants.length > 0 && (
+                        <Button
+                          size="xs"
+                          variant="light"
+                          onClick={handleRestoreDeletedVariants}
+                        >
+                          {deletedVariants.length} silinen varyantı geri getir
+                        </Button>
+                      )}
+                    </Stack>
                   </Group>
                 }
                 rightSection={<IconArrowBarToLeft />}
@@ -591,15 +656,10 @@ const VariantGroupDrawer = ({
                     handleAddVariant();
                   }
                 }}
-                error={
-                  variantError
-                    ? variantError
-                    : errors.options?.message
-                      ? errors.options?.message
-                      : undefined
-                }
+                error={variantError || errors.options?.message || undefined}
                 variant="filled"
               />
+
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -610,18 +670,17 @@ const VariantGroupDrawer = ({
                   strategy={verticalListSortingStrategy}
                 >
                   <Stack gap={"xs"}>
-                    {fields &&
-                      fields.map((field, index) => (
-                        <SortableVariantItem
-                          key={field.id}
-                          id={field.id}
-                          index={index}
-                          control={control}
-                          type={type}
-                          onEdit={() => setSelectedVariantOptionModal(field.id)}
-                          onDelete={() => remove(index)}
-                        />
-                      ))}
+                    {fields.map((field, index) => (
+                      <SortableVariantItem
+                        key={field.id}
+                        id={field.id}
+                        index={index}
+                        control={control}
+                        type={type}
+                        onEdit={() => setSelectedVariantOptionModal(field.id)}
+                        onDelete={() => handleDeleteSingleVariant(index)}
+                      />
+                    ))}
                   </Stack>
                 </SortableContext>
               </DndContext>
@@ -674,7 +733,7 @@ const VariantGroupDrawer = ({
                       field.onChange(files[0]);
                     }}
                     existingImages={
-                      fields[selectedVariantIndex].existingFile
+                      fields[selectedVariantIndex]?.existingFile
                         ? [
                             {
                               url: fields[selectedVariantIndex].existingFile,

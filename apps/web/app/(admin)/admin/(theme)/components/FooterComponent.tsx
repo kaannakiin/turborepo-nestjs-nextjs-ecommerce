@@ -8,7 +8,6 @@ import {
   Title,
 } from "@mantine/core";
 import { MainPageComponentsType } from "@repo/types";
-import { useRouter } from "next/navigation";
 import { useTheme } from "../ThemeContexts/ThemeContext";
 
 interface FooterComponentProps {
@@ -17,20 +16,30 @@ interface FooterComponentProps {
 
 const FooterComponent = ({ footerData }: FooterComponentProps) => {
   const { media } = useTheme();
-  const { push } = useRouter();
 
   if (media === "desktop") {
     return (
-      <div className="w-full bg-[var(--mantine-primary-color-9)] text-white">
+      <div
+        className="w-full"
+        style={{
+          backgroundColor:
+            footerData.options.backgroundColor ||
+            "var(--mantine-primary-color-9)",
+        }}
+      >
         <div className="max-w-[1500px] mx-auto">
           <div className="flex flex-col">
-            <div className="py-16 px-8">
+            <div className="py-16 px-4">
               <SimpleGrid cols={5} spacing="xl">
                 {footerData.linkGroups
                   .map((group) => (
                     <Stack key={group.uniqueId} gap="lg" align="start">
                       {group.title && (
-                        <Title order={4} c="white" fw={600} className="mb-2">
+                        <Title
+                          fz={footerData.options.titleFontSize}
+                          c={footerData.options.titleColor}
+                          fw={500}
+                        >
                           {group.title}
                         </Title>
                       )}
@@ -38,10 +47,11 @@ const FooterComponent = ({ footerData }: FooterComponentProps) => {
                         {group.links.map((link) => (
                           <Text
                             key={link.uniqueId}
+                            fz={footerData.options.textFontSize}
+                            c={footerData.options.textColor}
                             className="cursor-pointer transition-all duration-200 hover:opacity-70 hover:translate-x-1"
                             onClick={() => {}}
                             size="sm"
-                            c="gray.3"
                           >
                             {link.title}
                           </Text>
@@ -55,7 +65,7 @@ const FooterComponent = ({ footerData }: FooterComponentProps) => {
 
             {/* Footer Bottom */}
             <div className="border-t border-white/10">
-              <div className="py-8 px-8">
+              <div className="py-8 px-4">
                 <Group justify="space-between" align="center">
                   <Text size="sm" c="gray.4">
                     © 2024 Your Company. Tüm hakları saklıdır.
@@ -85,7 +95,14 @@ const FooterComponent = ({ footerData }: FooterComponentProps) => {
     );
   } else {
     return (
-      <div className="w-full bg-[var(--mantine-primary-color-9)] text-white">
+      <div
+        className="w-full"
+        style={{
+          backgroundColor:
+            footerData.options.backgroundColor ||
+            "var(--mantine-primary-color-9)",
+        }}
+      >
         <div className="px-4 py-8">
           {/* Mobile Accordion */}
           <Stack gap="xs">
@@ -103,7 +120,12 @@ const FooterComponent = ({ footerData }: FooterComponentProps) => {
               >
                 <Accordion.Item value={group.uniqueId}>
                   <Accordion.Control>
-                    <Title order={5} c="white" fw={500}>
+                    <Title
+                      order={5}
+                      fz={footerData.options.titleFontSize}
+                      c={footerData.options.titleColor}
+                      fw={500}
+                    >
                       {group.title}
                     </Title>
                   </Accordion.Control>
@@ -113,8 +135,9 @@ const FooterComponent = ({ footerData }: FooterComponentProps) => {
                         <Text
                           key={link.uniqueId}
                           size="sm"
-                          c="gray.3"
-                          className="cursor-pointer hover:text-white transition-colors"
+                          fz={footerData.options.textFontSize}
+                          c={footerData.options.textColor}
+                          className="cursor-pointer"
                           onClick={() => {}}
                         >
                           {link.title}

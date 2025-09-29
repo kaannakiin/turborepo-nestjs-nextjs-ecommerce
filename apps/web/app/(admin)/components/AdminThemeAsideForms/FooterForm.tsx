@@ -16,6 +16,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
+  Accordion,
   ActionIcon,
   Alert,
   Badge,
@@ -49,6 +50,7 @@ import {
 } from "@tabler/icons-react";
 import { useState } from "react";
 import FooterGroupForm from "./FooterGroupForm";
+import FontSizeSelect from "./CustomSelects/FontSizeSelect";
 
 type DocType = "add" | "edit" | "normal";
 
@@ -171,13 +173,18 @@ const FooterForm = ({ onSubmit, defaultValues }: FooterFormProps) => {
   const {
     control,
     handleSubmit,
-    watch,
     formState: { isSubmitting, errors },
   } = useForm<FooterType>({
     resolver: zodResolver(FooterSchema),
     defaultValues: defaultValues || {
       linkGroups: [],
-      backgroundColor: "#ffffff",
+      options: {
+        backgroundColor: "#ffffff",
+        textColor: "#000000",
+        titleColor: "#000000",
+        textFontSize: "md",
+        titleFontSize: "lg",
+      },
     },
   });
 
@@ -185,9 +192,7 @@ const FooterForm = ({ onSubmit, defaultValues }: FooterFormProps) => {
     control,
     name: "linkGroups",
   });
-  const backgroundColor = watch("backgroundColor");
 
-  // DnD sensors
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -195,7 +200,6 @@ const FooterForm = ({ onSubmit, defaultValues }: FooterFormProps) => {
     })
   );
 
-  // Drag end handler - Çok daha basit yaklaşım
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -206,15 +210,8 @@ const FooterForm = ({ onSubmit, defaultValues }: FooterFormProps) => {
       const newIndex = fields.findIndex((field) => field.uniqueId === over.id);
 
       if (oldIndex !== -1 && newIndex !== -1) {
-        // React Hook Form'un built-in move fonksiyonunu kullan
+        // Sadece taşı, order güncelleme yapma
         move(oldIndex, newIndex);
-
-        // Order'ları yeniden hesapla ve güncelle
-        setTimeout(() => {
-          fields.forEach((_, index) => {
-            update(index, { ...fields[index], order: index });
-          });
-        }, 0);
       }
     }
   };
@@ -273,7 +270,6 @@ const FooterForm = ({ onSubmit, defaultValues }: FooterFormProps) => {
   return (
     <Container size="lg" py="md">
       <Stack gap="md">
-        {/* Header */}
         <Group justify="space-between" align="center">
           <Box>
             <Title order={3}>Footer Yönetimi</Title>
@@ -292,31 +288,79 @@ const FooterForm = ({ onSubmit, defaultValues }: FooterFormProps) => {
           </Button>
         </Group>
 
-        {/* Background Color Setting */}
-        <Card withBorder padding="sm" radius="md">
-          <Group justify="space-between" align="center" mb="xs">
-            <Text size="sm" fw={500}>
-              Arka Plan Rengi
-            </Text>
-            <Text size="xs" c="dimmed">
-              {backgroundColor}
-            </Text>
-          </Group>
-
-          <Controller
-            control={control}
-            name="backgroundColor"
-            render={({ field: { onChange, ...field } }) => (
-              <ColorInput
-                {...field}
-                onChangeEnd={onChange}
-                format="hex"
-                size="sm"
-              />
-            )}
-          />
-        </Card>
-
+        <Accordion variant="contained">
+          <Accordion.Item value="customization">
+            <Accordion.Control>Özelleştirme Seçenekleri</Accordion.Control>
+            <Accordion.Panel>
+              <Stack gap={"xs"}>
+                <Controller
+                  control={control}
+                  name="options.backgroundColor"
+                  render={({ field: { onChange, ...field } }) => (
+                    <ColorInput
+                      {...field}
+                      label="Footer Arka Plan Rengi"
+                      onChangeEnd={onChange}
+                      format="hex"
+                      size="sm"
+                    />
+                  )}
+                />
+                <Controller
+                  control={control}
+                  name="options.titleColor"
+                  render={({ field: { onChange, ...field } }) => (
+                    <ColorInput
+                      {...field}
+                      label="Başlık Rengi"
+                      onChangeEnd={onChange}
+                      format="hex"
+                      size="sm"
+                    />
+                  )}
+                />
+                <Controller
+                  control={control}
+                  name="options.textColor"
+                  defaultValue={defaultValues?.options?.textColor || "#000000"}
+                  render={({ field: { onChange, ...field } }) => (
+                    <ColorInput
+                      {...field}
+                      label="Metin Rengi"
+                      onChangeEnd={onChange}
+                      format="hex"
+                      size="sm"
+                    />
+                  )}
+                />
+                <Controller
+                  control={control}
+                  name="options.titleFontSize"
+                  defaultValue={defaultValues?.options?.titleFontSize || "lg"}
+                  render={({ field, fieldState }) => (
+                    <FontSizeSelect
+                      {...field}
+                      error={fieldState.error?.message}
+                      label="Başlık Font Boyutu"
+                    />
+                  )}
+                />
+                <Controller
+                  control={control}
+                  name="options.textFontSize"
+                  defaultValue={defaultValues?.options?.textFontSize || "md"}
+                  render={({ field, fieldState }) => (
+                    <FontSizeSelect
+                      {...field}
+                      error={fieldState.error?.message}
+                      label="Link Font Boyutu"
+                    />
+                  )}
+                />
+              </Stack>
+            </Accordion.Panel>
+          </Accordion.Item>
+        </Accordion>
         {docLinkType === "normal" ? (
           <>
             {/* Groups List */}

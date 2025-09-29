@@ -7,10 +7,10 @@ import {
   TextInput,
   UnstyledButton,
 } from "@mantine/core";
+import { Controller, SubmitHandler, useForm, zodResolver } from "@repo/shared";
 import { LoginSchema, LoginSchemaType } from "@repo/types";
 import { IconMail, IconPhone } from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Controller, SubmitHandler, useForm, zodResolver } from "@repo/shared";
 import CustomPhoneInput from "../../(user)/components/CustomPhoneInput";
 import GlobalLoadingOverlay from "../../components/GlobalLoadingOverlay";
 

@@ -11,7 +11,11 @@ import {
   CompleteThreeDSSuccessResponse,
   InstallmentRequest,
   InstallmentResponse,
+  ItemTransaction,
   IyzicoAddress,
+  NonThreeDSRequest,
+  NonThreeDSResponse,
+  NonThreeDSSuccessResponse,
   PaymentType,
   SignatureValidationData,
   ThreeDCallback,
@@ -60,7 +64,7 @@ export class PaymentService {
     const secretKey = this.configService.get<string>('IYZICO_SECRET_KEY');
 
     if (!apiKey || !secretKey) {
-      throw new BadRequestException('İyzico API anahtarları eksik');
+      throw new BadRequestException('Bilinmeyen hata oluştu');
     }
 
     const randomKey =
@@ -133,7 +137,7 @@ export class PaymentService {
 
           if (finalPrice && finalPrice > 0) {
             basketItem = {
-              id: item.variantId,
+              id: `${item.productId}-${item.variantId}`,
               itemType:
                 item.product.type === 'DIGITAL' ? 'VIRTUAL' : 'PHYSICAL',
               category1: item.product.taxonomyCategoryId || createId(),
@@ -168,7 +172,7 @@ export class PaymentService {
         for (let i = 0; i < item.quantity; i++) {
           basketItems.push({
             ...basketItem,
-            id: `${basketItem.id}_${i + 1}`, // Unique ID için
+            id: `${basketItem.id}`, // Unique ID için
           });
         }
       }
@@ -344,12 +348,12 @@ export class PaymentService {
       conversationId: installementConversationId,
       price: 500,
     };
-
+    console.log('Taksit sorgu isteği:', installementRequestData);
     const instReq = await this.iyzicoFetch<
       InstallmentRequest,
       InstallmentResponse
     >('/payment/iyzipos/installment', installementRequestData);
-
+    console.log('Taksit sorgu yanıtı:', instReq);
     if (instReq.status === 'failure') {
       throw new BadRequestException(`${instReq.errorMessage}`);
     } else {
@@ -373,19 +377,21 @@ export class PaymentService {
             : {}),
         };
 
-        const billingAddress: IyzicoAddress = {
-          address: `${cart.cart.billingAddress.addressLine1} ${cart.cart.billingAddress.addressLine2 ? cart.cart.billingAddress.addressLine2 : ''} `,
-          city: cart.cart.billingAddress.city
-            ? cart.cart.billingAddress.city.name
-            : cart.cart.billingAddress.state
-              ? cart.cart.billingAddress.state.name
-              : 'N/A',
-          contactName: `${cart.cart.shippingAddress.name} ${cart.cart.shippingAddress.surname}`,
-          country: cart.cart.shippingAddress.country.translations[0].name,
-          ...(cart.cart.shippingAddress.zipCode
-            ? { zipCode: cart.cart.shippingAddress.zipCode }
-            : {}),
-        };
+        const billingAddress: IyzicoAddress = cart.cart.billingAddress
+          ? {
+              address: `${cart.cart.billingAddress.addressLine1} ${cart.cart.billingAddress.addressLine2 ? cart.cart.billingAddress.addressLine2 : ''} `,
+              city: cart.cart.billingAddress.city
+                ? cart.cart.billingAddress.city.name
+                : cart.cart.billingAddress.state
+                  ? cart.cart.billingAddress.state.name
+                  : 'N/A',
+              contactName: `${cart.cart.shippingAddress.name} ${cart.cart.shippingAddress.surname}`,
+              country: cart.cart.shippingAddress.country.translations[0].name,
+              ...(cart.cart.shippingAddress.zipCode
+                ? { zipCode: cart.cart.shippingAddress.zipCode }
+                : {}),
+            }
+          : shippingAddress;
         const buyer: Buyer = cart.cart.user
           ? {
               city: cart.cart.shippingAddress.city
@@ -420,11 +426,11 @@ export class PaymentService {
               registrationAddress: `${cart.cart.shippingAddress.addressLine1} ${cart.cart.shippingAddress.addressLine2 ? cart.cart.shippingAddress.addressLine2 : ''} `,
             };
         //THREED SECURE
+        console.log('3D Secure durumu:', instReq);
         if (
-          // instReq.installmentDetails &&
-          // instReq.installmentDetails.length > 0 &&
-          // instReq.installmentDetails[0].force3ds === 1
-          instReq.status === 'success'
+          instReq.installmentDetails &&
+          instReq.installmentDetails.length > 0 &&
+          instReq.installmentDetails[0].force3ds === 1
         ) {
           const paymentRequest: ThreeDSRequest = {
             locale: 'tr',
@@ -452,7 +458,7 @@ export class PaymentService {
               (cart.cart.cargoRule?.price || 0),
             price: basketItems.reduce((sum, item) => sum + item.price, 0),
           };
-
+          console.log('3D Secure ödeme isteği:', paymentRequest);
           const threeDSRequest = await this.iyzicoFetch<
             ThreeDSRequest,
             ThreeDSResponse
@@ -474,11 +480,61 @@ export class PaymentService {
 
           return {
             success: true,
+            time: new Date().getTime(),
             message: '3D Secure yönlendirmesi gerekiyor',
             threeDSHtmlContent: threeDSRequest.threeDSHtmlContent,
           };
         } else {
-          //3D SECURE DEĞİL
+          const nonThreeDSRequest: NonThreeDSRequest = {
+            locale: 'tr',
+            currency: 'TRY',
+            installment: 1,
+            conversationId: paymentRequestConversationId,
+            paymentGroup: 'PRODUCT',
+            paymentChannel: 'WEB',
+            basketId: cart.cart.id,
+            shippingAddress,
+            billingAddress,
+            basketItems,
+            buyer,
+            paymentCard: {
+              cardHolderName: paymentData.creditCardName,
+              cardNumber: cleanCardNumber,
+              cvc: paymentData.cvv,
+              expireMonth: paymentData.expiryDate.split('/')[0].trim(),
+              expireYear: paymentData.expiryDate.split('/')[1].trim(),
+              registerCard: 0,
+            },
+            paidPrice: 500,
+            price: basketItems.reduce((sum, item) => sum + item.price, 0),
+          };
+          const nonThreeDReq = await this.iyzicoFetch<
+            NonThreeDSRequest,
+            NonThreeDSResponse
+          >('/payment/auth', nonThreeDSRequest);
+
+          if (nonThreeDReq.status === 'failure') {
+            throw new BadRequestException(`${nonThreeDReq.errorMessage}`);
+          } else if (nonThreeDReq.status === 'success') {
+            const isValidSignature = this.validateSignature('non-3ds-auth', {
+              paymentId: nonThreeDReq.paymentId,
+              currency: nonThreeDReq.currency,
+              basketId: nonThreeDReq.basketId,
+              conversationId: nonThreeDReq.conversationId,
+              paidPrice: nonThreeDReq.paidPrice,
+              price: nonThreeDReq.price,
+              signature: nonThreeDReq.signature,
+            });
+            if (!isValidSignature) {
+              throw new BadRequestException(
+                'Şu an işleminizi gerçekleştiremiyoruz. Lütfen tekrar deneyiniz.',
+              );
+            }
+            console.log('Ödeme başarılı', nonThreeDReq);
+            return {
+              status: true,
+            };
+          }
         }
       }
     }
@@ -487,18 +543,9 @@ export class PaymentService {
       message: 'Ödeme intenti oluşturuldu',
     };
   }
-  private async createOrderThreeDS(
-    threeDResponse: CompleteThreeDSSuccessResponse,
-  ) {
-    const isCartExists = await this.cartService.getCartById(
-      threeDResponse.basketId,
-    );
-    if (!isCartExists || !isCartExists.cart) {
-      throw new BadRequestException('Sepet bulunamadı');
-    }
-  }
 
   async threeDCallback(body: ThreeDCallback, res: Response) {
+    const webUrl = this.configService.get<string>('WEB_UI_REDIRECT');
     const isSignaturValid = this.validateSignature('callback-url', {
       signature: body.signature,
       conversationId: body.conversationId,
@@ -510,7 +557,10 @@ export class PaymentService {
       status: body.status,
     });
     if (!isSignaturValid) {
-      throw new BadRequestException(`Bilinmeyen hata oluştu`);
+      const redirectUri = new URL(
+        `${webUrl}/checkout/${body.paymentId}?step=payment&error=1`,
+      );
+      return res.redirect(redirectUri.toString());
     }
 
     if (body.status === 'success') {
@@ -527,7 +577,10 @@ export class PaymentService {
       });
 
       if (completeThreeDSReq.status === 'failure') {
-        throw new BadRequestException(`${completeThreeDSReq.errorMessage}`);
+        const redirectUri = new URL(
+          `${webUrl}/checkout/${body.paymentId}?step=payment&error=1`,
+        );
+        return res.redirect(redirectUri.toString());
       } else if (
         completeThreeDSReq.fraudStatus == 0 ||
         completeThreeDSReq.fraudStatus == 1
@@ -542,12 +595,55 @@ export class PaymentService {
           price: completeThreeDSReq.price,
         });
         if (!completeIsSignaturValid) {
-          throw new BadRequestException(`Bilinmeyen hata oluştu`);
+          const redirectUri = new URL(
+            `${webUrl}/checkout/${body.paymentId}?step=payment&error=1`,
+          );
+          return res.redirect(redirectUri.toString());
         }
       } else if (completeThreeDSReq.fraudStatus == -1) {
-        throw new BadRequestException(`Ödemeniz gerçekleştirilemedi.`);
+        const redirectUri = new URL(
+          `${webUrl}/checkout/${body.paymentId}?step=payment&error=1`,
+        );
+        return res.redirect(redirectUri.toString());
       }
+      // completethreed
     } else if (body.status === 'failure') {
+      const redirectUri = new URL(
+        `${webUrl}/checkout/${body.paymentId}?step=payment&error=1`,
+      );
+      return res.redirect(redirectUri.toString());
     }
   }
+
+  private generateUniqueOrderNumber() {
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const randomString = Math.random()
+      .toString(36)
+      .substring(2, 8)
+      .toUpperCase();
+
+    return `ORD-${date}-${randomString}`;
+  }
+
+  // private calculateOrderTotal(items: ItemTransaction[]): {
+  //   subTotal: number;
+  //   totalAmount: number;
+  // } {
+  //   let totalAmount: number = 0;
+  //   let subTotal: number = 0;
+
+  //   items.forEach((item) => {
+  //     totalAmount += item.
+  //   });
+  // }
+
+  // private async createThreeDOrder(data: CompleteThreeDSSuccessResponse) {
+  //   const txResult = await this.prisma.$transaction(async (tx) => {
+  //     const order = await tx.order.create({
+  //       data: {
+  //         orderNumber: this.generateUniqueOrderNumber(),
+  //       },
+  //     });
+  //   });
+  // }
 }

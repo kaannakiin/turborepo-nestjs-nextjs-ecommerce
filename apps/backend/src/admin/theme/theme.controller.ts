@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseBoolPipe,
   Post,
   Query,
   UploadedFiles,
@@ -103,7 +104,12 @@ export class ThemeController {
 
   @Public()
   @Get('get-layout')
-  async getLayout() {
-    return this.themeService.getLayout();
+  async getLayout(@Query('footer', ParseBoolPipe) footer: boolean) {
+    return this.themeService.getLayout(footer);
+  }
+  @Public()
+  @Get('get-footer')
+  async getFooter() {
+    return this.themeService.getFooter();
   }
 }

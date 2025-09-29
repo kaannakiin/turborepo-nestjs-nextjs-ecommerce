@@ -1,5 +1,6 @@
 "use client";
 
+import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import CustomPhoneInput from "@/(user)/components/CustomPhoneInput";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import {
@@ -39,6 +40,7 @@ const NonAuthUserAddressForm = ({
   onSubmit,
   defaultValues,
 }: AddressFormProps) => {
+  const { media } = useTheme();
   const { control, handleSubmit, setValue, watch } =
     useForm<NonAuthUserAddressZodType>({
       resolver: zodResolver(NonAuthUserAddressSchema),
@@ -128,20 +130,261 @@ const NonAuthUserAddressForm = ({
     setValue("cityId", null);
   };
   return (
-    <div className="flex flex-col gap-3">
+    <>
       {(countriesIsLoading || citiesIsLoading || statesIsLoading) && (
         <GlobalLoadingOverlay />
       )}
-      <Group gap={"sm"} align="start">
-        <ThemeIcon radius={"xl"} color="black" size={"lg"}>
-          <Text fz={"xl"} fw={700} ta={"center"}>
-            1
-          </Text>
-        </ThemeIcon>
-        <Stack gap={"lg"} className="flex-1">
-          <Text fz={"lg"} fw={600}>
-            Adres
-          </Text>
+      {media === "desktop" ? (
+        <Group gap={"sm"} align="start">
+          <ThemeIcon radius={"xl"} color="black" size={"lg"}>
+            <Text fz={"xl"} fw={700} ta={"center"}>
+              1
+            </Text>
+          </ThemeIcon>
+          <Stack gap={"lg"} className="flex-1">
+            <Text fz={"lg"} fw={600}>
+              Adres
+            </Text>
+            <Stack gap={"xl"}>
+              <div className="flex flex-col gap-3">
+                <Text fz={"xl"} c={"black"} fw={400}>
+                  İletişim Bilgileri
+                </Text>
+                <Controller
+                  control={control}
+                  name="email"
+                  render={({ field, fieldState }) => (
+                    <TextInput
+                      {...field}
+                      type="email"
+                      size="lg"
+                      radius="md"
+                      placeholder="E-Posta"
+                      error={fieldState.error?.message}
+                      rightSection={
+                        <Tooltip
+                          label="Sipariş bilgileri bu adrese gönderilecektir"
+                          position="top"
+                        >
+                          <IconHelpCircleFilled />
+                        </Tooltip>
+                      }
+                    />
+                  )}
+                />
+                <Controller
+                  control={control}
+                  name="campaignCheckbox"
+                  render={({ field: { value, ...field } }) => (
+                    <Checkbox
+                      {...field}
+                      checked={value}
+                      color={"black"}
+                      classNames={{
+                        label: "text-gray-500",
+                      }}
+                      label="Beni kampanyalardan ve özel tekliflerden haberdar et"
+                    />
+                  )}
+                />
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <Text fz={"xl"} c={"black"} fw={400}>
+                  Teslimat Bilgileri
+                </Text>
+
+                <SimpleGrid cols={{ xs: 1, sm: 1, md: 2 }}>
+                  <Controller
+                    control={control}
+                    name="name"
+                    render={({ field, fieldState }) => (
+                      <TextInput
+                        {...field}
+                        size="lg"
+                        error={fieldState.error?.message}
+                        placeholder="Ad"
+                        radius="md"
+                      />
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="surname"
+                    render={({ field, fieldState }) => (
+                      <TextInput
+                        {...field}
+                        error={fieldState.error?.message}
+                        placeholder="Soyad"
+                        size="lg"
+                        radius="md"
+                      />
+                    )}
+                  />
+                </SimpleGrid>
+
+                <Controller
+                  control={control}
+                  name="addressLine1"
+                  render={({ field, fieldState }) => (
+                    <TextInput
+                      {...field}
+                      error={fieldState.error?.message}
+                      placeholder="Mahalle / Sokak / Cadde"
+                      size="lg"
+                      radius="md"
+                    />
+                  )}
+                />
+
+                <SimpleGrid cols={2}>
+                  <Controller
+                    control={control}
+                    name="countryId"
+                    render={({ field, fieldState }) => (
+                      <Select
+                        {...field}
+                        allowDeselect={false}
+                        error={fieldState.error?.message}
+                        placeholder="Ülke Seçin"
+                        size="lg"
+                        searchable
+                        radius="md"
+                        onChange={handleCountryChange}
+                        disabled={countriesIsLoading || !countryExists}
+                        data={
+                          countryExists
+                            ? countries.map((country) => ({
+                                value: country.id,
+                                label: `${country.emoji} ${country.translations[0]?.name || "No Name"}`,
+                              }))
+                            : []
+                        }
+                      />
+                    )}
+                  />
+
+                  {addressType === "STATE" && (
+                    <Controller
+                      control={control}
+                      name="stateId"
+                      render={({ field, fieldState }) => (
+                        <Select
+                          {...field}
+                          error={fieldState.error?.message}
+                          placeholder="Eyalet/Bölge Seçin"
+                          size="lg"
+                          searchable
+                          allowDeselect={false}
+                          radius="md"
+                          onChange={handleStateChange}
+                          disabled={statesIsLoading || !states?.length}
+                          data={
+                            states?.length
+                              ? states.map((state) => ({
+                                  value: state.id,
+                                  label: state.name || "No Name",
+                                }))
+                              : []
+                          }
+                        />
+                      )}
+                    />
+                  )}
+
+                  {addressType === "CITY" && (
+                    <Controller
+                      control={control}
+                      name="cityId"
+                      render={({ field, fieldState }) => (
+                        <Select
+                          {...field}
+                          error={fieldState.error?.message}
+                          placeholder="Şehir Seçin"
+                          size="lg"
+                          allowDeselect={false}
+                          searchable
+                          radius="md"
+                          disabled={citiesIsLoading || !cities?.length}
+                          data={
+                            cities?.length
+                              ? cities.map((city) => ({
+                                  value: city.id,
+                                  label: city.name || "No Name",
+                                }))
+                              : []
+                          }
+                        />
+                      )}
+                    />
+                  )}
+                  <Controller
+                    control={control}
+                    name="addressLine2"
+                    render={({ field, fieldState }) => (
+                      <TextInput
+                        {...field}
+                        error={fieldState.error?.message}
+                        placeholder="Apartman, Daire vb."
+                        size="lg"
+                        radius="md"
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    control={control}
+                    name="postalCode"
+                    render={({ field, fieldState }) => (
+                      <TextInput
+                        {...field}
+                        error={fieldState.error?.message}
+                        placeholder="Posta Kodu"
+                        size="lg"
+                        radius="md"
+                      />
+                    )}
+                  />
+                </SimpleGrid>
+
+                <Controller
+                  control={control}
+                  name="phone"
+                  render={({ field, fieldState }) => (
+                    <CustomPhoneInput
+                      {...field}
+                      error={fieldState.error?.message}
+                      radius={"md"}
+                      size="lg"
+                      placeholder="Telefon Numarası"
+                    />
+                  )}
+                />
+              </div>
+              <Button
+                size="lg"
+                radius={"md"}
+                variant="filled"
+                color="black"
+                onClick={handleSubmit(onSubmit)}
+              >
+                {"Kargo ile Devam Et"}
+              </Button>
+            </Stack>
+          </Stack>
+        </Group>
+      ) : (
+        <Stack>
+          <Group gap={"sm"} align="start">
+            <ThemeIcon radius={"xl"} color="black" size={"lg"}>
+              <Text fz={"xl"} fw={700} ta={"center"}>
+                1
+              </Text>
+            </ThemeIcon>
+            <Text fz={"lg"} fw={600}>
+              Adres
+            </Text>
+          </Group>
           <Stack gap={"xl"}>
             <div className="flex flex-col gap-3">
               <Text fz={"xl"} c={"black"} fw={400}>
@@ -369,8 +612,8 @@ const NonAuthUserAddressForm = ({
             </Button>
           </Stack>
         </Stack>
-      </Group>
-    </div>
+      )}
+    </>
   );
 };
 

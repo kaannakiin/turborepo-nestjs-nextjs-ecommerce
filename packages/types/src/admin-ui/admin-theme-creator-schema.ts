@@ -493,7 +493,13 @@ export const FooterSchema = z.object({
         .min(0, { error: "Sıra 0 veya daha büyük olmalı" }),
     })
   ),
-  backgroundColor: colorSchema,
+  options: z.object({
+    backgroundColor: colorSchema,
+    textFontSize: fontSizeSchema,
+    textColor: colorSchema,
+    titleColor: colorSchema,
+    titleFontSize: fontSizeSchema,
+  }),
 });
 
 export type FooterType = z.infer<typeof FooterSchema>;

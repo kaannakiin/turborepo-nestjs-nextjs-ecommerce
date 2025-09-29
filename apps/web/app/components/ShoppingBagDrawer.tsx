@@ -1,4 +1,5 @@
 "use client";
+import { useCartV2 } from "@/context/cart-context/CartContextV2";
 import {
   ActionIcon,
   AspectRatio,
@@ -23,7 +24,6 @@ import {
 } from "@tabler/icons-react";
 import { usePathname, useRouter } from "next/navigation";
 import ProductPriceFormatter from "../(user)/components/ProductPriceFormatter";
-import { useCart } from "../context/cart-context/CartContext";
 import CustomImage from "./CustomImage";
 
 const ShoppingBagDrawer = () => {
@@ -33,7 +33,13 @@ const ShoppingBagDrawer = () => {
   const isMobile = useMediaQuery("(max-width: 768px)");
   const isTablet = useMediaQuery("(max-width: 1024px)");
 
-  const { cart, removeItem, addItem } = useCart();
+  const {
+    cart,
+    removeItem,
+    addItem,
+    decreaseItemQuantity,
+    increaseItemQuantity,
+  } = useCartV2();
   const isEmpty = !cart || !cart.items || cart.items.length === 0;
 
   const productUrlCreator = (
@@ -152,10 +158,6 @@ const ShoppingBagDrawer = () => {
                 >
                   <Stack gap={"lg"}>
                     {cart.items.map((item, index) => {
-                      const url = productUrlCreator({
-                        productSlug: item.productSlug,
-                        variantOptions: item.variantOptions || [],
-                      });
                       return (
                         <Group
                           key={index}
@@ -166,7 +168,7 @@ const ShoppingBagDrawer = () => {
                           px={0}
                           onClick={() => {
                             close();
-                            push(url);
+                            push(item.productUrl);
                           }}
                           h={"100%"}
                         >
@@ -205,7 +207,8 @@ const ShoppingBagDrawer = () => {
                                       fz={"sm"}
                                       fw={700}
                                       key={
-                                        vo.variantGroupId + vo.variantOptionName
+                                        vo.variantGroupSlug +
+                                        vo.variantOptionSlug
                                       }
                                     >
                                       {vo.variantGroupName}:{" "}
@@ -226,12 +229,13 @@ const ShoppingBagDrawer = () => {
                                   variant="transparent"
                                   onClick={async (e) => {
                                     e.stopPropagation();
-                                    await removeItem({
-                                      productId: item.productId,
-                                      variantId: item.variantId,
-                                      quantity: 1,
-                                      cartId: null,
-                                    });
+                                    if (item.quantity > 1) {
+                                      await decreaseItemQuantity({
+                                        itemId: item.itemId,
+                                      });
+                                    } else {
+                                      await removeItem({ itemId: item.itemId });
+                                    }
                                   }}
                                   size={"md"}
                                   c={item.quantity > 1 ? "primary" : "red"}
@@ -250,11 +254,8 @@ const ShoppingBagDrawer = () => {
                                   size={"md"}
                                   onClick={async (e) => {
                                     e.stopPropagation();
-                                    await addItem({
-                                      productId: item.productId,
-                                      variantId: item.variantId,
-                                      quantity: 1,
-                                      cartId: null,
+                                    await increaseItemQuantity({
+                                      itemId: item.itemId,
                                     });
                                   }}
                                 >
@@ -304,7 +305,7 @@ const ShoppingBagDrawer = () => {
                       <ProductPriceFormatter
                         fw={700}
                         fz={"lg"}
-                        price={cart.totalDiscountedPrice} // İndirimli toplam fiyat
+                        price={cart.totalDiscount} // İndirimli toplam fiyat
                       />
                     </Stack>
                   </Group>

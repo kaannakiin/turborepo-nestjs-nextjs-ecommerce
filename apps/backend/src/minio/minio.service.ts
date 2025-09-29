@@ -340,6 +340,7 @@ export class MinioService {
       }
       return { success: true, data: processedAsset };
     } catch (error) {
+      console.log(error);
       this.logger.error(
         `Dosya yükleme sırasında hata oluştu: ${file.originalname}`,
         error.stack,

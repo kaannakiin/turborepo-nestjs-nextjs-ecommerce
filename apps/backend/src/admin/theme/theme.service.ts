@@ -371,9 +371,7 @@ export class ThemeService {
         if (!existingFooter) {
           existingFooter = await tx.footer.create({
             data: {
-              options: footer.backgroundColor
-                ? { backgroundColor: footer.backgroundColor }
-                : null,
+              options: footer.options ? { ...footer.options } : null,
             },
           });
         } else {
@@ -381,9 +379,7 @@ export class ThemeService {
           await tx.footer.update({
             where: { id: existingFooter.id },
             data: {
-              options: footer.backgroundColor
-                ? { backgroundColor: footer.backgroundColor }
-                : null,
+              options: footer.options ? { ...footer.options } : null,
             },
           });
         }
@@ -585,7 +581,7 @@ export class ThemeService {
     });
   }
 
-  async getLayout(): Promise<{
+  async getLayout(isNeedFooter: boolean): Promise<{
     components: MainPageComponentsType['components'];
     footer: MainPageComponentsType['footer'] | null;
   }> {
@@ -723,36 +719,10 @@ export class ThemeService {
           };
       }
     });
-
-    const footer = await this.prisma.footer.findFirst({
-      include: {
-        linkGroups: {
-          orderBy: {
-            order: 'asc',
-          },
-          include: {
-            links: {
-              orderBy: {
-                order: 'asc',
-              },
-              include: {
-                brand: {
-                  select: { id: true },
-                },
-                category: {
-                  select: { id: true },
-                },
-                product: {
-                  select: {
-                    id: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
+    let footer: MainPageComponentsType['footer'] | null = null;
+    if (isNeedFooter) {
+      footer = (await this.getFooter()).footer;
+    }
 
     if (sliders && sliders.items && sliders.items.length > 0) {
       return {
@@ -790,58 +760,82 @@ export class ThemeService {
           },
           ...returnData,
         ],
-        footer: footer
-          ? {
-              // backgroundColor: footer.options?.backgroundColor || null,
-              backgroundColor: '#ffffff',
-              linkGroups:
-                footer.linkGroups.map((group) => ({
-                  // fontSize: (group.options?.fontSize as MantineSize) || null,
-                  fontSize: 'md' as MantineSize,
-                  links: group.links.map((link) => ({
-                    order: link.order,
-                    title: link.title,
-                    uniqueId: link.id,
-                    customLink: link.customLink || '',
-                    productId: link.productId || null,
-                    categoryId: link.categoryId || null,
-                    brandId: link.brandId || null,
-                  })) as MainPageComponentsType['footer']['linkGroups'][number]['links'],
-                  order: group.order,
-                  title: group.title,
-                  uniqueId: group.id,
-                })) || [],
-            }
-          : null,
+        footer: isNeedFooter ? footer : null,
       };
     } else {
       return {
         components: returnData,
-        footer: footer
-          ? {
-              //TODO: Burayı parse'ı düzgün etmemiz lazım
-              // backgroundColor: footer.options?.backgroundColor || null,
-              backgroundColor: '#ffffff',
-              linkGroups:
-                footer.linkGroups.map((group) => ({
-                  // fontSize: (group.options?.fontSize as MantineSize) || null,
-                  fontSize: 'md' as MantineSize,
-                  links: group.links.map((link) => ({
-                    order: link.order,
-                    title: link.title,
-                    uniqueId: link.id,
-                    customLink: link.customLink || '',
-                    productId: link.productId || null,
-                    categoryId: link.categoryId || null,
-                    brandId: link.brandId || null,
-                  })) as MainPageComponentsType['footer']['linkGroups'][number]['links'],
-                  order: group.order,
-                  title: group.title,
-                  uniqueId: group.id,
-                })) || [],
-            }
-          : null,
+        footer: isNeedFooter ? footer : null,
       };
     }
+  }
+
+  async getFooter(): Promise<{
+    footer: MainPageComponentsType['footer'] | null;
+  }> {
+    const footer = await this.prisma.footer.findFirst({
+      include: {
+        linkGroups: {
+          orderBy: {
+            order: 'asc',
+          },
+          include: {
+            links: {
+              orderBy: {
+                order: 'asc',
+              },
+              include: {
+                brand: {
+                  select: { id: true },
+                },
+                category: {
+                  select: { id: true },
+                },
+                product: {
+                  select: {
+                    id: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!footer) return { footer: null };
+    return footer
+      ? {
+          footer: {
+            options: footer.options
+              ? (JSON.parse(
+                  JSON.stringify(footer.options),
+                ) as MainPageComponentsType['footer']['options'])
+              : {
+                  backgroundColor: '#ffffff',
+                  textColor: '#000000',
+                  titleColor: '#000000',
+                  textFontSize: 'md',
+                  titleFontSize: 'lg',
+                },
+            linkGroups:
+              footer.linkGroups.map((group) => ({
+                // fontSize: (group.options?.fontSize as MantineSize) || null,
+                fontSize: 'md' as MantineSize,
+                links: group.links.map((link) => ({
+                  order: link.order,
+                  title: link.title,
+                  uniqueId: link.id,
+                  customLink: link.customLink || '',
+                  productId: link.productId || null,
+                  categoryId: link.categoryId || null,
+                  brandId: link.brandId || null,
+                })) as MainPageComponentsType['footer']['linkGroups'][number]['links'],
+                order: group.order,
+                title: group.title,
+                uniqueId: group.id,
+              })) || [],
+          },
+        }
+      : { footer: null };
   }
 }

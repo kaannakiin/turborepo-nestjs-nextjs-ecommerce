@@ -592,7 +592,7 @@ const AdminThemeAside = ({
           <Group justify="flex-end" align="center" gap={"xs"}>
             <Button
               onClick={handleSubmit(onSubmit)}
-              disabled={!formState.isValid || formState.isSubmitting}
+              disabled={formState.isSubmitting}
             >
               Kaydet
             </Button>
@@ -815,10 +815,26 @@ const AdminThemeAside = ({
       {component === "footer" && (
         <FooterForm
           onSubmit={(data) => {
-            setValue("footer", data);
+            const dataWithOrders = {
+              ...data,
+              linkGroups: data.linkGroups.map((group, index) => ({
+                ...group,
+                order: index,
+              })),
+            };
+            setValue("footer", dataWithOrders);
             setComponent("add");
           }}
-          defaultValues={parentData.footer || undefined}
+          defaultValues={
+            parentData && parentData.footer
+              ? {
+                  ...parentData.footer,
+                  linkGroups: parentData.footer.linkGroups.sort(
+                    (a, b) => (a.order || 0) - (b.order || 0)
+                  ),
+                }
+              : undefined
+          }
         />
       )}
     </Stack>

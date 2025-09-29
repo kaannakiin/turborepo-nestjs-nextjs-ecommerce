@@ -19,7 +19,7 @@ export class PaymentController {
     return this.paymentService.createPaymentIntent(cartId, data);
   }
 
-  @Post('three-d-callback')
+  @Post('/iyzico/three-d-callback')
   async threeDCallback(
     @Body() body: ThreeDCallback,
     @Res({ passthrough: true }) res: Response,
