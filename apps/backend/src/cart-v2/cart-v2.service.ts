@@ -86,9 +86,13 @@ export class CartV2Service {
     });
   }
 
-  private async getCart(cartId: string): Promise<GetCartByIdReturn | null> {
+  async getCart(
+    cartId: string,
+    whereClause: Omit<Prisma.CartWhereUniqueInput, 'id'> = {},
+  ): Promise<GetCartByIdReturn | null> {
+    if (!cartId) return null;
     const cart = await this.prisma.cart.findUnique({
-      where: { id: cartId },
+      where: { id: cartId, ...whereClause },
       include: {
         billingAddress: {
           include: {
@@ -113,6 +117,9 @@ export class CartV2Service {
           },
         },
         items: {
+          orderBy: {
+            createdAt: 'desc',
+          },
           include: {
             product: {
               include: {
@@ -196,7 +203,7 @@ export class CartV2Service {
             },
           },
         },
-        user: { select: { id: true, email: true } },
+        user: true,
         cargoRule: true,
       },
     });
@@ -204,11 +211,11 @@ export class CartV2Service {
     return cart as GetCartByIdReturn;
   }
 
-  private convertCartToContextType(
+  private async convertCartToContextType(
     cart: GetCartByIdReturn,
     selectedCurrency: $Enums.Currency,
     selectedLocale: $Enums.Locale,
-  ): CartContextCartType['items'] {
+  ): Promise<CartContextCartType['items']> {
     const setInVisibleItems: Array<{
       cause: $Enums.inVisibleCause;
       itemId: string;
@@ -314,11 +321,12 @@ export class CartV2Service {
       return false;
     });
     if (setInVisibleItems.length > 0 || setVisibleItems.length > 0) {
-      this.updateCartVisibleCause(setInVisibleItems, setVisibleItems).catch(
-        (error) => {
-          console.error('Failed to update cart visibility:', error);
-        },
-      );
+      await this.updateCartVisibleCause(
+        setInVisibleItems,
+        setVisibleItems,
+      ).catch((error) => {
+        console.error('Failed to update cart visibility:', error);
+      });
     }
     return visibleItems.map((item) => {
       if (item.variant && item.variantId) {
@@ -421,15 +429,19 @@ export class CartV2Service {
     selectedCurrency: $Enums.Currency = 'TRY',
     selectedLocale: $Enums.Locale = 'TR',
   ): Promise<CartActionResponse> {
-    const cart = await this.getCart(cartId);
+    const cart = await this.getCart(cartId, {
+      status: 'ACTIVE',
+    });
     if (!cart) {
       return { success: false, message: 'Sepet bulunamadı', newCart: null };
     }
-    const items = this.convertCartToContextType(
+    const items = (await this.convertCartToContextType(
       cart,
       selectedCurrency,
       selectedLocale,
-    ).filter((i): i is CartContextCartItemType => i !== null);
+    ).then((res) =>
+      res.filter((i) => i !== null),
+    )) as CartContextCartType['items'];
     return {
       success: true,
       message: 'Sepet başarıyla getirildi',
@@ -441,7 +453,7 @@ export class CartV2Service {
         lastActivityAt: cart.updatedAt,
         locale: cart.locale,
         status: cart.status as $Enums.CartStatus,
-        totalItems: items.reduce((sum, i) => sum, 0),
+        totalItems: items.length,
         totalPrice: items.reduce(
           (sum, i) => sum + (i.discountedPrice || i.price) * i.quantity,
           0,
@@ -466,16 +478,15 @@ export class CartV2Service {
   async addItemToCart(
     cartId: string | null,
     item: AddItemToCartV2,
+    userId?: string,
   ): Promise<CartActionResponse> {
-    // Hem aktif hem silinmiş item'ları kontrol et
-
     let cart: Prisma.CartGetPayload<{ include: { items: true } }> | null = null;
 
-    // cartId varsa, o cart'ı bul
     if (cartId) {
       cart = await this.prisma.cart.findUnique({
-        where: { id: cartId },
+        where: { id: cartId, status: 'ACTIVE' },
         include: {
+          user: true,
           items: {
             where: {
               productId: item.productId,
@@ -498,6 +509,22 @@ export class CartV2Service {
       cart = await this.prisma.cart.create({
         data: {},
         include: {
+          user: true,
+          items: {
+            where: {
+              productId: item.productId,
+              variantId: item.variantId || null,
+            },
+          },
+        },
+      });
+    }
+    if (userId && !cart.userId) {
+      cart = await this.prisma.cart.update({
+        where: { id: cart.id },
+        data: { userId: userId },
+        include: {
+          user: true,
           items: {
             where: {
               productId: item.productId,
@@ -508,11 +535,10 @@ export class CartV2Service {
       });
     }
 
-    const existingItem = cart.items[0]; // Unique constraint sayesinde max 1 tane olabilir
+    const existingItem = cart.items[0];
 
     await this.prisma.$transaction(async (tx) => {
       if (existingItem) {
-        // Silinmiş veya aktif fark etmez, restore et ve quantity artır
         await tx.cartItem.update({
           where: { id: existingItem.id },
           data: {
@@ -539,14 +565,16 @@ export class CartV2Service {
       }
     });
 
-    return this.getCartForContext(cartId);
+    return this.getCartForContext(cartId ? cartId : cart.id);
   }
 
   async incrementItemQuantity(
     cartId: string,
     itemId: string,
   ): Promise<CartActionResponse> {
-    const cart = await this.getCart(cartId);
+    const cart = await this.getCart(cartId, {
+      status: 'ACTIVE',
+    });
     if (!cart) {
       return { success: false, message: 'Sepet bulunamadı', newCart: null };
     }
@@ -565,7 +593,9 @@ export class CartV2Service {
     cartId: string,
     itemId: string,
   ): Promise<CartActionResponse> {
-    const cart = await this.getCart(cartId);
+    const cart = await this.getCart(cartId, {
+      status: 'ACTIVE',
+    });
     if (!cart) {
       return { success: false, message: 'Sepet bulunamadı', newCart: null };
     }
@@ -593,13 +623,12 @@ export class CartV2Service {
     }
     return this.getCartForContext(cartId);
   }
-  // CartV2Service içine ekle:
 
   async removeItemFromCart(
     cartId: string,
     itemId: string,
   ): Promise<CartActionResponse> {
-    const cart = await this.getCart(cartId);
+    const cart = await this.getCart(cartId, { status: 'ACTIVE' });
     if (!cart) {
       return { success: false, message: 'Sepet bulunamadı', newCart: null };
     }
@@ -623,7 +652,9 @@ export class CartV2Service {
   }
 
   async clearCart(cartId: string): Promise<CartActionResponse> {
-    const cart = await this.getCart(cartId);
+    const cart = await this.getCart(cartId, {
+      status: 'ACTIVE',
+    });
     if (!cart) {
       return { success: false, message: 'Sepet bulunamadı', newCart: null };
     }
@@ -656,5 +687,146 @@ export class CartV2Service {
     // });
 
     return this.getCartForContext(cartId);
+  }
+
+  async mergeUserCart(
+    userId: string,
+    cartId: string, // Guest cart ID (localStorage'dan gelen)
+  ): Promise<CartActionResponse> {
+    if (!userId || !cartId) {
+      return {
+        success: false,
+        message: 'Kullanıcı ID veya Sepet ID eksik',
+        newCart: null,
+      };
+    }
+
+    // Kullanıcının mevcut sepetini bul
+    const userCart = await this.prisma.cart.findFirst({
+      where: {
+        status: 'ACTIVE',
+        userId: userId,
+        id: { not: cartId }, // Guest cart hariç
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    // Eğer kullanıcının sepeti yoksa, guest sepetini kullanıcıya ata
+    if (!userCart) {
+      const updatedCart = await this.prisma.cart.update({
+        where: { id: cartId },
+        data: { userId: userId },
+      });
+      return this.getCartForContext(updatedCart.id);
+    }
+
+    // ✅ DOĞRU SIRA: Guest sepeti (cartId) → User sepetine (userCart.id) birleştir
+    // userCart kalacak, guest cart silinecek
+    return this.mergeCarts(userCart.id, cartId);
+  }
+
+  /**
+   * İki alışveriş sepetini birleştirir. İkinci sepetteki tüm ürünleri birinci sepete ekler ve ikinci merge durumuna günceller .
+   *
+   * @param firstCartId - Tüm ürünleri alacak sepetin ID'si (bu sepet KALACAK)
+   * @param secondCartId - Birleştirilip silinecek sepetin ID'si (bu sepet SİLİNECEK)
+   * @param selectedCurrency - Fiyat hesaplamaları için para birimi (varsayılan: 'TRY')
+   * @param selectedLocale - Çeviriler için dil (varsayılan: 'TR')
+   *
+   * @returns Güncellenmiş birinci sepeti içeren CartActionResponse
+   *
+   * @example
+   * // Kullanıcı girişi sonrası guest sepetini user sepetine birleştir
+   * const result = await this.mergeCarts(userCartId, guestCartId, 'TRY', 'TR');
+   *
+   * @remarks
+   * **ÖNEMLİ**: Parametre sırası çok önemli!
+   * - `firstCartId` → KALACAK ve tüm ürünleri alacak sepet
+   * - `secondCartId` → Birleştirildikten sonra SİLİNECEK sepet
+   *
+   * İşlem Adımları:
+   * 1. İkinci sepetteki her ürün için:
+   *    - Birinci sepette varsa → miktarı artırır
+   *    - Birinci sepette yoksa → yeni ürün olarak ekler
+   * 2. İkinci sepetin durumunu 'MERGED' olarak işaretler
+   * 3. Güncellenmiş birinci sepeti context formatında döndürür
+   *
+   * @throws Sepetlerden biri bulunamazsa hata response'u döner
+   */
+  private async mergeCarts(
+    firstCartId: string,
+    secondCartId: string,
+    selectedCurrency: $Enums.Currency = 'TRY',
+    selectedLocale: $Enums.Locale = 'TR',
+  ): Promise<CartActionResponse> {
+    const firstCart = await this.getCart(firstCartId);
+    const secondCart = await this.getCart(secondCartId);
+
+    if (!firstCart) {
+      return { success: false, message: 'İlk sepet bulunamadı', newCart: null };
+    }
+    if (!secondCart) {
+      return {
+        success: false,
+        message: 'İkinci sepet bulunamadı',
+        newCart: null,
+      };
+    }
+
+    await this.prisma.$transaction(
+      async (tx) => {
+        for (const item of secondCart.items.filter((i) => !i.deletedAt)) {
+          const existingItem = firstCart.items.find((i) =>
+            item.variantId
+              ? i.variantId === item.variantId
+              : i.productId === item.productId && i.variantId === null,
+          );
+
+          if (existingItem) {
+            await tx.cartItem.update({
+              where: { id: existingItem.id },
+              data: {
+                quantity: existingItem.quantity + item.quantity,
+                deletedAt: null,
+                isVisible: true,
+                visibleCause: null,
+              },
+            });
+          } else {
+            await tx.cartItem.create({
+              data: {
+                cartId: firstCart.id,
+                productId: item.productId,
+                variantId: item.variantId,
+                quantity: item.quantity,
+                whereAdded: item.whereAdded || 'PRODUCT_PAGE', // Default değer
+                isVisible: true,
+                visibleCause: null,
+                deletedAt: null,
+              },
+            });
+          }
+        }
+
+        // İkinci sepeti "MERGED" olarak işaretle ve sil
+        await tx.cart.update({
+          where: { id: secondCart.id },
+          data: { status: 'MERGED' }, // Silinecek sepet merged
+        });
+
+        // İlk sepet ACTIVE kalmalı, güncelleme yapma
+        // Sadece updatedAt güncellensin (otomatik olacak)
+      },
+      {
+        timeout: 60000 * 10,
+      },
+    );
+
+    // Güncel sepeti context formatında döndür
+    return this.getCartForContext(
+      firstCartId,
+      selectedCurrency,
+      selectedLocale,
+    );
   }
 }

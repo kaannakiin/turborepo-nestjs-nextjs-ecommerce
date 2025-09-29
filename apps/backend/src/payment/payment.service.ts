@@ -5,17 +5,14 @@ import {
   $Enums,
   BasketItem,
   Buyer,
-  CheckoutPageCartType,
   CompleteThreeDSRequest,
   CompleteThreeDSResponse,
-  CompleteThreeDSSuccessResponse,
+  GetCartByIdReturn,
   InstallmentRequest,
   InstallmentResponse,
-  ItemTransaction,
   IyzicoAddress,
   NonThreeDSRequest,
   NonThreeDSResponse,
-  NonThreeDSSuccessResponse,
   PaymentType,
   SignatureValidationData,
   ThreeDCallback,
@@ -24,7 +21,7 @@ import {
 } from '@repo/types';
 import { createHmac } from 'crypto';
 import { Response } from 'express';
-import { CartService } from 'src/cart/cart.service';
+import { CartV2Service } from 'src/cart-v2/cart-v2.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ShippingService } from 'src/shipping/shipping.service';
 
@@ -48,7 +45,7 @@ export class PaymentService {
   private readonly separator = ':';
   constructor(
     private prisma: PrismaService,
-    private cartService: CartService,
+    private cartService: CartV2Service,
     private shippingService: ShippingService,
     private configService: ConfigService,
   ) {
@@ -115,7 +112,7 @@ export class PaymentService {
   }
 
   private createBasketItems(
-    cart: CheckoutPageCartType,
+    cart: GetCartByIdReturn,
     currency: $Enums.Currency,
   ): BasketItem[] {
     const basketItems: BasketItem[] = [];
@@ -324,8 +321,8 @@ export class PaymentService {
   }
 
   async createPaymentIntent(cartId: string, paymentData: PaymentType) {
-    const cart = await this.cartService.getCartById(cartId);
-    if (!cart || !cart.cart) {
+    const cart = await this.cartService.getCart(cartId);
+    if (!cart || !cart) {
       throw new BadRequestException('Sepet bulunamadı');
     }
     const rules =
@@ -334,7 +331,7 @@ export class PaymentService {
       throw new BadRequestException(rules.message);
     }
     const ruleExists = rules.shippingMethods.rules.find(
-      (r) => r.id === cart.cart.cargoRuleId,
+      (r) => r.id === cart.cargoRuleId,
     );
     if (!ruleExists) {
       throw new BadRequestException('Geçersiz kargo seçeneği');
@@ -358,72 +355,72 @@ export class PaymentService {
       throw new BadRequestException(`${instReq.errorMessage}`);
     } else {
       if (instReq.conversationId === installementConversationId) {
-        const basketItems = this.createBasketItems(cart.cart, 'TRY');
+        const basketItems = this.createBasketItems(cart, 'TRY');
         if (basketItems.length === 0) {
           throw new BadRequestException('Sepette ürün bulunamadı');
         }
         const paymentRequestConversationId = createId();
         const shippingAddress: IyzicoAddress = {
-          address: `${cart.cart.shippingAddress.addressLine1} ${cart.cart.shippingAddress.addressLine2 ? cart.cart.shippingAddress.addressLine2 : ''} `,
-          city: cart.cart.shippingAddress.city
-            ? cart.cart.shippingAddress.city.name
-            : cart.cart.shippingAddress.state
-              ? cart.cart.shippingAddress.state.name
+          address: `${cart.shippingAddress.addressLine1} ${cart.shippingAddress.addressLine2 ? cart.shippingAddress.addressLine2 : ''} `,
+          city: cart.shippingAddress.city
+            ? cart.shippingAddress.city.name
+            : cart.shippingAddress.state
+              ? cart.shippingAddress.state.name
               : 'N/A',
-          contactName: `${cart.cart.shippingAddress.name} ${cart.cart.shippingAddress.surname}`,
-          country: cart.cart.shippingAddress.country.translations[0].name,
-          ...(cart.cart.shippingAddress.zipCode
-            ? { zipCode: cart.cart.shippingAddress.zipCode }
+          contactName: `${cart.shippingAddress.name} ${cart.shippingAddress.surname}`,
+          country: cart.shippingAddress.country.translations[0].name,
+          ...(cart.shippingAddress.zipCode
+            ? { zipCode: cart.shippingAddress.zipCode }
             : {}),
         };
 
-        const billingAddress: IyzicoAddress = cart.cart.billingAddress
+        const billingAddress: IyzicoAddress = cart.billingAddress
           ? {
-              address: `${cart.cart.billingAddress.addressLine1} ${cart.cart.billingAddress.addressLine2 ? cart.cart.billingAddress.addressLine2 : ''} `,
-              city: cart.cart.billingAddress.city
-                ? cart.cart.billingAddress.city.name
-                : cart.cart.billingAddress.state
-                  ? cart.cart.billingAddress.state.name
+              address: `${cart.billingAddress.addressLine1} ${cart.billingAddress.addressLine2 ? cart.billingAddress.addressLine2 : ''} `,
+              city: cart.billingAddress.city
+                ? cart.billingAddress.city.name
+                : cart.billingAddress.state
+                  ? cart.billingAddress.state.name
                   : 'N/A',
-              contactName: `${cart.cart.shippingAddress.name} ${cart.cart.shippingAddress.surname}`,
-              country: cart.cart.shippingAddress.country.translations[0].name,
-              ...(cart.cart.shippingAddress.zipCode
-                ? { zipCode: cart.cart.shippingAddress.zipCode }
+              contactName: `${cart.shippingAddress.name} ${cart.shippingAddress.surname}`,
+              country: cart.shippingAddress.country.translations[0].name,
+              ...(cart.shippingAddress.zipCode
+                ? { zipCode: cart.shippingAddress.zipCode }
                 : {}),
             }
           : shippingAddress;
-        const buyer: Buyer = cart.cart.user
+        const buyer: Buyer = cart.user
           ? {
-              city: cart.cart.shippingAddress.city
-                ? cart.cart.shippingAddress.city.name
-                : cart.cart.shippingAddress.state
-                  ? cart.cart.shippingAddress.state.name
+              city: cart.shippingAddress.city
+                ? cart.shippingAddress.city.name
+                : cart.shippingAddress.state
+                  ? cart.shippingAddress.state.name
                   : 'N/A',
-              country: cart.cart.shippingAddress.country.translations[0].name,
-              email: cart.cart.user.email,
-              gsmNumber: cart.cart.user.phone
-                ? cart.cart.user.phone
-                : cart.cart.shippingAddress.phone,
-              id: cart.cart.user.id,
-              name: cart.cart.user.name,
-              surname: cart.cart.user.surname,
+              country: cart.shippingAddress.country.translations[0].name,
+              email: cart.user.email,
+              gsmNumber: cart.user.phone
+                ? cart.user.phone
+                : cart.shippingAddress.phone,
+              id: cart.user.id,
+              name: cart.user.name,
+              surname: cart.user.surname,
               identityNumber: '11111111111',
-              registrationAddress: `${cart.cart.shippingAddress.addressLine1} ${cart.cart.shippingAddress.addressLine2 ? cart.cart.shippingAddress.addressLine2 : ''} `,
+              registrationAddress: `${cart.shippingAddress.addressLine1} ${cart.shippingAddress.addressLine2 ? cart.shippingAddress.addressLine2 : ''} `,
             }
           : {
-              city: cart.cart.shippingAddress.city
-                ? cart.cart.shippingAddress.city.name
-                : cart.cart.shippingAddress.state
-                  ? cart.cart.shippingAddress.state.name
+              city: cart.shippingAddress.city
+                ? cart.shippingAddress.city.name
+                : cart.shippingAddress.state
+                  ? cart.shippingAddress.state.name
                   : 'N/A',
-              country: cart.cart.shippingAddress.country.translations[0].name,
-              email: cart.cart.shippingAddress.email,
-              gsmNumber: cart.cart.shippingAddress.phone,
+              country: cart.shippingAddress.country.translations[0].name,
+              email: cart.shippingAddress.email,
+              gsmNumber: cart.shippingAddress.phone,
               id: createId(),
-              name: cart.cart.shippingAddress.name,
-              surname: cart.cart.shippingAddress.surname,
+              name: cart.shippingAddress.name,
+              surname: cart.shippingAddress.surname,
               identityNumber: '11111111111',
-              registrationAddress: `${cart.cart.shippingAddress.addressLine1} ${cart.cart.shippingAddress.addressLine2 ? cart.cart.shippingAddress.addressLine2 : ''} `,
+              registrationAddress: `${cart.shippingAddress.addressLine1} ${cart.shippingAddress.addressLine2 ? cart.shippingAddress.addressLine2 : ''} `,
             };
         //THREED SECURE
         console.log('3D Secure durumu:', instReq);
@@ -439,7 +436,7 @@ export class PaymentService {
             conversationId: paymentRequestConversationId,
             paymentGroup: 'PRODUCT',
             paymentChannel: 'WEB',
-            basketId: cart.cart.id,
+            basketId: cart.id,
             callbackUrl: `${this.configService.get<string>('IYZICO_CALLBACK_URL')}`,
             shippingAddress,
             billingAddress,
@@ -455,7 +452,7 @@ export class PaymentService {
             },
             paidPrice:
               basketItems.reduce((sum, item) => sum + item.price, 0) +
-              (cart.cart.cargoRule?.price || 0),
+              (cart.cargoRule?.price || 0),
             price: basketItems.reduce((sum, item) => sum + item.price, 0),
           };
           console.log('3D Secure ödeme isteği:', paymentRequest);
@@ -492,7 +489,7 @@ export class PaymentService {
             conversationId: paymentRequestConversationId,
             paymentGroup: 'PRODUCT',
             paymentChannel: 'WEB',
-            basketId: cart.cart.id,
+            basketId: cart.id,
             shippingAddress,
             billingAddress,
             basketItems,

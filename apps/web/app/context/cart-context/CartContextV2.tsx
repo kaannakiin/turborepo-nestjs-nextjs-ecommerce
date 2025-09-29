@@ -5,20 +5,48 @@ import { useQuery, useQueryClient } from "@repo/shared";
 import {
   AddItemToCartV2,
   CartActionResponse,
+  CartContextCartItemType,
   CartContextCartType,
   CartContextTypeV2,
   ItemIdOnlyParams,
 } from "@repo/types";
-import { createContext, ReactNode, useContext } from "react";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 export const CartContextV2 = createContext<CartContextTypeV2 | null>(null);
 
 export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
+  const [lastAddedItem, setLastAddedItem] =
+    useState<CartContextCartItemType | null>(null);
+  const [popoverOpened, setPopoverOpened] = useState(false);
+
   const [cartKey, setCartKey] = useLocalStorage<string | null>({
     key: LOCALE_CART_COOKIE,
     defaultValue: null,
   });
+
+  useEffect(() => {
+    if (popoverOpened && lastAddedItem) {
+      const timer = setTimeout(() => {
+        setPopoverOpened(false);
+        setLastAddedItem(null);
+      }, 3000); // 3 saniye sonra popover'ı kapat
+
+      return () => clearTimeout(timer);
+    }
+  }, [popoverOpened, lastAddedItem]);
+
+  const closePopover = () => {
+    setPopoverOpened(false);
+    // State'i hemen temizleme, animasyon bitsin diye kısa delay
+    setTimeout(() => setLastAddedItem(null), 300);
+  };
 
   const { data: cart } = useQuery({
     queryKey: ["get-cart-v2", cartKey],
@@ -79,13 +107,11 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
       (oldCart: CartContextCartType | null): CartContextCartType | null => {
         if (!oldCart) return oldCart;
 
-        // Aynı ürün var mı kontrol et
         const existingItemIndex = oldCart.items.findIndex(
           (i) =>
             i.productId === params.productId && i.variantId === params.variantId
         );
 
-        // SADECE var olan item'sa optimistic update yap
         if (existingItemIndex !== -1) {
           const updatedItems = oldCart.items.map((i, idx) =>
             idx === existingItemIndex
@@ -103,7 +129,6 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
           };
         }
 
-        // Yeni item ise, optimistic update yapma - backend'i bekle
         return oldCart;
       }
     );
@@ -137,7 +162,30 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
       const addItemData = (await addItemReq.json()) as CartActionResponse;
 
       if (addItemData.success && addItemData.newCart) {
-        queryClient.setQueryData(["get-cart-v2", cartKey], addItemData.newCart);
+        const newCartId = addItemData.newCart.cartId;
+        const addedItem = addItemData.newCart.items.find(
+          (i) =>
+            i.productId === params.productId && i.variantId === params.variantId
+        );
+
+        if (addedItem) {
+          setLastAddedItem(addedItem);
+          setPopoverOpened(true); // Popover'ı aç
+        }
+        queryClient.setQueryData(
+          ["get-cart-v2", newCartId],
+          addItemData.newCart
+        );
+
+        // Sonra cartKey'i güncelle
+        if (cartKey !== newCartId || !cartKey) {
+          setCartKey(newCartId);
+
+          // Eski cartKey varsa ve farklıysa, eski query'i temizle
+          if (cartKey && cartKey !== newCartId) {
+            queryClient.removeQueries({ queryKey: ["get-cart-v2", cartKey] });
+          }
+        }
       }
 
       return addItemData;
@@ -151,11 +199,11 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
       };
     }
   };
-
   const increaseItemQuantity = async (
     params: ItemIdOnlyParams
   ): Promise<CartActionResponse> => {
     // Optimistic update
+
     queryClient.setQueryData(
       ["get-cart-v2", cartKey],
       (oldCart: CartContextCartType | null): CartContextCartType | null => {
@@ -207,12 +255,20 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
       const increaseData = (await increaseReq.json()) as CartActionResponse;
 
       if (increaseData.success && increaseData.newCart) {
+        const newCartId = increaseData.newCart.cartId;
         queryClient.setQueryData(
-          ["get-cart-v2", cartKey],
+          ["get-cart-v2", newCartId],
           increaseData.newCart
         );
-      }
 
+        // CartId değiştiyse güncelle
+        if (cartKey !== newCartId) {
+          setCartKey(newCartId);
+          if (cartKey) {
+            queryClient.removeQueries({ queryKey: ["get-cart-v2", cartKey] });
+          }
+        }
+      }
       return increaseData;
     } catch (error) {
       await queryClient.invalidateQueries({
@@ -290,10 +346,18 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
       const decreaseData = (await decreaseReq.json()) as CartActionResponse;
 
       if (decreaseData.success && decreaseData.newCart) {
+        const newCartId = decreaseData.newCart.cartId;
         queryClient.setQueryData(
-          ["get-cart-v2", cartKey],
+          ["get-cart-v2", newCartId],
           decreaseData.newCart
         );
+
+        if (cartKey !== newCartId) {
+          setCartKey(newCartId);
+          if (cartKey) {
+            queryClient.removeQueries({ queryKey: ["get-cart-v2", cartKey] });
+          }
+        }
       }
 
       return decreaseData;
@@ -358,10 +422,19 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
       const removeItemData = (await removeItemReq.json()) as CartActionResponse;
 
       if (removeItemData.success && removeItemData.newCart) {
+        const newCartId = removeItemData.newCart.cartId;
         queryClient.setQueryData(
-          ["get-cart-v2", cartKey],
+          ["get-cart-v2", newCartId],
           removeItemData.newCart
         );
+
+        // CartId değiştiyse güncelle
+        if (cartKey !== newCartId) {
+          setCartKey(newCartId);
+          if (cartKey) {
+            queryClient.removeQueries({ queryKey: ["get-cart-v2", cartKey] });
+          }
+        }
       }
 
       return removeItemData;
@@ -420,10 +493,19 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
       const clearCartData = (await clearCartReq.json()) as CartActionResponse;
 
       if (clearCartData.success && clearCartData.newCart) {
+        const newCartId = clearCartData.newCart.cartId;
         queryClient.setQueryData(
-          ["get-cart-v2", cartKey],
+          ["get-cart-v2", newCartId],
           clearCartData.newCart
         );
+
+        // CartId değiştiyse güncelle
+        if (cartKey !== newCartId) {
+          setCartKey(newCartId);
+          if (cartKey) {
+            queryClient.removeQueries({ queryKey: ["get-cart-v2", cartKey] });
+          }
+        }
       }
 
       return clearCartData;
@@ -483,6 +565,61 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const mergeCarts = async (): Promise<CartActionResponse> => {
+    if (!cartKey) {
+      return {
+        success: false,
+        message: "Sepet bulunamadı",
+      };
+    }
+
+    try {
+      const mergeReq = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart-v2/merge-carts`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ cartId: cartKey }),
+        }
+      );
+
+      if (!mergeReq?.ok) {
+        return {
+          success: false,
+          message: "Sepet birleştirilirken bir hata oluştu",
+        };
+      }
+
+      const mergeData = (await mergeReq.json()) as CartActionResponse;
+
+      if (mergeData.success && mergeData.newCart) {
+        const newCartId = mergeData.newCart.cartId;
+
+        // ✅ Önce localStorage'ı senkron güncelle
+        setCartKey(newCartId);
+
+        // Sonra cache'i güncelle
+        queryClient.setQueryData(["get-cart-v2", newCartId], mergeData.newCart);
+
+        // Eski cache'i temizle
+        if (cartKey !== newCartId) {
+          queryClient.removeQueries({ queryKey: ["get-cart-v2", cartKey] });
+        }
+      }
+
+      return mergeData;
+    } catch (error) {
+      console.error("Merge error:", error);
+      return {
+        success: false,
+        message: "Bir hata oluştu",
+      };
+    }
+  };
+
   return (
     <CartContextV2.Provider
       value={{
@@ -493,6 +630,10 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
         removeItem,
         clearCart,
         updateOrderNote,
+        mergeCarts,
+        closePopover,
+        lastAddedItem,
+        popoverOpened,
       }}
     >
       {children}

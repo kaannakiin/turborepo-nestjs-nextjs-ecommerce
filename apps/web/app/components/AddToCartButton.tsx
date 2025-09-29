@@ -14,17 +14,36 @@ const AddToCartButton = ({
   variantId,
   quantity = 1,
 }: AddToCartButtonProps) => {
-  const { addItem } = useCartV2();
+  const { increaseItemQuantity, addItem, cart } = useCartV2();
   return (
     <Button
       fullWidth
       onClick={async () => {
-        await addItem({
-          productId,
-          variantId,
-          quantity,
-          whereAdded: "PRODUCT_PAGE",
-        });
+        if (cart) {
+          const isItemInCart = cart.items.find((item) =>
+            item.variantId
+              ? item.variantId === variantId
+              : item.productId === productId
+          );
+          if (isItemInCart) {
+            await increaseItemQuantity({ itemId: isItemInCart.itemId });
+          } else {
+            await addItem({
+              productId: productId,
+              variantId,
+              quantity,
+              whereAdded: "PRODUCT_PAGE",
+              cartId: cart.cartId,
+            });
+          }
+        } else {
+          await addItem({
+            productId: productId,
+            variantId,
+            quantity,
+            whereAdded: "PRODUCT_PAGE",
+          });
+        }
       }}
       radius={"xl"}
       size="lg"

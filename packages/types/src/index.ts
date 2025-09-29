@@ -7,7 +7,6 @@ export * from "./api/api-pipe-types";
 export * from "./auth/schemas";
 export * from "./helper-types";
 export * from "./products/brand-schemas";
-export * from "./products/cart-schemas";
 export * from "./products/cart-schemas-v2";
 export * from "./products/category-schema";
 export * from "./products/discount-schemas";

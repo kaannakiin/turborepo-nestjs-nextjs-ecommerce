@@ -9,7 +9,6 @@ import { MinioModule } from './minio/minio.module';
 import { LocationsModule } from './locations/locations.module';
 import { DiscountsModule } from './discounts/discounts.module';
 import { UserPageModule } from './user-page/user-page.module';
-import { CartModule } from './cart/cart.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { PaymentModule } from './payment/payment.module';
 import { CartV2Module } from './cart-v2/cart-v2.module';
@@ -38,7 +37,6 @@ import { CartV2Module } from './cart-v2/cart-v2.module';
     LocationsModule,
     DiscountsModule,
     UserPageModule,
-    CartModule,
     ShippingModule,
     PaymentModule,
     CartV2Module,

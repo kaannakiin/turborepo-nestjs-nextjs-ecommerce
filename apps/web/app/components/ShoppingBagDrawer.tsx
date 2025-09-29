@@ -2,20 +2,25 @@
 import { useCartV2 } from "@/context/cart-context/CartContextV2";
 import {
   ActionIcon,
+  Anchor,
   AspectRatio,
+  Avatar,
   Box,
   Button,
+  CloseButton,
   Drawer,
   Group,
   Indicator,
+  Popover,
   ScrollArea,
   Stack,
   Text,
+  ThemeIcon,
   Title,
 } from "@mantine/core";
-import { useDisclosure, useMediaQuery } from "@mantine/hooks";
-import { CartItemType } from "@repo/types";
+import { useDisclosure, useMediaQuery, useWindowScroll } from "@mantine/hooks";
 import {
+  IconCheck,
   IconMinus,
   IconPlus,
   IconShoppingBag,
@@ -25,38 +30,27 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import ProductPriceFormatter from "../(user)/components/ProductPriceFormatter";
 import CustomImage from "./CustomImage";
+import { useEffect, useState } from "react";
+import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 
 const ShoppingBagDrawer = () => {
   const pathname = usePathname();
-
-  const [opened, { open, close }] = useDisclosure();
-  const isMobile = useMediaQuery("(max-width: 768px)");
-  const isTablet = useMediaQuery("(max-width: 1024px)");
-
+  const [opened, { open, close, toggle }] = useDisclosure();
+  const { media } = useTheme();
   const {
     cart,
     removeItem,
-    addItem,
     decreaseItemQuantity,
     increaseItemQuantity,
+    popoverOpened,
+    closePopover,
+    lastAddedItem,
   } = useCartV2();
+
   const isEmpty = !cart || !cart.items || cart.items.length === 0;
 
-  const productUrlCreator = (
-    data: Pick<CartItemType, "productSlug" | "variantOptions">
-  ) => {
-    const basePath = `/${data.productSlug}`;
-    if (!data.variantOptions || data.variantOptions.length === 0) {
-      return basePath;
-    }
-
-    const searchParams = new URLSearchParams();
-    data.variantOptions.forEach((option) => {
-      searchParams.append(option.variantGroupSlug, option.variantOptionSlug);
-    });
-    return `${basePath}?${searchParams.toString()}`;
-  };
   const { push } = useRouter();
+
   if (pathname.startsWith("/cart") || pathname.startsWith("/checkout")) {
     return (
       <ActionIcon variant="transparent">
@@ -64,29 +58,197 @@ const ShoppingBagDrawer = () => {
       </ActionIcon>
     );
   }
+
   return (
     <>
-      <ActionIcon variant="transparent" size={"xl"} onClick={open}>
-        {cart && cart.items && cart.items.length > 0 ? (
-          <Indicator
-            label={cart.items.length}
-            classNames={{
-              indicator: "font-semibold",
-            }}
-            inline
-            size={20}
-            offset={3}
-          >
-            <IconShoppingBag size={28} />
-          </Indicator>
-        ) : (
-          <IconShoppingBag size={28} />
-        )}
-      </ActionIcon>
+      <Popover
+        withArrow={false}
+        offset={16}
+        opened={Boolean(lastAddedItem) && popoverOpened}
+        position={
+          media === "mobile" || media === "tablet" ? "bottom" : "bottom-start"
+        }
+        onClose={closePopover}
+        withOverlay
+        overlayProps={{ zIndex: 10000, blur: "8px" }}
+        zIndex={100011}
+        styles={{
+          dropdown: {
+            padding: 0,
+            maxWidth:
+              media === "mobile"
+                ? "calc(100vw - 32px)"
+                : media === "tablet"
+                  ? "calc(100vw - 64px)"
+                  : "400px",
+            width:
+              media === "mobile"
+                ? "calc(100vw - 32px)"
+                : media === "tablet"
+                  ? "calc(100vw - 64px)"
+                  : "400px",
+          },
+        }}
+      >
+        <Popover.Target>
+          <ActionIcon variant="transparent" size={"xl"} onClick={toggle}>
+            {cart && cart.items && cart.items.length > 0 ? (
+              <Indicator
+                label={cart.totalItems}
+                classNames={{ indicator: "font-semibold" }}
+                inline
+                size={20}
+                offset={3}
+                withBorder={false}
+                styles={{
+                  indicator: {
+                    minWidth: "20px",
+                    height: "20px",
+                    padding: "0 4px",
+                    fontSize: "11px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  },
+                }}
+              >
+                <IconShoppingBag size={28} />
+              </Indicator>
+            ) : (
+              <IconShoppingBag size={28} />
+            )}
+          </ActionIcon>
+        </Popover.Target>
+        <Popover.Dropdown>
+          {lastAddedItem && (
+            <Stack gap={0} w={"100%"}>
+              {/* Header - Primary Background */}
+              <Group justify="space-between" align="center" p={"md"}>
+                <Group gap="xs">
+                  <ThemeIcon
+                    variant="primary"
+                    size={media === "mobile" ? "sm" : "md"}
+                    radius="xl"
+                    color="primary"
+                  >
+                    <IconCheck size={media === "mobile" ? 14 : 18} />
+                  </ThemeIcon>
+                  <Text
+                    fw={600}
+                    c="primary"
+                    size={media === "mobile" ? "xs" : "sm"}
+                  >
+                    ÜRÜN SEPETE EKLENDİ
+                  </Text>
+                </Group>
+                <CloseButton
+                  size={media === "mobile" ? "sm" : "md"}
+                  c="primary"
+                  onClick={closePopover}
+                  styles={{
+                    root: {
+                      "&:hover": {
+                        backgroundColor: "rgba(255, 255, 255, 0.1)",
+                      },
+                    },
+                  }}
+                />
+              </Group>
 
+              {/* Content */}
+              <Stack gap="md" p={media === "mobile" ? "sm" : "lg"}>
+                <Group
+                  gap={media === "mobile" ? "sm" : "md"}
+                  align="flex-start"
+                >
+                  <AspectRatio ratio={1} w={media === "mobile" ? 60 : 80}>
+                    <CustomImage
+                      src={
+                        lastAddedItem.variantAsset?.url ||
+                        lastAddedItem.productAsset?.url ||
+                        ""
+                      }
+                      alt={lastAddedItem.productName}
+                      className="rounded-md"
+                    />
+                  </AspectRatio>
+
+                  <Stack gap="xs" style={{ flex: 1, minWidth: 0 }}>
+                    <Text
+                      fw={600}
+                      size={media === "mobile" ? "xs" : "sm"}
+                      lineClamp={2}
+                    >
+                      {lastAddedItem.productName}
+                    </Text>
+
+                    {lastAddedItem.variantOptions &&
+                      lastAddedItem.variantOptions.length > 0 && (
+                        <Text
+                          size="xs"
+                          c="dimmed"
+                          tt="capitalize"
+                          lineClamp={1}
+                        >
+                          {lastAddedItem.variantOptions
+                            .map((vo) => `${vo.variantOptionName}`)
+                            .join(", ")}
+                        </Text>
+                      )}
+
+                    <Group gap="xs" wrap="nowrap">
+                      <Text size="xs" c="dimmed">
+                        Adet: {lastAddedItem.quantity}
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        •
+                      </Text>
+                      <ProductPriceFormatter
+                        size="xs"
+                        fw={600}
+                        price={
+                          (lastAddedItem.discountedPrice ||
+                            lastAddedItem.price) * lastAddedItem.quantity
+                        }
+                      />
+                    </Group>
+                  </Stack>
+                </Group>
+
+                {/* Buttons */}
+                <Stack gap="sm">
+                  <Button
+                    variant="default"
+                    size={media === "mobile" ? "xs" : "sm"}
+                    radius="xl"
+                    fullWidth
+                    onClick={() => {
+                      closePopover();
+                      push("/cart");
+                    }}
+                  >
+                    SEPETİM ({cart?.totalItems || 0})
+                  </Button>
+                  <Button
+                    size={media === "mobile" ? "xs" : "sm"}
+                    radius="xl"
+                    fullWidth
+                    onClick={() => {
+                      closePopover();
+                      push(`/checkout${cart?.cartId ? `/${cart.cartId}` : ""}`);
+                    }}
+                  >
+                    ÖDEME
+                  </Button>
+                </Stack>
+              </Stack>
+            </Stack>
+          )}
+        </Popover.Dropdown>
+      </Popover>
       <Drawer.Root
         position="left"
-        size={isMobile || isTablet ? "lg" : "md"}
+        size={media === "mobile" || media === "tablet" ? "lg" : "md"}
         opened={opened}
         onClose={close}
         styles={{
@@ -264,20 +426,33 @@ const ShoppingBagDrawer = () => {
                               </Group>
 
                               <Stack gap="xs" align="flex-end">
-                                {item.price !== item.discountedPrice && (
+                                {item.discountedPrice &&
+                                item.discountedPrice < item.price ? (
+                                  <>
+                                    <ProductPriceFormatter
+                                      size="sm"
+                                      td="line-through"
+                                      c="dimmed"
+                                      ta="end"
+                                      price={item.price * item.quantity}
+                                    />
+                                    <ProductPriceFormatter
+                                      size="md"
+                                      fw={700}
+                                      ta={"end"}
+                                      price={
+                                        item.discountedPrice * item.quantity
+                                      }
+                                    />
+                                  </>
+                                ) : (
                                   <ProductPriceFormatter
-                                    size="sm"
-                                    td="line-through"
-                                    c="dimmed"
-                                    ta="end"
+                                    size="md"
+                                    fw={700}
+                                    ta={"end"}
                                     price={item.price * item.quantity}
                                   />
                                 )}
-                                <ProductPriceFormatter
-                                  ta={"end"}
-                                  fw={600}
-                                  price={item.discountedPrice * item.quantity}
-                                />
                               </Stack>
                             </div>
                           </Group>
@@ -298,17 +473,64 @@ const ShoppingBagDrawer = () => {
                     justify="space-between"
                     px={"xs"}
                   >
-                    <Text fz={"lg"} fw={700}>
-                      Toplam
+                    <Text fz={"md"} fw={500} c={"dimmed"}>
+                      {cart.totalDiscount > 0 ? "Ara Toplam" : "Toplam"}
                     </Text>
                     <Stack gap="xs" align="flex-end">
                       <ProductPriceFormatter
-                        fw={700}
-                        fz={"lg"}
-                        price={cart.totalDiscount} // İndirimli toplam fiyat
+                        fz={"md"}
+                        fw={500}
+                        c={"dimmed"}
+                        price={
+                          cart.totalDiscount > 0
+                            ? cart.totalDiscount + cart.totalPrice
+                            : cart.totalPrice
+                        }
                       />
                     </Stack>
                   </Group>
+
+                  {cart.totalDiscount > 0 && (
+                    <Group
+                      align="center"
+                      className="w-full"
+                      justify="space-between"
+                      px={"xs"}
+                    >
+                      <Text fz={"md"} fw={500} c={"dimmed"}>
+                        İndirim
+                      </Text>
+                      <Stack gap="xs" align="flex-end">
+                        <ProductPriceFormatter
+                          fz={"md"}
+                          fw={500}
+                          c={"dimmed"}
+                          price={cart.totalDiscount}
+                        />
+                      </Stack>
+                    </Group>
+                  )}
+
+                  {cart.totalDiscount > 0 && (
+                    <Group
+                      align="center"
+                      className="w-full"
+                      justify="space-between"
+                      px={"xs"}
+                    >
+                      <Text fz={"md"} fw={500} c={"dimmed"}>
+                        Toplam
+                      </Text>
+                      <Stack gap="xs" align="flex-end">
+                        <ProductPriceFormatter
+                          fz={"md"}
+                          fw={500}
+                          c={"dimmed"}
+                          price={cart.totalPrice}
+                        />
+                      </Stack>
+                    </Group>
+                  )}
                   <Button
                     fullWidth
                     onClick={() => {

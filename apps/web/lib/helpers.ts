@@ -733,3 +733,16 @@ export const getConditionText = (data: ShippingRuleType) => {
     return "-";
   }
 };
+
+export function calculateDiscountRate(
+  price: number,
+  discountedPrice: number
+): string {
+  if (price <= 0) return "0%";
+  if (discountedPrice >= price) return "0%";
+
+  const discount = price - discountedPrice;
+  const discountRate = (discount / price) * 100;
+
+  return `${Math.round(discountRate * 10) / 10}%`; // Virgülden sonra 1 basamak
+}

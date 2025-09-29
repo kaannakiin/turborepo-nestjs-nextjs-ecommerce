@@ -78,7 +78,6 @@ const RegisterForm = () => {
               placeholder="İsim"
               size="md"
               radius={"md"}
-              variant="filled"
             />
           )}
         />
@@ -92,7 +91,6 @@ const RegisterForm = () => {
               placeholder="Soyisim"
               size="md"
               radius={"md"}
-              variant="filled"
             />
           )}
         />
@@ -109,7 +107,6 @@ const RegisterForm = () => {
             type="email"
             size="md"
             radius={"md"}
-            variant="filled"
             placeholder="E-posta Adresi"
           />
         )}
@@ -140,7 +137,6 @@ const RegisterForm = () => {
             size="md"
             radius={"md"}
             placeholder="Şifre"
-            variant="filled"
           />
         )}
       />
@@ -155,7 +151,6 @@ const RegisterForm = () => {
             size="md"
             radius={"md"}
             placeholder="Şifre Tekrarı"
-            variant="filled"
           />
         )}
       />

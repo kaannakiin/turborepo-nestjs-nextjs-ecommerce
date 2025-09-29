@@ -18,6 +18,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import CustomImage from "../../../components/CustomImage";
 import AddToCartButton from "../../../components/AddToCartButton";
 import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
+import { calculateDiscountRate } from "@lib/helpers";
 
 interface ProductRightSectionProps {
   productId: string;
@@ -81,7 +82,7 @@ const ProductRightSection = ({
     }
 
     const queryString = newSearchParams.toString();
-    replace(`?${queryString}`);
+    replace(`?${queryString}`, { scroll: false });
   };
 
   return (
@@ -100,7 +101,12 @@ const ProductRightSection = ({
                 size="lg"
                 color={"red.7"}
               >
-                <Text fw={700}>%50.1</Text>
+                <Text fw={700}>
+                  {calculateDiscountRate(
+                    selectedVariantPrice.price,
+                    selectedVariantPrice.discountedPrice
+                  )}
+                </Text>
               </Badge>
               <Stack gap={"1px"}>
                 <ProductPriceFormatter

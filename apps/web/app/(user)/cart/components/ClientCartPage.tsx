@@ -1,4 +1,5 @@
 "use client";
+import { useCartV2 } from "@/context/cart-context/CartContextV2";
 import {
   Accordion,
   ActionIcon,
@@ -24,11 +25,11 @@ import {
 } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import CustomImage from "../../../components/CustomImage";
-import { useCart } from "../../../context/cart-context/CartContext";
 import ProductPriceFormatter from "../../components/ProductPriceFormatter";
 
 const ClientCartPage = () => {
-  const { cart, removeItem, addItem } = useCart();
+  const { cart, removeItem, increaseItemQuantity, decreaseItemQuantity } =
+    useCartV2();
   const { push } = useRouter();
   const isMobile = useMediaQuery("(max-width: 768px)");
   const isTablet = useMediaQuery("(max-width: 1024px)");
@@ -127,8 +128,8 @@ const ClientCartPage = () => {
                                     {item.variantOptions.map((vo) => (
                                       <Text
                                         key={
-                                          vo.variantGroupId +
-                                          vo.variantOptionName
+                                          vo.variantGroupSlug +
+                                          vo.variantOptionSlug
                                         }
                                         size="sm"
                                         c="dimmed"
@@ -150,12 +151,17 @@ const ClientCartPage = () => {
                                     variant="transparent"
                                     size="lg"
                                     onClick={async () => {
-                                      await removeItem({
-                                        productId: item.productId,
-                                        variantId: item.variantId,
-                                        quantity: 1,
-                                        cartId: null,
-                                      });
+                                      if (item.quantity > 0) {
+                                        if (item.quantity === 1) {
+                                          await removeItem({
+                                            itemId: item.itemId,
+                                          });
+                                        } else {
+                                          await decreaseItemQuantity({
+                                            itemId: item.itemId,
+                                          });
+                                        }
+                                      }
                                     }}
                                     color={
                                       item.quantity > 1 ? "primary" : "red"
@@ -180,11 +186,8 @@ const ClientCartPage = () => {
                                     variant="transparent"
                                     size="lg"
                                     onClick={async () => {
-                                      await addItem({
-                                        productId: item.productId,
-                                        variantId: item.variantId,
-                                        quantity: 1,
-                                        cartId: null,
+                                      await increaseItemQuantity({
+                                        itemId: item.itemId,
                                       });
                                     }}
                                   >
@@ -194,18 +197,22 @@ const ClientCartPage = () => {
 
                                 {/* Fiyat */}
                                 <Stack gap="xs" align="flex-end">
-                                  {item.price !== item.discountedPrice && (
-                                    <ProductPriceFormatter
-                                      size="sm"
-                                      td="line-through"
-                                      c="dimmed"
-                                      price={item.price * item.quantity}
-                                    />
-                                  )}
+                                  {item.discountedPrice &&
+                                    item.price !== item.discountedPrice && (
+                                      <ProductPriceFormatter
+                                        size="sm"
+                                        td="line-through"
+                                        c="dimmed"
+                                        price={item.price * item.quantity}
+                                      />
+                                    )}
                                   <ProductPriceFormatter
                                     fw={700}
                                     size="lg"
-                                    price={item.discountedPrice * item.quantity}
+                                    price={
+                                      (item.discountedPrice || item.price) *
+                                      item.quantity
+                                    }
                                   />
                                 </Stack>
                               </Group>
@@ -268,7 +275,7 @@ const ClientCartPage = () => {
                                 {item.variantOptions.map((vo) => (
                                   <Text
                                     key={
-                                      vo.variantGroupId + vo.variantOptionName
+                                      vo.variantGroupSlug + vo.variantOptionSlug
                                     }
                                     size="sm"
                                     c="dimmed"
@@ -290,12 +297,17 @@ const ClientCartPage = () => {
                                 variant="transparent"
                                 size="lg"
                                 onClick={async () => {
-                                  await removeItem({
-                                    productId: item.productId,
-                                    variantId: item.variantId,
-                                    quantity: 1,
-                                    cartId: null,
-                                  });
+                                  if (item.quantity > 0) {
+                                    if (item.quantity === 1) {
+                                      await removeItem({
+                                        itemId: item.itemId,
+                                      });
+                                    } else {
+                                      await decreaseItemQuantity({
+                                        itemId: item.itemId,
+                                      });
+                                    }
+                                  }
                                 }}
                                 color={item.quantity > 1 ? "primary" : "red"}
                               >
@@ -318,11 +330,8 @@ const ClientCartPage = () => {
                                 variant="transparent"
                                 size="lg"
                                 onClick={async () => {
-                                  await addItem({
-                                    productId: item.productId,
-                                    variantId: item.variantId,
-                                    quantity: 1,
-                                    cartId: null,
+                                  await increaseItemQuantity({
+                                    itemId: item.itemId,
                                   });
                                 }}
                               >
@@ -332,18 +341,22 @@ const ClientCartPage = () => {
 
                             {/* Fiyat */}
                             <Stack gap="xs" align="flex-end">
-                              {item.price !== item.discountedPrice && (
-                                <ProductPriceFormatter
-                                  size="sm"
-                                  td="line-through"
-                                  c="dimmed"
-                                  price={item.price * item.quantity}
-                                />
-                              )}
+                              {item.discountedPrice &&
+                                item.price !== item.discountedPrice && (
+                                  <ProductPriceFormatter
+                                    size="sm"
+                                    td="line-through"
+                                    c="dimmed"
+                                    price={item.price * item.quantity}
+                                  />
+                                )}
                               <ProductPriceFormatter
                                 fw={700}
                                 size="lg"
-                                price={item.discountedPrice * item.quantity}
+                                price={
+                                  (item.discountedPrice || item.price) *
+                                  item.quantity
+                                }
                               />
                             </Stack>
                           </Group>
@@ -367,51 +380,49 @@ const ClientCartPage = () => {
 
                 <Stack gap="sm">
                   <Group justify="space-between">
-                    <Text>Ara Toplam ({cart.items.length} ürün)</Text>
-                    <ProductPriceFormatter
-                      price={cart.items.reduce(
-                        (total, item) => total + item.price * item.quantity,
-                        0
-                      )}
-                    />
-                  </Group>
-
-                  {/* <Group justify="space-between">
-                    <Text>Kargo</Text>
-                    <Text c="green" fw={500}>
-                      Ücretsiz
+                    <Text>
+                      {cart.totalDiscount > 0 ? "Ara Toplam" : "Toplam"} (
+                      {cart.items.length} ürün)
                     </Text>
-                  </Group> */}
-                </Stack>
-
-                <Divider />
-
-                {cart.items.some(
-                  (item) => item.price !== item.discountedPrice
-                ) && (
-                  <Group justify="space-between" c="red">
-                    <Text>İndirim</Text>
                     <ProductPriceFormatter
-                      c="red"
                       price={
-                        cart.items.reduce(
-                          (total, item) => total + item.price * item.quantity,
-                          0
-                        ) - cart.totalDiscountedPrice
+                        cart.totalDiscount > 0
+                          ? cart.totalDiscount + cart.totalPrice
+                          : cart.totalPrice
                       }
                     />
                   </Group>
+                </Stack>
+
+                {cart.totalDiscount > 0 && (
+                  <>
+                    <Divider />
+                    <Group justify="space-between" c="red">
+                      <Text>İndirim</Text>
+                      <ProductPriceFormatter
+                        c="red"
+                        fw={500}
+                        price={cart.totalDiscount}
+                      />
+                    </Group>
+                  </>
                 )}
-                <Group justify="space-between" className="text-lg">
-                  <Text fw={700} size="lg">
-                    Toplam
-                  </Text>
-                  <ProductPriceFormatter
-                    fw={700}
-                    size="xl"
-                    price={cart.totalDiscountedPrice}
-                  />
-                </Group>
+
+                {cart.totalDiscount > 0 && (
+                  <>
+                    <Divider />
+                    <Group justify="space-between" className="text-lg">
+                      <Text fw={700} size="lg">
+                        Toplam
+                      </Text>
+                      <ProductPriceFormatter
+                        fw={700}
+                        size="xl"
+                        price={cart.totalPrice}
+                      />
+                    </Group>
+                  </>
+                )}
 
                 {/* Aksiyon Butonları */}
                 <Stack gap="md">

@@ -21,7 +21,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const isTablet = useMediaQuery("(max-width: 1024px) and (min-width: 769px)");
+  const isTablet = useMediaQuery("(max-width: 1024px)");
 
   const [media, setMedia] = useState<Media>("desktop");
 

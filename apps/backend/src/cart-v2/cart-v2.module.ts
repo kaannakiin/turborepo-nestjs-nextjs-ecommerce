@@ -5,5 +5,6 @@ import { CartV2Controller } from './cart-v2.controller';
 @Module({
   controllers: [CartV2Controller],
   providers: [CartV2Service],
+  exports: [CartV2Service],
 })
 export class CartV2Module {}

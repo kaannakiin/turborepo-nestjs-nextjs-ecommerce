@@ -200,7 +200,7 @@ export type GetCartByIdReturn = Prisma.CartGetPayload<{
         };
       };
     };
-    user: { select: { id: true; email: true } };
+    user: true;
     cargoRule: true;
   };
 }>;
@@ -217,4 +217,8 @@ export type CartContextTypeV2 = {
   removeItem: (params: ItemIdOnlyParams) => Promise<CartActionResponse>;
   clearCart: () => Promise<CartActionResponse>;
   updateOrderNote: (note: string) => Promise<CartActionResponse>;
+  mergeCarts: () => Promise<CartActionResponse>;
+  lastAddedItem: CartContextCartItemType | null;
+  popoverOpened: boolean;
+  closePopover: () => void; // ✅ Ekle
 };

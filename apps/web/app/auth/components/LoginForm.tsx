@@ -1,4 +1,5 @@
 "use client";
+import { LOCALE_CART_COOKIE } from "@lib/constants";
 import {
   Button,
   PasswordInput,
@@ -7,14 +8,17 @@ import {
   TextInput,
   UnstyledButton,
 } from "@mantine/core";
+import { useLocalStorage } from "@mantine/hooks";
 import { Controller, SubmitHandler, useForm, zodResolver } from "@repo/shared";
-import { LoginSchema, LoginSchemaType } from "@repo/types";
+import { CartActionResponse, LoginSchema, LoginSchemaType } from "@repo/types";
 import { IconMail, IconPhone } from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import CustomPhoneInput from "../../(user)/components/CustomPhoneInput";
 import GlobalLoadingOverlay from "../../components/GlobalLoadingOverlay";
+import { useCartV2 } from "@/context/cart-context/CartContextV2";
 
 const LoginForm = () => {
+  const { mergeCarts } = useCartV2();
   const {
     control,
     handleSubmit,
@@ -37,23 +41,43 @@ const LoginForm = () => {
   const searchParams = useSearchParams();
 
   const onSubmit: SubmitHandler<LoginSchemaType> = async (data) => {
-    const authReq = await fetch("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify(data),
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      cache: "no-cache",
-    });
-    if (!authReq.ok) {
-      setError("root", {
-        message:
-          "Giriş başarısız. Lütfen bilgilerinizi kontrol edin ve tekrar deneyin.",
+    try {
+      const authReq = await fetch("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        cache: "no-cache",
       });
-    } else {
+
+      if (!authReq.ok) {
+        setError("root", {
+          message: "Giriş başarısız. Lütfen bilgilerinizi kontrol edin.",
+        });
+        return;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const mergeResult = await mergeCarts();
+
+      if (mergeResult.success) {
+        console.log("✅ Sepet birleştirildi:", mergeResult.newCart?.cartId);
+      } else {
+        console.warn("⚠️ Sepet birleştirme başarısız:", mergeResult.message);
+      }
+
+      // ✅ Küçük bir delay - localStorage'ın kesin yazılmasını garanti et
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
       const redirectUrl = (searchParams.get("redirectUri") as string) || "/";
       push(redirectUrl);
+    } catch (error) {
+      setError("root", {
+        message: "Bir hata oluştu. Lütfen tekrar deneyin.",
+      });
     }
   };
 
