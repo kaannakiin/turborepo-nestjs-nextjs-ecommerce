@@ -12,6 +12,7 @@ export interface ApiClientOptions extends Omit<RequestInit, "method"> {
 
 class FetchWrapper {
   private baseURL: string;
+  e;
   private defaultOptions: RequestInit;
 
   constructor(options: ApiClientOptions = {}) {

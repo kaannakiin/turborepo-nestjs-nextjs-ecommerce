@@ -8,7 +8,7 @@ const page = async () => {
     queryKey: ["get-layout"],
     queryFn: async () => {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/theme/get-layout?footer=false`,
+        `${process.env.BACKEND_URL}/admin/theme/get-layout?footer=false`,
         {
           method: "GET",
         }
