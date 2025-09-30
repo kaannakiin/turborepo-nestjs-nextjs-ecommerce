@@ -3,6 +3,8 @@ import { Prisma } from '@repo/database';
 import {
   $Enums,
   AddItemToCartV2,
+  AdminCartTableData,
+  AdminCartTableSelect,
   CartActionResponse,
   CartContextCartItemType,
   CartContextCartType,
@@ -91,7 +93,136 @@ export class CartV2Service {
     whereClause: Omit<Prisma.CartWhereUniqueInput, 'id'> = {},
   ): Promise<GetCartByIdReturn | null> {
     if (!cartId) return null;
-    const cart = await this.prisma.cart.findUnique({
+    let cart: GetCartByIdReturn | null = null;
+    if (!cartId && whereClause.userId) {
+      cart = await this.prisma.cart.findFirst({
+        where: { ...whereClause },
+        include: {
+          billingAddress: {
+            include: {
+              city: { select: { id: true, name: true } },
+              country: {
+                select: {
+                  id: true,
+                  name: true,
+                  emoji: true,
+                  translations: true,
+                },
+              },
+              state: {
+                select: { id: true, name: true },
+              },
+            },
+          },
+          shippingAddress: {
+            include: {
+              city: { select: { id: true, name: true } },
+              country: {
+                select: {
+                  id: true,
+                  name: true,
+                  emoji: true,
+                  translations: true,
+                },
+              },
+              state: {
+                select: { id: true, name: true },
+              },
+            },
+          },
+          items: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+            include: {
+              product: {
+                include: {
+                  assets: {
+                    take: 1,
+                    select: {
+                      asset: {
+                        select: {
+                          url: true,
+                          type: true,
+                        },
+                      },
+                    },
+                  },
+                  translations: true,
+                  brand: {
+                    select: {
+                      id: true,
+                      translations: true,
+                    },
+                  },
+                  categories: {
+                    select: {
+                      category: {
+                        select: {
+                          id: true,
+                          translations: true,
+                        },
+                      },
+                    },
+                  },
+                  prices: true,
+                },
+              },
+              variant: {
+                include: {
+                  assets: {
+                    take: 1,
+                    select: {
+                      asset: {
+                        select: {
+                          url: true,
+                          type: true,
+                        },
+                      },
+                    },
+                  },
+                  prices: true,
+                  translations: true,
+                  options: {
+                    orderBy: {
+                      productVariantOption: {
+                        productVariantGroup: {
+                          order: 'asc',
+                        },
+                      },
+                    },
+                    select: {
+                      productVariantOption: {
+                        select: {
+                          variantOption: {
+                            select: {
+                              id: true,
+                              translations: true,
+                              hexValue: true,
+                              asset: { select: { url: true, type: true } },
+                              variantGroup: {
+                                select: {
+                                  translations: true,
+                                  type: true,
+                                  id: true,
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          user: true,
+          cargoRule: true,
+        },
+      });
+    }
+    cart = await this.prisma.cart.findUnique({
       where: { id: cartId, ...whereClause },
       include: {
         billingAddress: {
@@ -426,12 +557,15 @@ export class CartV2Service {
 
   async getCartForContext(
     cartId: string,
+    userId: string | null = null,
     selectedCurrency: $Enums.Currency = 'TRY',
     selectedLocale: $Enums.Locale = 'TR',
   ): Promise<CartActionResponse> {
     const cart = await this.getCart(cartId, {
       status: 'ACTIVE',
+      ...(userId ? { userId } : {}),
     });
+
     if (!cart) {
       return { success: false, message: 'Sepet bulunamadı', newCart: null };
     }
@@ -701,28 +835,57 @@ export class CartV2Service {
       };
     }
 
-    // Kullanıcının mevcut sepetini bul
-    const userCart = await this.prisma.cart.findFirst({
+    // Kullanıcının tüm aktif sepetlerini bul (guest cart dahil)
+    const userCarts = await this.prisma.cart.findMany({
       where: {
         status: 'ACTIVE',
-        userId: userId,
-        id: { not: cartId }, // Guest cart hariç
+        OR: [
+          { userId: userId },
+          { id: cartId }, // Guest cart'ı da dahil et
+        ],
       },
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
 
-    // Eğer kullanıcının sepeti yoksa, guest sepetini kullanıcıya ata
-    if (!userCart) {
-      const updatedCart = await this.prisma.cart.update({
-        where: { id: cartId },
-        data: { userId: userId },
-      });
-      return this.getCartForContext(updatedCart.id);
+    // Hiç sepet yoksa
+    if (!userCarts || userCarts.length === 0) {
+      return {
+        success: false,
+        message: 'Sepet bulunamadı',
+        newCart: null,
+      };
     }
 
-    // ✅ DOĞRU SIRA: Guest sepeti (cartId) → User sepetine (userCart.id) birleştir
-    // userCart kalacak, guest cart silinecek
-    return this.mergeCarts(userCart.id, cartId);
+    // En yeni sepeti (target cart) belirle
+    const targetCart = userCarts[0];
+
+    // Target cart'ın userId'si yoksa ata
+    if (!targetCart.userId) {
+      await this.prisma.cart.update({
+        where: { id: targetCart.id },
+        data: { userId: userId },
+      });
+    }
+
+    // Birleştirilecek diğer sepetler (target cart hariç)
+    const cartsToMerge = userCarts.slice(1);
+
+    // Eğer birleştirilecek sepet yoksa, sadece target cart'ı döndür
+    if (cartsToMerge.length === 0) {
+      return this.getCartForContext(targetCart.id);
+    }
+
+    // Tüm sepetleri sırayla target cart'a birleştir
+    for (const cart of cartsToMerge) {
+      const mergeResult = await this.mergeCarts(targetCart.id, cart.id);
+
+      // Eğer birleştirme başarısız olduysa, hatayı döndür
+      if (!mergeResult.success) {
+        return mergeResult;
+      }
+    }
+
+    return this.getCartForContext(targetCart.id);
   }
 
   /**
@@ -825,8 +988,337 @@ export class CartV2Service {
     // Güncel sepeti context formatında döndür
     return this.getCartForContext(
       firstCartId,
+      null,
       selectedCurrency,
       selectedLocale,
     );
+  }
+
+  private convertAdminCartTableData(
+    carts: AdminCartTableSelect[],
+  ): AdminCartTableData[] {
+    return carts.map((cart) => {
+      // Önce items'ı filtrele ve hesapla
+      const processedItems = cart.items
+        .map((item) => {
+          if (!item.productId || (item.variantId && !item.variant)) return null;
+          const itemTranslation = item.product.translations.find(
+            (t) => t.locale === cart.locale,
+          );
+          if (!itemTranslation) return null;
+
+          if (item.variant && item.variantId) {
+            const variantPrice = item.variant.prices.find(
+              (p) => p.currency === cart.currency,
+            );
+            if (!variantPrice) return null;
+
+            return {
+              itemId: item.id,
+              isDeleted:
+                item.deletedAt && item.isVisible === false ? true : false,
+              price: variantPrice.price,
+              discountedPrice: variantPrice.discountedPrice,
+              productId: item.productId,
+              quantity: item.quantity,
+              variantId: item.variantId,
+              whereAdded: item.whereAdded || 'PRODUCT_PAGE',
+              visibleCause: item.visibleCause,
+              productName: itemTranslation?.name,
+              productAsset: item.product.assets[0]?.asset
+                ? {
+                    url: item.product.assets[0]?.asset.url,
+                    type: item.product.assets[0]?.asset.type,
+                  }
+                : null,
+              variantAsset: item.variant.assets[0]?.asset
+                ? {
+                    url: item.variant.assets[0]?.asset.url,
+                    type: item.variant.assets[0]?.asset.type,
+                  }
+                : null,
+              productUrl: item.variantId
+                ? `/${itemTranslation.slug}?${item.variant.options
+                    .map((opt) => {
+                      const optTrans =
+                        opt.productVariantOption.variantOption.translations.find(
+                          (t) => t.locale === cart.locale,
+                        ) ||
+                        opt.productVariantOption.variantOption.translations[0];
+                      const groupTrans =
+                        opt.productVariantOption.variantOption.variantGroup.translations.find(
+                          (t) => t.locale === cart.locale,
+                        ) ||
+                        opt.productVariantOption.variantOption.variantGroup
+                          .translations[0];
+                      return `${groupTrans?.slug}=${optTrans?.slug}`;
+                    })
+                    .join('&')}`
+                : `${itemTranslation.slug}`,
+              variantOptions: item.variant.options.map((opt) => {
+                const optTrans =
+                  opt.productVariantOption.variantOption.translations.find(
+                    (t) => t.locale === cart.locale,
+                  ) || opt.productVariantOption.variantOption.translations[0];
+                const groupTrans =
+                  opt.productVariantOption.variantOption.variantGroup.translations.find(
+                    (t) => t.locale === cart.locale,
+                  ) ||
+                  opt.productVariantOption.variantOption.variantGroup
+                    .translations[0];
+                return {
+                  variantGroupName: groupTrans?.name,
+                  variantOptionName: optTrans?.name,
+                  variantGroupSlug: groupTrans?.slug,
+                  variantOptionSlug: optTrans?.slug,
+                  variantOptionAsset: opt.productVariantOption.variantOption
+                    .asset
+                    ? {
+                        url: opt.productVariantOption.variantOption.asset.url,
+                        type: opt.productVariantOption.variantOption.asset.type,
+                      }
+                    : null,
+                  variantOptionHexValue:
+                    opt.productVariantOption.variantOption.hexValue,
+                };
+              }),
+            };
+          } else {
+            const productPrice = item.product.prices.find(
+              (p) => p.currency === cart.currency,
+            );
+            if (!productPrice) return null;
+
+            return {
+              itemId: item.id,
+              isDeleted:
+                item.deletedAt && item.isVisible === false ? true : false,
+              price: productPrice.price,
+              productId: item.productId,
+              quantity: item.quantity,
+              discountedPrice: productPrice.discountedPrice,
+              variantId: null,
+              whereAdded: item.whereAdded || 'PRODUCT_PAGE',
+              visibleCause: item.visibleCause,
+              productName: itemTranslation?.name,
+              productAsset: item.product.assets[0]?.asset
+                ? {
+                    url: item.product.assets[0]?.asset.url,
+                    type: item.product.assets[0]?.asset.type,
+                  }
+                : null,
+              productUrl: `/${itemTranslation.slug}`,
+              variantAsset: null,
+              variantOptions: [],
+            };
+          }
+        })
+        .filter((item) => item !== null);
+
+      // Hesaplamalar - sadece valid items üzerinden
+      const calculatedSubTotal = processedItems.reduce((sum, item) => {
+        return sum + item.price * item.quantity;
+      }, 0);
+
+      const calculatedTotalPrice = processedItems.reduce((sum, item) => {
+        const itemPrice = item.discountedPrice ?? item.price;
+        return sum + itemPrice * item.quantity;
+      }, 0);
+
+      const calculatedTotalDiscount = calculatedSubTotal - calculatedTotalPrice;
+
+      return {
+        cartId: cart.id,
+        createdAt: cart.createdAt,
+        currency: cart.currency,
+        locale: cart.locale,
+        status: cart.status as $Enums.CartStatus,
+        totalItems: processedItems.length,
+        updatedAt: cart.updatedAt,
+        user: cart.user
+          ? {
+              email: cart.user.email,
+              name: cart.user.name,
+              surname: cart.user.surname,
+            }
+          : null,
+        taxTotal: 0, // Tax hesaplaması şimdilik boş
+        subTotalPrice: calculatedSubTotal,
+        totalDiscount: calculatedTotalDiscount,
+        totalPrice: calculatedTotalPrice,
+        orderNote: null,
+        items: processedItems,
+      };
+    });
+  }
+
+  async getAdminCartList({
+    status,
+    endDate,
+    search,
+    startDate,
+    page,
+  }: {
+    status: $Enums.CartStatus | null;
+    search: string | null;
+    startDate: Date | null;
+    endDate: Date | null;
+    page: number;
+  }): Promise<{
+    carts: AdminCartTableData[];
+    success: boolean;
+    message: string;
+    pagination?: {
+      totalItems: number;
+      totalPages: number;
+      currentPage: number;
+      itemsPerPage: number;
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+    };
+  }> {
+    const take = 10;
+    const skip = (page - 1) * take;
+
+    const cartWhere: Prisma.CartWhereInput = {
+      ...(status && { status }),
+      ...(search && {
+        OR: [
+          { user: { name: { contains: search, mode: 'insensitive' } } },
+          { user: { email: { contains: search, mode: 'insensitive' } } },
+        ],
+      }),
+      ...((startDate || endDate) && {
+        createdAt: {
+          ...(startDate && { gte: startDate }),
+          ...(endDate && {
+            lte: (() => {
+              const endOfDay = new Date(endDate);
+              endOfDay.setHours(23, 59, 59, 999);
+              return endOfDay;
+            })(),
+          }),
+        },
+      }),
+    };
+    const carts = await this.prisma.cart.findMany({
+      where: cartWhere,
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take,
+      include: {
+        user: true,
+        items: {
+          orderBy: {
+            createdAt: 'desc',
+          },
+          include: {
+            product: {
+              include: {
+                assets: {
+                  take: 1,
+                  select: {
+                    asset: {
+                      select: {
+                        url: true,
+                        type: true,
+                      },
+                    },
+                  },
+                },
+                translations: true,
+                brand: {
+                  select: {
+                    id: true,
+                    translations: true,
+                  },
+                },
+                categories: {
+                  select: {
+                    category: {
+                      select: {
+                        id: true,
+                        translations: true,
+                      },
+                    },
+                  },
+                },
+                prices: true,
+              },
+            },
+            variant: {
+              include: {
+                assets: {
+                  take: 1,
+                  select: {
+                    asset: {
+                      select: {
+                        url: true,
+                        type: true,
+                      },
+                    },
+                  },
+                },
+                prices: true,
+                translations: true,
+                options: {
+                  orderBy: {
+                    productVariantOption: {
+                      productVariantGroup: {
+                        order: 'asc',
+                      },
+                    },
+                  },
+                  select: {
+                    productVariantOption: {
+                      select: {
+                        variantOption: {
+                          select: {
+                            id: true,
+                            translations: true,
+                            hexValue: true,
+                            asset: { select: { url: true, type: true } },
+                            variantGroup: {
+                              select: {
+                                translations: true,
+                                type: true,
+                                id: true,
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const cartCount = await this.prisma.cart.count({
+      where: cartWhere,
+    });
+    if (carts.length === 0) {
+      return {
+        carts: [],
+        message: 'Sepet bulunamadı',
+        success: true,
+      };
+    }
+    return {
+      carts: this.convertAdminCartTableData(carts),
+      message: 'Sepetler başarıyla getirildi',
+      success: true,
+      pagination: {
+        totalItems: cartCount,
+        totalPages: Math.ceil(cartCount / take),
+        currentPage: page,
+        itemsPerPage: take,
+        hasNextPage: page * take < cartCount,
+        hasPreviousPage: page > 1,
+      },
+    };
   }
 }

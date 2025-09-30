@@ -1,18 +1,21 @@
 "use client";
 
 import { ActionIcon, Button, Group, Popover, Stack, Text } from "@mantine/core";
+import { MantineSize } from "@repo/types";
 import { useState } from "react";
 
 interface ActionPopoverrProps {
   targetIcon: React.ReactNode;
   text: string;
-  onConfirm?: () => void;
+  onConfirm?: () => void | Promise<void>;
+  size?: MantineSize;
 }
 
 const ActionPopover = ({
   targetIcon,
   text,
   onConfirm,
+  size = "xs",
 }: ActionPopoverrProps) => {
   const [opened, setOpened] = useState(false);
 
@@ -22,13 +25,13 @@ const ActionPopover = ({
         <ActionIcon
           variant="transparent"
           c={"red"}
-          size={"xs"}
+          size={size}
           onClick={() => setOpened((o) => !o)}
         >
           {targetIcon}
         </ActionIcon>
       </Popover.Target>
-      <Popover.Dropdown bg={"gray.3"}>
+      <Popover.Dropdown bg={"gray.3"} maw={300}>
         <Stack gap={"xs"}>
           <Text fz={"md"}>{text}</Text>
           <Group justify="end" gap="xs">

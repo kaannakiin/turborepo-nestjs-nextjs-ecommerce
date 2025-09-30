@@ -222,3 +222,137 @@ export type CartContextTypeV2 = {
   popoverOpened: boolean;
   closePopover: () => void; // ✅ Ekle
 };
+
+export type AdminCartTableData = {
+  cartId: string;
+  user?: {
+    name: string;
+    surname: string;
+    email: string;
+  };
+  currency: $Enums.Currency;
+  locale: $Enums.Locale;
+  status: $Enums.CartStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  totalItems: number;
+  totalPrice: number;
+  totalDiscount: number;
+  taxTotal: number;
+  orderNote?: string;
+  items: Array<{
+    itemId: string;
+    productName: string;
+    quantity: number;
+    price: number;
+    discountedPrice?: number;
+    isDeleted: boolean;
+    visibleCause: $Enums.inVisibleCause;
+    whereAdded: $Enums.WhereAdded;
+    productId: string;
+    variantId?: string;
+    productUrl: string;
+    productAsset?: { url: string; type: $Enums.AssetType };
+    variantAsset?: { url: string; type: $Enums.AssetType };
+    variantOptions?: Array<{
+      variantGroupName: string;
+      variantGroupSlug: string;
+      variantOptionName: string;
+      variantOptionSlug: string;
+      variantOptionHexValue?: string;
+      variantOptionAsset?: { url: string; type: $Enums.AssetType };
+    }>;
+  }>;
+};
+export type AdminCartTableSelect = Prisma.CartGetPayload<{
+  include: {
+    user: true;
+    items: {
+      orderBy: {
+        createdAt: "desc";
+      };
+      include: {
+        product: {
+          include: {
+            assets: {
+              take: 1;
+              select: {
+                asset: {
+                  select: {
+                    url: true;
+                    type: true;
+                  };
+                };
+              };
+            };
+            translations: true;
+            brand: {
+              select: {
+                id: true;
+                translations: true;
+              };
+            };
+            categories: {
+              select: {
+                category: {
+                  select: {
+                    id: true;
+                    translations: true;
+                  };
+                };
+              };
+            };
+            prices: true;
+          };
+        };
+        variant: {
+          include: {
+            assets: {
+              take: 1;
+              select: {
+                asset: {
+                  select: {
+                    url: true;
+                    type: true;
+                  };
+                };
+              };
+            };
+            prices: true;
+            translations: true;
+            options: {
+              orderBy: {
+                productVariantOption: {
+                  productVariantGroup: {
+                    order: "asc";
+                  };
+                };
+              };
+              select: {
+                productVariantOption: {
+                  select: {
+                    variantOption: {
+                      select: {
+                        id: true;
+                        translations: true;
+                        hexValue: true;
+                        asset: { select: { url: true; type: true } };
+                        variantGroup: {
+                          select: {
+                            translations: true;
+                            type: true;
+                            id: true;
+                          };
+                        };
+                      };
+                    };
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+}>;

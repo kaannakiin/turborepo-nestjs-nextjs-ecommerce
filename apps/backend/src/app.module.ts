@@ -1,17 +1,17 @@
 import { Module } from '@nestjs/common';
-import { PrismaModule } from './prisma/prisma.module';
-import { UserModule } from './user/user.module';
-import { AuthModule } from './auth/auth.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AdminModule } from './admin/admin.module';
 import { NestMinioModule } from 'nestjs-minio';
-import { MinioModule } from './minio/minio.module';
-import { LocationsModule } from './locations/locations.module';
-import { DiscountsModule } from './discounts/discounts.module';
-import { UserPageModule } from './user-page/user-page.module';
-import { ShippingModule } from './shipping/shipping.module';
-import { PaymentModule } from './payment/payment.module';
+import { AdminModule } from './admin/admin.module';
+import { AuthModule } from './auth/auth.module';
 import { CartV2Module } from './cart-v2/cart-v2.module';
+import { DiscountsModule } from './discounts/discounts.module';
+import { LocationsModule } from './locations/locations.module';
+import { MinioModule } from './minio/minio.module';
+import { PaymentModule } from './payment/payment.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { ShippingModule } from './shipping/shipping.module';
+import { UserPageModule } from './user-page/user-page.module';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [

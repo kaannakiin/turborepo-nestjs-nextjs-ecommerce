@@ -14,6 +14,7 @@ import {
   IconHome2,
   IconPackage,
   IconSettings,
+  IconShoppingCartBolt,
   IconUser,
 } from "@tabler/icons-react";
 import { usePathname, useRouter } from "next/navigation";
@@ -95,6 +96,22 @@ const data: NavbarButtonType[] = [
     ],
   },
   {
+    label: "Sepetler ve Siparişler",
+    icon: <IconShoppingCartBolt size={24} stroke={2} />,
+    sub: [
+      {
+        href: "/orders",
+        icon: null,
+        label: "Siparişler",
+      },
+      {
+        href: "/carts",
+        icon: null,
+        label: "Sepetler",
+      },
+    ],
+  },
+  {
     label: "Kullanıcılar",
     icon: <IconUser size={24} stroke={2} />,
     sub: [
@@ -110,6 +127,7 @@ const data: NavbarButtonType[] = [
       },
     ],
   },
+
   {
     label: "Tema",
     icon: <IconBrush size={24} stroke={2} />,

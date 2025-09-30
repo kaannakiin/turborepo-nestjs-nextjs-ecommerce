@@ -1,3 +1,4 @@
+import { ParseDatePipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
@@ -35,7 +36,6 @@ async function bootstrap() {
     });
 
     const port = parseInt(configService.get<string>('PORT') || '3001', 10);
-
     await app.listen(port, '0.0.0.0');
 
     console.log(`Application is running on: ${await app.getUrl()}`);

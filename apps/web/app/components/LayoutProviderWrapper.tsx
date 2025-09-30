@@ -2,7 +2,6 @@
 
 import {
   createTheme,
-  InputWrapper,
   MantineColorsTuple,
   MantineProvider,
   Modal,
@@ -10,7 +9,9 @@ import {
 import { DatesProvider } from "@mantine/dates";
 import { Notifications } from "@mantine/notifications";
 import { QueryClient, QueryClientProvider } from "@repo/shared";
+import dayjs from "dayjs";
 import "dayjs/locale/tr";
+import customParseFormat from "dayjs/plugin/customParseFormat";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 const primaryColor: MantineColorsTuple = [
@@ -55,6 +56,7 @@ const LayoutProviderWrapper = ({ children }: { children: ReactNode }) => {
       }),
     },
   });
+  dayjs.extend(customParseFormat);
   return (
     <QueryClientProvider
       client={

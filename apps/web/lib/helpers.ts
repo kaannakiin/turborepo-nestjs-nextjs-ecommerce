@@ -746,3 +746,29 @@ export function calculateDiscountRate(
 
   return `${Math.round(discountRate * 10) / 10}%`; // Virgülden sonra 1 basamak
 }
+
+export function getCartStatusLabel(status: $Enums.CartStatus): string {
+  switch (status) {
+    case "ABANDONED":
+      return "Terkedilmiş";
+    case "ACTIVE":
+      return "Aktif";
+    case "CONVERTED":
+      return "Satın Alınmış";
+    case "MERGED":
+      return "Birleştirilmiş";
+  }
+}
+
+export function getCartStatusColor(status: $Enums.CartStatus): string {
+  switch (status) {
+    case "ABANDONED":
+      return "red";
+    case "ACTIVE":
+      return "green";
+    case "CONVERTED":
+      return "blue";
+    case "MERGED":
+      return "gray";
+  }
+}
