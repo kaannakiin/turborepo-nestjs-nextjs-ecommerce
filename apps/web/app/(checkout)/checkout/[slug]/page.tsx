@@ -5,6 +5,7 @@ import { Group, Text } from "@mantine/core";
 import Link from "next/link";
 import logo from "../../../../public/logo.svg";
 import Image from "next/image";
+import AuthUserCheckoutPage from "./components/Auth_User/AuthUserCheckoutPage";
 
 export type CheckoutStep = "info" | "shipping" | "payment";
 
@@ -60,7 +61,13 @@ const CheckoutPage = async ({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="order-2 lg:order-1 lg:py-8 lg:px-3">
             <CheckoutDesktopHeader />
-            {session ? null : (
+            {session ? (
+              <AuthUserCheckoutPage
+                userInfo={session}
+                cartId={slug}
+                step={step}
+              />
+            ) : (
               <NonAuthUserCheckoutPage cartId={slug} step={step} />
             )}
           </div>

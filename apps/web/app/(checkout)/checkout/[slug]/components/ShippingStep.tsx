@@ -83,7 +83,7 @@ const ShippingStep = ({ cartId, onSubmit }: ShippingStepProps) => {
                   }}
                   key={rule.id}
                   bg={"#F7F7F9"}
-                  className="border border-gray-900 "
+                  className="border-2 border-gray-900 "
                   radius={"md"}
                   px={"xs"}
                   py={"md"}
@@ -183,7 +183,7 @@ const ShippingStep = ({ cartId, onSubmit }: ShippingStepProps) => {
                   }}
                   key={rule.id}
                   bg={"#F7F7F9"}
-                  className="border border-gray-900 "
+                  className="border-2 border-gray-900 "
                   radius={"md"}
                   px={"xs"}
                   py={"md"}

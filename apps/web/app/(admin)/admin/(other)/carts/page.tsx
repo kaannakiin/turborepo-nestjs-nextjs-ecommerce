@@ -62,7 +62,7 @@ const AdminCartsPage = () => {
   if (isLoading || isPending) {
     return <GlobalLoadingOverlay />;
   }
-  if (!data || !data.success || !data.carts || !data.carts.length) {
+  if (!data || !data.success) {
     return (
       <div className="flex items-center justify-center w-full h-full">
         <Stack gap={"lg"} align="center">
@@ -130,7 +130,9 @@ const AdminCartsPage = () => {
       </Group>
       <Divider />
       <CartsTable data={data.carts} activeFilters={activeFilterExists} />
-      <CustomPagination total={data.pagination?.totalPages} />
+      {data.pagination && data.pagination?.totalPages > 1 && (
+        <CustomPagination total={data.pagination?.totalPages} />
+      )}
     </div>
   );
 };

@@ -105,8 +105,10 @@ model User {
   discountIncluded DiscountIncludedUser[]
   discountUsage    CouponUsage[]
   carts            Cart[]
-  addressSchema    AddressSchema[]
+  addresses        AddressSchema[] // addressSchema yerine addresses daha açıklayıcı
   orders           Order[]
+  defaultAddressId String?                @unique
+  defaultAddress   AddressSchema?         @relation("UserDefaultAddress", fields: [defaultAddressId], references: [id], onDelete: SetNull)
 
   @@index([id, refreshToken, email, phone])
 }
@@ -1037,8 +1039,9 @@ model AddressSchema {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  shippingCarts Cart[] @relation("CartShippingAddress")
-  billingCarts  Cart[] @relation("CartBillingAddress")
+  shippingCarts  Cart[] @relation("CartShippingAddress")
+  billingCarts   Cart[] @relation("CartBillingAddress")
+  defaultForUser User?  @relation("UserDefaultAddress") // Bu satırı ekleyin
 
   @@index([userId])
   @@index([countryId])

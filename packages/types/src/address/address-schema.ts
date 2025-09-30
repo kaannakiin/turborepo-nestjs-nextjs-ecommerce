@@ -91,7 +91,7 @@ const BaseAddressSchema = z
     }
   });
 
-export const AuthAddressSchema = BaseAddressSchema.safeExtend({
+export const AuthUserAddressSchema = BaseAddressSchema.safeExtend({
   addressTitle: z
     .string({
       error: '"Adres Başlığı gereklidir",',
@@ -110,6 +110,7 @@ export const NonAuthUserAddressSchema = BaseAddressSchema.safeExtend({
 export type NonAuthUserAddressZodType = z.infer<
   typeof NonAuthUserAddressSchema
 >;
+export type AuthUserAddressZodType = z.infer<typeof AuthUserAddressSchema>;
 
 export type GetAllCountryReturnType = Prisma.CountryGetPayload<{
   select: {
@@ -203,3 +204,23 @@ export const BillingAddressSchema = BaseAddressSchema.safeExtend({
 });
 
 export type BillingAddressZodType = z.infer<typeof BillingAddressSchema>;
+
+export type UserDbAddressType = Prisma.AddressSchemaGetPayload<{
+  include: {
+    city: {
+      select: { id: true; name: true };
+    };
+    country: {
+      select: {
+        id: true;
+        translations: { select: { name: true; locale: true } };
+        emoji: true;
+        name: true;
+        type: true;
+      };
+    };
+    state: {
+      select: { id: true; name: true };
+    };
+  };
+}>;

@@ -120,7 +120,7 @@ const NonAuthUserPaymentForm = ({
         <Card
           withBorder
           bg={"#F7F7F9"}
-          className="border-gray-900 gap-2"
+          className="border-gray-900 border-2 gap-2"
           p={"lg"}
         >
           <Controller

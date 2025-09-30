@@ -264,6 +264,7 @@ export type AdminCartTableData = {
     }>;
   }>;
 };
+
 export type AdminCartTableSelect = Prisma.CartGetPayload<{
   include: {
     user: true;

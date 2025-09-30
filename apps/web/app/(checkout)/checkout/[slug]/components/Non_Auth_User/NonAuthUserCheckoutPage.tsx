@@ -11,7 +11,7 @@ import { CheckoutStep } from "../../page";
 import AddressCard from "../AddressCard";
 import ShippingCard from "../ShippingCard";
 import ShippingStep from "../ShippingStep";
-import NonAuthUserAddressForm from "./NonAuthUserAdressForm";
+import NonAuthUserAdressForm from "./NonAuthUserAdressForm";
 import NonAuthUserPaymentForm from "./NonAuthUserPaymentForm";
 
 interface NonAuthUserCheckoutPageProps {
@@ -54,7 +54,7 @@ const NonAuthUserCheckoutPage = ({
     <Stack gap="lg" mt={"lg"}>
       {step === "info" ? (
         <>
-          <NonAuthUserAddressForm
+          <NonAuthUserAdressForm
             defaultValues={
               data.cart?.shippingAddress
                 ? {

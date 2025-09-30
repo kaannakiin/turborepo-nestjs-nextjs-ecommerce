@@ -36,7 +36,7 @@ interface AddressFormProps {
   defaultValues: NonAuthUserAddressZodType;
 }
 
-const NonAuthUserAddressForm = ({
+const NonAuthUserAdressForm = ({
   onSubmit,
   defaultValues,
 }: AddressFormProps) => {
@@ -617,4 +617,4 @@ const NonAuthUserAddressForm = ({
   );
 };
 
-export default NonAuthUserAddressForm;
+export default NonAuthUserAdressForm;
