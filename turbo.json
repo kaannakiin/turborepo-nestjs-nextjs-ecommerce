@@ -1,34 +1,7 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
-  "globalEnv": [
-    "DATABASE_URL",
-    "MINIO_ENDPOINT",
-    "MINIO_ACCESS_KEY",
-    "MINIO_SECRET_KEY",
-    "MINIO_PORT",
-    "MINIO_USE_SSL",
-    "JWT_ACCESS_TOKEN_SECRET",
-    "JWT_REFRESH_TOKEN_SECRET",
-    "JWT_ACCESS_TOKEN_EXPIRATION_MS",
-    "JWT_REFRESH_TOKEN_EXPIRATION_MS",
-    "GOOGLE_CLIENT_ID",
-    "GOOGLE_CLIENT_SECRET",
-    "AUTH_UI_REDIRECT",
-    "FACEBOOK_APP_ID",
-    "FACEBOOK_APP_SECRET",
-    "FACEBOOK_CALLBACK_URL",
-    "WEB_UI_REDIRECT",
-    "MOBILE_UI_REDIRECT",
-    "PORT",
-    "NODE_ENV",
-    "DOMAIN",
-    "NEXT_PUBLIC_BASE_URL",
-    "BACKEND_URL",
-    "NEXT_PUBLIC_BACKEND_URL",
-    "ALLOWED_ORIGINS",
-    "MINIO_ENDPOINT_SETTINGS"
-  ],
+  "globalEnv": [],
   "globalDependencies": ["**/.env.*local"],
   "tasks": {
     "build": {
@@ -37,13 +10,7 @@
     },
     "web#build": {
       "dependsOn": ["^build"],
-      "env": [
-        "BACKEND_URL",
-        "NEXT_PUBLIC_BACKEND_URL",
-        "MINIO_ENDPOINT",
-        "NODE_ENV",
-        "NEXT_PUBLIC_BASE_URL"
-      ],
+      "env": ["BACKEND_URL", "NEXT_PUBLIC_BACKEND_URL", "NEXT_PUBLIC_BASE_URL"],
       "outputs": [".next/**", "!.next/cache/**"]
     },
     "backend#build": {
@@ -61,16 +28,25 @@
         "FACEBOOK_CALLBACK_URL",
         "WEB_UI_REDIRECT",
         "MOBILE_UI_REDIRECT",
+        "PORT",
+        "DOMAIN",
         "MINIO_ENDPOINT",
+        "MINIO_ENDPOINT_SETTINGS",
         "MINIO_ACCESS_KEY",
         "MINIO_SECRET_KEY",
         "MINIO_PORT",
         "MINIO_USE_SSL",
-        "PORT",
-        "NODE_ENV",
-        "DOMAIN",
         "ALLOWED_ORIGINS",
-        "MINIO_ENDPOINT_SETTINGS"
+        "IYZICO_API_KEY",
+        "IYZICO_SECRET_KEY",
+        "IYZICO_BASE_URL",
+        "IYZICO_CALLBACK_URL",
+        "COOKIE_SECRET",
+        "CSRF_SECRET",
+        "NODE_ENV",
+        "CSRF_ENABLED",
+        "REDIS_URL",
+        "DATABASE_URL"
       ],
       "outputs": ["dist/**"]
     },
@@ -78,11 +54,10 @@
       "cache": false,
       "persistent": true,
       "env": [
-        "DATABASE_URL",
-        "JWT_ACCESS_TOKEN_SECRET",
-        "JWT_REFRESH_TOKEN_SECRET",
         "JWT_ACCESS_TOKEN_EXPIRATION_MS",
         "JWT_REFRESH_TOKEN_EXPIRATION_MS",
+        "JWT_REFRESH_TOKEN_SECRET",
+        "JWT_ACCESS_TOKEN_SECRET",
         "GOOGLE_CLIENT_ID",
         "GOOGLE_CLIENT_SECRET",
         "AUTH_UI_REDIRECT",
@@ -91,32 +66,34 @@
         "FACEBOOK_CALLBACK_URL",
         "WEB_UI_REDIRECT",
         "MOBILE_UI_REDIRECT",
+        "PORT",
+        "DOMAIN",
         "MINIO_ENDPOINT",
+        "MINIO_ENDPOINT_SETTINGS",
         "MINIO_ACCESS_KEY",
         "MINIO_SECRET_KEY",
         "MINIO_PORT",
         "MINIO_USE_SSL",
-        "PORT",
-        "NODE_ENV",
-        "DOMAIN",
         "ALLOWED_ORIGINS",
-        "MINIO_ENDPOINT_SETTINGS"
+        "IYZICO_API_KEY",
+        "IYZICO_SECRET_KEY",
+        "IYZICO_BASE_URL",
+        "IYZICO_CALLBACK_URL",
+        "COOKIE_SECRET",
+        "CSRF_SECRET",
+        "NODE_ENV",
+        "CSRF_ENABLED",
+        "REDIS_URL",
+        "DATABASE_URL"
       ]
     },
     "web#start": {
       "cache": false,
       "persistent": true,
-      "env": [
-        "BACKEND_URL",
-        "NEXT_PUBLIC_BACKEND_URL",
-        "MINIO_ENDPOINT",
-        "NEXT_PUBLIC_BASE_URL",
-        "NODE_ENV"
-      ]
+      "env": ["BACKEND_URL", "NEXT_PUBLIC_BACKEND_URL", "NEXT_PUBLIC_BASE_URL"]
     },
     "database#build": {
       "dependsOn": ["^build"],
-      "env": ["DATABASE_URL"],
       "outputs": ["dist/**"]
     },
     "dev": {
@@ -124,8 +101,7 @@
       "persistent": true
     },
     "db:generate": {
-      "cache": false,
-      "env": ["DATABASE_URL"]
+      "cache": false
     },
     "db:migrate": {
       "cache": false,
@@ -133,6 +109,7 @@
     },
     "db:deploy": {
       "cache": false,
+      "outputs": [],
       "env": ["DATABASE_URL"]
     },
     "db:prisma": {
