@@ -107,6 +107,7 @@ export class ThemeController {
   async getLayout(@Query('footer', ParseBoolPipe) footer: boolean) {
     return this.themeService.getLayout(footer);
   }
+
   @Public()
   @Get('get-footer')
   async getFooter() {

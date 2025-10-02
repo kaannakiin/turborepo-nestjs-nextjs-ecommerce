@@ -7,47 +7,63 @@ import {
   Res,
   UseGuards,
   UsePipes,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { type User } from '@repo/database';
 import {
   RegisterSchema,
   type RegisterSchemaType,
   TokenPayload,
 } from '@repo/types';
-import { type Response } from 'express';
+import { type Request, type Response } from 'express';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import { AuthService } from './auth.service';
+import { FacebookAuthGuard } from './guards/facebook-auth.guard';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
-import { GoogleAuthGuard } from './guards/google-auth.guard';
-import { FacebookAuthGuard } from './guards/facebook-auth.guard';
+
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
   @Post('register')
+  @HttpCode(HttpStatus.CREATED)
+  @SkipThrottle({ default: true })
+  @Throttle({ auth: { limit: 5, ttl: 60000 } })
   @UsePipes(new ZodValidationPipe(RegisterSchema))
   async register(@Body() registerData: RegisterSchemaType) {
     return this.authService.register(registerData);
   }
 
   @Post('login')
+  @HttpCode(HttpStatus.OK)
+  @SkipThrottle({ default: true })
+  @Throttle({ auth: { limit: 5, ttl: 60000 } })
   @UseGuards(LocalAuthGuard)
   async login(
     @CurrentUser() user: User,
     @Res({ passthrough: true }) response: Response,
+    @Req() req: Request,
   ) {
-    return await this.authService.login(user, response);
+    return await this.authService.login(user, response, false, false, req);
   }
 
   @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @SkipThrottle({ default: true })
+  @Throttle({ refresh: { limit: 10, ttl: 60000 } })
   @UseGuards(JwtRefreshAuthGuard)
   async refreshToken(
     @CurrentUser() user: User,
     @Res({ passthrough: true }) response: Response,
+    @Req() req: Request,
   ) {
-    return await this.authService.login(user, response);
+    return await this.authService.login(user, response, false, false, req);
   }
 
   @Get('google')
@@ -62,8 +78,8 @@ export class AuthController {
     @Res() response: Response,
   ) {
     const userAgent = req.headers['user-agent'];
-    const isMobile = userAgent && userAgent.includes('Mobile');
-    await this.authService.login(user, response, true, isMobile || false);
+    const isMobile = userAgent?.includes('Mobile') ?? false;
+    await this.authService.login(user, response, true, isMobile, req);
   }
 
   @Get('facebook')
@@ -78,20 +94,53 @@ export class AuthController {
     @Res() response: Response,
   ) {
     const userAgent = req.headers['user-agent'];
-    const isMobile = userAgent && userAgent.includes('Mobile');
-    await this.authService.login(user, response, true, isMobile || false);
+    const isMobile = userAgent?.includes('Mobile') ?? false;
+    await this.authService.login(user, response, true, isMobile, req);
   }
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  me(@CurrentUser() user: User) {
+  me(@CurrentUser() user: User & { jti: string }) {
     return {
       id: user.id,
       name: `${user.name} ${user.surname}`,
       role: user.role,
       ...(user.email && { email: user.email }),
       ...(user.phone && { phone: user.phone }),
+      jti: user.jti,
       ...(user.imageUrl && { imageUrl: user.imageUrl }),
     } as TokenPayload;
   }
+
+  @Get('csrf')
+  getCsrfToken(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const generateCsrfToken = req['csrfToken'] as (
+      req: Request,
+      res: Response,
+    ) => string;
+    const token = generateCsrfToken(req, res);
+
+    return {
+      success: true,
+      csrfToken: token,
+    };
+  }
+
+  // FORGOT PASSWORD - 'auth-strict' throttler (3 istek/5dk)
+  // @Post('forgot-password')
+  // @HttpCode(HttpStatus.OK)
+  // @SkipThrottle({ default: true })
+  // @Throttle({ 'auth-strict': { limit: 3, ttl: 300000 } })
+  // async forgotPassword(@Body() dto: any) {
+  //   return this.authService.forgotPassword(dto);
+  // }
+
+  // RESEND VERIFICATION - 'auth-strict' throttler
+  // @Post('resend-verification')
+  // @HttpCode(HttpStatus.OK)
+  // @SkipThrottle({ default: true })
+  // @Throttle({ 'auth-strict': { limit: 3, ttl: 300000 } })
+  // async resendVerification(@Body() dto: any) {
+  //   return this.authService.resendVerification(dto);
+  // }
 }

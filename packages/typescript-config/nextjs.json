@@ -9,5 +9,6 @@
     "jsx": "preserve",
     "noEmit": true,
     "strict": false
+    
   }
 }

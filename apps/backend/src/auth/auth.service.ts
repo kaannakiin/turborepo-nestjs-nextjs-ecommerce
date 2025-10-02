@@ -3,14 +3,15 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@repo/database';
+import { createId } from '@repo/shared';
 import { getCountryCodes, RegisterSchemaType, TokenPayload } from '@repo/types';
 import { hash, verify } from 'argon2';
-import { Response } from 'express';
+import { Request, Response } from 'express';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { UserService } from 'src/user/user.service';
 
 @Injectable()
@@ -19,6 +20,7 @@ export class AuthService {
     private userService: UserService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private prismaService: PrismaService,
   ) {}
 
   private capitalize(str: string): string {
@@ -84,6 +86,7 @@ export class AuthService {
     response: Response,
     redirect: boolean = false,
     isMobile: boolean = false,
+    req: Request,
   ) {
     const accessTokenExpirationMs = parseInt(
       this.configService.getOrThrow<string>('JWT_ACCESS_TOKEN_EXPIRATION_MS'),
@@ -102,9 +105,31 @@ export class AuthService {
     expiresRefreshToken.setTime(
       expiresRefreshToken.getTime() + refreshTokenExpirationMs,
     );
+    const currentRefreshToken = req.cookies?.refresh_token;
+    if (currentRefreshToken) {
+      try {
+        const oldPayload = this.jwtService.verify(currentRefreshToken, {
+          secret: this.configService.getOrThrow('JWT_REFRESH_TOKEN_SECRET'),
+        }) as TokenPayload;
+
+        await this.prismaService.refreshTokens.update({
+          where: {
+            id: oldPayload.jti,
+            userId: user.id,
+            revokedAt: null,
+          },
+          data: {
+            revokedAt: new Date(),
+          },
+        });
+      } catch (error) {
+        console.warn('Could not revoke old token:', error.message);
+      }
+    }
 
     const tokenPayload: TokenPayload = {
       id: user.id,
+      jti: createId(),
       name: `${this.capitalize(user.name)} ${this.capitalize(user.surname)}`,
       role: user.role,
       ...(user.email ? { email: user.email } : {}),
@@ -121,7 +146,32 @@ export class AuthService {
       secret: this.configService.getOrThrow('JWT_REFRESH_TOKEN_SECRET'),
       expiresIn: Math.floor(refreshTokenExpirationMs / 1000), // Saniyeye çevir
     });
+    const hashedRefreshToken = await hash(refreshToken);
 
+    await this.prismaService.user.update({
+      where: { id: user.id },
+      data: {
+        refreshTokens: {
+          create: {
+            id: tokenPayload.jti,
+            expiresAt: expiresRefreshToken,
+            hashedRefreshToken: hashedRefreshToken,
+            browser: req.useragent.browser || 'Unknown',
+            browserVersion: req.useragent.version || 'Unknown',
+            os: req.useragent.os || 'Unknown',
+            deviceName: req.useragent.platform || 'Unknown',
+            deviceType: req.useragent.isMobile
+              ? 'MOBILE'
+              : req.useragent.isTablet
+                ? 'TABLET'
+                : 'DESKTOP',
+            ipAddress: req.socket.remoteAddress || req.ip || 'Unknown',
+            osVersion: req.useragent.os || 'Unknown',
+            userAgent: req.useragent.source || 'Unknown',
+          },
+        },
+      },
+    });
     response.cookie('token', accessToken, {
       httpOnly: true,
       secure: this.configService.get('NODE_ENV') === 'production',
@@ -151,22 +201,55 @@ export class AuthService {
     }
   }
 
-  async verifyRefreshToken(refreshToken: string, userId: string) {
-    try {
-      const user = await this.userService.findUnique({
-        where: {
-          id: userId,
-        },
-      });
+  async verifyRefreshToken(request: Request, payload: TokenPayload) {
+    const refreshToken = request.cookies?.refresh_token;
 
-      if (!user || !user.refreshToken) {
-        throw new UnauthorizedException('Invalid refresh token');
-      }
-
-      const { password: dbPass, ...result } = user;
-      return result;
-    } catch (error) {
-      throw new UnauthorizedException('Invalid refresh token');
+    if (!refreshToken) {
+      throw new BadRequestException('Refresh token not found');
     }
+
+    const tokenRecord = await this.prismaService.refreshTokens.findUnique({
+      where: {
+        id: payload.jti,
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    if (
+      !tokenRecord ||
+      tokenRecord.userId !== payload.id ||
+      tokenRecord.revokedAt !== null ||
+      tokenRecord.expiresAt <= new Date()
+    ) {
+      throw new BadRequestException('Invalid or expired token');
+    }
+
+    const isTokenValid = await verify(
+      tokenRecord.hashedRefreshToken,
+      refreshToken,
+    );
+
+    if (!isTokenValid) {
+      throw new BadRequestException('Invalid token');
+    }
+
+    return tokenRecord.user;
+  }
+
+  private async cleanupOldTokens() {
+    await this.prismaService.refreshTokens.deleteMany({
+      where: {
+        OR: [
+          { expiresAt: { lte: new Date() } }, // Süresi dolmuş
+          {
+            revokedAt: {
+              lte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 gün önce iptal edilmiş
+            },
+          },
+        ],
+      },
+    });
   }
 }

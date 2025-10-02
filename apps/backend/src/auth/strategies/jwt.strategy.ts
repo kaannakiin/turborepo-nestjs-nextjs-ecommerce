@@ -34,6 +34,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: dbPass, ...result } = user;
-    return result;
+    return { result, jti: payload.jti };
   }
 }

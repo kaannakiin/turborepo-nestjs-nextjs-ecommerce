@@ -136,6 +136,7 @@ export type LoginSchemaType = z.infer<typeof LoginSchema>;
 export type TokenPayload = {
   id: string;
   name: string;
+  jti: string;
   role: UserRole;
   email?: string;
   phone?: string;

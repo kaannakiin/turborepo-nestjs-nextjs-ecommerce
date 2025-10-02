@@ -1,10 +1,12 @@
 {
   "dependencies": {
+    "@nest-lab/throttler-storage-redis": "^1.1.0",
     "@nestjs/mapped-types": "*",
     "@repo/database": "^0.0.0",
     "@repo/shared": "^0.0.0",
     "bcryptjs": "^3.0.2",
-    "date-fns": "^4.1.0"
+    "date-fns": "^4.1.0",
+    "ioredis": "^5.8.0"
   },
   "name": "draft-turborepo",
   "private": true,

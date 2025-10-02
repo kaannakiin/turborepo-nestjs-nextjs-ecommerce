@@ -25,6 +25,7 @@ import GlobalDropzone from "@/components/GlobalDropzone";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import GlobalSeoCard from "@/components/GlobalSeoCard";
 import CustomBrandSelect from "./CustomBrandSelect";
+import FetchWrapperV2 from "@lib/fetchWrapper-v2";
 
 interface BrandFormProps {
   defaultValues?: Brand;
@@ -61,70 +62,46 @@ const BrandForm = ({ defaultValues }: BrandFormProps) => {
     const { image, ...rest } = data;
 
     try {
-      const brandResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/brands/create-or-update-brand`,
+      const api = new FetchWrapperV2();
+
+      // Brand oluştur
+      const brandRes = await api.post(
+        "/admin/products/brands/create-or-update-brand",
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(rest),
-          credentials: "include",
-          cache: "no-cache",
         }
       );
-
-      if (!brandResponse.ok) {
-        let errorMessage = "Marka kaydedilirken bir hata oluştu";
-
-        try {
-          const errorData = await brandResponse.json();
-          errorMessage = errorData.message || errorMessage;
-        } catch {
-          // JSON parse edilemezse default mesajı kullan
-        }
-
+      if (!brandRes.success) {
         notifications.show({
           title: "Hata",
-          message: errorMessage,
+          message:
+            "Marka kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.",
           autoClose: 3000,
-          color: "red",
         });
         return;
       }
 
-      const brandResult = await brandResponse.json();
-
+      // Resim yükle
       if (image) {
         const formData = new FormData();
         formData.append("file", image);
-        const imageResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/brands/update-brand-image/${data.uniqueId}`,
-          {
-            method: "POST",
-            body: formData,
-            credentials: "include",
-            cache: "no-cache",
-          }
+
+        const imageRes = await api.postFormData(
+          `/admin/products/brands/update-brand-image/${data.uniqueId}`,
+          formData
         );
-
-        if (!imageResponse.ok) {
-          let imageErrorMessage = "Resim yüklenirken bir hata oluştu";
-
-          try {
-            const errorData = await imageResponse.json();
-            imageErrorMessage = errorData.message || imageErrorMessage;
-          } catch (err) {
-            console.error("Error parsing JSON:", err);
-          }
-
+        if (!imageRes.success) {
           notifications.show({
             title: "Hata",
-            message: imageErrorMessage,
+            message:
+              "Resim yüklenirken bir hata oluştu. Lütfen tekrar deneyin.",
             autoClose: 3000,
             color: "red",
           });
           return;
         }
       }
+
       push("/admin/product-list/brands");
       notifications.show({
         title: "Başarılı",
@@ -135,13 +112,12 @@ const BrandForm = ({ defaultValues }: BrandFormProps) => {
     } catch (error) {
       notifications.show({
         title: "Hata",
-        message: "Bağlantı hatası. Lütfen tekrar deneyin.",
+        message: error instanceof Error ? error.message : "Bir hata oluştu",
         autoClose: 3000,
         color: "red",
       });
     }
   };
-
   const existingImage = watch("existingImage") || null;
   return (
     <Stack gap={"lg"}>
@@ -203,28 +179,17 @@ const BrandForm = ({ defaultValues }: BrandFormProps) => {
                 existingImage ? [{ type: "IMAGE", url: existingImage }] : []
               }
               existingImagesDelete={async (fileUrl) => {
-                const response = await fetch(
-                  `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/brands/delete-brand-image/${encodeURIComponent(fileUrl)}`,
-                  {
-                    method: "DELETE",
-                    credentials: "include",
-                    cache: "no-cache",
-                  }
+                const api = new FetchWrapperV2();
+
+                const result = await api.delete<void>(
+                  `/admin/products/brands/delete-brand-image/${encodeURIComponent(fileUrl)}`
                 );
 
-                if (!response.ok) {
-                  let errorMessage = "Resim silinirken bir hata oluştu";
-
-                  try {
-                    const errorData = await response.json();
-                    errorMessage = errorData.message || errorMessage;
-                  } catch (err) {
-                    console.error("Error parsing JSON:", err);
-                  }
-
+                if (!result.success) {
                   notifications.show({
                     title: "Hata",
-                    message: errorMessage,
+                    message:
+                      "Resim silinirken bir hata oluştu. Lütfen tekrar deneyin.",
                     autoClose: 3000,
                     color: "red",
                   });

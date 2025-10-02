@@ -27,6 +27,7 @@ import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import { useState } from "react";
 import { notifications } from "@mantine/notifications";
 import TableAsset from "@/(admin)/components/TableAsset";
+import FetchWrapperV2 from "@lib/fetchWrapper-v2";
 
 const BrandsTable = () => {
   const searchParams = useSearchParams();
@@ -45,24 +46,21 @@ const BrandsTable = () => {
     ],
     queryFn: async ({ queryKey }) => {
       const [, search, page] = queryKey;
+      const api = new FetchWrapperV2();
+
       const params = new URLSearchParams();
       if (search) params.set("search", search as string);
       params.set("page", page.toString());
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/brands/get-all-brands?${params}`,
-        {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
-        }
+      const result = await api.get<BrandsResponse>(
+        `/admin/products/brands/get-all-brands?${params}`
       );
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch brands: ${response.status}`);
+      if (!result.success) {
+        throw new Error("Markalar yüklenirken bir hata oluştu");
       }
 
-      return response.json() as Promise<BrandsResponse>;
+      return result.data;
     },
     refetchOnWindowFocus: false,
     gcTime: 1000 * 60 * 5, // 5 minutes
@@ -72,22 +70,17 @@ const BrandsTable = () => {
   // Delete mutation
   const deleteBrandMutation = useMutation({
     mutationFn: async (brandId: string) => {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/brands/delete-brand/${brandId}`,
-        {
-          method: "DELETE",
-          credentials: "include",
-        }
+      const api = new FetchWrapperV2();
+
+      const result = await api.delete<{ message: string }>(
+        `/admin/products/brands/delete-brand/${brandId}`
       );
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(
-          errorData?.message || `Failed to delete brand: ${response.status}`
-        );
+      if (!result.success) {
+        throw new Error("Marka silinirken bir hata oluştu");
       }
 
-      return response.json();
+      return result.data;
     },
     onSuccess: (data, brandId) => {
       // Close popover

@@ -21,6 +21,7 @@ import styles from "./styles/ProductListCarousel.module.css";
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 import { useRouter } from "next/navigation";
+import FetchWrapperV2 from "@lib/fetchWrapper-v2";
 
 interface MainPageProductListProps {
   data: ProductListComponentType;
@@ -37,23 +38,16 @@ const MainPageProductList = ({ data }: MainPageProductListProps) => {
     enabled: data.items.length > 0,
     refetchOnWindowFocus: false,
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/products/get-products-by-ids-for-product-list-carousel`,
+      const api = new FetchWrapperV2();
+      const apiRes = await api.post<ModalProductCardForAdmin[]>(
+        `/users/products/get-products-by-ids-for-product-list-carousel`,
         {
-          credentials: "include",
-          method: "POST",
           body: JSON.stringify({ items: data.items }),
-          headers: {
-            "Content-Type": "application/json",
-          },
         }
       );
-      if (!res.ok) {
-        console.error("Failed to fetch products:", res.statusText, res.status);
-        return [];
+      if (apiRes.success) {
+        return apiRes.data;
       }
-      const resData = (await res.json()) as ModalProductCardForAdmin[];
-      return resData;
     },
   });
   const { push } = useRouter();
