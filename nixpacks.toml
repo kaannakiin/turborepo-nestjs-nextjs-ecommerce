@@ -8,9 +8,9 @@ cmds = ["npm ci"]
 
 [phases.build]
 cmds = [
-  "npx turbo run db:generate",  # ← db:deploy kaldırıldı
+  "npx turbo run db:generate",  
   "npx turbo run build"
 ]
 
 [start]
-cmd = "npm run start:migrate"  # ← Yeni script
+cmd = "npm run start:migrate"  
