@@ -1,18 +1,21 @@
 "use client";
 
 import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import {
   Button,
+  Divider,
   Group,
   Radio,
   Stack,
   Text,
   ThemeIcon,
-  UnstyledButton,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
+import { useQuery } from "@repo/shared";
 import { TokenPayload, UserDbAddressType } from "@repo/types";
-import { IconArrowNarrowLeft, IconCheck } from "@tabler/icons-react";
+import { IconCheck } from "@tabler/icons-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import AuthUserAddressForm from "./AuthUserAddressForm";
 
@@ -21,32 +24,48 @@ type ViewType = "list" | "add" | "edit";
 interface AuthUserAddressListProps {
   cartId: string;
   userInfo: TokenPayload;
-  addresses: Array<UserDbAddressType & { isDefault: boolean }>;
-  refetch: () => void;
 }
 
 const AuthUserAddressList = ({
   cartId,
   userInfo,
-  addresses,
-  refetch,
 }: AuthUserAddressListProps) => {
+  const { data, isLoading, isPending, refetch } = useQuery({
+    queryKey: ["users-address", userInfo.id],
+    queryFn: async () => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/locations/get-user-addresses`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+      if (!res?.ok) throw new Error("Failed to fetch user's addresses");
+      const data = (await res.json()) as Array<
+        UserDbAddressType & { isDefault: boolean }
+      >;
+      return data;
+    },
+    enabled: !!userInfo.id,
+  });
   const { media } = useTheme();
+  const searchParams = useSearchParams();
+  const { replace } = useRouter();
   const [view, setView] = useState<ViewType>("list");
+  const [loading, setLoading] = useState<boolean>(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
     null
   );
-  const [editingAddress, setEditingAddress] =
-    useState<UserDbAddressType | null>(null);
 
   useEffect(() => {
-    if (addresses && addresses.length > 0) {
-      const defaultAddress = addresses.find((addr) => addr.isDefault);
-      if (defaultAddress) {
-        setSelectedAddressId(defaultAddress.id);
-      }
+    if (data && data.length > 0) {
+      const defaultAddress = data.find((addr) => addr.isDefault);
+      setSelectedAddressId(defaultAddress?.id || data[0]?.id || null);
     }
-  }, [addresses]);
+  }, [data]);
+
+  const [editingAddress, setEditingAddress] =
+    useState<UserDbAddressType | null>(null);
 
   const handleEditClick = (address: UserDbAddressType) => {
     setEditingAddress(address);
@@ -58,36 +77,53 @@ const AuthUserAddressList = ({
     setEditingAddress(null);
   };
 
+  const handleRadioChange = (value: string) => {
+    setSelectedAddressId(value);
+    setView("list");
+    setEditingAddress(null);
+  };
+
   return (
-    <Stack gap={"sm"} align="start">
-      <Group align="center" gap={"sm"}>
-        <ThemeIcon radius={"xl"} color="black" size={"lg"}>
-          <Text fz={"xl"} fw={700} ta={"center"}>
-            1
+    <Stack gap={"xl"}>
+      {(isLoading || isPending || loading) && <GlobalLoadingOverlay />}
+
+      <Stack gap={"sm"} align="start">
+        <Group align="center" gap={"sm"}>
+          <ThemeIcon radius={"xl"} color="black" size={"lg"}>
+            <Text fz={"xl"} fw={700} ta={"center"}>
+              1
+            </Text>
+          </ThemeIcon>
+          <Text fz={"lg"} fw={600}>
+            Adres
           </Text>
-        </ThemeIcon>
-        <Text fz={"lg"} fw={600}>
-          Adres
-        </Text>
-      </Group>
-      <Stack gap={"xs"} className="flex-1 w-full">
-        <Stack gap={"sm"} pl={media === "desktop" ? 40 : 0} className="w-full">
+        </Group>
+        <Stack
+          gap={"sm"}
+          pl={media === "desktop" ? 40 : 0}
+          className="w-full flex-1"
+        >
           <Text fz={"lg"}>Teslimat Adresi</Text>
-          {addresses && addresses.length > 0 && view === "list" && (
-            <Stack gap="sm" style={{ width: "100%" }}>
-              <Radio.Group
-                value={selectedAddressId}
-                onChange={setSelectedAddressId}
-                style={{ width: "100%" }}
-              >
-                <Stack gap="sm" style={{ width: "100%" }}>
-                  {addresses.map((addres) => (
+
+          <Stack gap="sm" style={{ width: "100%" }}>
+            <Radio.Group
+              value={selectedAddressId}
+              onChange={handleRadioChange}
+              style={{ width: "100%" }}
+            >
+              <Stack gap="sm" style={{ width: "100%" }}>
+                {data &&
+                  data.length > 0 &&
+                  data.map((addres) => (
                     <Radio.Card
                       key={addres.id}
                       value={addres.id}
                       bg={"#F7F7F9"}
-                      className="border-gray-900 border-2"
-                      withBorder
+                      className={
+                        selectedAddressId === addres.id
+                          ? "border-gray-900 border-2"
+                          : "border border-gray-400"
+                      }
                       p="md"
                       style={{ width: "100%" }}
                     >
@@ -104,17 +140,18 @@ const AuthUserAddressList = ({
                             {addres.addressTitle}
                           </Text>
                         </Group>
-                        <UnstyledButton
-                          className="underline"
+                        <Text
+                          className="hover:underline hover:underline-offset-4 cursor-pointer"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
                             handleEditClick(addres);
-                            setSelectedAddressId(addres.id);
+                            setSelectedAddressId(null);
+                            setView("edit");
                           }}
                         >
                           Düzenle
-                        </UnstyledButton>
+                        </Text>
                       </Group>
                       <Stack pl={"xl"} gap={"xs"}>
                         <Text fz={"sm"} c={"dimmed"} fw={700} tt={"capitalize"}>
@@ -142,14 +179,18 @@ const AuthUserAddressList = ({
                       </Stack>
                     </Radio.Card>
                   ))}
-                </Stack>
-              </Radio.Group>
+              </Stack>
+            </Radio.Group>
 
+            {view === "list" && (
               <Radio.Card
                 withBorder
                 className="border-gray-400 border"
                 p="md"
-                onClick={() => setView("add")}
+                onClick={() => {
+                  setView("add");
+                  setSelectedAddressId(null);
+                }}
                 style={{ cursor: "pointer" }}
               >
                 <Group gap={"lg"}>
@@ -159,18 +200,11 @@ const AuthUserAddressList = ({
                   </Text>
                 </Group>
               </Radio.Card>
-            </Stack>
-          )}
+            )}
+          </Stack>
 
           {(view === "add" || view === "edit") && (
             <Stack gap="sm" style={{ width: "100%" }}>
-              <UnstyledButton
-                className="flex flex-row gap-1 items-center hover:underline hover:underline-offset-4"
-                onClick={handleBackToList}
-              >
-                <IconArrowNarrowLeft />
-                Geri
-              </UnstyledButton>
               <AuthUserAddressForm
                 defaultValues={
                   view === "edit" && editingAddress
@@ -229,17 +263,99 @@ const AuthUserAddressList = ({
               />
             </Stack>
           )}
+
           <Button
             fullWidth
             size="lg"
             radius={"md"}
             variant="filled"
             color="black"
+            onClick={async () => {
+              if (!selectedAddressId) {
+                notifications.show({
+                  title: "Adres seçilmedi",
+                  message: "Lütfen bir adres seçin veya yeni adres ekleyin.",
+                });
+
+                return;
+              }
+
+              try {
+                setLoading(true);
+                const res = await fetch(
+                  `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart-v2/update-cart-address`,
+                  {
+                    method: "POST",
+                    credentials: "include",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      cartId,
+                      addressId: selectedAddressId,
+                    }),
+                  }
+                );
+                if (!res.ok) {
+                  const errorData = await res.json();
+                  notifications.show({
+                    title: "Adres seçilemedi",
+                    message: errorData?.message || "Lütfen tekrar deneyin.",
+                    color: "red",
+                  });
+                  return;
+                }
+                notifications.show({
+                  title: "Adres seçildi",
+                  message: "Adresiniz başarıyla seçildi.",
+                  color: "green",
+                });
+                const params = new URLSearchParams(searchParams.toString());
+                params.set("step", "shipping");
+                replace(`?${params.toString()}`);
+                return;
+              } catch (error) {
+                notifications.show({
+                  title: "Adres seçilemedi",
+                  message: "Lütfen tekrar deneyin.",
+                  color: "red",
+                });
+                return;
+              } finally {
+                setLoading(false);
+              }
+            }}
           >
             {"Kargo ile Devam Et"}
           </Button>
         </Stack>
       </Stack>
+      <Divider size={"md"} />
+      <Group gap={"xl"}>
+        <Group align="center" gap={"sm"}>
+          <ThemeIcon radius={"xl"} color="gray.3" size={"lg"}>
+            <Text fz={"xl"} fw={700} ta={"center"} c={"dimmed"}>
+              2
+            </Text>
+          </ThemeIcon>
+          <Text fz={"lg"} fw={600} c={"dimmed"}>
+            Kargo
+          </Text>
+        </Group>
+      </Group>
+      <Divider size={"md"} />
+      <Group gap={"xl"}>
+        <Group align="center" gap={"sm"}>
+          <ThemeIcon radius={"xl"} color="gray.3" size={"lg"}>
+            <Text fz={"xl"} fw={700} ta={"center"} c={"dimmed"}>
+              3
+            </Text>
+          </ThemeIcon>
+          <Text fz={"lg"} fw={600} c={"dimmed"}>
+            Ödeme
+          </Text>
+        </Group>
+      </Group>
     </Stack>
   );
 };

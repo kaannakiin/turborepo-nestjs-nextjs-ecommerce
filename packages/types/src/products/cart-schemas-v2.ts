@@ -357,3 +357,8 @@ export type AdminCartTableSelect = Prisma.CartGetPayload<{
     };
   };
 }>;
+
+export type GetUserCartInfoForCheckoutReturn = Omit<
+  GetCartByIdReturn,
+  "items"
+> & { items: CartContextCartItemType[] };

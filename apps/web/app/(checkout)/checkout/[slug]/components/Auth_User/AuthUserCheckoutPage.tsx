@@ -1,11 +1,11 @@
 "use client";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import { Stack } from "@mantine/core";
 import { useQuery } from "@repo/shared";
-import { TokenPayload, UserDbAddressType } from "@repo/types";
+import { GetUserCartInfoForCheckoutReturn, TokenPayload } from "@repo/types";
 import { CheckoutStep } from "../../page";
+import PaymentStep from "../PaymentStep";
 import AuthUserAddressList from "./AuthUserAddressList";
-import { notifications } from "@mantine/notifications";
+import AuthUserShippingList from "./AuthUserShippingList";
 
 interface AuthUserCheckoutPageProps {
   cartId: string;
@@ -18,39 +18,44 @@ const AuthUserCheckoutPage = ({
   step,
   userInfo,
 }: AuthUserCheckoutPageProps) => {
-  const { data, isLoading, isPending, refetch } = useQuery({
-    queryKey: ["users-address", userInfo.id],
+  const { data, isLoading, isPending, isFetching } = useQuery({
+    queryKey: ["auth-user-cartd", userInfo.id, cartId],
     queryFn: async () => {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/locations/get-user-addresses`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart-v2/get-user-cart-info-for-checkout?cartId=${cartId}&userId=${userInfo.id}`,
         {
           method: "GET",
           credentials: "include",
         }
       );
-      if (!res?.ok) throw new Error("Failed to fetch user's addresses");
-      const data = (await res.json()) as Array<
-        UserDbAddressType & { isDefault: boolean }
-      >;
+      if (!res.ok) {
+        return null;
+      }
+      const data = (await res.json()) as GetUserCartInfoForCheckoutReturn;
       return data;
     },
-    enabled: !!userInfo.id && step === "info",
+    enabled: !!cartId && !!userInfo.id,
   });
-
+  if (isLoading || isPending || isFetching) {
+    return <GlobalLoadingOverlay />;
+  }
   return (
-    <Stack gap="lg" mt={"lg"}>
-      {(isLoading || isPending) && <GlobalLoadingOverlay />}
+    <>
       {step === "info" ? (
-        <>
-          <AuthUserAddressList
-            addresses={data}
-            cartId={cartId}
-            userInfo={userInfo}
-            refetch={refetch}
-          />
-        </>
+        <AuthUserAddressList cartId={cartId} userInfo={userInfo} />
+      ) : step === "shipping" &&
+        data &&
+        data.shippingAddressId &&
+        data.shippingAddress ? (
+        <AuthUserShippingList cart={data} />
+      ) : data &&
+        data.shippingAddressId &&
+        data.shippingAddress &&
+        data.cargoRule &&
+        data.cargoRuleId ? (
+        <PaymentStep cart={data} />
       ) : null}
-    </Stack>
+    </>
   );
 };
 

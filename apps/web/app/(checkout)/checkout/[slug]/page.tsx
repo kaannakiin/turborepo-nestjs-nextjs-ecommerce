@@ -59,7 +59,7 @@ const CheckoutPage = async ({
       <div className="flex-1 w-full max-w-[1250px] lg:mx-auto px-4 mb-5">
         <CheckoutMobileDrawer />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="order-2 lg:order-1 lg:py-8 lg:px-3">
+          <div className="order-2 lg:order-1 lg:py-8 lg:px-3 lg:space-y-5">
             <CheckoutDesktopHeader />
             {session ? (
               <AuthUserCheckoutPage
@@ -80,9 +80,7 @@ const CheckoutPage = async ({
           </div>
         </div>
       </div>
-
-      {/* Footer */}
-      <div className="h-20 md:h-40 w-full flex flex-row bg-blue-400"></div>
+      <div className="h-12 w-full flex flex-row bg-blue-400"></div>
     </div>
   );
 };

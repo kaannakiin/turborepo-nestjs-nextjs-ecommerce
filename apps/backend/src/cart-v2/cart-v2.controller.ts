@@ -3,10 +3,11 @@ import {
   Controller,
   Get,
   Param,
-  Post,
-  UseGuards,
-  Query,
   ParseDatePipe,
+  Post,
+  Put,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 import { $Enums, type User } from '@repo/database';
 import {
@@ -17,9 +18,9 @@ import {
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { CartStatusValidationPipe } from 'src/common/pipes/cart-status-validation.pipe';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import { CartV2Service } from './cart-v2.service';
-import { CartStatusValidationPipe } from 'src/common/pipes/cart-status-validation.pipe';
 
 @Controller('cart-v2')
 export class CartV2Controller {
@@ -112,5 +113,28 @@ export class CartV2Controller {
       endDate: endDate ?? null,
       startDate: startDate ?? null,
     });
+  }
+
+  //for auth user to update address
+  @Post('update-cart-address')
+  @UseGuards(JwtAuthGuard)
+  async updateCartAddress(@Body() body: { cartId: string; addressId: string }) {
+    return this.cartV2Service.updateCartAddress(body.cartId, body.addressId);
+  }
+
+  @Get('get-user-cart-info-for-checkout')
+  @UseGuards(JwtAuthGuard)
+  async getUserCartInfoForCheckout(
+    @Query('cartId') cartId: string,
+    @Query('userId') userId: string,
+  ) {
+    return this.cartV2Service.getUserCartInfoForCheckout(cartId, userId);
+  }
+
+  @Put('set-cart-cargo-rule')
+  async setCartCargoRule(
+    @Body() body: { cartId: string; cargoRuleId: string },
+  ) {
+    return this.cartV2Service.setCartCargoRule(body.cartId, body.cargoRuleId);
   }
 }

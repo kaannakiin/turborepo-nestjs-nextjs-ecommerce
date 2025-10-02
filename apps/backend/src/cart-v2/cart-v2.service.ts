@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@repo/database';
 import {
   $Enums,
@@ -9,12 +13,17 @@ import {
   CartContextCartItemType,
   CartContextCartType,
   GetCartByIdReturn,
+  GetUserCartInfoForCheckoutReturn,
 } from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { ShippingService } from 'src/shipping/shipping.service';
 
 @Injectable()
 export class CartV2Service {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private shippingService: ShippingService,
+  ) {}
   private async updateCartVisibleCause(
     setInVisibleItems: Array<{
       cause: $Enums.inVisibleCause;
@@ -1319,6 +1328,120 @@ export class CartV2Service {
         hasNextPage: page * take < cartCount,
         hasPreviousPage: page > 1,
       },
+    };
+  }
+
+  async updateCartAddress(cartId: string, addressId: string) {
+    if (!cartId || !addressId) {
+      throw new BadRequestException('Sepet ID veya Adres ID eksik');
+    }
+
+    const cart = await this.prisma.cart.findUnique({
+      where: {
+        id: cartId,
+        status: 'ACTIVE',
+      },
+      include: {
+        billingAddress: true,
+        shippingAddress: true,
+      },
+    });
+
+    if (!cart) {
+      throw new NotFoundException('Sepet bulunamadı');
+    }
+
+    const address = await this.prisma.addressSchema.findUnique({
+      where: {
+        id: addressId,
+      },
+    });
+    if (!address) {
+      throw new NotFoundException('Adres bulunamadı');
+    }
+
+    if (cart.userId !== address.userId || !cart.userId) {
+      throw new BadRequestException(
+        'Bilinmeyen bir hata oluştu. Lütfen tekrar deneyiniz.',
+      );
+    }
+
+    if (
+      cart.shippingAddressId === addressId &&
+      cart.billingAddressId === addressId
+    ) {
+      return {
+        success: true,
+        message: 'Adres başarıyla güncellendi',
+      };
+    }
+    if (cart.shippingAddressId !== addressId) {
+      await this.prisma.cart.update({
+        where: { id: cart.id },
+        data: {
+          shippingAddress: { connect: { id: addressId } },
+          billingAddress: { connect: { id: addressId } },
+          user: {
+            update: {
+              defaultAddressId: addressId,
+            },
+          },
+        },
+      });
+      return {
+        success: true,
+        message: 'Adres başarıyla güncellendi',
+      };
+    }
+  }
+
+  async getUserCartInfoForCheckout(
+    cartId: string,
+    userId: string,
+  ): Promise<GetUserCartInfoForCheckoutReturn> {
+    const cart = await this.getCart(cartId, { status: 'ACTIVE', userId });
+    if (!cart) {
+      throw new NotFoundException('Sepet bulunamadı');
+    }
+
+    if (!cart.userId || cart.userId !== userId) {
+      throw new BadRequestException('Sepet bir kullanıcıya ait değil');
+    }
+
+    const items = await this.convertCartToContextType(cart, 'TRY', 'TR');
+
+    return {
+      ...cart,
+      items: items.filter((i) => i !== null) as CartContextCartType['items'],
+    };
+  }
+  async setCartCargoRule(cartId: string, cargoRuleId: string) {
+    const cargoRule = await this.prisma.cargoRule.findUnique({
+      where: { id: cargoRuleId },
+    });
+    if (!cargoRule) {
+      throw new NotFoundException('Kargo kuralı bulunamadı');
+    }
+    const getAvailableCargoRules =
+      await this.shippingService.getAvailableShippingMethods(cartId);
+
+    if (!getAvailableCargoRules.success) {
+      throw new BadRequestException(getAvailableCargoRules.message);
+    }
+    if (
+      !getAvailableCargoRules.shippingMethods.rules.find(
+        (c) => c.id === cargoRuleId,
+      )
+    ) {
+      throw new BadRequestException('Kargo kuralı sepete uygulanamaz');
+    }
+    await this.prisma.cart.update({
+      where: { id: cartId },
+      data: { cargoRuleId },
+    });
+    return {
+      success: true,
+      message: 'Kargo kuralı başarıyla güncellendi',
     };
   }
 }
