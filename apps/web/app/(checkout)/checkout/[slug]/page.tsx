@@ -1,6 +1,5 @@
 import { getSession } from "@lib/auth";
 import { Params, SearchParams } from "types/GlobalTypes";
-import NonAuthUserCheckoutPage from "./components/Non_Auth_User/NonAuthUserCheckoutPage";
 import { Group, Text } from "@mantine/core";
 import Link from "next/link";
 import logo from "../../../../public/logo.svg";
@@ -67,9 +66,7 @@ const CheckoutPage = async ({
                 cartId={slug}
                 step={step}
               />
-            ) : (
-              <NonAuthUserCheckoutPage cartId={slug} step={step} />
-            )}
+            ) : null}
           </div>
           <div className="order-1 lg:order-2 lg:py-8 lg:px-3">
             <div className="sticky top-4 space-y-4">

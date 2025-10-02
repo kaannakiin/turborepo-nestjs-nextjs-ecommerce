@@ -7,7 +7,10 @@ import {
   Res,
   UseGuards,
   UsePipes,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { type User } from '@repo/database';
 import {
   RegisterSchema,
@@ -23,16 +26,24 @@ import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
+
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
   @Post('register')
+  @HttpCode(HttpStatus.CREATED)
+  @SkipThrottle({ default: true })
+  @Throttle({ auth: { limit: 5, ttl: 60000 } })
   @UsePipes(new ZodValidationPipe(RegisterSchema))
   async register(@Body() registerData: RegisterSchemaType) {
     return this.authService.register(registerData);
   }
 
   @Post('login')
+  @HttpCode(HttpStatus.OK)
+  @SkipThrottle({ default: true })
+  @Throttle({ auth: { limit: 5, ttl: 60000 } })
   @UseGuards(LocalAuthGuard)
   async login(
     @CurrentUser() user: User,
@@ -43,6 +54,9 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @SkipThrottle({ default: true })
+  @Throttle({ refresh: { limit: 10, ttl: 60000 } })
   @UseGuards(JwtRefreshAuthGuard)
   async refreshToken(
     @CurrentUser() user: User,
@@ -64,8 +78,8 @@ export class AuthController {
     @Res() response: Response,
   ) {
     const userAgent = req.headers['user-agent'];
-    const isMobile = userAgent && userAgent.includes('Mobile');
-    await this.authService.login(user, response, true, isMobile || false, req);
+    const isMobile = userAgent?.includes('Mobile') ?? false;
+    await this.authService.login(user, response, true, isMobile, req);
   }
 
   @Get('facebook')
@@ -80,8 +94,8 @@ export class AuthController {
     @Res() response: Response,
   ) {
     const userAgent = req.headers['user-agent'];
-    const isMobile = userAgent && userAgent.includes('Mobile');
-    await this.authService.login(user, response, true, isMobile || false, req);
+    const isMobile = userAgent?.includes('Mobile') ?? false;
+    await this.authService.login(user, response, true, isMobile, req);
   }
 
   @Get('me')
@@ -97,4 +111,36 @@ export class AuthController {
       ...(user.imageUrl && { imageUrl: user.imageUrl }),
     } as TokenPayload;
   }
+
+  @Get('csrf')
+  getCsrfToken(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const generateCsrfToken = req['csrfToken'] as (
+      req: Request,
+      res: Response,
+    ) => string;
+    const token = generateCsrfToken(req, res);
+
+    return {
+      success: true,
+      csrfToken: token,
+    };
+  }
+
+  // FORGOT PASSWORD - 'auth-strict' throttler (3 istek/5dk)
+  // @Post('forgot-password')
+  // @HttpCode(HttpStatus.OK)
+  // @SkipThrottle({ default: true })
+  // @Throttle({ 'auth-strict': { limit: 3, ttl: 300000 } })
+  // async forgotPassword(@Body() dto: any) {
+  //   return this.authService.forgotPassword(dto);
+  // }
+
+  // RESEND VERIFICATION - 'auth-strict' throttler
+  // @Post('resend-verification')
+  // @HttpCode(HttpStatus.OK)
+  // @SkipThrottle({ default: true })
+  // @Throttle({ 'auth-strict': { limit: 3, ttl: 300000 } })
+  // async resendVerification(@Body() dto: any) {
+  //   return this.authService.resendVerification(dto);
+  // }
 }

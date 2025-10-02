@@ -1,6 +1,7 @@
 "use client";
 
-import { Select, SelectProps, Text } from "@mantine/core";
+import FetchWrapperV2 from "@lib/fetchWrapper-v2";
+import { Select, SelectProps } from "@mantine/core";
 import { useQuery } from "@repo/shared";
 
 interface CustomBrandSelectProps extends SelectProps {
@@ -8,21 +9,22 @@ interface CustomBrandSelectProps extends SelectProps {
 }
 const CustomBrandSelect = ({ brandId, ...props }: CustomBrandSelectProps) => {
   const fetchParentBrands = async (brandId?: string) => {
+    const api = new FetchWrapperV2();
     const endpoint = brandId
       ? `get-all-parent-brands/${brandId}`
       : "get-all-parent-brands";
 
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/brands/${endpoint}`,
-      { credentials: "include" }
-    );
+    const result = await api.get<{
+      success: boolean;
+      data: { label: string; value: string }[];
+    }>(`/admin/products/brands/${endpoint}`);
 
-    if (!response.ok) {
-      throw new Error("Parent brands getirilemedi");
+    if (!result.success) {
+      throw new Error("Failed to fetch parent brands");
     }
 
-    const result = await response.json();
-    return result.data;
+    // Backend'den gelen data içinde zaten { success: true, data: brands } var
+    return result.data.data; // İkinci .data backend'den geliyor
   };
 
   const useParentBrands = (currentBrandId?: string) => {
@@ -47,7 +49,6 @@ const CustomBrandSelect = ({ brandId, ...props }: CustomBrandSelectProps) => {
         clearable
         data={parentBrands}
         disabled={parentBrandsLoading}
-     
       />
     </>
   );

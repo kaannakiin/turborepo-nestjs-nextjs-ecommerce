@@ -1,5 +1,6 @@
 "use client";
 import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
+import FetchWrapperV2 from "@lib/fetchWrapper-v2";
 import { Carousel } from "@mantine/carousel";
 import { Paper, Title } from "@mantine/core";
 import { useQuery } from "@repo/shared";
@@ -26,25 +27,22 @@ const CategoryGridComponent = ({ data }: CategoryGridComponentProps) => {
   } = useQuery({
     queryKey: ["get-categories-by-ids", data.categoryIds],
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/categories/get-categories-by-ids`,
+      const api = new FetchWrapperV2();
+      const apiRes = await api.post<CategoryGridComponentReturnData[]>(
+        "/users/categories/get-categories-by-ids",
         {
-          method: "POST",
           credentials: "include",
           body: JSON.stringify({ categoryIds: data.categoryIds }),
-          headers: {
-            "Content-Type": "application/json",
-          },
         }
       );
-      if (!res.ok) {
-        return [];
+      if (apiRes.success) {
+        return apiRes.data;
       }
-      const resData = (await res.json()) as CategoryGridComponentReturnData[];
-      return resData;
+      return [];
     },
     enabled: data.categoryIds.length > 0,
     refetchOnWindowFocus: false,
+    retry: 0,
   });
 
   if (isLoading || isFetching || isPending) {

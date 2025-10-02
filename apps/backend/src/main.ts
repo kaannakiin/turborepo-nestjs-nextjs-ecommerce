@@ -1,6 +1,5 @@
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import { TokenPayload } from '@repo/types';
 import cookieParser from 'cookie-parser';
 import { doubleCsrf } from 'csrf-csrf';
 import * as ExpressUseragent from 'express-useragent';
@@ -25,44 +24,13 @@ async function bootstrap() {
       }),
     );
 
+    // ✅ 2. Cookie Parser (CSRF'den önce olmalı)
     app.use(cookieParser(configService.get<string>('COOKIE_SECRET')));
 
+    // ✅ 3. User Agent
     app.use(ExpressUseragent.express());
 
-    const csrfEnabled = configService.get<boolean>('CSRF_ENABLED', true);
-    if (csrfEnabled) {
-      const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
-        getSecret: () => configService.getOrThrow<string>('CSRF_SECRET'),
-        cookieName: '__Host-csrf-token',
-        cookieOptions: {
-          httpOnly: true,
-          sameSite: 'lax',
-          secure: isProduction,
-          ...(nodeEnv === 'production' && {
-            domain: configService.get('DOMAIN') as string,
-          }),
-        },
-        size: 64,
-        ignoredMethods: ['GET', 'HEAD', 'OPTIONS'],
-        getCsrfTokenFromRequest: (req) => req.headers['x-csrf-token'] as string,
-
-        getSessionIdentifier: (req) => {
-          const user = req.user as TokenPayload | null | undefined;
-          if (user?.id) {
-            return user.id;
-          }
-          const ip = req.ip || req.socket.remoteAddress || 'unknown';
-          const userAgent = req.headers['user-agent'] || 'unknown';
-          return `${ip}-${userAgent}`;
-        },
-      });
-      app.use(doubleCsrfProtection);
-      app.use((req, _res, next) => {
-        req['csrfToken'] = generateCsrfToken;
-        next();
-      });
-    }
-
+    // ✅ 4. CORS - CSRF'DEN ÖNCE OLMALI! (ÇOK ÖNEMLİ)
     let allowedOrigins: string[] | boolean;
     if (isProduction) {
       const originsFromEnv = configService.get<string>('ALLOWED_ORIGINS');
@@ -76,10 +44,6 @@ async function bootstrap() {
     } else {
       allowedOrigins = true;
     }
-
-    console.log('🌍 Allowed CORS Origins:', allowedOrigins);
-    console.log('🔧 Environment:', nodeEnv);
-    console.log('🛡️  CSRF Protection:', csrfEnabled ? 'Enabled' : 'Disabled');
 
     app.enableCors({
       origin: allowedOrigins,
@@ -95,15 +59,59 @@ async function bootstrap() {
       maxAge: 86400,
     });
 
-    // ✅ 8. Graceful Shutdown
+    const csrfEnabled = configService.get<boolean>('CSRF_ENABLED', true);
+
+    if (csrfEnabled) {
+      const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
+        getSecret: () => configService.getOrThrow<string>('CSRF_SECRET'),
+        // ✅ __Host- prefix'ini kaldır (sadece production'da kullan)
+        cookieName: isProduction ? '__Host-csrf-token' : 'csrf-token',
+        cookieOptions: {
+          httpOnly: true,
+          sameSite: 'lax',
+          secure: isProduction, // Development'ta false
+          path: '/',
+          ...(isProduction && {
+            domain: configService.get('DOMAIN') as string,
+          }),
+        },
+        size: 64,
+        ignoredMethods: ['GET', 'HEAD', 'OPTIONS'],
+        getCsrfTokenFromRequest: (req) => {
+          const token = req.headers['x-csrf-token'] as string;
+
+          return token;
+        },
+        getSessionIdentifier: (req) => {
+          const sessionId = req.ip || req.socket.remoteAddress || 'unknown';
+          return sessionId;
+        },
+      });
+
+      // CSRF koruması - belirli route'lar hariçb
+      app.use((req, res, next) => {
+        const excludedPaths = ['/auth/csrf', '/auth/refresh'];
+
+        if (excludedPaths.includes(req.path)) {
+          return next();
+        }
+
+        doubleCsrfProtection(req, res, next);
+      });
+
+      // CSRF token generator'ı ekle
+      app.use((req, _res, next) => {
+        req['csrfToken'] = generateCsrfToken;
+        next();
+      });
+    }
+
+    // ✅ 6. Graceful Shutdown
     app.enableShutdownHooks();
 
-    // ✅ 9. Port Configuration
+    // ✅ 7. Port Configuration
     const port = configService.get<number>('PORT', 3001);
-
     await app.listen(port);
-
-    console.log(`✅ Application is running on: ${await app.getUrl()}`);
 
     process.on('unhandledRejection', (reason, promise) => {
       console.error('Unhandled Rejection at:', promise, 'reason:', reason);

@@ -1,5 +1,9 @@
 "use client";
 
+import GlobalDropzone from "@/components/GlobalDropzone";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import GlobalSeoCard from "@/components/GlobalSeoCard";
+import FetchWrapperV2 from "@lib/fetchWrapper-v2";
 import {
   Button,
   Group,
@@ -22,9 +26,6 @@ import {
 } from "@repo/shared";
 import { Category, CategorySchema } from "@repo/types";
 import { useRouter } from "next/navigation";
-import GlobalDropzone from "@/components/GlobalDropzone";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import GlobalSeoCard from "@/components/GlobalSeoCard";
 
 interface AdminCategoryFormProps {
   defaultValues?: Category;
@@ -32,21 +33,20 @@ interface AdminCategoryFormProps {
 
 // Fetch function for parent categories
 const fetchParentCategories = async (categoryId?: string) => {
+  const api = new FetchWrapperV2();
   const endpoint = categoryId
     ? `get-all-parent-categories/${categoryId}`
     : "get-all-parent-categories";
 
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/categories/${endpoint}`,
-    { credentials: "include" }
-  );
+  const result = await api.get<{
+    data: Array<{ value: string; label: string }>;
+  }>(`/admin/products/categories/${endpoint}`);
 
-  if (!response.ok) {
-    throw new Error("Parent kategoriler getirilemedi");
+  if (!result.success) {
+    throw new Error("Üst kategoriler yüklenirken bir hata oluştu");
   }
 
-  const result = await response.json();
-  return result.data as Array<{ value: string; label: string }>;
+  return result.data.data;
 };
 
 // Custom hook for parent categories
@@ -97,64 +97,40 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
     const { image, ...rest } = data;
 
     try {
-      // 1. Önce kategoriyi image olmadan kaydet
-      const categoryResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/categories/create-or-update-category`,
+      const api = new FetchWrapperV2();
+
+      // Kategori oluştur
+      const categoryRes = await api.post<void>(
+        "/admin/products/categories/create-or-update-category",
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(rest),
-          credentials: "include",
-          cache: "no-cache",
         }
       );
 
-      if (!categoryResponse.ok) {
-        let errorMessage = "Kategori kaydedilirken bir hata oluştu";
-
-        try {
-          const errorData = await categoryResponse.json();
-          errorMessage = errorData.message || errorMessage;
-        } catch {
-          // JSON parse edilemezse default mesajı kullan
-        }
-
+      if (!categoryRes.success) {
         notifications.show({
           title: "Hata",
-          message: errorMessage,
+          message: "Kategori kaydedilirken bir hata oluştu",
           autoClose: 3000,
           color: "red",
         });
         return;
       }
 
+      // Resim yükle
       if (image) {
         const formData = new FormData();
         formData.append("file", image);
 
-        const imageResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/categories/update-category-image/${data.uniqueId}`,
-          {
-            method: "POST",
-            body: formData,
-            credentials: "include",
-            cache: "no-cache",
-          }
+        const imageRes = await api.postFormData<void>(
+          `/admin/products/categories/update-category-image/${data.uniqueId}`,
+          formData
         );
 
-        if (!imageResponse.ok) {
-          let imageErrorMessage = "Resim yüklenirken bir hata oluştu";
-
-          try {
-            const errorData = await imageResponse.json();
-            imageErrorMessage = errorData.message || imageErrorMessage;
-          } catch (err) {
-            console.error("Error parsing JSON:", err);
-          }
-
+        if (!imageRes.success) {
           notifications.show({
             title: "Hata",
-            message: imageErrorMessage,
+            message: "Kategori resmi yüklenirken bir hata oluştu",
             autoClose: 3000,
             color: "red",
           });
@@ -170,16 +146,14 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
         color: "green",
       });
     } catch (error) {
-      console.error("Category submit error:", error);
       notifications.show({
         title: "Hata",
-        message: "Bağlantı hatası. Lütfen tekrar deneyin.",
+        message: "Beklenmeyen bir hata oluştu",
         autoClose: 3000,
         color: "red",
       });
     }
   };
-
   return (
     <Stack gap={"lg"}>
       {isSubmitting && <GlobalLoadingOverlay />}

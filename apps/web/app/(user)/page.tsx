@@ -1,36 +1,38 @@
+"use client";
 import AdminThemeViewer from "@/(admin)/admin/(theme)/components/AdminThemeViewer";
-import { QueryClient } from "@repo/shared";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import FetchWrapperV2 from "@lib/fetchWrapper-v2";
+import { useQuery } from "@repo/shared";
 import { FontFamily, MainPageComponentsType } from "@repo/types";
 
-const page = async () => {
-  const client = new QueryClient();
-  const layout = await client.fetchQuery({
+const UserPage = () => {
+  const { data, isLoading, isPending, isFetching } = useQuery({
     queryKey: ["get-layout"],
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.BACKEND_URL}/admin/theme/get-layout?footer=false`,
-        {
-          method: "GET",
-        }
-      );
-      if (!res?.ok) {
-        console.error("Failed to fetch sliders:", res.statusText, res.status);
-        return null;
-      }
-      const data = (await res.json()) as {
+      const api = new FetchWrapperV2();
+      const layout = await api.get<{
         components: MainPageComponentsType["components"];
         footer: MainPageComponentsType["footer"] | null;
-      } | null;
-      return data;
+      } | null>(
+        `${process.env.BACKEND_URL}/admin/theme/get-layout?footer=false`
+      );
+      if (!layout.success) {
+        return null;
+      }
+      return layout.data;
     },
   });
-  if (!layout) {
+
+  if (!data) {
     return <div></div>;
+  }
+  if (isLoading || isPending || isFetching) {
+    return <GlobalLoadingOverlay />;
   }
   return (
     <AdminThemeViewer
       data={{
-        ...layout,
+        ...data,
         primaryColor: "#f06e27",
         secondaryColor: "#6672af",
         fontFamily: FontFamily.mantineDefault,
@@ -39,4 +41,4 @@ const page = async () => {
   );
 };
 
-export default page;
+export default UserPage;
