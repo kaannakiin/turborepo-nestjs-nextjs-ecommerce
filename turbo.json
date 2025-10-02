@@ -1,8 +1,8 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
-  "globalEnv": [],
-  "globalDependencies": ["**/.env.*local"],
+  "globalEnv": ["DATABASE_URL"],
+  "globalDependencies": ["**/.env", "**/.env.*local"],
   "tasks": {
     "build": {
       "dependsOn": ["^build", "db:generate"],
@@ -113,7 +113,8 @@
       "env": ["DATABASE_URL"]
     },
     "db:prisma": {
-      "cache": false
+      "cache": false,
+      "env": ["DATABASE_URL"]
     },
     "lint": {
       "dependsOn": ["^lint"]
