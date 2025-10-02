@@ -14,15 +14,15 @@ import {
   type RegisterSchemaType,
   TokenPayload,
 } from '@repo/types';
-import { type Response } from 'express';
+import { type Request, type Response } from 'express';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import { AuthService } from './auth.service';
+import { FacebookAuthGuard } from './guards/facebook-auth.guard';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
-import { GoogleAuthGuard } from './guards/google-auth.guard';
-import { FacebookAuthGuard } from './guards/facebook-auth.guard';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -37,8 +37,9 @@ export class AuthController {
   async login(
     @CurrentUser() user: User,
     @Res({ passthrough: true }) response: Response,
+    @Req() req: Request,
   ) {
-    return await this.authService.login(user, response);
+    return await this.authService.login(user, response, false, false, req);
   }
 
   @Post('refresh')
@@ -46,8 +47,9 @@ export class AuthController {
   async refreshToken(
     @CurrentUser() user: User,
     @Res({ passthrough: true }) response: Response,
+    @Req() req: Request,
   ) {
-    return await this.authService.login(user, response);
+    return await this.authService.login(user, response, false, false, req);
   }
 
   @Get('google')
@@ -63,7 +65,7 @@ export class AuthController {
   ) {
     const userAgent = req.headers['user-agent'];
     const isMobile = userAgent && userAgent.includes('Mobile');
-    await this.authService.login(user, response, true, isMobile || false);
+    await this.authService.login(user, response, true, isMobile || false, req);
   }
 
   @Get('facebook')
@@ -79,18 +81,19 @@ export class AuthController {
   ) {
     const userAgent = req.headers['user-agent'];
     const isMobile = userAgent && userAgent.includes('Mobile');
-    await this.authService.login(user, response, true, isMobile || false);
+    await this.authService.login(user, response, true, isMobile || false, req);
   }
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  me(@CurrentUser() user: User) {
+  me(@CurrentUser() user: User & { jti: string }) {
     return {
       id: user.id,
       name: `${user.name} ${user.surname}`,
       role: user.role,
       ...(user.email && { email: user.email }),
       ...(user.phone && { phone: user.phone }),
+      jti: user.jti,
       ...(user.imageUrl && { imageUrl: user.imageUrl }),
     } as TokenPayload;
   }

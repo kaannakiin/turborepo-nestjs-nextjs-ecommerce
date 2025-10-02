@@ -90,15 +90,14 @@ model Asset {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  role         UserRole @default(USER)
-  name         String
-  surname      String
-  email        String?  @unique
-  phone        String?  @unique
-  password     String?
-  imageUrl     String?
-  refreshToken String?
+  id       String   @id @default(cuid())
+  role     UserRole @default(USER)
+  name     String
+  surname  String
+  email    String?  @unique
+  phone    String?  @unique
+  password String?
+  imageUrl String?
 
   createdAt        DateTime               @default(now())
   updatedAt        DateTime               @updatedAt
@@ -109,8 +108,31 @@ model User {
   orders           Order[]
   defaultAddressId String?                @unique
   defaultAddress   AddressSchema?         @relation("UserDefaultAddress", fields: [defaultAddressId], references: [id], onDelete: SetNull)
+  refreshTokens    RefreshTokens[]
 
-  @@index([id, refreshToken, email, phone])
+  @@index([id, email, phone])
+}
+
+model RefreshTokens {
+  id                 String  @id @default(cuid())
+  hashedRefreshToken String  @unique
+  userAgent          String?
+  browser            String?
+  browserVersion     String?
+  os                 String?
+  osVersion          String?
+  deviceType         String? // mobile, tablet, desktop
+  deviceName         String?
+
+  ipAddress String?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([id, hashedRefreshToken])
 }
 
 model CategoryTranslation {
