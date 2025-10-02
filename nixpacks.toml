@@ -1,15 +1,16 @@
-[variables]
-NODE_ENV = "production"
+[phases.setup]
+nixPkgs = ["nodejs_22", "npm-9_x", "openssl"]
+nixLibs = ["gcc-unwrapped"]
+aptPkgs = ["curl", "wget"]
+
+[phases.install]
+cmds = ["npm ci"]
 
 [phases.build]
-dependsOn = ['install']
 cmds = [
-  'npx turbo run db:deploy',
-  'npx turbo run db:generate', 
-  'npx turbo run build'
+  "npx turbo run db:generate",  # ← db:deploy kaldırıldı
+  "npx turbo run build"
 ]
-cacheDirectories = [
-  'apps/web/.next/cache',
-  'node_modules/.cache',
-  'packages/jest-config/.next/cache'
-]
+
+[start]
+cmd = "npm run start:migrate"  # ← Yeni script
