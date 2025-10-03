@@ -1,5 +1,6 @@
 "use client";
 import GlobalLoader from "@/components/GlobalLoader";
+import fetchWrapper from "@lib/fetchWrapper";
 import { getSelectionTextShipping } from "@lib/helpers";
 import {
   ActionIcon,
@@ -68,19 +69,16 @@ const ShippingLocationDrawer = ({
   const { data: states, isLoading: statesIsLoading } = useQuery({
     queryKey: ["get-states-by-country", defaultValues.countryId],
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/locations/get-states-by-country/${defaultValues.countryId}`,
+      const res = await fetchWrapper.get<GetAllStateReturnType[]>(
+        `/locations/get-states-by-country/${defaultValues.countryId}`,
         {
-          method: "GET",
           credentials: "include",
         }
       );
-      if (!res.ok) {
-        console.error("Failed to fetch states", await res.text());
+      if (!res.success) {
         throw new Error("Failed to fetch states");
       }
-      const data = (await res.json()) as GetAllStateReturnType[];
-      return data;
+      return res.data;
     },
     enabled: !!defaultValues.countryId && defaultValues.countryType === "STATE",
   });
@@ -88,19 +86,16 @@ const ShippingLocationDrawer = ({
   const { data: cities, isLoading: citiesIsLoading } = useQuery({
     queryKey: ["get-cities-by-country", defaultValues.countryId],
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/locations/get-cities-by-country/${defaultValues.countryId}`,
+      const res = await fetchWrapper.get<GetAllCityReturnType[]>(
+        `/locations/get-cities-by-country/${defaultValues.countryId}`,
         {
-          method: "GET",
           credentials: "include",
         }
       );
-      if (!res.ok) {
-        console.error("Failed to fetch cities", await res.text());
+      if (!res.success) {
         throw new Error("Failed to fetch cities");
       }
-      const data = (await res.json()) as GetAllCityReturnType[];
-      return data;
+      return res.data;
     },
     enabled: !!defaultValues.countryId && defaultValues.countryType === "CITY",
   });

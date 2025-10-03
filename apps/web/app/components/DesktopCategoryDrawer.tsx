@@ -5,7 +5,7 @@ import {
   HoverCard,
   SimpleGrid,
   Stack,
-  Text
+  Text,
 } from "@mantine/core";
 import { $Enums, CategoryHeaderData } from "@repo/types";
 import Link from "next/link";

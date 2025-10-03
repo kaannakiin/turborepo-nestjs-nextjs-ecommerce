@@ -1,30 +1,31 @@
 "use client";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import fetchWrapper from "@lib/fetchWrapper";
 import {
   ActionIcon,
+  Alert,
   Box,
   Button,
+  Center,
   Checkbox,
   Collapse,
   Divider,
   Group,
   Modal,
+  Radio,
   ScrollArea,
   Stack,
   Text,
-  Center,
-  Radio,
-  Alert,
 } from "@mantine/core";
 import { useQuery } from "@repo/shared";
 import { ProductWithVariants } from "@repo/types";
 import {
   IconChevronDown,
   IconChevronRight,
-  IconPackage,
   IconInfoCircle,
+  IconPackage,
 } from "@tabler/icons-react";
-import { useState, useEffect } from "react";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import { useEffect, useState } from "react";
 
 type SelectionMode = "multiple" | "single";
 
@@ -71,15 +72,16 @@ const ProductsModal = ({
   const { data, isLoading, isFetching, error } = useQuery({
     queryKey: ["get-products-and-variants"],
     queryFn: async () => {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/get-products-and-variants`,
-        { method: "GET", credentials: "include" }
+      const response = await fetchWrapper.get<ProductWithVariants[]>(
+        `/admin/products/get-products-and-variants`,
+        { credentials: "include" }
       );
-      if (!response.ok) {
+
+      if (!response.success) {
         throw new Error("Network response was not ok");
       }
-      const data = await response.json();
-      return data as ProductWithVariants[];
+
+      return response.data;
     },
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,

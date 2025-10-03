@@ -2,7 +2,6 @@ import { QueryClient } from "@repo/shared";
 import { CategoryHeaderData } from "@repo/types";
 import { ReactNode } from "react";
 import { getSession } from "../../lib/auth";
-import { fetchWrapper } from "../../lib/fetchWrapper";
 import UserAppShellLayout from "../components/UserAppShellLayout";
 
 const UserLayout = async ({ children }: { children: ReactNode }) => {
@@ -12,11 +11,21 @@ const UserLayout = async ({ children }: { children: ReactNode }) => {
     await queryClient.fetchQuery({
       queryKey: ["categories"],
       queryFn: async () => {
-        const response = await fetchWrapper.get(
-          "/user-page/main-page-header-categories"
+        const response = await fetch(
+          `${process.env.BACKEND_URL}/user-page/main-page-header-categories`,
+          {
+            method: "GET",
+            cache: "no-store",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
         );
-        if (!response?.data) return null;
-        return response.data as CategoryHeaderData[];
+        if (!response.ok) {
+          return null;
+        }
+        const data = (await response.json()) as CategoryHeaderData[];
+        return data;
       },
       staleTime: 1000 * 60 * 60, // 1 saat
       gcTime: 1000 * 60 * 60 * 24, // 24 saat

@@ -27,6 +27,7 @@ import {
   getCouponGenerationTypeTooltip,
   getDiscountTypeLabel,
 } from "@lib/helpers";
+import fetchWrapper from "@lib/fetchWrapper";
 
 const DiscountTable = () => {
   const searchParams = useSearchParams();
@@ -44,22 +45,18 @@ const DiscountTable = () => {
       const params = new URLSearchParams();
       if (search) params.append("search", search);
       if (page) params.append("page", page.toString());
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/discounts/get-all-discounts-for-admin?${params.toString()}`,
-        {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
-        }
-      );
-      if (!response.ok) throw new Error("Failed to fetch discounts");
-      const data = (await response.json()) as {
+      const response = await fetchWrapper.get<{
         discounts: DiscountTableData[];
         totalCount: number;
         currentPage: number;
         totalPages: number;
-      };
-      return data;
+      }>(`/discounts/get-all-discounts-for-admin?${params.toString()}`, {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (!response.success) throw new Error("Failed to fetch discounts");
+      return response.data;
     },
     refetchOnWindowFocus: false,
     gcTime: 5 * 60 * 1000,
@@ -189,18 +186,16 @@ const DiscountTable = () => {
                                   onClick={async () => {
                                     try {
                                       setLoading(true);
-                                      const response = await fetch(
-                                        `${process.env.NEXT_PUBLIC_BACKEND_URL}/discounts/delete-discount/${discount.id}`,
-                                        {
-                                          method: "DELETE",
-                                          credentials: "include",
-                                        }
-                                      );
-                                      if (!response.ok) {
-                                        const error = await response.text();
+                                      const response =
+                                        await fetchWrapper.delete(
+                                          `/discounts/delete-discount/${discount.id}`,
+                                          {
+                                            credentials: "include",
+                                          }
+                                        );
+                                      if (!response.status) {
                                         notifications.show({
                                           message:
-                                            error ||
                                             "İndirim silinirken bir hata oluştu",
                                           color: "red",
                                           autoClose: 3000,

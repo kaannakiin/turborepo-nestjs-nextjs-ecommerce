@@ -1,4 +1,5 @@
 import GlobalLoader from "@/components/GlobalLoader";
+import fetchWrapper from "@lib/fetchWrapper";
 import {
   Button,
   Card,
@@ -27,7 +28,6 @@ import {
   FooterLinkSchema,
   FooterLinkType,
 } from "@repo/types";
-import { IconArrowLeft } from "@tabler/icons-react";
 import { useState } from "react";
 
 type AddType = "brand" | "category" | "product" | "custom";
@@ -85,19 +85,20 @@ const FooterLinkForm = ({
   const { data: brands, isLoading: isLoadingBrands } = useQuery({
     queryKey: ["get-brands"],
     queryFn: async () => {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/brands/get-all-brands-only-id-name-image`,
-        { method: "GET", credentials: "include" }
-      );
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
+      const response = await fetchWrapper.get<
+        Array<
+          BrandIdAndName & {
+            image: { url: string; type: $Enums.AssetType } | null;
+          }
+        >
+      >(`/admin/products/brands/get-all-brands-only-id-name-image`, {
+        credentials: "include",
+      });
+      if (!response.success) {
+        console.error("Marka verisi alınamadı");
+        return [];
       }
-      const data = await response.json();
-      return data as Array<
-        BrandIdAndName & {
-          image: { url: string; type: $Enums.AssetType } | null;
-        }
-      >;
+      return response.data;
     },
     enabled: addType === "brand" && opened,
     staleTime: Infinity,
@@ -109,23 +110,21 @@ const FooterLinkForm = ({
   const { data: categories, isLoading: isLoadingCategories } = useQuery({
     queryKey: ["get-categories"],
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/categories/get-all-categories-only-id-name-image`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
-      if (!res.ok) {
+      const res = await fetchWrapper.get<
+        Array<
+          CategoryIdAndName & {
+            image: { url: string; type: $Enums.AssetType } | null;
+          }
+        >
+      >(`/admin/products/categories/get-all-categories-only-id-name-image`, {
+        method: "GET",
+        credentials: "include",
+      });
+      if (!res.success) {
         console.error("Kategori verisi alınamadı");
         return [];
       }
-      const data = (await res.json()) as Array<
-        CategoryIdAndName & {
-          image: { url: string; type: $Enums.AssetType } | null;
-        }
-      >;
-      return data;
+      return res.data;
     },
     enabled: addType === "category" && opened,
     staleTime: Infinity,
@@ -137,23 +136,20 @@ const FooterLinkForm = ({
   const { data: products, isLoading: isLoadingProducts } = useQuery({
     queryKey: ["get-products"],
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/get-all-products-id-name-image`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
-      if (!res.ok) {
-        console.error("Ürün verisi alınamadı");
+      const res = await fetchWrapper.get<
+        Array<{
+          id: string;
+          name: string;
+          image: { url: string; type: $Enums.AssetType } | null;
+        }>
+      >(`/admin/products/get-all-products-id-name-image`, {
+        method: "GET",
+        credentials: "include",
+      });
+      if (!res.success) {
         return [];
       }
-      const data = (await res.json()) as Array<{
-        id: string;
-        name: string;
-        image: { url: string; type: $Enums.AssetType } | null;
-      }>;
-      return data;
+      return res.data;
     },
     enabled: addType === "product" && opened,
     staleTime: Infinity,

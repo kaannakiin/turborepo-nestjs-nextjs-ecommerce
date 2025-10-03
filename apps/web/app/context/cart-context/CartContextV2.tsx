@@ -1,5 +1,6 @@
 "use client";
 import { LOCALE_CART_COOKIE } from "@lib/constants";
+import fetchWrapper from "@lib/fetchWrapper";
 import { useLocalStorage } from "@mantine/hooks";
 import { useQuery, useQueryClient } from "@repo/shared";
 import {
@@ -36,7 +37,7 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
       const timer = setTimeout(() => {
         setPopoverOpened(false);
         setLastAddedItem(null);
-      }, 3000); // 3 saniye sonra popover'ı kapat
+      }, 3000);
 
       return () => clearTimeout(timer);
     }
@@ -44,43 +45,31 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
 
   const closePopover = () => {
     setPopoverOpened(false);
-    // State'i hemen temizleme, animasyon bitsin diye kısa delay
     setTimeout(() => setLastAddedItem(null), 300);
   };
 
+  // ✅ GET CART - FetchWrapper ile
   const { data: cart } = useQuery({
     queryKey: ["get-cart-v2", cartKey],
     queryFn: async () => {
       if (!cartKey) return null;
 
-      const cartReq = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart-v2/get-cart-v2/${cartKey}`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
+      const response = await fetchWrapper.get<CartActionResponse>(
+        `/cart-v2/get-cart-v2/${cartKey}`
       );
 
-      if (!cartReq?.ok) {
+      if (!response.success || !response.data.newCart) {
         setCartKey(null);
         return null;
       }
 
-      const cartData = (await cartReq.json()) as CartActionResponse;
-
-      if (!cartData.success || !cartData.newCart) {
-        setCartKey(null);
-        return null;
-      }
-
-      return cartData.newCart;
+      return response.data.newCart;
     },
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     enabled: !!cartKey,
   });
 
-  // Helper function for recalculating cart totals
   const recalculateCartTotals = (
     items: CartContextCartType["items"],
     taxTotal: number = 0
@@ -99,6 +88,7 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
     return { totalItems, subTotalPrice, totalDiscount, totalPrice };
   };
 
+  // ✅ ADD ITEM - FetchWrapper ile
   const addItemToCart = async (
     params: AddItemToCartV2
   ): Promise<CartActionResponse> => {
@@ -134,14 +124,9 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
     );
 
     try {
-      const addItemReq = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart-v2/add-item`,
+      const response = await fetchWrapper.post<CartActionResponse>(
+        "/cart-v2/add-item",
         {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
           body: JSON.stringify({
             ...params,
             ...(cartKey ? { cartId: cartKey } : {}),
@@ -149,7 +134,7 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
         }
       );
 
-      if (!addItemReq?.ok) {
+      if (!response.success) {
         await queryClient.invalidateQueries({
           queryKey: ["get-cart-v2", cartKey],
         });
@@ -159,7 +144,7 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
         };
       }
 
-      const addItemData = (await addItemReq.json()) as CartActionResponse;
+      const addItemData = response.data;
 
       if (addItemData.success && addItemData.newCart) {
         const newCartId = addItemData.newCart.cartId;
@@ -170,18 +155,17 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
 
         if (addedItem) {
           setLastAddedItem(addedItem);
-          setPopoverOpened(true); // Popover'ı aç
+          setPopoverOpened(true);
         }
+
         queryClient.setQueryData(
           ["get-cart-v2", newCartId],
           addItemData.newCart
         );
 
-        // Sonra cartKey'i güncelle
         if (cartKey !== newCartId || !cartKey) {
           setCartKey(newCartId);
 
-          // Eski cartKey varsa ve farklıysa, eski query'i temizle
           if (cartKey && cartKey !== newCartId) {
             queryClient.removeQueries({ queryKey: ["get-cart-v2", cartKey] });
           }
@@ -199,11 +183,11 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
       };
     }
   };
+
+  // ✅ INCREASE QUANTITY - FetchWrapper ile
   const increaseItemQuantity = async (
     params: ItemIdOnlyParams
   ): Promise<CartActionResponse> => {
-    // Optimistic update
-
     queryClient.setQueryData(
       ["get-cart-v2", cartKey],
       (oldCart: CartContextCartType | null): CartContextCartType | null => {
@@ -230,19 +214,14 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
     );
 
     try {
-      const increaseReq = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart-v2/increase-item-quantity/${cartKey}`,
+      const response = await fetchWrapper.post<CartActionResponse>(
+        `/cart-v2/increase-item-quantity/${cartKey}`,
         {
-          method: "POST",
           body: JSON.stringify(params),
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
         }
       );
 
-      if (!increaseReq?.ok) {
+      if (!response.success) {
         await queryClient.invalidateQueries({
           queryKey: ["get-cart-v2", cartKey],
         });
@@ -252,7 +231,7 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
         };
       }
 
-      const increaseData = (await increaseReq.json()) as CartActionResponse;
+      const increaseData = response.data;
 
       if (increaseData.success && increaseData.newCart) {
         const newCartId = increaseData.newCart.cartId;
@@ -261,7 +240,6 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
           increaseData.newCart
         );
 
-        // CartId değiştiyse güncelle
         if (cartKey !== newCartId) {
           setCartKey(newCartId);
           if (cartKey) {
@@ -281,10 +259,10 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // ✅ DECREASE QUANTITY - FetchWrapper ile
   const decreaseItemQuantity = async (
     params: ItemIdOnlyParams
   ): Promise<CartActionResponse> => {
-    // Optimistic update
     queryClient.setQueryData(
       ["get-cart-v2", cartKey],
       (oldCart: CartContextCartType | null): CartContextCartType | null => {
@@ -298,12 +276,10 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
         let updatedItems: CartContextCartType["items"];
 
         if (updatedItem.quantity <= 1) {
-          // Quantity 1'se kaldır
           updatedItems = oldCart.items.filter(
             (i) => i.itemId !== params.itemId
           );
         } else {
-          // Değilse azalt
           updatedItems = oldCart.items.map((i) =>
             i.itemId === params.itemId ? { ...i, quantity: i.quantity - 1 } : i
           );
@@ -321,19 +297,14 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
     );
 
     try {
-      const decreaseReq = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart-v2/decrease-item-quantity/${cartKey}`,
+      const response = await fetchWrapper.post<CartActionResponse>(
+        `/cart-v2/decrease-item-quantity/${cartKey}`,
         {
-          method: "POST",
           body: JSON.stringify(params),
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
         }
       );
 
-      if (!decreaseReq?.ok) {
+      if (!response.success) {
         await queryClient.invalidateQueries({
           queryKey: ["get-cart-v2", cartKey],
         });
@@ -343,7 +314,7 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
         };
       }
 
-      const decreaseData = (await decreaseReq.json()) as CartActionResponse;
+      const decreaseData = response.data;
 
       if (decreaseData.success && decreaseData.newCart) {
         const newCartId = decreaseData.newCart.cartId;
@@ -372,10 +343,10 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // ✅ REMOVE ITEM - FetchWrapper ile
   const removeItem = async (
     params: ItemIdOnlyParams
   ): Promise<CartActionResponse> => {
-    // Optimistic update
     queryClient.setQueryData(
       ["get-cart-v2", cartKey],
       (oldCart: CartContextCartType | null): CartContextCartType | null => {
@@ -397,19 +368,14 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
     );
 
     try {
-      const removeItemReq = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart-v2/remove-item/${cartKey}`,
+      const response = await fetchWrapper.post<CartActionResponse>(
+        `/cart-v2/remove-item/${cartKey}`,
         {
-          method: "POST",
           body: JSON.stringify(params),
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
         }
       );
 
-      if (!removeItemReq?.ok) {
+      if (!response.success) {
         await queryClient.invalidateQueries({
           queryKey: ["get-cart-v2", cartKey],
         });
@@ -419,7 +385,7 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
         };
       }
 
-      const removeItemData = (await removeItemReq.json()) as CartActionResponse;
+      const removeItemData = response.data;
 
       if (removeItemData.success && removeItemData.newCart) {
         const newCartId = removeItemData.newCart.cartId;
@@ -428,7 +394,6 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
           removeItemData.newCart
         );
 
-        // CartId değiştiyse güncelle
         if (cartKey !== newCartId) {
           setCartKey(newCartId);
           if (cartKey) {
@@ -449,8 +414,8 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // ✅ CLEAR CART - FetchWrapper ile
   const clearCart = async (): Promise<CartActionResponse> => {
-    // Optimistic update
     queryClient.setQueryData(
       ["get-cart-v2", cartKey],
       (oldCart: CartContextCartType | null): CartContextCartType | null => {
@@ -469,18 +434,11 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
     );
 
     try {
-      const clearCartReq = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart-v2/clear-cart/${cartKey}`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+      const response = await fetchWrapper.post<CartActionResponse>(
+        `/cart-v2/clear-cart/${cartKey}`
       );
 
-      if (!clearCartReq?.ok) {
+      if (!response.success) {
         await queryClient.invalidateQueries({
           queryKey: ["get-cart-v2", cartKey],
         });
@@ -490,7 +448,7 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
         };
       }
 
-      const clearCartData = (await clearCartReq.json()) as CartActionResponse;
+      const clearCartData = response.data;
 
       if (clearCartData.success && clearCartData.newCart) {
         const newCartId = clearCartData.newCart.cartId;
@@ -499,7 +457,6 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
           clearCartData.newCart
         );
 
-        // CartId değiştiyse güncelle
         if (cartKey !== newCartId) {
           setCartKey(newCartId);
           if (cartKey) {
@@ -520,21 +477,17 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // ✅ UPDATE ORDER NOTE - FetchWrapper ile
   const updateOrderNote = async (note: string): Promise<CartActionResponse> => {
     try {
-      const updateNoteReq = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart-v2/update-order-note/${cartKey}`,
+      const response = await fetchWrapper.post<CartActionResponse>(
+        `/cart-v2/update-order-note/${cartKey}`,
         {
-          method: "POST",
           body: JSON.stringify({ note }),
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
         }
       );
 
-      if (!updateNoteReq?.ok) {
+      if (!response.success) {
         await queryClient.invalidateQueries({
           queryKey: ["get-cart-v2", cartKey],
         });
@@ -544,7 +497,7 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
         };
       }
 
-      const updateNoteData = (await updateNoteReq.json()) as CartActionResponse;
+      const updateNoteData = response.data;
 
       if (updateNoteData.success && updateNoteData.newCart) {
         queryClient.setQueryData(
@@ -565,6 +518,7 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // ✅ MERGE CARTS - FetchWrapper ile
   const mergeCarts = async (): Promise<CartActionResponse> => {
     if (!cartKey) {
       return {
@@ -574,37 +528,29 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      const mergeReq = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart-v2/merge-carts`,
+      const response = await fetchWrapper.post<CartActionResponse>(
+        "/cart-v2/merge-carts",
         {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
           body: JSON.stringify({ cartId: cartKey }),
         }
       );
 
-      if (!mergeReq?.ok) {
+      if (!response.success) {
         return {
           success: false,
           message: "Sepet birleştirilirken bir hata oluştu",
         };
       }
 
-      const mergeData = (await mergeReq.json()) as CartActionResponse;
+      const mergeData = response.data;
 
       if (mergeData.success && mergeData.newCart) {
         const newCartId = mergeData.newCart.cartId;
 
-        // ✅ Önce localStorage'ı senkron güncelle
         setCartKey(newCartId);
 
-        // Sonra cache'i güncelle
         queryClient.setQueryData(["get-cart-v2", newCartId], mergeData.newCart);
 
-        // Eski cache'i temizle
         if (cartKey !== newCartId) {
           queryClient.removeQueries({ queryKey: ["get-cart-v2", cartKey] });
         }

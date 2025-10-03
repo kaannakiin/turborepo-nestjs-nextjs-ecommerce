@@ -63,6 +63,7 @@ import CategoriesModal from "./CategoriesModal";
 import ProductsModal from "./ProductsModal";
 import UsersModal from "./UsersModal";
 import ProductPriceNumberInput from "../../../product-list/create-variant/components/ProductPriceNumberInput";
+import fetchWrapper from "@lib/fetchWrapper";
 
 interface DiscountFormProps {
   defaultValues?: DiscountZodType;
@@ -244,52 +245,24 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
 
   const onSubmit: SubmitHandler<DiscountZodType> = async (data) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/discounts/create-or-update`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify(data),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-
-        let errorMessage = "Bilinmeyen bir hata oluştu";
-
-        switch (response.status) {
-          case 400:
-            errorMessage = errorData?.message || "Gönderilen veriler geçersiz";
-            break;
-          case 401:
-            errorMessage = "Oturum süreniz dolmuş, lütfen tekrar giriş yapın";
-            break;
-          case 403:
-            errorMessage = "Bu işlem için yetkiniz bulunmuyor";
-            break;
-          case 409:
-            errorMessage = errorData?.message || "Kupon kodu zaten kullanımda";
-            break;
-          case 422:
-            errorMessage =
-              "Validasyon hatası: " +
-              (errorData?.message || "Veriler geçersiz");
-            break;
-          case 500:
-            errorMessage =
-              "Sunucu hatası oluştu, lütfen daha sonra tekrar deneyin";
-            break;
-          default:
-            errorMessage = `HTTP ${response.status}: ${errorData?.message || "Bilinmeyen hata"}`;
-        }
-
-        throw new Error(errorMessage);
+      const response = await fetchWrapper.post(`/discounts/create-or-update`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      if (!response.success) {
+        notifications.show({
+          color: "red",
+          title: "Hata!",
+          message: "İndirim kaydedilemedi",
+          icon: <IconX size={16} />,
+          loading: false,
+          autoClose: 5000,
+        });
+        return;
       }
-
       notifications.show({
         color: "teal",
         title: "Başarılı!",

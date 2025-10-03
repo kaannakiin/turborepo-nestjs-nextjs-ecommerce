@@ -1,6 +1,7 @@
 "use client";
 
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import fetchWrapper from "@lib/fetchWrapper";
 import {
   ActionIcon,
   Badge,
@@ -23,24 +24,20 @@ const ShippingTable = () => {
   const { isLoading, isPending, isFetching, data } = useQuery({
     queryKey: ["get-all-cargo-zones"],
     queryFn: async () => {
-      const req = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/shipping/get-all-cargo-zones`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
-      if (!req.ok) {
-        return null;
-      }
-      const data = (await req.json()) as {
+      const req = await fetchWrapper.get<{
         success: boolean;
         cargoZones: Array<CargoZones>;
-      };
-      if (!data.success) {
+      }>(`/shipping/get-all-cargo-zones`, {
+        credentials: "include",
+      });
+      if (!req.success) {
         return null;
       }
-      return data.cargoZones;
+
+      if (!req.data.success) {
+        return null;
+      }
+      return req.data.cargoZones;
     },
     refetchOnMount: false,
   });

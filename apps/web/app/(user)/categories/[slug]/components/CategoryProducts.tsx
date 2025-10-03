@@ -5,9 +5,9 @@ import { useInfiniteQuery } from "@repo/shared";
 import { $Enums, CategoryPageProductsReturnType } from "@repo/types";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { fetchWrapper } from "../../../../../lib/fetchWrapper";
 import GlobalLoadingOverlay from "../../../../components/GlobalLoadingOverlay";
 import CategoryPageProductCard from "./CategoryPageProductCard";
+import fetchWrapper from "@lib/fetchWrapper";
 
 interface CategoryProductsProps {
   categoryId: string;
@@ -47,12 +47,12 @@ const CategoryProducts = ({
       const params = new URLSearchParams(searchParams.toString());
       params.set("page", pageParam.toString());
 
-      const res = await fetchWrapper.get(
+      const res = await fetchWrapper.get<CategoryPageProductsReturnType>(
         `/users/categories/get-products-categories/${categoryId}?${params.toString()}`
       );
 
       if (!res.success) {
-        throw new Error(res.message);
+        throw new Error("Ürünler yüklenirken bir hata oluştu");
       }
       return res.data as CategoryPageProductsReturnType;
     },

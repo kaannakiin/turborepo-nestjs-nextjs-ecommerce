@@ -1,6 +1,7 @@
 "use client";
 
 import GlobalLoader from "@/components/GlobalLoader";
+import fetchWrapper from "@lib/fetchWrapper";
 import { getMantineFontWeightLabel, getTextAlignLabel } from "@lib/helpers";
 import {
   ActionIcon,
@@ -73,19 +74,17 @@ const CategoryGridForm = ({
   const { data, isLoading, isFetching, isPending } = useQuery({
     queryKey: ["get-all-categories-only-id-and-name"],
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/categories/get-all-categories-only-id-and-name`,
+      const res = await fetchWrapper.get<CategoryIdAndName[]>(
+        `/admin/products/categories/get-all-categories-only-id-and-name`,
         {
-          method: "GET",
           credentials: "include",
         }
       );
-      if (!res.ok) {
-        console.error("Kategori verisi alınamadı");
+      if (!res.success) {
         return [];
       }
-      const data = (await res.json()) as CategoryIdAndName[];
-      return data;
+
+      return res.data;
     },
   });
   const categoryIds = watch("categoryIds") || [];

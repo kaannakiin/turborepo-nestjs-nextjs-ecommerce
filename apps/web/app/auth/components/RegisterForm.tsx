@@ -1,6 +1,8 @@
 "use client";
 
+import { useCartV2 } from "@/context/cart-context/CartContextV2";
 import { zodResolver } from "@hookform/resolvers/zod";
+import fetchWrapper from "@lib/fetchWrapper";
 import {
   Button,
   PasswordInput,
@@ -10,13 +12,15 @@ import {
   TextInput,
   UnstyledButton,
 } from "@mantine/core";
+import { Controller, SubmitHandler, useForm } from "@repo/shared";
 import { RegisterSchema, RegisterSchemaType } from "@repo/types";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Controller, SubmitHandler, useForm } from "@repo/shared";
 import CustomPhoneInput from "../../(user)/components/CustomPhoneInput";
 import GlobalLoadingOverlay from "../../components/GlobalLoadingOverlay";
 
 const RegisterForm = () => {
+  const { mergeCarts } = useCartV2();
+
   const {
     control,
     handleSubmit,
@@ -38,22 +42,60 @@ const RegisterForm = () => {
 
   const onSubmit: SubmitHandler<RegisterSchemaType> = async (data) => {
     try {
-      const registerReq = await fetch("/api/auth/register", {
-        method: "POST",
+      const registerReq = await fetchWrapper.post<{
+        success: boolean;
+        message: string;
+      }>("/auth/register", {
         body: JSON.stringify(data),
         headers: {
           "Content-Type": "application/json",
         },
       });
 
-      const responseData = await registerReq.json();
-
-      if (!registerReq.ok) {
+      if (!registerReq.success) {
         setError("root", {
-          message: responseData.message || "Bir hata oluştu",
+          message: "Kayıt işlemi başarısız oldu. Lütfen tekrar deneyin.",
         });
         return;
       }
+      if (!registerReq.data.success) {
+        setError("root", {
+          message:
+            registerReq.data.message ||
+            "Kayıt işlemi başarısız oldu. Lütfen tekrar deneyin.",
+        });
+        return;
+      }
+      const authReq = await fetchWrapper.post("/auth/login", {
+        body: JSON.stringify({
+          username:
+            data.email && data.email.trim() !== "" ? data.email : data.phone,
+          password: data.password,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        cache: "no-cache",
+      });
+      if (!authReq.success) {
+        setError("root", {
+          message: "Giriş başarısız. Lütfen manuel olarak giriş yapın.",
+        });
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const mergeResult = await mergeCarts();
+
+      if (mergeResult.success) {
+        console.log("✅ Sepet birleştirildi:", mergeResult.newCart?.cartId);
+      } else {
+        console.warn("⚠️ Sepet birleştirme başarısız:", mergeResult.message);
+      }
+
+      // ✅ Küçük bir delay - localStorage'ın kesin yazılmasını garanti et
+      await new Promise((resolve) => setTimeout(resolve, 150));
       const redirectUrl = (searchParams.get("redirectUri") as string) || "/";
       push(redirectUrl);
     } catch {
@@ -179,8 +221,6 @@ const RegisterForm = () => {
           size="lg"
           radius={"md"}
           onClick={handleSubmit(onSubmit)}
-          loading={isSubmitting}
-          disabled={isSubmitting}
         >
           Üye Ol
         </Button>

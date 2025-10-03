@@ -3,6 +3,7 @@
 import CustomPagination from "@/components/CustomPagination";
 import CustomSearchInput from "@/components/CustomSearchInput";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import fetchWrapper from "@lib/fetchWrapper";
 import { getSortAdminUserTableLabels, getUserRoleLabels } from "@lib/helpers";
 import {
   Badge,
@@ -39,8 +40,8 @@ const UserTable = () => {
         if (sortValue) fetchSearchParams.append("sortBy", sortValue);
         if (pageValue) fetchSearchParams.append("page", pageValue.toString());
 
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/users/get-users${
+        const response = await fetchWrapper.get<GetUsersQueriesReturnType>(
+          `/admin/users/get-users${
             fetchSearchParams.toString()
               ? `?${fetchSearchParams.toString()}`
               : ""
@@ -51,11 +52,10 @@ const UserTable = () => {
           }
         );
 
-        if (!response?.ok) {
-          throw new Error(`Failed to fetch users: ${response.statusText}`);
+        if (!response?.success) {
+          throw new Error(`Failed to fetch users`);
         }
-        const data = (await response.json()) as GetUsersQueriesReturnType;
-        return data;
+        return response.data;
       },
       staleTime: 1000 * 60,
       refetchOnWindowFocus: false,

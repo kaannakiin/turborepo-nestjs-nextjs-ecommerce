@@ -1,31 +1,26 @@
 "use client";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import GlobalLoader from "@/components/GlobalLoader";
+import fetchWrapper from "@lib/fetchWrapper";
+import { notifications } from "@mantine/notifications";
 import { SubmitHandler, useQuery } from "@repo/shared";
 import { FontFamily, MainPageComponentsType } from "@repo/types";
 import AdminThemeLayoutShell from "../components/AdminThemeLayoutShell";
-import { notifications } from "@mantine/notifications";
-import GlobalLoader from "@/components/GlobalLoader";
 
 const ThemePage = () => {
   const { data, isLoading, isFetching, isPending, refetch } = useQuery({
     queryKey: ["get-layout"],
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/theme/get-layout`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
-      if (!res?.ok) {
-        console.error("Failed to fetch sliders:", res.statusText, res.status);
-        return null;
-      }
-      const data = (await res.json()) as {
+      const res = await fetchWrapper.get<{
         components: MainPageComponentsType["components"];
         footer: MainPageComponentsType["footer"] | null;
-      } | null;
-      return data;
+      } | null>(`/admin/theme/get-layout`, {
+        method: "GET",
+        credentials: "include",
+      });
+      if (!res.success) {
+        throw new Error("Layout verisi alınamadı");
+      }
+      return res.data;
     },
   });
 
@@ -58,20 +53,16 @@ const ThemePage = () => {
 
           // Slider silme
           if (slidersToDelete.length > 0) {
-            await fetch(
-              `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/theme/delete-sliders`,
-              {
-                method: "DELETE",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  uniqueIds: slidersToDelete,
-                }),
-                credentials: "include",
-                cache: "no-store",
-              }
-            );
+            await fetchWrapper.delete(`/admin/theme/delete-sliders`, {
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                uniqueIds: slidersToDelete,
+              }),
+              credentials: "include",
+              cache: "no-store",
+            });
           }
 
           // Yeni slider ekleme/güncelleme
@@ -97,21 +88,16 @@ const ThemePage = () => {
             formData.append("uniqueId", slider.uniqueId);
 
             try {
-              const res = await fetch(
-                `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/theme/create-slider`,
-                {
-                  method: "POST",
-                  credentials: "include",
-                  cache: "no-store",
-                  body: formData,
-                }
-              );
+              const res = await fetchWrapper.postFormData<{
+                success: boolean;
+                message?: string;
+              }>(`/admin/theme/create-slider`, formData);
 
-              if (!res.ok) {
+              if (!res.success) {
                 throw new Error(`HTTP error! status: ${res.status}`);
               }
 
-              const result = await res.json();
+              const result = res.data;
 
               if (result.success) {
                 successCount++;
@@ -154,10 +140,9 @@ const ThemePage = () => {
           (component) => component.type !== "SLIDER"
         );
 
-        const otherCompRes = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/theme/update-layout`,
+        const otherCompRes = await fetchWrapper.post(
+          `/admin/theme/update-layout`,
           {
-            method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
@@ -170,11 +155,8 @@ const ThemePage = () => {
           }
         );
 
-        if (!otherCompRes.ok) {
-          console.error(
-            "Diğer bileşenler güncelleme hatası:",
-            otherCompRes.statusText
-          );
+        if (!otherCompRes.success) {
+          console.error("Diğer bileşenler güncelleme hatası:");
           throw new Error("Layout güncelleme başarısız");
         }
       }

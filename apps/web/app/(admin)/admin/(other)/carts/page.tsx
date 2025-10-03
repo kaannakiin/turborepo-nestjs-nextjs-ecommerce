@@ -12,6 +12,7 @@ import StatusIndicators from "./components/StatusIndicators";
 import { AdminCartTableData } from "@repo/types";
 import CustomPagination from "@/components/CustomPagination";
 import { IconShoppingBag } from "@tabler/icons-react";
+import fetchWrapper from "@lib/fetchWrapper";
 
 const AdminCartsPage = () => {
   const searchParams = useSearchParams();
@@ -34,16 +35,7 @@ const AdminCartsPage = () => {
       if (startDate) params.append("startDate", startDate);
       if (endDate) params.append("endDate", endDate);
       params.append("page", page.toString());
-      const req = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart-v2/admin-cart-list${params.toString() ? `?${params.toString()}` : ""}`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
-      if (!req.ok) throw new Error("Failed to fetch carts");
-
-      return (await req.json()) as {
+      const req = await fetchWrapper.get<{
         carts: AdminCartTableData[];
         success: boolean;
         message: string;
@@ -55,7 +47,17 @@ const AdminCartsPage = () => {
           hasNextPage: boolean;
           hasPreviousPage: boolean;
         };
-      };
+      }>(
+        `/cart-v2/admin-cart-list${params.toString() ? `?${params.toString()}` : ""}`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+      if (!req.success) {
+        throw new Error("Failed to fetch carts");
+      }
+      return req.data;
     },
   });
 

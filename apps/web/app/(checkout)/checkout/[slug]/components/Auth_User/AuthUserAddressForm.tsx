@@ -3,6 +3,7 @@
 import CustomPhoneInput from "@/(user)/components/CustomPhoneInput";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import { TURKEY_DB_ID } from "@lib/constants";
+import fetchWrapper from "@lib/fetchWrapper";
 import {
   Button,
   Card,
@@ -68,19 +69,17 @@ const AuthUserAddressForm = ({
   const { data: countries, isLoading: countriesIsLoading } = useQuery({
     queryKey: ["get-all-countries"],
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/locations/get-all-countries`,
+      const res = await fetchWrapper.get<GetAllCountryReturnType[]>(
+        `/locations/get-all-countries`,
         {
           method: "GET",
           credentials: "include",
         }
       );
-      if (!res.ok) {
-        console.error("Failed to fetch countries", await res.text());
+      if (!res.success) {
         throw new Error("Failed to fetch countries");
       }
-      const data = (await res.json()) as GetAllCountryReturnType[];
-      return data;
+      return res.data;
     },
     refetchOnMount: false,
   });
@@ -88,19 +87,17 @@ const AuthUserAddressForm = ({
   const { data: states, isLoading: statesIsLoading } = useQuery({
     queryKey: ["get-states-by-country", countryId],
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/locations/get-states-by-country/${countryId}`,
+      const res = await fetchWrapper.get<GetAllStateReturnType[]>(
+        `/locations/get-states-by-country/${countryId}`,
         {
           method: "GET",
           credentials: "include",
         }
       );
-      if (!res.ok) {
-        console.error("Failed to fetch states", await res.text());
+      if (!res.success) {
         throw new Error("Failed to fetch states");
       }
-      const data = (await res.json()) as GetAllStateReturnType[];
-      return data;
+      return res.data;
     },
     enabled: !!countryId && addressType === "STATE",
   });
@@ -108,19 +105,16 @@ const AuthUserAddressForm = ({
   const { data: cities, isLoading: citiesIsLoading } = useQuery({
     queryKey: ["get-cities-by-country", countryId],
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/locations/get-cities-by-country/${countryId}`,
+      const res = await fetchWrapper.get<GetAllCityReturnType[]>(
+        `/locations/get-cities-by-country/${countryId}`,
         {
-          method: "GET",
           credentials: "include",
         }
       );
-      if (!res.ok) {
-        console.error("Failed to fetch cities", await res.text());
+      if (!res.success) {
         throw new Error("Failed to fetch cities");
       }
-      const data = (await res.json()) as GetAllCityReturnType[];
-      return data;
+      return res.data;
     },
     enabled: !!countryId && addressType === "CITY",
   });

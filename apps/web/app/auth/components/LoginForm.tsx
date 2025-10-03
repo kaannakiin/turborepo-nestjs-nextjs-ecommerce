@@ -1,5 +1,6 @@
 "use client";
-import { LOCALE_CART_COOKIE } from "@lib/constants";
+import { useCartV2 } from "@/context/cart-context/CartContextV2";
+import fetchWrapper from "@lib/fetchWrapper";
 import {
   Button,
   PasswordInput,
@@ -8,14 +9,12 @@ import {
   TextInput,
   UnstyledButton,
 } from "@mantine/core";
-import { useLocalStorage } from "@mantine/hooks";
 import { Controller, SubmitHandler, useForm, zodResolver } from "@repo/shared";
-import { CartActionResponse, LoginSchema, LoginSchemaType } from "@repo/types";
+import { LoginSchema, LoginSchemaType } from "@repo/types";
 import { IconMail, IconPhone } from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import CustomPhoneInput from "../../(user)/components/CustomPhoneInput";
 import GlobalLoadingOverlay from "../../components/GlobalLoadingOverlay";
-import { useCartV2 } from "@/context/cart-context/CartContextV2";
 
 const LoginForm = () => {
   const { mergeCarts } = useCartV2();
@@ -42,9 +41,11 @@ const LoginForm = () => {
 
   const onSubmit: SubmitHandler<LoginSchemaType> = async (data) => {
     try {
-      const authReq = await fetch("/api/auth/login", {
-        method: "POST",
-        body: JSON.stringify(data),
+      const authReq = await fetchWrapper.post("/auth/login", {
+        body: JSON.stringify({
+          username: data.type === "email" ? data.email : data.phone,
+          password: data.password,
+        }),
         headers: {
           "Content-Type": "application/json",
         },
@@ -52,7 +53,7 @@ const LoginForm = () => {
         cache: "no-cache",
       });
 
-      if (!authReq.ok) {
+      if (!authReq.success) {
         setError("root", {
           message: "Giriş başarısız. Lütfen bilgilerinizi kontrol edin.",
         });

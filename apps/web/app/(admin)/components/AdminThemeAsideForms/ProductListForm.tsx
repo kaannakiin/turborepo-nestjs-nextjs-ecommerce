@@ -1,6 +1,7 @@
 "use client";
 import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 import CustomImage from "@/components/CustomImage";
+import fetchWrapper from "@lib/fetchWrapper";
 import {
   ActionIcon,
   Badge,
@@ -58,10 +59,9 @@ const ProductListForm = ({ defaultValues, onSubmit }: ProductListFormProps) => {
     queryFn: async () => {
       if (!defaultValues?.items?.length) return [];
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/get-selected-products`,
+      const res = await fetchWrapper.post<ModalProductCardForAdmin[]>(
+        `/admin/products/get-selected-products`,
         {
-          method: "POST",
           body: JSON.stringify({
             selectedItems: defaultValues.items,
           }),
@@ -69,8 +69,10 @@ const ProductListForm = ({ defaultValues, onSubmit }: ProductListFormProps) => {
           headers: { "Content-Type": "application/json" },
         }
       );
-      return (await res.json()) as ModalProductCardForAdmin[];
+      if (!res.success) throw new Error("Failed to fetch");
+      return res.data;
     },
+
     enabled: !!defaultValues?.items?.length,
   });
 
@@ -83,8 +85,8 @@ const ProductListForm = ({ defaultValues, onSubmit }: ProductListFormProps) => {
   } = useQuery({
     queryKey: ["search-products-for-modals", debouncedQuery],
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/get-product-and-variants-for-modal?search=${debouncedQuery}`,
+      const res = await fetchWrapper.get<ModalProductCardForAdmin[]>(
+        `/admin/products/get-product-and-variants-for-modal?search=${debouncedQuery}`,
         {
           method: "GET",
           credentials: "include",
@@ -93,8 +95,10 @@ const ProductListForm = ({ defaultValues, onSubmit }: ProductListFormProps) => {
           },
         }
       );
-      return (await res.json()) as ModalProductCardForAdmin[];
+      if (!res.success) throw new Error("Failed to fetch");
+      return res.data;
     },
+
     refetchOnWindowFocus: false,
     enabled: debouncedQuery.length >= 3,
   });

@@ -2,6 +2,7 @@
 
 import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import fetchWrapper from "@lib/fetchWrapper";
 import {
   Button,
   Group,
@@ -23,29 +24,24 @@ interface ShippingStepProps {
 }
 
 const ShippingStep = ({ cartId, onSubmit }: ShippingStepProps) => {
-  const { push, replace } = useRouter();
+  const { replace } = useRouter();
   const [selectedRuleId, setSelectedRuleId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const params = useSearchParams();
   const { data, isLoading, isPending, isFetching } = useQuery({
     queryKey: ["get-available-shipping-methods", cartId],
     queryFn: async () => {
-      const req = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/shipping/get-available-shipping-methods/${cartId}`,
+      const req = await fetchWrapper.get<ShippingMethodsResponse>(
+        `/shipping/get-available-shipping-methods/${cartId}`,
         {
           method: "GET",
           credentials: "include",
         }
       );
-      if (!req.ok) {
+      if (!req.success) {
         return null;
       }
-      const data = (await req.json()) as ShippingMethodsResponse;
-      if (data.success) {
-        return data.shippingMethods;
-      } else {
-        return null;
-      }
+      return req.data.shippingMethods;
     },
   });
 
