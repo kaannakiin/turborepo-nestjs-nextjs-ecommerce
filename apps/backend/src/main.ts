@@ -65,7 +65,7 @@ async function bootstrap() {
       const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
         getSecret: () => configService.getOrThrow<string>('CSRF_SECRET'),
         // ✅ __Host- prefix'ini kaldır (sadece production'da kullan)
-        cookieName: isProduction ? '__Host-csrf-token' : 'csrf-token',
+        cookieName: 'csrf-token',
         cookieOptions: {
           httpOnly: true,
           sameSite: 'lax',
