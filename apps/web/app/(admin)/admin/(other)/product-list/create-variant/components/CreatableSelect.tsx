@@ -1,6 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
+import fetchWrapper from "@lib/fetchWrapper";
 import {
   Combobox,
   InputBase,
@@ -41,16 +42,16 @@ const CreatableSelect = ({
   const { data: allVariants, isLoading } = useQuery({
     queryKey: ["variants"],
     queryFn: async (): Promise<VariantGroupZodType[]> => {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/get-variants`,
-        { method: "GET", credentials: "include", cache: "no-cache" }
+      const response = await fetchWrapper.get<VariantGroupZodType[]>(
+        `/admin/products/get-variants`,
+        { credentials: "include", cache: "no-cache" }
       );
 
-      if (!response.ok) {
+      if (!response.success) {
         throw new Error("Failed to fetch variants");
       }
 
-      return response.json();
+      return response.data;
     },
   });
 

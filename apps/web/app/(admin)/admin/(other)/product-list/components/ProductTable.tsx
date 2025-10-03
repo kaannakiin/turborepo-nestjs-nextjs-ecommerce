@@ -33,6 +33,7 @@ import CustomPagination from "../../../../../components/CustomPagination";
 import CustomSearchInput from "../../../../../components/CustomSearchInput";
 import GlobalLoadingOverlay from "../../../../../components/GlobalLoadingOverlay";
 import TableAsset from "../../../../components/TableAsset";
+import fetchWrapper from "@lib/fetchWrapper";
 
 type ProductsResponse = {
   products: AdminProductTableData[];
@@ -52,20 +53,19 @@ const fetchProducts = async (
   if (search) params.append("search", search);
   params.append("page", page.toString());
 
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/get-products?${params.toString()}`,
+  const response = await fetchWrapper.get<ProductsResponse>(
+    `/admin/products/get-products?${params.toString()}`,
     {
-      method: "GET",
       credentials: "include",
       cache: "no-store",
     }
   );
 
-  if (!response.ok) {
+  if (!response.success) {
     throw new Error("Ürünler yüklenirken hata oluştu");
   }
 
-  return response.json();
+  return response.data;
 };
 
 const ProductTable = () => {

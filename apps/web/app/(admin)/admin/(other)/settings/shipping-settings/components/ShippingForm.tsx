@@ -40,6 +40,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import ShippingLocationDrawer from "./ShippingLocationDrawer";
 import ShippingRuleDrawer from "./ShippingRuleDrawer";
+import fetchWrapper from "@lib/fetchWrapper";
 
 interface ShippingFormProps {
   defaultValues?: CargoZoneType;
@@ -115,19 +116,16 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
   const { data: countries, isLoading: countriesIsLoading } = useQuery({
     queryKey: ["get-all-countries"],
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/locations/get-all-countries`,
+      const res = await fetchWrapper.get<GetAllCountryReturnType[]>(
+        `/locations/get-all-countries`,
         {
-          method: "GET",
           credentials: "include",
         }
       );
-      if (!res.ok) {
-        console.error("Failed to fetch countries", await res.text());
+      if (!res.success) {
         throw new Error("Failed to fetch countries");
       }
-      const data = (await res.json()) as GetAllCountryReturnType[];
-      return data;
+      return res.data;
     },
     refetchOnMount: false,
   });
@@ -148,8 +146,8 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
   const onSubmit: SubmitHandler<CargoZoneType> = async (
     data: CargoZoneType
   ) => {
-    const req = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/shipping/create-or-update-cargo-zone`,
+    const req = await fetchWrapper.post<{ success: boolean; message: string }>(
+      `/shipping/create-or-update-cargo-zone`,
       {
         method: "POST",
         credentials: "include",
@@ -159,7 +157,7 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
         },
       }
     );
-    if (!req.ok) {
+    if (!req.success) {
       notifications.show({
         title: "Hata",
         message: "Bölge kaydedilirken bir hata oluştu",
@@ -167,11 +165,10 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
       });
       return;
     }
-    const res = (await req.json()) as { success: boolean; message: string };
-    if (res.success) {
+    if (req.data.success) {
       notifications.show({
         title: "Başarılı",
-        message: res.message,
+        message: req.data.message,
         color: "green",
       });
       push("/admin/settings/shipping-settings");

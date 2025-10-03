@@ -3,7 +3,8 @@
 import GlobalDropzone from "@/components/GlobalDropzone";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import GlobalSeoCard from "@/components/GlobalSeoCard";
-import FetchWrapperV2 from "@lib/fetchWrapper-v2";
+import fetchWrapper from "@lib/fetchWrapper";
+
 import {
   Button,
   Group,
@@ -33,12 +34,11 @@ interface AdminCategoryFormProps {
 
 // Fetch function for parent categories
 const fetchParentCategories = async (categoryId?: string) => {
-  const api = new FetchWrapperV2();
   const endpoint = categoryId
     ? `get-all-parent-categories/${categoryId}`
     : "get-all-parent-categories";
 
-  const result = await api.get<{
+  const result = await fetchWrapper.get<{
     data: Array<{ value: string; label: string }>;
   }>(`/admin/products/categories/${endpoint}`);
 
@@ -97,10 +97,7 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
     const { image, ...rest } = data;
 
     try {
-      const api = new FetchWrapperV2();
-
-      // Kategori oluştur
-      const categoryRes = await api.post<void>(
+      const categoryRes = await fetchWrapper.post<void>(
         "/admin/products/categories/create-or-update-category",
         {
           body: JSON.stringify(rest),
@@ -122,7 +119,7 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
         const formData = new FormData();
         formData.append("file", image);
 
-        const imageRes = await api.postFormData<void>(
+        const imageRes = await fetchWrapper.postFormData<void>(
           `/admin/products/categories/update-category-image/${data.uniqueId}`,
           formData
         );
@@ -218,8 +215,8 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
                 existingImage ? [{ type: "IMAGE", url: existingImage }] : []
               }
               existingImagesDelete={async (fileUrl) => {
-                const response = await fetch(
-                  `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/categories/delete-category-image/${encodeURIComponent(fileUrl)}`,
+                const response = await fetchWrapper.delete(
+                  `/admin/products/categories/delete-category-image/${encodeURIComponent(fileUrl)}`,
                   {
                     method: "DELETE",
                     credentials: "include",
@@ -227,19 +224,10 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
                   }
                 );
 
-                if (!response.ok) {
-                  let errorMessage = "Resim silinirken bir hata oluştu";
-
-                  try {
-                    const errorData = await response.json();
-                    errorMessage = errorData.message || errorMessage;
-                  } catch (err) {
-                    console.error("Error parsing JSON:", err);
-                  }
-
+                if (!response.success) {
                   notifications.show({
                     title: "Hata",
-                    message: errorMessage,
+                    message: "Resim silinirken bir hata oluştu",
                     autoClose: 3000,
                     color: "red",
                   });

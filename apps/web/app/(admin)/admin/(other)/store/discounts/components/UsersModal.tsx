@@ -1,6 +1,7 @@
 "use client";
 
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import fetchWrapper from "@lib/fetchWrapper";
 import { Checkbox, Modal, ScrollArea, Stack } from "@mantine/core";
 import { useQuery } from "@repo/shared";
 import { UserIdAndName } from "@repo/types";
@@ -21,13 +22,14 @@ const UsersModal = ({
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ["get-users-id-and-name"],
     queryFn: async () => {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/users/get-users-id-and-name`,
+      const response = await fetchWrapper.get<UserIdAndName[]>(
+        `/admin/users/get-users-id-and-name`,
         { method: "GET", credentials: "include" }
       );
-      if (!response.ok) throw new Error("Failed to fetch users");
-      const data = (await response.json()) as UserIdAndName[];
-      return data;
+
+      if (!response.success) throw new Error("Failed to fetch users");
+
+      return response.data;
     },
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,

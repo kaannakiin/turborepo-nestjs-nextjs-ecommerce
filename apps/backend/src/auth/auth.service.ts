@@ -57,13 +57,17 @@ export class AuthService {
     });
 
     if (isUserExists) {
-      throw new BadRequestException('Kullanıcı zaten mevcut');
+      return {
+        success: false,
+        message:
+          'Bu kullanıcı zaten mevcut. Lütfen giriş yaparak tekrar devem ediniz.',
+      };
     }
 
     try {
       const hashedPassword = await hash(data.password);
 
-      return await this.userService.createUser({
+      await this.userService.createUser({
         data: {
           name: this.capitalize(data.name.trim()),
           surname: this.capitalize(data.surname.trim()),
@@ -76,8 +80,15 @@ export class AuthService {
           role: 'USER',
         },
       });
+      return {
+        success: true,
+        message: 'Kullanıcı başarıyla oluşturuldu',
+      };
     } catch (error) {
-      throw new InternalServerErrorException('Kullanıcı oluşturulamadı');
+      return {
+        success: false,
+        message: ' Kullanıcı oluşturulamadı. Lütfen tekrar deneyin.',
+      };
     }
   }
 

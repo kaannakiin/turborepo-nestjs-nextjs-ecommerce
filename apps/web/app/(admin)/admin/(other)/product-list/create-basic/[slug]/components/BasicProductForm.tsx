@@ -39,6 +39,7 @@ import GlobalSeoCard from "../../../../../../../components/GlobalSeoCard";
 import ProductDetailCard from "../../../create-variant/components/ProductDetailCard";
 import ProductPriceNumberInput from "../../../create-variant/components/ProductPriceNumberInput";
 import GoogleTaxonomySelectV2 from "../../../create-variant/components/GoogleTaxonomySelectV2";
+import fetchWrapper from "@lib/fetchWrapper";
 
 const GlobalTextEditor = dynamic(
   () => import("../../../../../../../components/GlobalTextEditor"),
@@ -108,10 +109,9 @@ const BasicProductForm = ({
       const { images, ...productDataWithoutImages } = data;
 
       // 2. İlk olarak ürünü oluştur/güncelle (images olmadan)
-      const productResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/create-or-update-basic-product`,
+      const productResponse = await fetchWrapper.post(
+        `/admin/products/create-or-update-basic-product`,
         {
-          method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
@@ -121,9 +121,7 @@ const BasicProductForm = ({
         }
       );
 
-      if (!productResponse.ok) {
-        const errorText = await productResponse.text();
-        console.error("Ürün oluşturma/güncelleme hatası:", errorText);
+      if (!productResponse.success) {
         notifications.show({
           title: "Hata!",
           message: "Ürün işlemi sırasında bir hata oluştu.",
@@ -142,19 +140,12 @@ const BasicProductForm = ({
 
         formData.append("productId", data.uniqueId);
 
-        const imageUploadResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/upload-product-image`,
-          {
-            method: "POST",
-            credentials: "include",
-            cache: "no-store",
-            body: formData, // Content-Type header'ını manuel set etme, FormData kendi ayarlayacak
-          }
+        const imageUploadResponse = await fetchWrapper.postFormData(
+          `/admin/products/upload-product-image`,
+          formData
         );
 
-        if (!imageUploadResponse.ok) {
-          const errorText = await imageUploadResponse.text();
-          console.error("Resim yükleme hatası:", errorText);
+        if (!imageUploadResponse.success) {
           notifications.show({
             title: "Uyarı!",
             message:
@@ -483,10 +474,9 @@ const BasicProductForm = ({
               }}
               existingImages={existingImages}
               existingImagesDelete={async (imageUrl) => {
-                const deleteResponse = await fetch(
-                  `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/delete-product-image`,
+                const deleteResponse = await fetchWrapper.delete(
+                  `/admin/products/delete-product-image`,
                   {
-                    method: "DELETE",
                     body: JSON.stringify({ imageUrl }),
                     headers: {
                       "Content-Type": "application/json",
@@ -495,8 +485,7 @@ const BasicProductForm = ({
                     cache: "no-store",
                   }
                 );
-                if (!deleteResponse.ok) {
-                  console.error(await deleteResponse.text());
+                if (!deleteResponse.success) {
                   notifications.show({
                     title: "Silme Hatası!",
                     message: "Ürün görseli silinirken bir hata oluştu.",

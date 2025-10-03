@@ -1,5 +1,6 @@
 "use client";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import fetchWrapper from "@lib/fetchWrapper";
 import { useQuery } from "@repo/shared";
 import { GetUserCartInfoForCheckoutReturn, TokenPayload } from "@repo/types";
 import { CheckoutStep } from "../../page";
@@ -21,18 +22,17 @@ const AuthUserCheckoutPage = ({
   const { data, isLoading, isPending, isFetching } = useQuery({
     queryKey: ["auth-user-cartd", userInfo.id, cartId],
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart-v2/get-user-cart-info-for-checkout?cartId=${cartId}&userId=${userInfo.id}`,
+      const res = await fetchWrapper.get<GetUserCartInfoForCheckoutReturn>(
+        `/cart-v2/get-user-cart-info-for-checkout?cartId=${cartId}&userId=${userInfo.id}`,
         {
           method: "GET",
           credentials: "include",
         }
       );
-      if (!res.ok) {
+      if (!res.success) {
         return null;
       }
-      const data = (await res.json()) as GetUserCartInfoForCheckoutReturn;
-      return data;
+      return res.data;
     },
     enabled: !!cartId && !!userInfo.id,
   });

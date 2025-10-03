@@ -1,6 +1,6 @@
 "use client";
 
-import FetchWrapperV2 from "@lib/fetchWrapper-v2";
+import fetchWrapper from "@lib/fetchWrapper";
 import { Select, SelectProps } from "@mantine/core";
 import { useQuery } from "@repo/shared";
 
@@ -9,12 +9,11 @@ interface CustomBrandSelectProps extends SelectProps {
 }
 const CustomBrandSelect = ({ brandId, ...props }: CustomBrandSelectProps) => {
   const fetchParentBrands = async (brandId?: string) => {
-    const api = new FetchWrapperV2();
     const endpoint = brandId
       ? `get-all-parent-brands/${brandId}`
       : "get-all-parent-brands";
 
-    const result = await api.get<{
+    const result = await fetchWrapper.get<{
       success: boolean;
       data: { label: string; value: string }[];
     }>(`/admin/products/brands/${endpoint}`);

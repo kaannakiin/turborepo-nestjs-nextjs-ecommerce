@@ -5,7 +5,6 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { BreadcrumbList, Product, WithContext } from "schema-dts";
-import { fetchWrapper } from "../../../lib/fetchWrapper";
 import { Params, SearchParams } from "../../../types/GlobalTypes";
 import ProductsCarousels from "../components/ProductsCarousels";
 import ProductAssetViewer from "./components/ProductAssetViewer";
@@ -87,29 +86,28 @@ const dataQuery = cache(
     const data: ProductPageDataType = await queryClient.fetchQuery({
       queryKey: ["get-product", slug, Object.values(allPageSearchParams)],
       queryFn: async () => {
-        const productRes = await fetchWrapper.get<ProductPageDataType>(
-          `/users/products/get-product/${slug}?${new URLSearchParams(
+        const productRes = await fetch(
+          `${process.env.BACKEND_URL}/users/products/get-product/${slug}?${new URLSearchParams(
             allPageSearchParams as Record<string, string>
           ).toString()}`,
           {
+            method: "GET",
             credentials: "include",
             headers: {
               "Cache-Control": "max-age=300",
             },
           }
         );
+        if (!productRes.ok) {
+          return null;
+        }
+        const data = (await productRes.json()) as ProductPageDataType;
 
-        // FetchWrapper response kontrolü - success kontrolü yap
-        if (!productRes.success || productRes.error) {
+        if (!data) {
           return null;
         }
 
-        // Data yoksa hata fırlat
-        if (!productRes.data) {
-          return null;
-        }
-
-        return productRes.data;
+        return data;
       },
       staleTime: 5 * 60 * 1000,
       gcTime: 30 * 60 * 1000,
@@ -437,26 +435,28 @@ const UserProductPage = async ({
   const data: ProductPageDataType = await queryClient.fetchQuery({
     queryKey: ["get-product", slug, Object.values(allPageSearchParams)],
     queryFn: async () => {
-      const productRes = await fetchWrapper.get<ProductPageDataType>(
-        `/users/products/get-product/${slug}?${new URLSearchParams(
+      const productRes = await fetch(
+        `${process.env.BACKEND_URL}/users/products/get-product/${slug}?${new URLSearchParams(
           allPageSearchParams as Record<string, string>
         ).toString()}`,
         {
+          method: "GET",
           credentials: "include",
+          headers: {
+            "Cache-Control": "max-age=300",
+          },
         }
       );
+      if (!productRes.ok) {
+        return null;
+      }
+      const data = (await productRes.json()) as ProductPageDataType;
 
-      // FetchWrapper response kontrolü - success kontrolü yap
-      if (!productRes.success || productRes.error) {
+      if (!data) {
         return null;
       }
 
-      // Data yoksa hata fırlat
-      if (!productRes.data) {
-        return null;
-      }
-
-      return productRes.data;
+      return data;
     },
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,

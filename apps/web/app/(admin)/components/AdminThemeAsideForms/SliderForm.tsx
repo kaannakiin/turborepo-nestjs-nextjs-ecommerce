@@ -22,6 +22,7 @@ import {
 import { $Enums, SliderSchema, SliderType } from "@repo/types";
 import { IconX } from "@tabler/icons-react";
 import GlobalDropzone from "../../../components/GlobalDropzone";
+import fetchWrapper from "@lib/fetchWrapper";
 
 interface SliderFormProps {
   defaultValues?: SliderType;
@@ -85,15 +86,15 @@ const SliderForm = ({ defaultValues, onSubmit }: SliderFormProps) => {
   const existingMobile = watch("existingMobileAsset");
   const uniqueId = watch("uniqueId");
   const onRemove = async (uniqueId: string, type: "DESKTOP" | "MOBILE") => {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/theme/delete-slider/${uniqueId}?type=${type}`,
+    const res = await fetchWrapper.delete(
+      `/admin/theme/delete-slider/${uniqueId}?type=${type}`,
       {
         method: "DELETE",
         credentials: "include",
         cache: "no-store",
       }
     );
-    if (res.ok) {
+    if (res.success) {
       if (type === "DESKTOP") {
         setValue("existingDesktopAsset", null);
       } else {

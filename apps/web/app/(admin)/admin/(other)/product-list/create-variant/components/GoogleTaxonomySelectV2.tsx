@@ -1,4 +1,5 @@
 import GlobalLoader from "@/components/GlobalLoader";
+import fetchWrapper from "@lib/fetchWrapper";
 import {
   Accordion,
   Checkbox,
@@ -35,20 +36,19 @@ const GoogleTaxonomySelectV2 = ({
   const { data, isLoading, isPending } = useQuery({
     queryKey: ["googleTaxonomyCategoriesNoRoot"],
     queryFn: async (): Promise<TaxonomyCategoryWithChildren[]> => {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/google-categories/taxonomy`,
+      const response = await fetchWrapper.get<TaxonomyCategoryWithChildren[]>(
+        `/admin/products/google-categories/taxonomy`,
         {
-          method: "GET",
           headers: {
             "Content-Type": "application/json",
           },
           credentials: "include",
         }
       );
-      if (!response.ok) {
+      if (!response.success) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      return response.json();
+      return response.data;
     },
     gcTime: Infinity,
     staleTime: Infinity,

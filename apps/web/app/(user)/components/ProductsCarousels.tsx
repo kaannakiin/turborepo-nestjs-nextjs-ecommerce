@@ -5,9 +5,9 @@ import { Stack, Title } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { useQuery } from "@repo/shared";
 import { ProductPageDataType } from "@repo/types";
-import { fetchWrapper } from "../../../lib/fetchWrapper";
 import ProductCard from "./ProductCard";
 import styles from "./ProductCarousel.module.css";
+import fetchWrapper from "@lib/fetchWrapper";
 
 interface ProductsCarouselsProps {
   title: string;
@@ -24,17 +24,15 @@ const ProductsCarousels = ({
   const { data, isError } = useQuery({
     queryKey: ["products", "similar-products", productId],
     queryFn: async () => {
-      const res = await fetchWrapper.get(
-        "/users/products/similar-products/" + productId
-      );
-      if (res.error) {
-        return null;
-      }
-      const data = res.data;
-      return data as {
+      const res = await fetchWrapper.get<{
         totalCount: number;
         products: ProductPageDataType[];
-      };
+      }>("/users/products/similar-products/" + productId);
+      if (!res.success) {
+        return null;
+      }
+
+      return res.data;
     },
     refetchOnWindowFocus: false,
     gcTime: 5 * 60 * 1000, // 5 minutes

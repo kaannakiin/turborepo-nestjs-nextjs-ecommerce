@@ -1,5 +1,6 @@
 "use client";
 
+import fetchWrapper from "@lib/fetchWrapper";
 import {
   Button,
   Grid,
@@ -97,34 +98,32 @@ const VariantProductForm = ({
         })
       );
 
-      const mainDataResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/create-or-update-variant-product`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...productData,
-            combinatedVariants: cleanCombinatedVariants,
-            existingVariants: cleanExistingVariants,
-          }),
-          credentials: "include",
-        }
-      );
+      const mainDataResponse = await fetchWrapper.post<{
+        productId: string;
+        combinations: Array<{ id: string; sku: string }>;
+      }>(`/admin/products/create-or-update-variant-product`, {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...productData,
+          combinatedVariants: cleanCombinatedVariants,
+          existingVariants: cleanExistingVariants,
+        }),
+        credentials: "include",
+      });
 
-      if (!mainDataResponse.ok) {
+      if (!mainDataResponse.success) {
         // Ana veri kaydedilemezse bu kritik bir hatadır, kullanıcıya göster.
-        const error = await mainDataResponse.json();
         notifications.show({
           title: "Hata!",
-          message: error.message || "Ürün kaydedilirken bir hata oluştu.",
+          message:
+            " Ürün kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.",
           color: "red",
         });
         return;
       }
 
-      const responseData = await mainDataResponse.json();
       const { productId, combinations: updatedCombinations } =
-        responseData.data;
+        mainDataResponse.data;
 
       notifications.show({
         title: "Başarılı!",
@@ -164,19 +163,12 @@ const VariantProductForm = ({
 
         productImageFormData.append("productId", productId);
 
-        const productImageResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/upload-product-image`,
-          {
-            method: "POST",
-            body: productImageFormData,
-            credentials: "include",
-          }
+        const productImageResponse = await fetchWrapper.postFormData(
+          `/admin/products/upload-product-image`,
+          productImageFormData
         );
-        if (!productImageResponse.ok) {
-          console.warn(
-            "Ana ürün resimleri yüklenemedi:",
-            await productImageResponse.json()
-          );
+        if (!productImageResponse.success) {
+          console.warn("Ana ürün resimleri yüklenemedi:");
         }
       }
 
@@ -203,18 +195,13 @@ const VariantProductForm = ({
           // Controller'ınız body'de variantId bekliyor.
           variantImageFormData.append("variantId", combinationInfo.id);
 
-          const variantImageResponse = await fetch(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/upload-variant-image`,
-            {
-              method: "POST",
-              credentials: "include",
-              body: variantImageFormData,
-            }
+          const variantImageResponse = await fetchWrapper.postFormData(
+            `/admin/products/upload-variant-image`,
+            variantImageFormData
           );
-          if (!variantImageResponse.ok) {
+          if (!variantImageResponse.success) {
             console.warn(
-              `SKU'su ${variant.sku} olan varyantın resimleri yüklenemedi:`,
-              await variantImageResponse.json()
+              `SKU'su ${variant.sku} olan varyantın resimleri yüklenemedi:`
             );
           }
         }
@@ -224,13 +211,9 @@ const VariantProductForm = ({
           if (options.file) {
             const optionFormData = new FormData();
             optionFormData.append("file", options.file);
-            const fetchRes = await fetch(
-              `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/upload-option-asset/${options.uniqueId}`,
-              {
-                method: "POST",
-                credentials: "include",
-                body: optionFormData,
-              }
+            const fetchRes = await fetchWrapper.postFormData(
+              `/admin/products/upload-option-asset/${options.uniqueId}`,
+              optionFormData
             );
           }
         }
@@ -322,10 +305,9 @@ const VariantProductForm = ({
               }}
               existingImages={existingImages}
               existingImagesDelete={async (imageUrl) => {
-                const deleteResponse = await fetch(
-                  `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/delete-product-image`,
+                const deleteResponse = await fetchWrapper.delete(
+                  `/admin/products/delete-product-image`,
                   {
-                    method: "DELETE",
                     body: JSON.stringify({ imageUrl }),
                     headers: {
                       "Content-Type": "application/json",
@@ -334,8 +316,7 @@ const VariantProductForm = ({
                     cache: "no-store",
                   }
                 );
-                if (!deleteResponse.ok) {
-                  console.error(await deleteResponse.text());
+                if (!deleteResponse.success) {
                   notifications.show({
                     title: "Silme Hatası!",
                     message: "Ürün görseli silinirken bir hata oluştu.",

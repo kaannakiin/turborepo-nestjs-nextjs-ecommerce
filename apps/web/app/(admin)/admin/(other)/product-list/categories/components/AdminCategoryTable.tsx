@@ -23,6 +23,7 @@ import { useState } from "react";
 import CustomSearchInput from "@/components/CustomSearchInput";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import TableAsset from "@/(admin)/components/TableAsset";
+import fetchWrapper from "@lib/fetchWrapper";
 
 // Response type
 interface CategoriesResponse {
@@ -45,38 +46,36 @@ const fetchCategories = async (
   if (search) params.append("search", search);
   params.append("page", page.toString());
 
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/categories/get-all-categories?${params}`,
+  const response = await fetchWrapper.get<CategoriesResponse>(
+    `/admin/products/categories/get-all-categories?${params}`,
     {
       credentials: "include",
       cache: "no-cache",
     }
   );
 
-  if (!response.ok) {
+  if (!response.success) {
     throw new Error("Kategoriler yüklenirken bir hata oluştu");
   }
 
-  return response.json();
+  return response.data;
 };
 
 // Delete function
 const deleteCategory = async (id: string) => {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/categories/delete-category/${id}`,
+  const response = await fetchWrapper.delete(
+    `/admin/products/categories/delete-category/${id}`,
     {
-      method: "DELETE",
       credentials: "include",
       cache: "no-cache",
     }
   );
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || "Kategori silinirken bir hata oluştu");
+  if (!response.success) {
+    throw new Error("Kategori silinirken bir hata oluştu");
   }
 
-  return response.json();
+  return response.data;
 };
 
 const useCategories = (search: string, page: number) => {
@@ -115,7 +114,7 @@ const AdminCategoryTable = () => {
 
       notifications.show({
         title: "Başarılı",
-        message: result.message || "Kategori başarıyla silindi",
+        message: "Kategori başarıyla silindi",
         color: "green",
         autoClose: 3000,
       });

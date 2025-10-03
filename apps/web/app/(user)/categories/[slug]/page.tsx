@@ -3,10 +3,9 @@ import { QueryClient } from "@repo/shared";
 import { $Enums, GetCategoryPageReturnType } from "@repo/types";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { fetchWrapper } from "../../../../lib/fetchWrapper";
 import { Params, SearchParams } from "../../../../types/GlobalTypes";
-import CategoryPageContent from "./components/CategoryPageContent";
 import CategoryBreadCrumbsList from "./components/CategoryBreadCrumbsList";
+import CategoryPageContent from "./components/CategoryPageContent";
 const locale: $Enums.Locale = "TR";
 const queryClient = new QueryClient();
 const getCategoryData = async (
@@ -24,13 +23,14 @@ const getCategoryData = async (
           searchParams.append(key, value);
         }
       });
-      const res = await fetchWrapper.get(
-        `/users/categories/get-category-page/${slug}?${searchParams.toString()}`
+      const res = await fetch(
+        `${process.env.BACKEND_URL}/users/categories/get-category-page/${slug}?${searchParams.toString()}`
       );
-      if (res.error) {
+      if (!res.ok) {
         return null;
       }
-      return res.data as GetCategoryPageReturnType;
+      const resData = (await res.json()) as GetCategoryPageReturnType;
+      return resData;
     },
   });
   if (!category) {

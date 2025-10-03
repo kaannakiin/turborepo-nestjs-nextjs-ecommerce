@@ -14,6 +14,7 @@ import { useQuery } from "@repo/shared";
 import { BrandIdAndName } from "@repo/types";
 import { useEffect, useState } from "react";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import fetchWrapper from "@lib/fetchWrapper";
 
 interface BrandsModalProps {
   opened: boolean;
@@ -34,15 +35,14 @@ const BrandsModal = ({
   const { data, isLoading, isFetching, error } = useQuery({
     queryKey: ["get-brands-only-id-and-name"],
     queryFn: async () => {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/brands/get-all-brands-only-id-and-name`,
-        { method: "GET", credentials: "include" }
+      const response = await fetchWrapper.get<BrandIdAndName[]>(
+        `/admin/products/brands/get-all-brands-only-id-and-name`,
+        { credentials: "include" }
       );
-      if (!response.ok) {
+      if (!response.success) {
         throw new Error("Network response was not ok");
       }
-      const data = await response.json();
-      return data as BrandIdAndName[];
+      return response.data as BrandIdAndName[];
     },
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,

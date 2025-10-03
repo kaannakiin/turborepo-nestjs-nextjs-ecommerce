@@ -18,6 +18,7 @@ import logo from "../../public/logo.svg";
 import DesktopCategoryDrawer from "./DesktopCategoryDrawer";
 import GlobalLoadingOverlay from "./GlobalLoadingOverlay";
 import ShoppingBagDrawer from "./ShoppingBagDrawer";
+import fetchWrapper from "@lib/fetchWrapper";
 
 const UserAppShellLayout = ({
   children,
@@ -37,19 +38,19 @@ const UserAppShellLayout = ({
     queryFn: async (): Promise<{
       footer: MainPageComponentsType["footer"] | null;
     }> => {
-      const footerReq = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/theme/get-footer`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
-      if (!footerReq.ok) {
+      const footerReq = await fetchWrapper.get(`/admin/theme/get-footer`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!footerReq.success) {
         return { footer: null };
       }
-      const footerData = (await footerReq.json()) as {
+
+      const footerData = footerReq.data as {
         footer: MainPageComponentsType["footer"] | null;
       };
+
       return footerData;
     },
   });

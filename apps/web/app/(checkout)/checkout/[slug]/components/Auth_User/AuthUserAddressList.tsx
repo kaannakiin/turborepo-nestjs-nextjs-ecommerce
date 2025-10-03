@@ -18,6 +18,7 @@ import { IconCheck } from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import AuthUserAddressForm from "./AuthUserAddressForm";
+import fetchWrapper from "@lib/fetchWrapper";
 
 type ViewType = "list" | "add" | "edit";
 
@@ -33,18 +34,21 @@ const AuthUserAddressList = ({
   const { data, isLoading, isPending, refetch } = useQuery({
     queryKey: ["users-address", userInfo.id],
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/locations/get-user-addresses`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
-      if (!res?.ok) throw new Error("Failed to fetch user's addresses");
-      const data = (await res.json()) as Array<
-        UserDbAddressType & { isDefault: boolean }
-      >;
-      return data;
+      const res = await fetchWrapper.get<
+        Array<UserDbAddressType & { isDefault: boolean }>
+      >(`/locations/get-user-addresses`, {
+        credentials: "include",
+      });
+      if (!res.success) {
+        notifications.show({
+          title: "Adresler yüklenemedi",
+          message: "Lütfen sayfayı yenileyip tekrar deneyin.",
+          color: "red",
+        });
+        return [];
+      }
+
+      return res.data;
     },
     enabled: !!userInfo.id,
   });
@@ -225,10 +229,9 @@ const AuthUserAddressList = ({
                     : undefined
                 }
                 onSubmit={async (data) => {
-                  const res = await fetch(
-                    `${process.env.NEXT_PUBLIC_BACKEND_URL}/locations/add-user-address`,
+                  const res = await fetchWrapper.post(
+                    `/locations/add-user-address`,
                     {
-                      method: "POST",
                       credentials: "include",
                       body: JSON.stringify(data),
                       headers: {
@@ -236,7 +239,7 @@ const AuthUserAddressList = ({
                       },
                     }
                   );
-                  if (!res.ok) {
+                  if (!res.success) {
                     notifications.show({
                       title:
                         view === "edit"
@@ -282,25 +285,20 @@ const AuthUserAddressList = ({
 
               try {
                 setLoading(true);
-                const res = await fetch(
-                  `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart-v2/update-cart-address`,
+                const res = await fetchWrapper.post(
+                  `/cart-v2/update-cart-address`,
                   {
-                    method: "POST",
                     credentials: "include",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
                     body: JSON.stringify({
                       cartId,
                       addressId: selectedAddressId,
                     }),
                   }
                 );
-                if (!res.ok) {
-                  const errorData = await res.json();
+                if (!res.success) {
                   notifications.show({
                     title: "Adres seçilemedi",
-                    message: errorData?.message || "Lütfen tekrar deneyin.",
+                    message: "Lütfen tekrar deneyin.",
                     color: "red",
                   });
                   return;

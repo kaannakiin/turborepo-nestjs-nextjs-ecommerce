@@ -2,6 +2,7 @@
 
 import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import fetchWrapper from "@lib/fetchWrapper";
 import {
   Button,
   Divider,
@@ -11,6 +12,7 @@ import {
   Text,
   ThemeIcon,
 } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { useQuery } from "@repo/shared";
 import {
   GetUserCartInfoForCheckoutReturn,
@@ -20,7 +22,6 @@ import { IconCheck } from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import AddressCard from "../AddressCard";
-import { notifications } from "@mantine/notifications";
 
 interface AuthUserShippingListProps {
   cart: GetUserCartInfoForCheckoutReturn;
@@ -41,8 +42,8 @@ const AuthUserShippingList = ({ cart }: AuthUserShippingListProps) => {
   } = useQuery({
     queryKey: ["shipping-rules", cart.id],
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/shipping/get-available-shipping-methods/${cart.id}`,
+      const res = await fetchWrapper.get<ShippingMethodsResponse>(
+        `/shipping/get-available-shipping-methods/${cart.id}`,
         {
           method: "GET",
           headers: {
@@ -51,10 +52,8 @@ const AuthUserShippingList = ({ cart }: AuthUserShippingListProps) => {
           credentials: "include",
         }
       );
-      if (!res.ok) throw new Error("Failed to fetch shipping methods");
-      const data = (await res.json()) as ShippingMethodsResponse;
-      if (!data.success) throw new Error(data.message);
-      return data.shippingMethods;
+      if (!res.success) throw new Error("Failed to fetch shipping methods");
+      return res.data.shippingMethods;
     },
     enabled: !!cart.id,
   });
@@ -146,36 +145,31 @@ const AuthUserShippingList = ({ cart }: AuthUserShippingListProps) => {
             onClick={async () => {
               setLoading(true);
               if (!selectedCargoRuleId) return;
-              const res = await fetch(
-                `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart-v2/set-cart-cargo-rule`,
-                {
-                  method: "PUT",
-                  headers: { "Content-Type": "application/json" },
-                  credentials: "include",
-                  body: JSON.stringify({
-                    cartId: cart.id,
-                    cargoRuleId: selectedCargoRuleId,
-                  }),
-                }
-              );
-              if (!res.ok) {
-                const text = await res.text();
+              const res = await fetchWrapper.put<{
+                success: boolean;
+                message: string;
+              }>(`/cart-v2/set-cart-cargo-rule`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                  cartId: cart.id,
+                  cargoRuleId: selectedCargoRuleId,
+                }),
+              });
+              if (!res.success) {
                 notifications.show({
                   title: "Hata",
-                  message: text || "Kargo kuralı seçilirken bir hata oluştu",
+                  message: "Kargo kuralı seçilirken bir hata oluştu",
                   color: "red",
                 });
                 return;
               }
-              const data = (await res.json()) as {
-                success: boolean;
-                message: string;
-              };
-              if (!data.success) {
+
+              if (!res.success) {
                 notifications.show({
                   title: "Hata",
-                  message:
-                    data.message || "Kargo kuralı seçilirken bir hata oluştu",
+                  message: "Kargo kuralı seçilirken bir hata oluştu",
                   color: "red",
                 });
               } else {

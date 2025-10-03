@@ -17,6 +17,7 @@ import { VariantProductZodType } from "@repo/types";
 import GlobalDropzone from "@/components/GlobalDropzone";
 import GlobalSeoCard from "@/components/GlobalSeoCard";
 import ProductPriceNumberInput from "./ProductPriceNumberInput";
+import fetchWrapper from "@lib/fetchWrapper";
 
 interface CombinatedVariantsFormDrawerProps
   extends Pick<DrawerProps, "opened" | "onClose"> {
@@ -153,10 +154,9 @@ const CombinatedVariantsFormDrawer = ({
               }}
               existingImages={existingImages || []}
               existingImagesDelete={async (imageUrl) => {
-                const deleteResponse = await fetch(
-                  `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/delete-product-image`,
+                const deleteResponse = await fetchWrapper.delete(
+                  `/admin/products/delete-product-image`,
                   {
-                    method: "DELETE",
                     body: JSON.stringify({ imageUrl }),
                     headers: {
                       "Content-Type": "application/json",
@@ -165,8 +165,7 @@ const CombinatedVariantsFormDrawer = ({
                     cache: "no-store",
                   }
                 );
-                if (!deleteResponse.ok) {
-                  console.error(await deleteResponse.text());
+                if (!deleteResponse.success) {
                   notifications.show({
                     title: "Silme Hatası!",
                     message: "Ürün görseli silinirken bir hata oluştu.",

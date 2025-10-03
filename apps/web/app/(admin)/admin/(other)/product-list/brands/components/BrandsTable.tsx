@@ -27,7 +27,7 @@ import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import { useState } from "react";
 import { notifications } from "@mantine/notifications";
 import TableAsset from "@/(admin)/components/TableAsset";
-import FetchWrapperV2 from "@lib/fetchWrapper-v2";
+import fetchWrapper from "@lib/fetchWrapper";
 
 const BrandsTable = () => {
   const searchParams = useSearchParams();
@@ -46,14 +46,16 @@ const BrandsTable = () => {
     ],
     queryFn: async ({ queryKey }) => {
       const [, search, page] = queryKey;
-      const api = new FetchWrapperV2();
 
       const params = new URLSearchParams();
       if (search) params.set("search", search as string);
       params.set("page", page.toString());
 
-      const result = await api.get<BrandsResponse>(
-        `/admin/products/brands/get-all-brands?${params}`
+      const result = await fetchWrapper.get<BrandsResponse>(
+        `/admin/products/brands/get-all-brands?${params}`,
+        {
+          credentials: "include",
+        }
       );
 
       if (!result.success) {
@@ -70,10 +72,11 @@ const BrandsTable = () => {
   // Delete mutation
   const deleteBrandMutation = useMutation({
     mutationFn: async (brandId: string) => {
-      const api = new FetchWrapperV2();
-
-      const result = await api.delete<{ message: string }>(
-        `/admin/products/brands/delete-brand/${brandId}`
+      const result = await fetchWrapper.delete<{ message: string }>(
+        `/admin/products/brands/delete-brand/${brandId}`,
+        {
+          credentials: "include",
+        }
       );
 
       if (!result.success) {

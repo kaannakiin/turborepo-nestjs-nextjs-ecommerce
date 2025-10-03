@@ -25,7 +25,7 @@ import GlobalDropzone from "@/components/GlobalDropzone";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import GlobalSeoCard from "@/components/GlobalSeoCard";
 import CustomBrandSelect from "./CustomBrandSelect";
-import FetchWrapperV2 from "@lib/fetchWrapper-v2";
+import fetchWrapper from "@lib/fetchWrapper";
 
 interface BrandFormProps {
   defaultValues?: Brand;
@@ -62,10 +62,8 @@ const BrandForm = ({ defaultValues }: BrandFormProps) => {
     const { image, ...rest } = data;
 
     try {
-      const api = new FetchWrapperV2();
-
       // Brand oluştur
-      const brandRes = await api.post(
+      const brandRes = await fetchWrapper.post(
         "/admin/products/brands/create-or-update-brand",
         {
           body: JSON.stringify(rest),
@@ -86,7 +84,7 @@ const BrandForm = ({ defaultValues }: BrandFormProps) => {
         const formData = new FormData();
         formData.append("file", image);
 
-        const imageRes = await api.postFormData(
+        const imageRes = await fetchWrapper.postFormData(
           `/admin/products/brands/update-brand-image/${data.uniqueId}`,
           formData
         );
@@ -179,10 +177,11 @@ const BrandForm = ({ defaultValues }: BrandFormProps) => {
                 existingImage ? [{ type: "IMAGE", url: existingImage }] : []
               }
               existingImagesDelete={async (fileUrl) => {
-                const api = new FetchWrapperV2();
-
-                const result = await api.delete<void>(
-                  `/admin/products/brands/delete-brand-image/${encodeURIComponent(fileUrl)}`
+                const result = await fetchWrapper.delete<void>(
+                  `/admin/products/brands/delete-brand-image/${encodeURIComponent(fileUrl)}`,
+                  {
+                    credentials: "include",
+                  }
                 );
 
                 if (!result.success) {

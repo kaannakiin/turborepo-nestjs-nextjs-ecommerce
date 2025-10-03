@@ -1,27 +1,19 @@
 "use client";
 
 import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
+import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 import CustomImage from "@/components/CustomImage";
 import { Carousel } from "@mantine/carousel";
-import {
-  AspectRatio,
-  Badge,
-  Card,
-  Group,
-  Stack,
-  Text,
-  Title,
-} from "@mantine/core";
+import { AspectRatio, Card, Stack, Title } from "@mantine/core";
 import { useQuery } from "@repo/shared";
 import {
   ModalProductCardForAdmin,
   ProductListComponentType,
 } from "@repo/types";
-import styles from "./styles/ProductListCarousel.module.css";
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
-import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 import { useRouter } from "next/navigation";
-import FetchWrapperV2 from "@lib/fetchWrapper-v2";
+import styles from "./styles/ProductListCarousel.module.css";
+import fetchWrapper from "@lib/fetchWrapper";
 
 interface MainPageProductListProps {
   data: ProductListComponentType;
@@ -38,8 +30,7 @@ const MainPageProductList = ({ data }: MainPageProductListProps) => {
     enabled: data.items.length > 0,
     refetchOnWindowFocus: false,
     queryFn: async () => {
-      const api = new FetchWrapperV2();
-      const apiRes = await api.post<ModalProductCardForAdmin[]>(
+      const apiRes = await fetchWrapper.post<ModalProductCardForAdmin[]>(
         `/users/products/get-products-by-ids-for-product-list-carousel`,
         {
           body: JSON.stringify({ items: data.items }),

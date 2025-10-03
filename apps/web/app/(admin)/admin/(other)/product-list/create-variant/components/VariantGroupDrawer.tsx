@@ -58,6 +58,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import CreatableSelect from "./CreatableSelect";
+import fetchWrapper from "@lib/fetchWrapper";
 
 interface VariantGroupDrawerProps
   extends Pick<DrawerProps, "opened" | "onClose"> {
@@ -743,11 +744,11 @@ const VariantGroupDrawer = ({
                         : []
                     }
                     existingImagesDelete={async (imageUrl) => {
-                      const fetchRes = await fetch(
-                        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/products/delete-option-asset/${encodeURIComponent(imageUrl)}`,
-                        { method: "DELETE", credentials: "include" }
+                      const fetchRes = await fetchWrapper.delete(
+                        `/admin/products/delete-option-asset/${encodeURIComponent(imageUrl)}`,
+                        { credentials: "include" }
                       );
-                      if (!fetchRes.ok) {
+                      if (!fetchRes.success) {
                         console.warn("Görsel silinirken bir hata oluştu.");
                       } else {
                         const currentOptions = watch("options");
