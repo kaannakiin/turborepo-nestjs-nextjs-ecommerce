@@ -103,12 +103,12 @@ export class AuthController {
   me(@CurrentUser() user: User & { jti: string }) {
     return {
       id: user.id,
-      name: `${user.name} ${user.surname}`,
+      name: `${user.name || ''} ${user.surname || ''}`.trim() || 'Unknown',
       role: user.role,
+      jti: user.jti,
       ...(user.email && { email: user.email }),
       ...(user.phone && { phone: user.phone }),
-      jti: user.jti,
-      ...(user.imageUrl && { imageUrl: user.imageUrl }),
+      ...(user.imageUrl && { image: user.imageUrl }), // imageUrl -> image
     } as TokenPayload;
   }
 

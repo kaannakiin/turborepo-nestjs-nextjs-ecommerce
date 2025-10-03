@@ -74,7 +74,6 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
     items: CartContextCartType["items"],
     taxTotal: number = 0
   ) => {
-    const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
     const subTotalPrice = items.reduce(
       (sum, i) => sum + (i.discountedPrice || i.price) * i.quantity,
       0
@@ -85,26 +84,30 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
     );
     const totalPrice = subTotalPrice + taxTotal;
 
-    return { totalItems, subTotalPrice, totalDiscount, totalPrice };
+    return {
+      totalItems: items.length,
+      subTotalPrice,
+      totalDiscount,
+      totalPrice,
+    };
   };
 
-  // ✅ ADD ITEM - FetchWrapper ile
   const addItemToCart = async (
     params: AddItemToCartV2
   ): Promise<CartActionResponse> => {
-    queryClient.setQueryData(
-      ["get-cart-v2", cartKey],
-      (oldCart: CartContextCartType | null): CartContextCartType | null => {
-        if (!oldCart) return oldCart;
+    const existingItem = cart?.items.find(
+      (i) =>
+        i.productId === params.productId && i.variantId === params.variantId
+    );
 
-        const existingItemIndex = oldCart.items.findIndex(
-          (i) =>
-            i.productId === params.productId && i.variantId === params.variantId
-        );
+    if (existingItem) {
+      queryClient.setQueryData(
+        ["get-cart-v2", cartKey],
+        (oldCart: CartContextCartType | null): CartContextCartType | null => {
+          if (!oldCart) return oldCart;
 
-        if (existingItemIndex !== -1) {
-          const updatedItems = oldCart.items.map((i, idx) =>
-            idx === existingItemIndex
+          const updatedItems = oldCart.items.map((i) =>
+            i.itemId === existingItem.itemId
               ? { ...i, quantity: i.quantity + params.quantity }
               : i
           );
@@ -118,10 +121,8 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
             lastActivityAt: new Date(),
           };
         }
-
-        return oldCart;
-      }
-    );
+      );
+    }
 
     try {
       const response = await fetchWrapper.post<CartActionResponse>(
@@ -158,6 +159,7 @@ export const CartProviderV2 = ({ children }: { children: ReactNode }) => {
           setPopoverOpened(true);
         }
 
+        // Gerçek data'yı set et
         queryClient.setQueryData(
           ["get-cart-v2", newCartId],
           addItemData.newCart

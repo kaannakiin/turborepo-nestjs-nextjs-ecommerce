@@ -14,6 +14,8 @@ import {
   type AddItemToCartV2,
   AddItemToCartV2Schema,
   ItemIdOnlySchema,
+  NonAuthUserAddressSchema,
+  type NonAuthUserAddressZodType,
 } from '@repo/types';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
@@ -122,13 +124,16 @@ export class CartV2Controller {
     return this.cartV2Service.updateCartAddress(body.cartId, body.addressId);
   }
 
-  @Get('get-user-cart-info-for-checkout')
-  @UseGuards(JwtAuthGuard)
+  @Get('get-user-cart-info-for-checkout/:cartId')
+  @UseGuards(OptionalJwtAuthGuard)
   async getUserCartInfoForCheckout(
-    @Query('cartId') cartId: string,
-    @Query('userId') userId: string,
+    @Param('cartId') cartId: string,
+    @CurrentUser() user: User | null,
   ) {
-    return this.cartV2Service.getUserCartInfoForCheckout(cartId, userId);
+    return this.cartV2Service.getUserCartInfoForCheckout(
+      cartId,
+      user ? user.id : null,
+    );
   }
 
   @Put('set-cart-cargo-rule')
@@ -136,5 +141,14 @@ export class CartV2Controller {
     @Body() body: { cartId: string; cargoRuleId: string },
   ) {
     return this.cartV2Service.setCartCargoRule(body.cartId, body.cargoRuleId);
+  }
+
+  @Post('set-non-auth-user-address-to-cart/:cartId')
+  async setNonAuthUserAddressToCart(
+    @Param('cartId') cartId: string,
+    @Body(new ZodValidationPipe(NonAuthUserAddressSchema))
+    body: NonAuthUserAddressZodType,
+  ) {
+    return this.cartV2Service.setNonAuthUserAddressToCart(cartId, body);
   }
 }

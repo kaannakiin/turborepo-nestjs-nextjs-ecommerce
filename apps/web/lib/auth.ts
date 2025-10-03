@@ -1,26 +1,25 @@
-"use server";
-
+// lib/auth.ts
 import { TokenPayload } from "@repo/types";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
-export async function getSession(): Promise<TokenPayload | null> {
+export const getSession = cache(async (): Promise<TokenPayload | null> => {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
+
+    if (!token) return null;
+
     const payloadFetch = await fetch(`${process.env.BACKEND_URL}/auth/me`, {
       method: "GET",
-      cache: "default",
-      headers: {
-        Cookie: `token=${token}`,
-      },
+      headers: { Cookie: `token=${token}` },
       credentials: "include",
+      next: { revalidate: 60 }, // 60 saniye cache
     });
-    if (!payloadFetch.ok) {
-      return null;
-    }
-    const data = (await payloadFetch.json()) as TokenPayload;
-    return data;
+
+    if (!payloadFetch.ok) return null;
+    return await payloadFetch.json();
   } catch {
     return null;
   }
-}
+});

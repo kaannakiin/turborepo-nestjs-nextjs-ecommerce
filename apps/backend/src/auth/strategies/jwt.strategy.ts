@@ -32,8 +32,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new NotFoundException();
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password: dbPass, ...result } = user;
-    return { result, jti: payload.jti };
+    const { password, ...userWithoutPassword } = user;
+
+    // jti'yi user objesine ekle ve direkt return et
+    return {
+      ...userWithoutPassword,
+      jti: payload.jti,
+    };
   }
 }

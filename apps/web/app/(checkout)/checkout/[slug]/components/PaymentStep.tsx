@@ -1,8 +1,12 @@
 "use client";
 
 import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
+import GlobalLoader from "@/components/GlobalLoader";
+import { TURKEY_DB_ID } from "@lib/constants";
 import {
+  Button,
   Card,
+  Checkbox,
   Divider,
   Group,
   InputBase,
@@ -13,20 +17,36 @@ import {
   TextInput,
   ThemeIcon,
 } from "@mantine/core";
-import { Controller, useForm, zodResolver } from "@repo/shared";
+import {
+  Controller,
+  createId,
+  SubmitHandler,
+  useForm,
+  zodResolver,
+} from "@repo/shared";
 import {
   GetUserCartInfoForCheckoutReturn,
   PaymentSchema,
   PaymentType,
+  TokenPayload,
 } from "@repo/types";
 import { IconCheck } from "@tabler/icons-react";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { IMaskInput } from "react-imask";
 import AddressCard from "./AddressCard";
 import ShippingCard from "./ShippingCard";
 
+const BillingAddressForm = dynamic(() => import("./BillingAddressForm"), {
+  ssr: false,
+  loading: () => <GlobalLoader />,
+});
+
 interface PaymentStepProps {
-  cart: GetUserCartInfoForCheckoutReturn;
+  cart: Pick<
+    GetUserCartInfoForCheckoutReturn,
+    "id" | "currency" | "billingAddress" | "shippingAddress" | "cargoRule"
+  >;
 }
 const PaymentStep = ({ cart }: PaymentStepProps) => {
   const { replace } = useRouter();
@@ -37,8 +57,8 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
     control,
     handleSubmit,
     formState: { errors, isSubmitting },
-    clearErrors,
-    setError,
+    watch,
+    setValue,
   } = useForm<PaymentType>({
     resolver: zodResolver(PaymentSchema),
     defaultValues: {
@@ -47,8 +67,50 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
       cvv: "",
       expiryDate: "",
       checkAggrements: true,
+      isBillingAddressSame: true,
+      billingAddress: cart.billingAddress
+        ? {
+            addressLine1: cart.billingAddress.addressLine1,
+            addressLine2: cart.billingAddress.addressLine2 || null,
+            cityId: cart.billingAddress.cityId || null,
+            countryId: cart.billingAddress.countryId || TURKEY_DB_ID,
+            name: cart.billingAddress.name || "",
+            surname: cart.billingAddress.surname || "",
+            phone: cart.billingAddress.phone || "",
+            postalCode: null,
+            stateId: cart.billingAddress.stateId || null,
+            addressType: cart.billingAddress.addressLocationType || "CITY",
+            id: cart.billingAddress.id || createId(),
+            isCorporateInvoice: cart.billingAddress.isCorporateInvoice || false,
+            taxNumber: cart.billingAddress.taxNumber || null,
+            companyName: cart.billingAddress.companyName || null,
+            companyRegistrationAddress:
+              cart.billingAddress.companyRegistrationAddress || null,
+          }
+        : cart.shippingAddress
+          ? {
+              addressLine1: cart.shippingAddress.addressLine1,
+              addressLine2: cart.shippingAddress.addressLine2 || null,
+              cityId: cart.shippingAddress.cityId || null,
+              countryId: cart.shippingAddress.countryId || TURKEY_DB_ID,
+              name: cart.shippingAddress.name || "",
+              surname: cart.shippingAddress.surname || "",
+              phone: cart.shippingAddress.phone || "",
+              postalCode: null,
+              stateId: cart.shippingAddress.stateId || null,
+              addressType: cart.shippingAddress.addressLocationType || "CITY",
+              id: cart.shippingAddress.id || createId(),
+              isCorporateInvoice: false,
+              taxNumber: null,
+              companyName: null,
+              companyRegistrationAddress: null,
+            }
+          : null,
     },
   });
+  const isBillingAddressSame = watch("isBillingAddressSame");
+
+  const onSubmit: SubmitHandler<PaymentType> = async (data: PaymentType) => {};
 
   return (
     <Stack gap={"lg"}>
@@ -96,7 +158,7 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
             className="border-gray-900 border-2 gap-3"
             p={"lg"}
           >
-            <Group gap={"xs"}>
+            <Group gap={"xs"} align="center">
               <RadioIndicator
                 checked
                 icon={IconCheck}
@@ -106,6 +168,9 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
                 }}
                 size="md"
               />
+              <Text fz="md" fw={500}>
+                Kredi Kartı
+              </Text>
             </Group>
             <Controller
               control={control}
@@ -215,6 +280,66 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
               />
             </SimpleGrid>
           </Card>
+          <Controller
+            control={control}
+            name="checkAggrements"
+            render={({ field: { value, ...field }, fieldState }) => (
+              <Checkbox
+                {...field}
+                checked={value}
+                color="black"
+                error={fieldState.error?.message}
+                label={
+                  <Text className="text-xs">
+                    <span className="font-semibold text-sm">
+                      Gizlilik politikasını ve Hizmet Şartlarını{" "}
+                    </span>
+                    ve{" "}
+                    <span className="font-semibold text-sm">
+                      Mesafeli Satış Sözleşmesini
+                    </span>{" "}
+                    okudum, onaylıyorum
+                  </Text>
+                }
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name="isBillingAddressSame"
+            render={({ field: { value, ...field }, fieldState }) => (
+              <Checkbox
+                checked={value}
+                {...field}
+                color="black"
+                error={fieldState.error?.message}
+                label={
+                  <Text className="text-xs">
+                    Fatura adresim, teslimat adresim ile aynı olsun. (Kurumsal
+                    Fatura seçeneği için, check işaretini kaldırarak adresinizi
+                    düzenleyiniz.)
+                  </Text>
+                }
+              />
+            )}
+          />
+          {!isBillingAddressSame && (
+            <BillingAddressForm
+              control={control}
+              setValue={setValue}
+              watch={watch}
+            />
+          )}
+          <Button
+            fullWidth
+            size="lg"
+            radius={"md"}
+            variant="filled"
+            color="black"
+            onClick={handleSubmit(onSubmit)}
+          >
+            Siparişi Tamamla
+          </Button>
         </Stack>
       </Stack>
     </Stack>

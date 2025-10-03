@@ -1,7 +1,6 @@
 "use client";
 
 import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper from "@lib/fetchWrapper";
 import {
   Button,
@@ -18,18 +17,17 @@ import {
   GetUserCartInfoForCheckoutReturn,
   ShippingMethodsResponse,
 } from "@repo/types";
-import { IconCheck } from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import AddressCard from "../AddressCard";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import { IconCheck } from "@tabler/icons-react";
 
-interface AuthUserShippingListProps {
-  cart: Pick<
-    GetUserCartInfoForCheckoutReturn,
-    "id" | "cargoRuleId" | "shippingAddress"
-  >;
+interface NonAuthUserShippingListProps {
+  cart: GetUserCartInfoForCheckoutReturn;
 }
-const AuthUserShippingList = ({ cart }: AuthUserShippingListProps) => {
+
+const NonAuthUserShippingList = ({ cart }: NonAuthUserShippingListProps) => {
   const { media } = useTheme();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
@@ -60,6 +58,7 @@ const AuthUserShippingList = ({ cart }: AuthUserShippingListProps) => {
     },
     enabled: !!cart.id,
   });
+
   useEffect(() => {
     if (
       shippingRules &&
@@ -204,4 +203,4 @@ const AuthUserShippingList = ({ cart }: AuthUserShippingListProps) => {
   );
 };
 
-export default AuthUserShippingList;
+export default NonAuthUserShippingList;
