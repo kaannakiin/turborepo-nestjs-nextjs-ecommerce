@@ -1,5 +1,9 @@
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import Redis from 'ioredis';
 import { NestMinioModule } from 'nestjs-minio';
 import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
@@ -12,10 +16,6 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { UserPageModule } from './user-page/user-page.module';
 import { UserModule } from './user/user.module';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
-import Redis from 'ioredis';
-import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -86,7 +86,7 @@ import { APP_GUARD } from '@nestjs/core';
             {
               name: 'auth-strict',
               ttl: 300000, // 5 dakika
-              limit: 3, // sadece 3 istek
+              limit: 5, // sadece 5 istek
             },
             {
               name: 'refresh',
@@ -94,6 +94,8 @@ import { APP_GUARD } from '@nestjs/core';
               limit: 10, // 10 istek
             },
           ],
+          errorMessage:
+            'Çok fazla istek yapıldı. Lütfen bir süre sonra tekrar deneyin.',
           storage: new ThrottlerStorageRedisService(redisClient),
         };
       },
