@@ -14,7 +14,9 @@ import {
   CartContextCartType,
   GetCartByIdReturn,
   GetUserCartInfoForCheckoutReturn,
+  NonAuthUserAddressZodType,
 } from '@repo/types';
+import { th } from 'date-fns/locale';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ShippingService } from 'src/shipping/shipping.service';
 
@@ -1359,7 +1361,6 @@ export class CartV2Service {
     if (!address) {
       throw new NotFoundException('Adres bulunamadı');
     }
-
     if (cart.userId !== address.userId || !cart.userId) {
       throw new BadRequestException(
         'Bilinmeyen bir hata oluştu. Lütfen tekrar deneyiniz.',
@@ -1403,6 +1404,18 @@ export class CartV2Service {
     if (!cart) {
       throw new NotFoundException('Sepet bulunamadı');
     }
+    if (!userId) {
+      if (!cart) {
+        throw new NotFoundException('Sepet bulunamadı');
+      }
+
+      const items = await this.convertCartToContextType(cart, 'TRY', 'TR');
+
+      return {
+        ...cart,
+        items: items.filter((i) => i !== null) as CartContextCartType['items'],
+      };
+    }
 
     if (!cart.userId || cart.userId !== userId) {
       throw new BadRequestException('Sepet bir kullanıcıya ait değil');
@@ -1443,5 +1456,68 @@ export class CartV2Service {
       success: true,
       message: 'Kargo kuralı başarıyla güncellendi',
     };
+  }
+
+  async setNonAuthUserAddressToCart(
+    cartId: string,
+    data: NonAuthUserAddressZodType,
+  ) {
+    const cart = await this.prisma.cart.findUnique({
+      where: { id: cartId, status: 'ACTIVE' },
+    });
+
+    if (!cart) {
+      throw new NotFoundException('Sepet bulunamadı');
+    }
+
+    if (cart.shippingAddressId) {
+      await this.prisma.addressSchema.update({
+        where: { id: cart.shippingAddressId },
+        data: {
+          ...(data.addressType === 'CITY'
+            ? { cityId: data.cityId, stateId: null }
+            : data.addressType === 'STATE'
+              ? { stateId: data.stateId, cityId: null }
+              : { cityId: null, stateId: null }),
+          addressLine1: data.addressLine1,
+          addressLine2: data.addressLine2,
+          countryId: data.countryId,
+          addressLocationType: data.addressType,
+          email: data.email,
+          name: data.name,
+          phone: data.phone,
+          surname: data.surname,
+          zipCode: data.postalCode,
+        },
+      });
+    } else {
+      const newAddress = await this.prisma.addressSchema.create({
+        data: {
+          ...(data.addressType === 'CITY'
+            ? { cityId: data.cityId }
+            : data.addressType === 'STATE'
+              ? { stateId: data.stateId }
+              : {}),
+          addressLine1: data.addressLine1,
+          addressLine2: data.addressLine2,
+          countryId: data.countryId,
+          addressLocationType: data.addressType,
+          email: data.email,
+          name: data.name,
+          phone: data.phone,
+          surname: data.surname,
+          zipCode: data.postalCode,
+        },
+      });
+
+      await this.prisma.cart.update({
+        where: { id: cartId },
+        data: {
+          shippingAddressId: newAddress.id,
+        },
+      });
+    }
+
+    return { success: true, message: 'Adres başarıyla kaydedildi' };
   }
 }

@@ -168,39 +168,6 @@ export const BillingAddressSchema = BaseAddressSchema.safeExtend({
     .max(256, "Vergi dairesi en fazla 256 karakter olabilir")
     .optional()
     .nullable(),
-}).check(({ value, issues }) => {
-  // ✅ Sadece kurumsal fatura seçiliyse validasyon yap
-  if (value.isCorporateInvoice) {
-    if (!value.companyName || value.companyName.trim().length === 0) {
-      issues.push({
-        code: "custom",
-        message: "Firma Adı gereklidir",
-        path: ["companyName"],
-        input: ["companyName"],
-      });
-    }
-
-    if (!value.taxNumber || value.taxNumber.trim().length === 0) {
-      issues.push({
-        code: "custom",
-        message: "Vergi Numarası gereklidir",
-        path: ["taxNumber"],
-        input: ["taxNumber"],
-      });
-    }
-
-    if (
-      !value.companyRegistrationAddress ||
-      value.companyRegistrationAddress.trim().length === 0
-    ) {
-      issues.push({
-        code: "custom",
-        message: "Vergi dairesi gereklidir",
-        path: ["companyRegistrationAddress"],
-        input: ["companyRegistrationAddress"],
-      });
-    }
-  }
 });
 
 export type BillingAddressZodType = z.infer<typeof BillingAddressSchema>;

@@ -35,11 +35,13 @@ import { IconCheck } from "@tabler/icons-react";
 interface AuthUserAddressFormProps {
   defaultValues?: AuthUserAddressZodType;
   onSubmit: SubmitHandler<AuthUserAddressZodType>;
+  title?: string;
 }
 
 const AuthUserAddressForm = ({
   onSubmit,
   defaultValues,
+  title,
 }: AuthUserAddressFormProps) => {
   const {
     control,
@@ -157,7 +159,9 @@ const AuthUserAddressForm = ({
               <IconCheck />
             </ThemeIcon>
             <Text fz={"md"} fw={500}>
-              {defaultValues ? defaultValues.addressTitle : "Yeni Adres"}
+              {defaultValues
+                ? defaultValues.addressTitle
+                : title || "Yeni Adres"}
             </Text>
           </Group>
           <Controller

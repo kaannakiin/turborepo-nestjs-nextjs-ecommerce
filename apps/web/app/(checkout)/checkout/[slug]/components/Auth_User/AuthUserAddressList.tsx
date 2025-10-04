@@ -17,9 +17,13 @@ import { TokenPayload, UserDbAddressType } from "@repo/types";
 import { IconCheck } from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import AuthUserAddressForm from "./AuthUserAddressForm";
 import fetchWrapper from "@lib/fetchWrapper";
-
+import dynamic from "next/dynamic";
+import GlobalLoader from "@/components/GlobalLoader";
+const AuthUserAddressForm = dynamic(() => import("./AuthUserAddressForm"), {
+  ssr: false,
+  loading: () => <GlobalLoader />,
+});
 type ViewType = "list" | "add" | "edit";
 
 interface AuthUserAddressListProps {
@@ -145,6 +149,10 @@ const AuthUserAddressList = ({
                           </Text>
                         </Group>
                         <Text
+                          fw={600}
+                          c={
+                            selectedAddressId === addres.id ? "black" : "dimmed"
+                          }
                           className="hover:underline hover:underline-offset-4 cursor-pointer"
                           onClick={(e) => {
                             e.preventDefault();
@@ -157,11 +165,24 @@ const AuthUserAddressList = ({
                           Düzenle
                         </Text>
                       </Group>
-                      <Stack pl={"xl"} gap={"xs"}>
-                        <Text fz={"sm"} c={"dimmed"} fw={700} tt={"capitalize"}>
+                      <Stack pl={"xl"} gap={"1px"}>
+                        <Text
+                          fz={"sm"}
+                          c={
+                            selectedAddressId === addres.id ? "black" : "dimmed"
+                          }
+                          fw={700}
+                          tt={"capitalize"}
+                        >
                           {addres.name} {addres.surname}
                         </Text>
-                        <Text fz={"sm"} c={"dimmed"}>
+                        <Text
+                          fz={"sm"}
+                          fw={600}
+                          c={
+                            selectedAddressId === addres.id ? "black" : "dimmed"
+                          }
+                        >
                           {addres.addressLine1}
                           {addres.addressLine2 && ` ${addres.addressLine2}`}
                           {addres.addressLocationType === "CITY" &&
