@@ -17,6 +17,7 @@ import { RegisterSchema, RegisterSchemaType } from "@repo/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import CustomPhoneInput from "../../(user)/components/CustomPhoneInput";
 import GlobalLoadingOverlay from "../../components/GlobalLoadingOverlay";
+import { LOCALE_CART_COOKIE } from "@lib/constants";
 
 const RegisterForm = () => {
   const { mergeCarts } = useCartV2();
@@ -84,15 +85,18 @@ const RegisterForm = () => {
         });
         return;
       }
+      localStorage.removeItem(LOCALE_CART_COOKIE);
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const mergeResult = await mergeCarts();
+      //TODO MERGE CARTS
 
-      if (mergeResult.success) {
-        console.log("✅ Sepet birleştirildi:", mergeResult.newCart?.cartId);
-      } else {
-        console.warn("⚠️ Sepet birleştirme başarısız:", mergeResult.message);
-      }
+      // const mergeResult = await mergeCarts();
+
+      // if (mergeResult.success) {
+      //   console.log("✅ Sepet birleştirildi:", mergeResult.newCart?.cartId);
+      // } else {
+      //   console.warn("⚠️ Sepet birleştirme başarısız:", mergeResult.message);
+      // }
 
       // ✅ Küçük bir delay - localStorage'ın kesin yazılmasını garanti et
       await new Promise((resolve) => setTimeout(resolve, 150));

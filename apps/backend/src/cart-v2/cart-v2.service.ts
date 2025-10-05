@@ -104,143 +104,19 @@ export class CartV2Service {
     whereClause: Omit<Prisma.CartWhereUniqueInput, 'id'> = {},
   ): Promise<GetCartByIdReturn | null> {
     if (!cartId) return null;
-    let cart: GetCartByIdReturn | null = null;
-    if (!cartId && whereClause.userId) {
-      cart = await this.prisma.cart.findFirst({
-        where: { ...whereClause },
-        include: {
-          billingAddress: {
-            include: {
-              city: { select: { id: true, name: true } },
-              country: {
-                select: {
-                  id: true,
-                  name: true,
-                  emoji: true,
-                  translations: true,
-                },
-              },
-              state: {
-                select: { id: true, name: true },
-              },
-            },
-          },
-          shippingAddress: {
-            include: {
-              city: { select: { id: true, name: true } },
-              country: {
-                select: {
-                  id: true,
-                  name: true,
-                  emoji: true,
-                  translations: true,
-                },
-              },
-              state: {
-                select: { id: true, name: true },
-              },
-            },
-          },
-          items: {
-            orderBy: {
-              createdAt: 'desc',
-            },
-            include: {
-              product: {
-                include: {
-                  assets: {
-                    take: 1,
-                    select: {
-                      asset: {
-                        select: {
-                          url: true,
-                          type: true,
-                        },
-                      },
-                    },
-                  },
-                  translations: true,
-                  brand: {
-                    select: {
-                      id: true,
-                      translations: true,
-                    },
-                  },
-                  categories: {
-                    select: {
-                      category: {
-                        select: {
-                          id: true,
-                          translations: true,
-                        },
-                      },
-                    },
-                  },
-                  prices: true,
-                },
-              },
-              variant: {
-                include: {
-                  assets: {
-                    take: 1,
-                    select: {
-                      asset: {
-                        select: {
-                          url: true,
-                          type: true,
-                        },
-                      },
-                    },
-                  },
-                  prices: true,
-                  translations: true,
-                  options: {
-                    orderBy: {
-                      productVariantOption: {
-                        productVariantGroup: {
-                          order: 'asc',
-                        },
-                      },
-                    },
-                    select: {
-                      productVariantOption: {
-                        select: {
-                          variantOption: {
-                            select: {
-                              id: true,
-                              translations: true,
-                              hexValue: true,
-                              asset: { select: { url: true, type: true } },
-                              variantGroup: {
-                                select: {
-                                  translations: true,
-                                  type: true,
-                                  id: true,
-                                },
-                              },
-                            },
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          user: true,
-          cargoRule: true,
-        },
-      });
-    }
-    cart = await this.prisma.cart.findUnique({
-      where: { id: cartId, ...whereClause },
+    const cart = await this.prisma.cart.findUnique({
+      where: { ...whereClause, id: cartId },
       include: {
         billingAddress: {
           include: {
             city: { select: { id: true, name: true } },
             country: {
-              select: { id: true, name: true, emoji: true, translations: true },
+              select: {
+                id: true,
+                name: true,
+                emoji: true,
+                translations: true,
+              },
             },
             state: {
               select: { id: true, name: true },
@@ -251,7 +127,12 @@ export class CartV2Service {
           include: {
             city: { select: { id: true, name: true } },
             country: {
-              select: { id: true, name: true, emoji: true, translations: true },
+              select: {
+                id: true,
+                name: true,
+                emoji: true,
+                translations: true,
+              },
             },
             state: {
               select: { id: true, name: true },
@@ -1400,7 +1281,10 @@ export class CartV2Service {
     cartId: string,
     userId: string,
   ): Promise<GetUserCartInfoForCheckoutReturn> {
-    const cart = await this.getCart(cartId, { status: 'ACTIVE', userId });
+    const cart = await this.getCart(cartId, {
+      status: 'ACTIVE',
+      ...(userId ? { userId } : {}),
+    });
     if (!cart) {
       throw new NotFoundException('Sepet bulunamadı');
     }

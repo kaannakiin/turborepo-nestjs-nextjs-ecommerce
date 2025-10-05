@@ -1,6 +1,7 @@
 "use client";
 
 import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper from "@lib/fetchWrapper";
 import {
   Button,
@@ -17,11 +18,11 @@ import {
   GetUserCartInfoForCheckoutReturn,
   ShippingMethodsResponse,
 } from "@repo/types";
+import { IconCheck } from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import AddressCard from "../AddressCard";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import { IconCheck } from "@tabler/icons-react";
+import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 
 interface NonAuthUserShippingListProps {
   cart: GetUserCartInfoForCheckoutReturn;
@@ -135,6 +136,17 @@ const NonAuthUserShippingList = ({ cart }: NonAuthUserShippingListProps) => {
                     />
                     <Text>{rule.name}</Text>
                   </Group>
+                  {rule.price === 0 ? (
+                    <Text fz={"md"} fw={700}>
+                      Ücretsiz
+                    </Text>
+                  ) : (
+                    <ProductPriceFormatter
+                      price={rule.price}
+                      fz={"md"}
+                      fw={700}
+                    />
+                  )}
                 </Group>
               ))
             : null}

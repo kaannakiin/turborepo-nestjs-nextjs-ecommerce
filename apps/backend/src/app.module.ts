@@ -16,6 +16,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { UserPageModule } from './user-page/user-page.module';
 import { UserModule } from './user/user.module';
+import { OrdersModule } from './orders/orders.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { UserModule } from './user/user.module';
     ShippingModule,
     PaymentModule,
     CartV2Module,
+    OrdersModule,
     // ThrottlerModule.forRootAsync({
     //   imports: [ConfigModule],
     //   inject: [ConfigService],

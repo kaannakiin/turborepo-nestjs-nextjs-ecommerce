@@ -1,6 +1,7 @@
 import { MantineColorsTuple } from "@mantine/core";
 import { $Enums, UserRole } from "@repo/database";
 import {
+  CardAssociation,
   FontFamily,
   LocationType,
   MantineFontWeight,
@@ -770,5 +771,37 @@ export function getCartStatusColor(status: $Enums.CartStatus): string {
       return "blue";
     case "MERGED":
       return "gray";
+  }
+}
+
+export function getCartAssociationUrl(type: CardAssociation) {
+  switch (type) {
+    case "VISA":
+      return "/visa.svg";
+    case "AMERICAN_EXPRESS":
+      return "/american-express.svg";
+    case "MASTER_CARD":
+      return "/mastercard.svg";
+    case "TROY":
+      return "/troy.svg";
+  }
+}
+
+export function getOrderStatusInfos(status: $Enums.OrderStatus): string {
+  switch (status) {
+    case "CANCELLED":
+      return "Kargolanmadı";
+    case "CONFIRMED":
+      return "Onaylandı";
+    case "DELIVERED":
+      return "Teslim Edildi";
+    case "PENDING":
+      return "Beklemede";
+    case "PROCESSING":
+      return "İşleniyor";
+    case "SHIPPED":
+      return "Kargolandı";
+    case "REFUNDED":
+      return "İade Edildi";
   }
 }

@@ -20,10 +20,12 @@ import { useEffect, useState } from "react";
 import fetchWrapper from "@lib/fetchWrapper";
 import dynamic from "next/dynamic";
 import GlobalLoader from "@/components/GlobalLoader";
+
 const AuthUserAddressForm = dynamic(() => import("./AuthUserAddressForm"), {
   ssr: false,
   loading: () => <GlobalLoader />,
 });
+
 type ViewType = "list" | "add" | "edit";
 
 interface AuthUserAddressListProps {
@@ -56,6 +58,7 @@ const AuthUserAddressList = ({
     },
     enabled: !!userInfo.id,
   });
+
   const { media } = useTheme();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
@@ -64,6 +67,11 @@ const AuthUserAddressList = ({
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
     null
   );
+  const [editingAddress, setEditingAddress] =
+    useState<UserDbAddressType | null>(null);
+
+  // ÇÖZÜM: Form'u yeniden mount etmek için unique key
+  const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {
     if (data && data.length > 0) {
@@ -72,23 +80,29 @@ const AuthUserAddressList = ({
     }
   }, [data]);
 
-  const [editingAddress, setEditingAddress] =
-    useState<UserDbAddressType | null>(null);
-
   const handleEditClick = (address: UserDbAddressType) => {
     setEditingAddress(address);
     setView("edit");
+    setFormKey((prev) => prev + 1); // Form'u yeniden mount et
   };
 
   const handleBackToList = () => {
     setView("list");
     setEditingAddress(null);
+    setFormKey((prev) => prev + 1); // Formu temizle
   };
 
   const handleRadioChange = (value: string) => {
     setSelectedAddressId(value);
     setView("list");
     setEditingAddress(null);
+  };
+
+  const handleAddNewAddress = () => {
+    setView("add");
+    setSelectedAddressId(null);
+    setEditingAddress(null);
+    setFormKey((prev) => prev + 1); // Yeni form için key güncelle
   };
 
   return (
@@ -159,7 +173,6 @@ const AuthUserAddressList = ({
                             e.stopPropagation();
                             handleEditClick(addres);
                             setSelectedAddressId(null);
-                            setView("edit");
                           }}
                         >
                           Düzenle
@@ -212,10 +225,7 @@ const AuthUserAddressList = ({
                 withBorder
                 className="border-gray-400 border"
                 p="md"
-                onClick={() => {
-                  setView("add");
-                  setSelectedAddressId(null);
-                }}
+                onClick={handleAddNewAddress}
                 style={{ cursor: "pointer" }}
               >
                 <Group gap={"lg"}>
@@ -231,6 +241,7 @@ const AuthUserAddressList = ({
           {(view === "add" || view === "edit") && (
             <Stack gap="sm" style={{ width: "100%" }}>
               <AuthUserAddressForm
+                key={formKey} // ÇÖZÜM: Her değişiklikte formu yeniden mount et
                 defaultValues={
                   view === "edit" && editingAddress
                     ? {

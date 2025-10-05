@@ -15,6 +15,7 @@ export type PaymentChannel =
   | "MOBILE_WINDOWS"
   | "MOBILE_TABLET"
   | "MOBILE_PHONE";
+
 export type CardAssociation =
   | "MASTER_CARD"
   | "VISA"
@@ -29,6 +30,38 @@ export type CardFamilyName =
   | "Paraf"
   | "CardFinans"
   | "Advantage";
+
+export interface BinCheckRequest {
+  locale: IyzLocale;
+  binNumber: string;
+  conversationId: string;
+}
+
+export interface BinCheckFailureResponse {
+  status: "failure";
+  errorCode: string;
+  errorMessage: string;
+  locale: IyzLocale;
+  systemTime: number;
+  conversationId: string;
+}
+export interface BinCheckSuccessResponse {
+  status: "success";
+  binNumber: string;
+  cardType: CardType;
+  cardAssociation: CardAssociation;
+  cardFamily: CardFamilyName;
+  bankName: string;
+  bankCode: number;
+  commercial: number;
+  locale: IyzLocale;
+  systemTime: number;
+  conversationId: string;
+}
+
+export type BinCheckResponse =
+  | BinCheckSuccessResponse
+  | BinCheckFailureResponse;
 
 export interface InstallmentRequest {
   locale: IyzLocale;

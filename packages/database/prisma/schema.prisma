@@ -1160,10 +1160,10 @@ model OrderItem {
   totalPrice    Float // quantity * buyedPrice (kalem toplam tutarı)
 
   // Ürün Bilgileri (Sipariş anındaki snapshot)
-  buyedVariants Json? // Satın alınan varyant bilgileri (renk, beden vs.)
-
+  buyedVariants   Json? // Satın alınan varyant bilgileri (renk, beden vs.)
+  productSnapshot Json? // Ürün bilgileri (isim, sku, vs.)
   // Ödeme Takibi
-  transactionId String? // Ödeme sağlayıcısından gelen işlem ID'si
+  transactionId   String? // Ödeme sağlayıcısından gelen işlem ID'si
 
   // İlişkiler
   product   Product                    @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -1177,8 +1177,15 @@ model OrderItem {
   createdAt DateTime @default(now()) // Kayıt oluşturma tarihi
   updatedAt DateTime @updatedAt // Son güncelleme tarihi
 
+  @@unique([orderId, productId, variantId]) // Aynı ürün/varyantın sipariş içinde tekrar etmemesi için
   @@index([orderId]) // Sipariş ID'sine göre hızlı arama
   @@index([productId]) // Ürün ID'sine göre hızlı arama
+}
+
+enum PaymentType {
+  THREE_D_SECURE
+  NON_THREE_D_SECURE
+  BANK_TRANSFER
 }
 
 model Order {
@@ -1192,10 +1199,10 @@ model Order {
   // Durum Bilgileri
   orderStatus   OrderStatus   @default(PENDING) // Sipariş durumu
   paymentStatus PaymentStatus @default(PENDING) // Ödeme durumu
-
+  paymentType   PaymentType   @default(THREE_D_SECURE) // Ödeme tipi
   // Bölgesel Ayarlar
-  currency Currency @default(TRY) // Para birimi
-  locale   Locale   @default(TR) // Dil/bölge
+  currency      Currency      @default(TRY) // Para birimi
+  locale        Locale        @default(TR) // Dil/bölge
 
   // Fiyat Bilgileri
   subtotal       Float // Ürünlerin toplam tutarı

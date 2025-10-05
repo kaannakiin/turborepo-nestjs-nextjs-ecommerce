@@ -1,3 +1,4 @@
+import { OrderItem, Prisma } from "@repo/database";
 import * as z from "zod";
 import { BillingAddressSchema } from "../address/address-schema";
 export const PaymentSchema = z
@@ -119,3 +120,133 @@ export const PaymentSchema = z
   });
 
 export type PaymentType = z.infer<typeof PaymentSchema>;
+
+export type OrderPageGetOrderReturnType = {
+  success: boolean;
+  message: string;
+  order?: Omit<
+    Prisma.OrderGetPayload<{
+      include: {
+        user: true;
+      };
+    }> & {
+      orderItems: Array<
+        Omit<OrderItem, "productSnapshot" | "buyedVariants"> & {
+          productSnapshot: Prisma.ProductGetPayload<{
+            include: {
+              assets: {
+                take: 1;
+                orderBy: { order: "asc" };
+                select: {
+                  asset: {
+                    select: { url: true; type: true };
+                  };
+                };
+              };
+              translations: true;
+              brand: true;
+              categories: {
+                orderBy: { createdAt: "desc" };
+                select: { category: true };
+              };
+              prices: true;
+              taxonomyCategory: true;
+            };
+          }>;
+          buyedVariants: Prisma.ProductVariantCombinationGetPayload<{
+            include: {
+              assets: {
+                take: 1;
+                orderBy: { order: "asc" };
+                select: {
+                  asset: {
+                    select: { url: true; type: true };
+                  };
+                };
+              };
+              prices: true;
+              translations: true;
+              options: {
+                orderBy: [
+                  {
+                    productVariantOption: {
+                      productVariantGroup: { order: "asc" };
+                    };
+                  },
+                  {
+                    productVariantOption: { order: "asc" };
+                  },
+                ];
+                select: {
+                  productVariantOption: {
+                    select: {
+                      variantOption: {
+                        select: {
+                          id: true;
+                          hexValue: true;
+                          asset: {
+                            select: { url: true; type: true };
+                          };
+                          translations: true;
+                          variantGroup: {
+                            select: {
+                              id: true;
+                              type: true;
+                              translations: true;
+                            };
+                          };
+                        };
+                      };
+                    };
+                  };
+                };
+              };
+              product: {
+                include: {
+                  assets: {
+                    take: 1;
+                    orderBy: { order: "asc" };
+                    select: {
+                      asset: {
+                        select: { url: true; type: true };
+                      };
+                    };
+                  };
+                  translations: true;
+                  brand: true;
+                  categories: {
+                    orderBy: { createdAt: "desc" };
+                    select: { category: true };
+                  };
+                  prices: true;
+                  taxonomyCategory: true;
+                };
+              };
+            };
+          }> | null;
+        }
+      >;
+    },
+    "billingAddress" | "shippingAddress"
+  > & {
+    billingAddress: {
+      city: string;
+      address: string;
+      country: string;
+      zipCode: string;
+      contactName: string;
+      gsmNumber: string;
+      email: string;
+    };
+  } & {
+    shippingAddress: {
+      city: string;
+      address: string;
+      country: string;
+      zipCode: string;
+      contactName: string;
+      gsmNumber: string;
+      email: string;
+    };
+  };
+};

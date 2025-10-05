@@ -1,10 +1,9 @@
 "use client";
+import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import { useCartV2 } from "@/context/cart-context/CartContextV2";
 import {
   ActionIcon,
-  Anchor,
   AspectRatio,
-  Avatar,
   Box,
   Button,
   CloseButton,
@@ -18,7 +17,7 @@ import {
   ThemeIcon,
   Title,
 } from "@mantine/core";
-import { useDisclosure, useMediaQuery, useWindowScroll } from "@mantine/hooks";
+import { useDisclosure, useInViewport } from "@mantine/hooks";
 import {
   IconCheck,
   IconMinus,
@@ -30,11 +29,10 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import ProductPriceFormatter from "../(user)/components/ProductPriceFormatter";
 import CustomImage from "./CustomImage";
-import { useEffect, useState } from "react";
-import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 
 const ShoppingBagDrawer = () => {
   const pathname = usePathname();
+  const { ref, inViewport } = useInViewport();
   const [opened, { open, close, toggle }] = useDisclosure();
   const { media } = useTheme();
   const {
@@ -64,9 +62,9 @@ const ShoppingBagDrawer = () => {
       <Popover
         withArrow={false}
         offset={16}
-        opened={Boolean(lastAddedItem) && popoverOpened}
+        opened={Boolean(lastAddedItem) && popoverOpened && inViewport}
         position={
-          media === "mobile" || media === "tablet" ? "bottom" : "bottom-start"
+          media === "mobile" || media === "tablet" ? "bottom" : "bottom-end"
         }
         onClose={closePopover}
         withOverlay
@@ -91,7 +89,12 @@ const ShoppingBagDrawer = () => {
         }}
       >
         <Popover.Target>
-          <ActionIcon variant="transparent" size={"xl"} onClick={toggle}>
+          <ActionIcon
+            ref={ref}
+            variant="transparent"
+            size={"xl"}
+            onClick={toggle}
+          >
             {cart && cart.items && cart.items.length > 0 ? (
               <Indicator
                 label={cart.totalItems}
@@ -122,8 +125,12 @@ const ShoppingBagDrawer = () => {
         <Popover.Dropdown>
           {lastAddedItem && (
             <Stack gap={0} w={"100%"}>
-              {/* Header - Primary Background */}
-              <Group justify="space-between" align="center" p={"md"}>
+              <Group
+                justify="space-between"
+                align="center"
+                p={"md"}
+                className="border-b border-b-[var(--mantine-color-dimmed)]"
+              >
                 <Group gap="xs">
                   <ThemeIcon
                     variant="primary"
@@ -145,13 +152,7 @@ const ShoppingBagDrawer = () => {
                   size={media === "mobile" ? "sm" : "md"}
                   c="primary"
                   onClick={closePopover}
-                  styles={{
-                    root: {
-                      "&:hover": {
-                        backgroundColor: "rgba(255, 255, 255, 0.1)",
-                      },
-                    },
-                  }}
+                  variant="transparent"
                 />
               </Group>
 

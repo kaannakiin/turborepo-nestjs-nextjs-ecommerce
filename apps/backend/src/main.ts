@@ -90,7 +90,17 @@ async function bootstrap() {
 
       // CSRF koruması - belirli route'lar hariçb
       app.use((req, res, next) => {
-        const excludedPaths = ['/auth/csrf', '/auth/refresh'];
+        const paymentCallback = configService.get<string>(
+          'IYZICO_CALLBACK_URL',
+          'http://localhost:3001/payment/iyzico/three-d-callback',
+        );
+        const paymentCallbackUrl = new URL(paymentCallback);
+
+        const excludedPaths = [
+          '/auth/csrf',
+          '/auth/refresh',
+          paymentCallbackUrl.pathname,
+        ];
 
         if (excludedPaths.includes(req.path)) {
           return next();

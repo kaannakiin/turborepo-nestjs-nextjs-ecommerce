@@ -240,7 +240,7 @@ const ClientCartPage = () => {
                       wrap="nowrap"
                     >
                       <Box style={{ cursor: "pointer" }}>
-                        <AspectRatio ratio={1} w={120}>
+                        <AspectRatio ratio={1} maw={120}>
                           {item.productAsset || item.variantAsset ? (
                             <CustomImage
                               src={

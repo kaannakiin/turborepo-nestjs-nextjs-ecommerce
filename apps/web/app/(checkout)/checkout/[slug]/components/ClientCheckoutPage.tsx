@@ -85,6 +85,7 @@ const ClientCheckoutPage = ({
       throw new Error("Failed to fetch cart info");
     },
   });
+
   if (isLoading || isPending || isFetching) {
     return <GlobalLoadingOverlay />;
   }
@@ -111,7 +112,11 @@ const ClientCheckoutPage = ({
           </div>
           <div className="order-1 lg:order-2 lg:py-8 lg:px-3">
             <div className="sticky top-4 space-y-4">
-              <CheckoutPageRightSection cartItems={data.items} step={step} />
+              <CheckoutPageRightSection
+                cargoRule={data.cargoRule}
+                cartItems={data.items}
+                step={step}
+              />
             </div>
           </div>
         </div>

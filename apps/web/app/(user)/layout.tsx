@@ -22,15 +22,16 @@ const UserLayout = async ({ children }: { children: ReactNode }) => {
           }
         );
         if (!response.ok) {
+          console.log(response.status);
           return null;
         }
+
         const data = (await response.json()) as CategoryHeaderData[];
         return data;
       },
       staleTime: 1000 * 60 * 60, // 1 saat
       gcTime: 1000 * 60 * 60 * 24, // 24 saat
     });
-
   return (
     <UserAppShellLayout
       session={session}

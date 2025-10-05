@@ -15,6 +15,7 @@ import { IconMail, IconPhone } from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import CustomPhoneInput from "../../(user)/components/CustomPhoneInput";
 import GlobalLoadingOverlay from "../../components/GlobalLoadingOverlay";
+import { LOCALE_CART_COOKIE } from "@lib/constants";
 
 const LoginForm = () => {
   const { mergeCarts } = useCartV2();
@@ -61,14 +62,15 @@ const LoginForm = () => {
       }
 
       await new Promise((resolve) => setTimeout(resolve, 100));
+      //TODO: Bunu auth/login'de yapmak daha mantıklı olabilir
+      localStorage.removeItem(LOCALE_CART_COOKIE);
+      // const mergeResult = await mergeCarts();
 
-      const mergeResult = await mergeCarts();
-
-      if (mergeResult.success) {
-        console.log("✅ Sepet birleştirildi:", mergeResult.newCart?.cartId);
-      } else {
-        console.warn("⚠️ Sepet birleştirme başarısız:", mergeResult.message);
-      }
+      // if (mergeResult.success) {
+      //   console.log("✅ Sepet birleştirildi:", mergeResult.newCart?.cartId);
+      // } else {
+      //   console.warn("⚠️ Sepet birleştirme başarısız:", mergeResult.message);
+      // }
 
       // ✅ Küçük bir delay - localStorage'ın kesin yazılmasını garanti et
       await new Promise((resolve) => setTimeout(resolve, 150));

@@ -301,14 +301,14 @@ export class ShippingService {
       if (rule.minValue !== null && cartTotal < rule.minValue) {
         return false;
       }
-      if (rule.maxValue !== null && cartTotal > rule.maxValue) {
+
+      if (rule.maxValue !== null && cartTotal >= rule.maxValue) {
         return false;
       }
     }
 
     return true;
   }
-
   async getAvailableShippingMethods(
     cartId: string,
   ): Promise<ShippingMethodsResponse> {
