@@ -87,7 +87,7 @@ async function bootstrap() {
         },
       });
       app.use((req, res, next) => {
-        const cookieName = isProduction ? '__Host-csrf-token' : 'csrf-token';
+        const cookieName = 'csrf-token';
 
         if (!req.cookies[cookieName]) {
           generateCsrfToken(req, res, {
