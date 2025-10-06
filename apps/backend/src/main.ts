@@ -64,13 +64,15 @@ async function bootstrap() {
     if (csrfEnabled) {
       const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
         getSecret: () => configService.getOrThrow<string>('CSRF_SECRET'),
-        // ✅ __Host- prefix'ini kaldır (sadece production'da kullan)
-        cookieName: isProduction ? '__Host-csrf-token' : 'csrf-token',
+        cookieName: 'csrf-token',
         cookieOptions: {
           httpOnly: false,
-          sameSite: 'lax',
-          secure: isProduction, // Development'ta false
+          sameSite: isProduction ? 'none' : 'lax',
+          secure: isProduction,
           path: '/',
+          ...(isProduction
+            ? { domain: configService.get<string>('DOMAIN') }
+            : {}),
         },
         size: 64,
         ignoredMethods: ['GET', 'HEAD', 'OPTIONS'],
@@ -96,7 +98,6 @@ async function bootstrap() {
         req['csrfToken'] = generateCsrfToken;
         next();
       });
-      // CSRF koruması - belirli route'lar hariçb
       app.use((req, res, next) => {
         const paymentCallback = configService.get<string>(
           'IYZICO_CALLBACK_URL',
