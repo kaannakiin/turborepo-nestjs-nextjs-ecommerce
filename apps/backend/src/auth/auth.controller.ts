@@ -118,14 +118,12 @@ export class AuthController {
       req: Request,
       res: Response,
     ) => string;
-    const token = generateCsrfToken(req, res);
-
-    return {
+    return res.status(200).json({
       success: true,
-      csrfToken: token,
-    };
+      csrfToken: generateCsrfToken(req, res),
+      message: 'CSRF token cookie olarak set edildi',
+    });
   }
-
   // FORGOT PASSWORD - 'auth-strict' throttler (3 istek/5dk)
   // @Post('forgot-password')
   // @HttpCode(HttpStatus.OK)

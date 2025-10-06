@@ -1,31 +1,55 @@
 type ApiSuccess<T> = { success: true; data: T; status: number };
 type ApiError = { success: false; error: string; status: number };
 type ApiResponse<T> = ApiSuccess<T> | ApiError;
+
 class FetchWrapperV2 {
   baseUrl: string =
     process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 
-  private csrfToken: string | null = null;
   private isRefreshing: boolean = false;
   private refreshPromise: Promise<boolean> | null = null;
+  private csrfInitialized: boolean = false;
 
   constructor() {}
 
-  private async fetchCsrfToken(): Promise<boolean> {
+  // Cookie'den CSRF token'ı oku
+  private getCsrfTokenFromCookie(): string | null {
+    if (typeof document === "undefined") return null;
+
+    // Önce __Host- prefix'li cookie'yi ara
+    let match = document.cookie.match(/__Host-csrf-token=([^;]+)/);
+
+    // Bulamazsan prefix'siz olanı ara (development için)
+    if (!match) {
+      match = document.cookie.match(/csrf-token=([^;]+)/);
+    }
+
+    return match ? decodeURIComponent(match[1]) : null;
+  }
+  // Backend'den CSRF token al
+  private async initializeCsrfToken(): Promise<void> {
+    if (this.csrfInitialized || this.getCsrfTokenFromCookie()) {
+      this.csrfInitialized = true;
+      return;
+    }
+
     try {
       const response = await fetch(`${this.baseUrl}/auth/csrf`, {
         method: "GET",
         credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
 
       if (response.ok) {
-        const data = await response.json();
-        this.csrfToken = data.csrfToken;
-        return true;
+        this.csrfInitialized = true;
+        // Cookie otomatik olarak set edilir
+      } else {
+        console.warn("CSRF token initialization failed:", response.statusText);
       }
-      return false;
     } catch (error) {
-      return false;
+      console.warn("CSRF token initialization error:", error);
     }
   }
 
@@ -50,6 +74,12 @@ class FetchWrapperV2 {
           },
         });
 
+        if (response.ok) {
+          // Refresh sonrası CSRF token yenilenir
+          this.csrfInitialized = false;
+          await this.initializeCsrfToken();
+        }
+
         return response.ok;
       } catch (error) {
         return false;
@@ -73,20 +103,27 @@ class FetchWrapperV2 {
         method.toUpperCase()
       );
 
-      if (needsCsrf && !this.csrfToken && retryCount === 0) {
-        await this.fetchCsrfToken();
+      // İlk mutating request'te CSRF token'ı initialize et
+      if (needsCsrf && !this.csrfInitialized && retryCount === 0) {
+        await this.initializeCsrfToken();
       }
 
       const headers: HeadersInit = {
         ...(init.headers || {}),
       };
 
-      if (init.body) {
+      if (init.body && typeof init.body === "string") {
         headers["Content-Type"] = "application/json";
       }
 
-      if (needsCsrf && this.csrfToken) {
-        headers["X-CSRF-Token"] = this.csrfToken;
+      // CSRF token'ı cookie'den oku ve header'a ekle
+      if (needsCsrf) {
+        const csrfToken = this.getCsrfTokenFromCookie();
+        if (csrfToken) {
+          headers["X-CSRF-Token"] = csrfToken;
+        } else {
+          console.warn("CSRF token not found in cookie");
+        }
       }
 
       const response = await fetch(this.baseUrl + url, {
@@ -97,30 +134,19 @@ class FetchWrapperV2 {
 
       // 403 Forbidden - CSRF token geçersiz/eksik
       if (response.status === 403 && retryCount === 0 && needsCsrf) {
-        this.csrfToken = null;
-        const isCsrfFetched = await this.fetchCsrfToken();
-
-        if (isCsrfFetched) {
-          return this.request<T>(url, init, retryCount + 1);
-        }
-
-        return {
-          success: false,
-          error: "CSRF token alınamadı",
-          status: 403,
-        };
+        console.log("CSRF token invalid, refreshing...");
+        this.csrfInitialized = false;
+        await this.initializeCsrfToken();
+        return this.request<T>(url, init, retryCount + 1);
       }
 
-      // 401 Unauthorized - Token süresi dolmuş
+      // 401 Unauthorized - Access token süresi dolmuş
       if (response.status === 401 && retryCount === 0) {
         if (this.hasRefreshToken()) {
+          console.log("Access token expired, refreshing...");
           const isRefreshed = await this.refreshToken();
 
           if (isRefreshed) {
-            if (needsCsrf) {
-              this.csrfToken = null;
-              await this.fetchCsrfToken();
-            }
             return this.request<T>(url, init, retryCount + 1);
           }
         }
@@ -132,7 +158,7 @@ class FetchWrapperV2 {
         };
       }
 
-      // Retry limitini aştık
+      // Retry sonrası hala başarısız
       if (retryCount > 0 && !response.ok) {
         const errorText = await response.text();
         return {
@@ -142,6 +168,7 @@ class FetchWrapperV2 {
         };
       }
 
+      // Normal error handling
       if (!response.ok) {
         const errorText = await response.text();
         return {
@@ -151,6 +178,7 @@ class FetchWrapperV2 {
         };
       }
 
+      // Success response
       const contentType = response.headers.get("content-type");
       const data =
         contentType && contentType.includes("application/json")
@@ -172,189 +200,28 @@ class FetchWrapperV2 {
   }
 
   async post<T>(url: string, init: RequestInit = {}): Promise<ApiResponse<T>> {
-    return this.request<T>(url, {
-      ...init,
-      method: "POST",
-    });
+    return this.request<T>(url, { ...init, method: "POST" });
   }
 
   async get<T>(url: string, init: RequestInit = {}): Promise<ApiResponse<T>> {
-    return this.request<T>(url, {
-      ...init,
-      method: "GET",
-    });
+    return this.request<T>(url, { ...init, method: "GET" });
   }
 
   async put<T>(url: string, init: RequestInit = {}): Promise<ApiResponse<T>> {
-    return this.request<T>(url, {
-      ...init,
-      method: "PUT",
-    });
+    return this.request<T>(url, { ...init, method: "PUT" });
   }
 
   async delete<T>(
     url: string,
     init: RequestInit = {}
   ): Promise<ApiResponse<T>> {
-    return this.request<T>(url, {
-      ...init,
-      method: "DELETE",
-    });
+    return this.request<T>(url, { ...init, method: "DELETE" });
   }
 
   async patch<T>(url: string, init: RequestInit = {}): Promise<ApiResponse<T>> {
-    return this.request<T>(url, {
-      ...init,
-      method: "PATCH",
-    });
-  }
-
-  async postFormData<T>(
-    url: string,
-    formData: FormData
-  ): Promise<ApiResponse<T>> {
-    try {
-      if (!this.csrfToken) {
-        await this.fetchCsrfToken();
-      }
-
-      const headers: HeadersInit = {};
-
-      if (this.csrfToken) {
-        headers["X-CSRF-Token"] = this.csrfToken;
-      }
-
-      const response = await fetch(this.baseUrl + url, {
-        method: "POST",
-        body: formData,
-        headers,
-        credentials: "include",
-      });
-
-      // 403 Forbidden
-      if (response.status === 403) {
-        this.csrfToken = null;
-        const isCsrfFetched = await this.fetchCsrfToken();
-
-        if (isCsrfFetched) {
-          headers["X-CSRF-Token"] = this.csrfToken!;
-          const retryResponse = await fetch(this.baseUrl + url, {
-            method: "POST",
-            body: formData,
-            headers,
-            credentials: "include",
-          });
-
-          if (!retryResponse.ok) {
-            const errorText = await retryResponse.text();
-            return {
-              success: false,
-              error: errorText || retryResponse.statusText,
-              status: retryResponse.status,
-            };
-          }
-
-          const contentType = retryResponse.headers.get("content-type");
-          const data =
-            contentType && contentType.includes("application/json")
-              ? await retryResponse.json()
-              : ({} as T);
-
-          return {
-            success: true,
-            data,
-            status: retryResponse.status,
-          };
-        }
-
-        return {
-          success: false,
-          error: "CSRF token alınamadı",
-          status: 403,
-        };
-      }
-
-      // 401 Unauthorized
-      if (response.status === 401) {
-        if (this.hasRefreshToken()) {
-          const isRefreshed = await this.refreshToken();
-
-          if (isRefreshed) {
-            this.csrfToken = null;
-            await this.fetchCsrfToken();
-
-            headers["X-CSRF-Token"] = this.csrfToken!;
-            const retryResponse = await fetch(this.baseUrl + url, {
-              method: "POST",
-              body: formData,
-              headers,
-              credentials: "include",
-            });
-
-            if (!retryResponse.ok) {
-              const errorText = await retryResponse.text();
-              return {
-                success: false,
-                error: errorText || retryResponse.statusText,
-                status: retryResponse.status,
-              };
-            }
-
-            const contentType = retryResponse.headers.get("content-type");
-            const data =
-              contentType && contentType.includes("application/json")
-                ? await retryResponse.json()
-                : ({} as T);
-
-            return {
-              success: true,
-              data,
-              status: retryResponse.status,
-            };
-          }
-        }
-
-        return {
-          success: false,
-          error: "Token yenilenemedi",
-          status: 401,
-        };
-      }
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        return {
-          success: false,
-          error: errorText || response.statusText,
-          status: response.status,
-        };
-      }
-
-      const contentType = response.headers.get("content-type");
-      const data =
-        contentType && contentType.includes("application/json")
-          ? await response.json()
-          : ({} as T);
-
-      return {
-        success: true,
-        data,
-        status: response.status,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Bilinmeyen hata",
-        status: 0,
-      };
-    }
-  }
-
-  clearCsrfToken(): void {
-    this.csrfToken = null;
+    return this.request<T>(url, { ...init, method: "PATCH" });
   }
 }
 
 const fetchWrapper = new FetchWrapperV2();
-
 export default fetchWrapper;

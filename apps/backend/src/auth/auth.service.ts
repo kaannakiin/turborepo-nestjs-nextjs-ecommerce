@@ -248,19 +248,4 @@ export class AuthService {
 
     return tokenRecord.user;
   }
-
-  private async cleanupOldTokens() {
-    await this.prismaService.refreshTokens.deleteMany({
-      where: {
-        OR: [
-          { expiresAt: { lte: new Date() } }, // Süresi dolmuş
-          {
-            revokedAt: {
-              lte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 gün önce iptal edilmiş
-            },
-          },
-        ],
-      },
-    });
-  }
 }
