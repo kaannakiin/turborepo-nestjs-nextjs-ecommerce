@@ -84,7 +84,18 @@ async function bootstrap() {
           return sessionId;
         },
       });
+      app.use((req, res, next) => {
+        const cookieName = isProduction ? '__Host-csrf-token' : 'csrf-token';
 
+        if (!req.cookies[cookieName]) {
+          generateCsrfToken(req, res, {
+            overwrite: true,
+          }); // overwrite: true
+        }
+
+        req['csrfToken'] = generateCsrfToken;
+        next();
+      });
       // CSRF koruması - belirli route'lar hariçb
       app.use((req, res, next) => {
         const paymentCallback = configService.get<string>(
