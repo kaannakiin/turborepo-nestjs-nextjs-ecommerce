@@ -1,9 +1,11 @@
 "use client";
+import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
+import AddToCartButtonV2 from "@/components/AddToCartButtonV2";
+import { calculateDiscountRate } from "@lib/helpers";
 import {
   Accordion,
   AspectRatio,
   Badge,
-  Button,
   ColorSwatch,
   Group,
   Stack,
@@ -16,9 +18,6 @@ import { slugify } from "@repo/shared";
 import { $Enums, ProductPageDataType } from "@repo/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import CustomImage from "../../../components/CustomImage";
-import AddToCartButton from "../../../components/AddToCartButton";
-import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
-import { calculateDiscountRate } from "@lib/helpers";
 
 interface ProductRightSectionProps {
   productId: string;
@@ -241,11 +240,60 @@ const ProductRightSection = ({
           </div>
         );
       })}
-      <AddToCartButton
+      <AddToCartButtonV2
+        data={{
+          price: selectedVariant.prices[0].price,
+          productId: selectedVariant.productId,
+          productName: productTranslation.name,
+          productSlug: productTranslation.slug,
+          quantity: 1,
+          whereAdded: "PRODUCT_PAGE",
+          categories: undefined,
+          discountedPrice: selectedVariant.prices[0].discountedPrice,
+          variantId: selectedVariant.id,
+          productAsset: selectedVariant.assets[0]?.asset || null,
+          variantOptions: selectedVariant.options.map((option) => {
+            return {
+              variantGroupName:
+                option.productVariantOption.variantOption.variantGroup.translations.find(
+                  (tr) => tr.locale === locale
+                )?.name || "",
+              variantGroupSlug:
+                option.productVariantOption.variantOption.variantGroup.translations.find(
+                  (tr) => tr.locale === locale
+                )?.slug || "",
+              optionName:
+                option.productVariantOption.variantOption.translations.find(
+                  (tr) => tr.locale === locale
+                )?.name || "",
+              optionSlug:
+                option.productVariantOption.variantOption.translations.find(
+                  (tr) => tr.locale === locale
+                )?.slug || "",
+              optionId: option.productVariantOptionId,
+              variantOptionName:
+                option.productVariantOption.variantOption.translations.find(
+                  (tr) => tr.locale === locale
+                )?.name || "",
+              variantOptionAsset:
+                option.productVariantOption.variantOption.asset || null,
+              variantOptionHex:
+                option.productVariantOption.variantOption.hexValue || null,
+              variantOptionSlug:
+                option.productVariantOption.variantOption.translations.find(
+                  (tr) => tr.locale === locale
+                )?.slug || "",
+              variantOptionHexValue:
+                option.productVariantOption.variantOption.hexValue || null,
+            };
+          }),
+        }}
+      />
+      {/* <AddToCartButton
         productId={productId}
         variantId={selectedVariant.id}
         quantity={1}
-      />
+      /> */}
       {(selectedVariantTranslation.description ||
         productTranslation.description) &&
         productTranslation.description !== "<p></p>" && (
