@@ -10,14 +10,17 @@ interface AddToCartButtonV2Props {
 const AddToCartButtonV2 = ({
   data: { productId, variantId, ...rest },
 }: AddToCartButtonV2Props) => {
-  const { addNewItem, cart } = useCartV3();
+  const { addNewItem, cart, increaseItemQuantity } = useCartV3();
   const handleAddToCart = async () => {
     if (cart) {
       const existingItem = cart.items.find(
         (item) => item.variantId === variantId && item.productId === productId
       );
       if (existingItem) {
-        console.log("Item already in cart");
+        await increaseItemQuantity(
+          existingItem.productId,
+          existingItem.variantId || undefined
+        );
       } else {
         await addNewItem({ productId, variantId, quantity: 1, ...rest });
       }
@@ -35,7 +38,7 @@ const AddToCartButtonV2 = ({
       size="lg"
       variant="filled"
     >
-      AddToCartButtonV2
+      Sepete Ekle
     </Button>
   );
 };

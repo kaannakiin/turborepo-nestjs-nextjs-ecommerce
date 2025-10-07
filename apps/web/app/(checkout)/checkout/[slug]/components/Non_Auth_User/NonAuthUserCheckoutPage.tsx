@@ -3,7 +3,10 @@
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import { TURKEY_DB_ID } from "@lib/constants";
 import { createId } from "@repo/shared";
-import { GetUserCartInfoForCheckoutReturn } from "@repo/types";
+import {
+  GetCartClientCheckoutReturnType,
+  GetUserCartInfoForCheckoutReturn,
+} from "@repo/types";
 import dynamic from "next/dynamic";
 import { CheckoutStep } from "../../page";
 import PaymentStep from "../PaymentStep";
@@ -26,7 +29,7 @@ const AuthUserShippingList = dynamic(
 interface NonAuthUserCheckoutPageProps {
   cartId: string;
   step: CheckoutStep;
-  data: GetUserCartInfoForCheckoutReturn;
+  data: GetCartClientCheckoutReturnType["cart"];
 }
 
 const NonAuthUserCheckoutPage = ({
@@ -61,9 +64,21 @@ const NonAuthUserCheckoutPage = ({
           }
         />
       ) : step === "shipping" ? (
-        <AuthUserShippingList cart={data} />
+        <AuthUserShippingList
+          cart={{
+            cart: data,
+          }}
+        />
       ) : (
-        <PaymentStep cart={data} />
+        <PaymentStep
+          cart={{
+            billingAddress: data.billingAddress,
+            cargoRule: data.cargoRule,
+            cartId: data.cartId,
+            currency: data.currency,
+            shippingAddress: data.shippingAddress,
+          }}
+        />
       )}
     </>
   );

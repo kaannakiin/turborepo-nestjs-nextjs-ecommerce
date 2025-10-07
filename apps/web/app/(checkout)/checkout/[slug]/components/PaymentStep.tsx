@@ -30,6 +30,7 @@ import {
 } from "@repo/shared";
 import {
   BinCheckSuccessResponse,
+  GetCartClientCheckoutReturnType,
   GetUserCartInfoForCheckoutReturn,
   PaymentSchema,
   PaymentType,
@@ -49,8 +50,8 @@ const BillingAddressForm = dynamic(() => import("./BillingAddressForm"), {
 
 interface PaymentStepProps {
   cart: Pick<
-    GetUserCartInfoForCheckoutReturn,
-    "id" | "currency" | "billingAddress" | "shippingAddress" | "cargoRule"
+    GetCartClientCheckoutReturnType["cart"],
+    "cartId" | "currency" | "billingAddress" | "shippingAddress" | "cargoRule"
   >;
 }
 
@@ -215,7 +216,7 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
       initThreeD?: boolean;
       threeDSHtmlContent?: string;
       orderNumber?: string;
-    }>(`/payment/create-payment/${cart.id}`, {
+    }>(`/payment/create-payment/${cart.cartId}`, {
       body: JSON.stringify(data),
       headers: { "Content-Type": "application/json" },
       credentials: "include",

@@ -24,8 +24,6 @@ import {
 } from '@repo/types';
 import { createHmac } from 'crypto';
 import { Request, Response } from 'express';
-import { CartV2Service } from 'src/cart-v2/cart-v2.service';
-import { OrdersService } from 'src/orders/orders.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ShippingService } from 'src/shipping/shipping.service';
 
@@ -49,10 +47,8 @@ export class PaymentService {
   private readonly separator = ':';
   constructor(
     private prisma: PrismaService,
-    private cartService: CartV2Service,
     private shippingService: ShippingService,
     private configService: ConfigService,
-    private orderService: OrdersService,
   ) {
     this.baseUrl = this.configService.get<string>('IYZICO_BASE_URL');
     this.secretKey = this.configService.get<string>('IYZICO_SECRET_KEY') || '';
@@ -345,388 +341,388 @@ export class PaymentService {
     }
   }
 
-  async createPaymentIntent(
-    cartId: string,
-    paymentData: PaymentType,
-    user: User | null,
-    req: Request,
-  ): Promise<{
-    success: boolean;
-    message: string;
-    initThreeD?: boolean;
-    threeDSHtmlContent?: string;
-    orderNumber?: string;
-  }> {
-    const cart = await this.cartService.getCart(cartId, { status: 'ACTIVE' });
-    if (!cart) {
-      return {
-        success: false,
-        message: 'Geçersiz sepet',
-      };
-    }
+  // async createPaymentIntent(
+  //   cartId: string,
+  //   paymentData: PaymentType,
+  //   user: User | null,
+  //   req: Request,
+  // ): Promise<{
+  //   success: boolean;
+  //   message: string;
+  //   initThreeD?: boolean;
+  //   threeDSHtmlContent?: string;
+  //   orderNumber?: string;
+  // }> {
+  //   const cart = await this.cartService.getCart(cartId, { status: 'ACTIVE' });
+  //   if (!cart) {
+  //     return {
+  //       success: false,
+  //       message: 'Geçersiz sepet',
+  //     };
+  //   }
 
-    const basketItems = this.createBasketItems(cart.items, 'TRY');
-    if (basketItems.length === 0) {
-      return {
-        success: false,
-        message: 'Sepetiniz boş lütfen ürün ekleyiniz.',
-      };
-    }
-    const totalPrice = parseFloat(
-      basketItems.reduce((acc, item) => acc + item.price, 0).toFixed(2),
-    );
+  //   const basketItems = this.createBasketItems(cart.items, 'TRY');
+  //   if (basketItems.length === 0) {
+  //     return {
+  //       success: false,
+  //       message: 'Sepetiniz boş lütfen ürün ekleyiniz.',
+  //     };
+  //   }
+  //   const totalPrice = parseFloat(
+  //     basketItems.reduce((acc, item) => acc + item.price, 0).toFixed(2),
+  //   );
 
-    const installmentReq = await this.checkInstallments({
-      binNumber: paymentData.creditCardNumber,
-      locale: 'tr',
-      price: totalPrice,
-    });
+  //   const installmentReq = await this.checkInstallments({
+  //     binNumber: paymentData.creditCardNumber,
+  //     locale: 'tr',
+  //     price: totalPrice,
+  //   });
 
-    if (!installmentReq.success) {
-      return {
-        success: false,
-        message: installmentReq.message,
-      };
-    }
+  //   if (!installmentReq.success) {
+  //     return {
+  //       success: false,
+  //       message: installmentReq.message,
+  //     };
+  //   }
 
-    const availableShippingRules =
-      await this.shippingService.getAvailableShippingMethods(cartId);
+  //   const availableShippingRules =
+  //     await this.shippingService.getAvailableShippingMethods(cartId);
 
-    if (
-      !availableShippingRules.success ||
-      availableShippingRules.shippingMethods.rules.length < 1 ||
-      !availableShippingRules.shippingMethods.rules.find(
-        (rule) => rule.id === cart.cargoRuleId,
-      )
-    ) {
-      return {
-        success: false,
-        message: 'Lütfen geçerli bir kargo yöntemi seçiniz.',
-      };
-    }
+  //   if (
+  //     !availableShippingRules.success ||
+  //     availableShippingRules.shippingMethods.rules.length < 1 ||
+  //     !availableShippingRules.shippingMethods.rules.find(
+  //       (rule) => rule.id === cart.cargoRuleId,
+  //     )
+  //   ) {
+  //     return {
+  //       success: false,
+  //       message: 'Lütfen geçerli bir kargo yöntemi seçiniz.',
+  //     };
+  //   }
 
-    const totalPriceWithShipping = parseFloat(
-      (
-        totalPrice +
-        (availableShippingRules.shippingMethods.rules.find(
-          (rule) => rule.id === cart.cargoRuleId,
-        )?.price || 0)
-      ).toFixed(2),
-    );
-    const conversationId = createId();
+  //   const totalPriceWithShipping = parseFloat(
+  //     (
+  //       totalPrice +
+  //       (availableShippingRules.shippingMethods.rules.find(
+  //         (rule) => rule.id === cart.cargoRuleId,
+  //       )?.price || 0)
+  //     ).toFixed(2),
+  //   );
+  //   const conversationId = createId();
 
-    const shippingAddress: ThreeDSRequest['shippingAddress'] = {
-      city:
-        cart.shippingAddress?.city?.name ||
-        cart.shippingAddress?.state?.name ||
-        'N/A',
-      country: cart.shippingAddress.country.name || 'N/A',
-      address:
-        `${cart.shippingAddress.addressLine1} ${cart.shippingAddress.addressLine2 || ''}`.trim() ||
-        'N/A',
-      contactName: `${cart.shippingAddress.name.trim() || ' '} ${cart.shippingAddress.surname.trim() || ' '}`,
-      zipCode: cart.shippingAddress.zipCode || 'N/A',
-    };
+  //   const shippingAddress: ThreeDSRequest['shippingAddress'] = {
+  //     city:
+  //       cart.shippingAddress?.city?.name ||
+  //       cart.shippingAddress?.state?.name ||
+  //       'N/A',
+  //     country: cart.shippingAddress.country.name || 'N/A',
+  //     address:
+  //       `${cart.shippingAddress.addressLine1} ${cart.shippingAddress.addressLine2 || ''}`.trim() ||
+  //       'N/A',
+  //     contactName: `${cart.shippingAddress.name.trim() || ' '} ${cart.shippingAddress.surname.trim() || ' '}`,
+  //     zipCode: cart.shippingAddress.zipCode || 'N/A',
+  //   };
 
-    const billingAddress: ThreeDSRequest['billingAddress'] =
-      paymentData.isBillingAddressSame
-        ? shippingAddress
-        : {
-            city:
-              cart.billingAddress?.city?.name ||
-              cart.billingAddress?.state?.name ||
-              'N/A',
-            country: cart.billingAddress.country.name || 'N/A',
-            address:
-              `${cart.billingAddress.addressLine1} ${cart.billingAddress.addressLine2 || ''}`.trim() ||
-              'N/A',
-            contactName: `${cart.billingAddress.name.trim() || ' '} ${cart.billingAddress.surname.trim() || ' '}`,
-            zipCode: cart.billingAddress.zipCode || 'N/A',
-          };
+  //   const billingAddress: ThreeDSRequest['billingAddress'] =
+  //     paymentData.isBillingAddressSame
+  //       ? shippingAddress
+  //       : {
+  //           city:
+  //             cart.billingAddress?.city?.name ||
+  //             cart.billingAddress?.state?.name ||
+  //             'N/A',
+  //           country: cart.billingAddress.country.name || 'N/A',
+  //           address:
+  //             `${cart.billingAddress.addressLine1} ${cart.billingAddress.addressLine2 || ''}`.trim() ||
+  //             'N/A',
+  //           contactName: `${cart.billingAddress.name.trim() || ' '} ${cart.billingAddress.surname.trim() || ' '}`,
+  //           zipCode: cart.billingAddress.zipCode || 'N/A',
+  //         };
 
-    const buyer: ThreeDSRequest['buyer'] = {
-      city:
-        cart.shippingAddress?.city?.name ||
-        cart.shippingAddress?.state?.name ||
-        'N/A',
-      country: cart.shippingAddress.country.name || 'N/A',
-      email: user?.email || cart.shippingAddress?.email || 'N/A',
-      gsmNumber: user?.phone || cart.shippingAddress?.phone || 'N/A',
-      id: user.id || cart.shippingAddressId || 'N/A',
-      identityNumber: '11111111111',
-      name: user?.name || cart.shippingAddress?.name || 'N/A',
-      surname: user?.surname || cart.shippingAddress?.surname || 'N/A',
-      zipCode: cart.shippingAddress.zipCode || 'N/A',
-      registrationAddress:
-        `${cart.shippingAddress.addressLine1} ${cart.shippingAddress.addressLine2 || ''}`.trim() ||
-        'N/A',
-      ip: req.socket.remoteAddress || req.ip || 'N/A',
-    };
-    const paymentCard: ThreeDSRequest['paymentCard'] = {
-      cardHolderName: paymentData.creditCardName,
-      cardNumber: paymentData.creditCardNumber.replace(/\s+/g, ''),
-      expireMonth: paymentData.expiryDate.split('/')[0].trim(),
-      expireYear: paymentData.expiryDate.split('/')[1].trim(),
-      cvc: paymentData.cvv,
-    };
+  //   const buyer: ThreeDSRequest['buyer'] = {
+  //     city:
+  //       cart.shippingAddress?.city?.name ||
+  //       cart.shippingAddress?.state?.name ||
+  //       'N/A',
+  //     country: cart.shippingAddress.country.name || 'N/A',
+  //     email: user?.email || cart.shippingAddress?.email || 'N/A',
+  //     gsmNumber: user?.phone || cart.shippingAddress?.phone || 'N/A',
+  //     id: user.id || cart.shippingAddressId || 'N/A',
+  //     identityNumber: '11111111111',
+  //     name: user?.name || cart.shippingAddress?.name || 'N/A',
+  //     surname: user?.surname || cart.shippingAddress?.surname || 'N/A',
+  //     zipCode: cart.shippingAddress.zipCode || 'N/A',
+  //     registrationAddress:
+  //       `${cart.shippingAddress.addressLine1} ${cart.shippingAddress.addressLine2 || ''}`.trim() ||
+  //       'N/A',
+  //     ip: req.socket.remoteAddress || req.ip || 'N/A',
+  //   };
+  //   const paymentCard: ThreeDSRequest['paymentCard'] = {
+  //     cardHolderName: paymentData.creditCardName,
+  //     cardNumber: paymentData.creditCardNumber.replace(/\s+/g, ''),
+  //     expireMonth: paymentData.expiryDate.split('/')[0].trim(),
+  //     expireYear: paymentData.expiryDate.split('/')[1].trim(),
+  //     cvc: paymentData.cvv,
+  //   };
 
-    const paymentRequest: ThreeDSRequest | NonThreeDSRequest = {
-      locale: 'tr',
-      basketItems: basketItems,
-      conversationId: conversationId,
-      paidPrice: totalPriceWithShipping,
-      price: totalPrice,
-      installment: 1,
-      currency: 'TRY',
-      paymentChannel: 'WEB',
-      paymentGroup: 'PRODUCT',
-      shippingAddress,
-      billingAddress,
-      basketId: cart.id,
-      buyer,
-      paymentCard,
-    };
-    if (installmentReq.data.installmentDetails[0].force3ds) {
-      // 3D Secure işlemleri
-      const callbackUrl = new URL(
-        this.configService.get<string>(
-          'IYZICO_CALLBACK_URL',
-          'http://localhost:3001/payment/three-d-callback',
-        ),
-      );
-      callbackUrl.searchParams.append('cartId', cart.id);
-      (paymentRequest as ThreeDSRequest).callbackUrl = callbackUrl.toString();
+  //   const paymentRequest: ThreeDSRequest | NonThreeDSRequest = {
+  //     locale: 'tr',
+  //     basketItems: basketItems,
+  //     conversationId: conversationId,
+  //     paidPrice: totalPriceWithShipping,
+  //     price: totalPrice,
+  //     installment: 1,
+  //     currency: 'TRY',
+  //     paymentChannel: 'WEB',
+  //     paymentGroup: 'PRODUCT',
+  //     shippingAddress,
+  //     billingAddress,
+  //     basketId: cart.id,
+  //     buyer,
+  //     paymentCard,
+  //   };
+  //   if (installmentReq.data.installmentDetails[0].force3ds) {
+  //     // 3D Secure işlemleri
+  //     const callbackUrl = new URL(
+  //       this.configService.get<string>(
+  //         'IYZICO_CALLBACK_URL',
+  //         'http://localhost:3001/payment/three-d-callback',
+  //       ),
+  //     );
+  //     callbackUrl.searchParams.append('cartId', cart.id);
+  //     (paymentRequest as ThreeDSRequest).callbackUrl = callbackUrl.toString();
 
-      const threeDReq = await this.iyzicoFetch<ThreeDSRequest, ThreeDSResponse>(
-        '/payment/3dsecure/initialize',
-        paymentRequest as ThreeDSRequest,
-      );
-      if (threeDReq.status === 'failure') {
-        return {
-          success: false,
-          message:
-            'Lütfen kart bilgilerinizi kontrol ediniz ve tekrar deneyiniz.',
-        };
-      }
-      if (threeDReq.conversationId === conversationId) {
-        const isValidSignature = this.validateSignature('3ds-initialize', {
-          paymentId: threeDReq.paymentId,
-          conversationId: threeDReq.conversationId,
-          signature: threeDReq.signature,
-        });
-        if (!isValidSignature) {
-          return {
-            success: false,
-            message:
-              'Lütfen kart bilgilerinizi kontrol ediniz ve tekrar deneyiniz.',
-          };
-        }
-        const orderNumber = this.createOrderNumber();
+  //     const threeDReq = await this.iyzicoFetch<ThreeDSRequest, ThreeDSResponse>(
+  //       '/payment/3dsecure/initialize',
+  //       paymentRequest as ThreeDSRequest,
+  //     );
+  //     if (threeDReq.status === 'failure') {
+  //       return {
+  //         success: false,
+  //         message:
+  //           'Lütfen kart bilgilerinizi kontrol ediniz ve tekrar deneyiniz.',
+  //       };
+  //     }
+  //     if (threeDReq.conversationId === conversationId) {
+  //       const isValidSignature = this.validateSignature('3ds-initialize', {
+  //         paymentId: threeDReq.paymentId,
+  //         conversationId: threeDReq.conversationId,
+  //         signature: threeDReq.signature,
+  //       });
+  //       if (!isValidSignature) {
+  //         return {
+  //           success: false,
+  //           message:
+  //             'Lütfen kart bilgilerinizi kontrol ediniz ve tekrar deneyiniz.',
+  //         };
+  //       }
+  //       const orderNumber = this.createOrderNumber();
 
-        const createdOrder = await this.prisma.order.upsert({
-          where: {
-            cartId: cart.id,
-          },
-          create: {
-            orderNumber: orderNumber,
-            userId: user?.id || undefined,
-            cartId: cart.id,
-            paymentId: threeDReq.paymentId,
-            subtotal: totalPrice,
-            totalAmount: totalPriceWithShipping,
-            binNumber:
-              installmentReq.data.installmentDetails[0].binNumber || null,
-            cardAssociation:
-              installmentReq.data.installmentDetails[0].cardAssociation || null,
-            cardFamily:
-              installmentReq.data.installmentDetails[0].cardFamilyName || null,
-            cardType:
-              installmentReq.data.installmentDetails[0].cardType || null,
-            lastFourDigits:
-              paymentData.creditCardNumber.replace(/\s+/g, '').slice(-4) ||
-              null,
-            currency: 'TRY',
-            locale: 'TR',
-            billingAddress: billingAddress
-              ? JSON.parse(
-                  JSON.stringify({
-                    ...billingAddress,
-                    email: buyer.email,
-                    phone: buyer.gsmNumber,
-                  }),
-                )
-              : JSON.parse(
-                  JSON.stringify({
-                    ...shippingAddress,
-                    email: buyer.email,
-                    phone: buyer.gsmNumber,
-                  }),
-                ),
-            shippingAddress: JSON.parse(
-              JSON.stringify({
-                ...shippingAddress,
-                email: buyer.email,
-                phone: buyer.gsmNumber,
-              }),
-            ),
-          },
-          update: {
-            paymentId: threeDReq.paymentId,
-            subtotal: totalPrice,
-            totalAmount: totalPriceWithShipping,
-            binNumber:
-              installmentReq.data.installmentDetails[0].binNumber || null,
-            cardAssociation:
-              installmentReq.data.installmentDetails[0].cardAssociation || null,
-            cardFamily:
-              installmentReq.data.installmentDetails[0].cardFamilyName || null,
-            cardType:
-              installmentReq.data.installmentDetails[0].cardType || null,
-            lastFourDigits:
-              paymentData.creditCardNumber.replace(/\s+/g, '').slice(-4) ||
-              null,
-            currency: 'TRY',
-            locale: 'TR',
-            billingAddress: billingAddress
-              ? JSON.parse(
-                  JSON.stringify({
-                    ...billingAddress,
-                    email: buyer.email,
-                    phone: buyer.gsmNumber,
-                  }),
-                )
-              : JSON.parse(
-                  JSON.stringify({
-                    ...shippingAddress,
-                    email: buyer.email,
-                    phone: buyer.gsmNumber,
-                  }),
-                ),
-            shippingAddress: JSON.parse(
-              JSON.stringify({
-                ...shippingAddress,
-                email: buyer.email,
-                phone: buyer.gsmNumber,
-              }),
-            ),
-            userId: user?.id || undefined,
-          },
-        });
+  //       const createdOrder = await this.prisma.order.upsert({
+  //         where: {
+  //           cartId: cart.id,
+  //         },
+  //         create: {
+  //           orderNumber: orderNumber,
+  //           userId: user?.id || undefined,
+  //           cartId: cart.id,
+  //           paymentId: threeDReq.paymentId,
+  //           subtotal: totalPrice,
+  //           totalAmount: totalPriceWithShipping,
+  //           binNumber:
+  //             installmentReq.data.installmentDetails[0].binNumber || null,
+  //           cardAssociation:
+  //             installmentReq.data.installmentDetails[0].cardAssociation || null,
+  //           cardFamily:
+  //             installmentReq.data.installmentDetails[0].cardFamilyName || null,
+  //           cardType:
+  //             installmentReq.data.installmentDetails[0].cardType || null,
+  //           lastFourDigits:
+  //             paymentData.creditCardNumber.replace(/\s+/g, '').slice(-4) ||
+  //             null,
+  //           currency: 'TRY',
+  //           locale: 'TR',
+  //           billingAddress: billingAddress
+  //             ? JSON.parse(
+  //                 JSON.stringify({
+  //                   ...billingAddress,
+  //                   email: buyer.email,
+  //                   phone: buyer.gsmNumber,
+  //                 }),
+  //               )
+  //             : JSON.parse(
+  //                 JSON.stringify({
+  //                   ...shippingAddress,
+  //                   email: buyer.email,
+  //                   phone: buyer.gsmNumber,
+  //                 }),
+  //               ),
+  //           shippingAddress: JSON.parse(
+  //             JSON.stringify({
+  //               ...shippingAddress,
+  //               email: buyer.email,
+  //               phone: buyer.gsmNumber,
+  //             }),
+  //           ),
+  //         },
+  //         update: {
+  //           paymentId: threeDReq.paymentId,
+  //           subtotal: totalPrice,
+  //           totalAmount: totalPriceWithShipping,
+  //           binNumber:
+  //             installmentReq.data.installmentDetails[0].binNumber || null,
+  //           cardAssociation:
+  //             installmentReq.data.installmentDetails[0].cardAssociation || null,
+  //           cardFamily:
+  //             installmentReq.data.installmentDetails[0].cardFamilyName || null,
+  //           cardType:
+  //             installmentReq.data.installmentDetails[0].cardType || null,
+  //           lastFourDigits:
+  //             paymentData.creditCardNumber.replace(/\s+/g, '').slice(-4) ||
+  //             null,
+  //           currency: 'TRY',
+  //           locale: 'TR',
+  //           billingAddress: billingAddress
+  //             ? JSON.parse(
+  //                 JSON.stringify({
+  //                   ...billingAddress,
+  //                   email: buyer.email,
+  //                   phone: buyer.gsmNumber,
+  //                 }),
+  //               )
+  //             : JSON.parse(
+  //                 JSON.stringify({
+  //                   ...shippingAddress,
+  //                   email: buyer.email,
+  //                   phone: buyer.gsmNumber,
+  //                 }),
+  //               ),
+  //           shippingAddress: JSON.parse(
+  //             JSON.stringify({
+  //               ...shippingAddress,
+  //               email: buyer.email,
+  //               phone: buyer.gsmNumber,
+  //             }),
+  //           ),
+  //           userId: user?.id || undefined,
+  //         },
+  //       });
 
-        await this.orderService.createOrderItemBeforeThreeD(
-          createdOrder.id,
-          paymentRequest.basketItems,
-        );
+  //       await this.orderService.createOrderItemBeforeThreeD(
+  //         createdOrder.id,
+  //         paymentRequest.basketItems,
+  //       );
 
-        return {
-          success: true,
-          message: '3D Secure doğrulaması gerekiyor.',
-          initThreeD: true,
-          threeDSHtmlContent: threeDReq.threeDSHtmlContent,
-        };
-      }
-    } else {
-      const nonThreeDReq = await this.iyzicoFetch<
-        NonThreeDSRequest,
-        NonThreeDSResponse
-      >('/payment/auth', paymentRequest as NonThreeDSRequest);
+  //       return {
+  //         success: true,
+  //         message: '3D Secure doğrulaması gerekiyor.',
+  //         initThreeD: true,
+  //         threeDSHtmlContent: threeDReq.threeDSHtmlContent,
+  //       };
+  //     }
+  //   } else {
+  //     const nonThreeDReq = await this.iyzicoFetch<
+  //       NonThreeDSRequest,
+  //       NonThreeDSResponse
+  //     >('/payment/auth', paymentRequest as NonThreeDSRequest);
 
-      if (nonThreeDReq.status === 'failure') {
-        return {
-          success: false,
-          message:
-            ' Lütfen kart bilgilerinizi kontrol ediniz ve tekrar deneyiniz.',
-        };
-      }
-      if (nonThreeDReq.conversationId === conversationId) {
-        const isValidSignature = this.validateSignature('non-3ds-auth', {
-          paymentId: nonThreeDReq.paymentId,
-          conversationId: nonThreeDReq.conversationId,
-          basketId: nonThreeDReq.basketId,
-          currency: nonThreeDReq.currency,
-          paidPrice: nonThreeDReq.paidPrice,
-          price: nonThreeDReq.price,
-          signature: nonThreeDReq.signature,
-        });
+  //     if (nonThreeDReq.status === 'failure') {
+  //       return {
+  //         success: false,
+  //         message:
+  //           ' Lütfen kart bilgilerinizi kontrol ediniz ve tekrar deneyiniz.',
+  //       };
+  //     }
+  //     if (nonThreeDReq.conversationId === conversationId) {
+  //       const isValidSignature = this.validateSignature('non-3ds-auth', {
+  //         paymentId: nonThreeDReq.paymentId,
+  //         conversationId: nonThreeDReq.conversationId,
+  //         basketId: nonThreeDReq.basketId,
+  //         currency: nonThreeDReq.currency,
+  //         paidPrice: nonThreeDReq.paidPrice,
+  //         price: nonThreeDReq.price,
+  //         signature: nonThreeDReq.signature,
+  //       });
 
-        if (!isValidSignature) {
-          return {
-            success: false,
-            message:
-              ' Lütfen kart bilgilerinizi kontrol ediniz ve tekrar deneyiniz.',
-          };
-        }
-        const orderNumber = this.createOrderNumber();
+  //       if (!isValidSignature) {
+  //         return {
+  //           success: false,
+  //           message:
+  //             ' Lütfen kart bilgilerinizi kontrol ediniz ve tekrar deneyiniz.',
+  //         };
+  //       }
+  //       const orderNumber = this.createOrderNumber();
 
-        const createdOrder = await this.prisma.order.create({
-          data: {
-            orderNumber: orderNumber,
-            userId: user?.id || undefined,
-            cartId: cart.id,
-            paymentId: nonThreeDReq.paymentId,
-            subtotal: totalPrice,
-            totalAmount: totalPriceWithShipping,
-            binNumber:
-              installmentReq.data.installmentDetails[0].binNumber || null,
-            cardAssociation:
-              installmentReq.data.installmentDetails[0].cardAssociation || null,
-            cardFamily:
-              installmentReq.data.installmentDetails[0].cardFamilyName || null,
-            cardType:
-              installmentReq.data.installmentDetails[0].cardType || null,
-            lastFourDigits:
-              paymentData.creditCardNumber.replace(/\s+/g, '').slice(-4) ||
-              null,
-            currency: 'TRY',
-            locale: 'TR',
-            billingAddress: billingAddress
-              ? JSON.parse(
-                  JSON.stringify({
-                    ...billingAddress,
-                    email: buyer.email,
-                    phone: buyer.gsmNumber,
-                  }),
-                )
-              : JSON.parse(
-                  JSON.stringify({
-                    ...shippingAddress,
-                    email: buyer.email,
-                    phone: buyer.gsmNumber,
-                  }),
-                ),
-            shippingAddress: JSON.parse(
-              JSON.stringify({
-                ...shippingAddress,
-                email: buyer.email,
-                phone: buyer.gsmNumber,
-              }),
-            ),
-            paymentType: 'NON_THREE_D_SECURE',
-          },
-        });
+  //       const createdOrder = await this.prisma.order.create({
+  //         data: {
+  //           orderNumber: orderNumber,
+  //           userId: user?.id || undefined,
+  //           cartId: cart.id,
+  //           paymentId: nonThreeDReq.paymentId,
+  //           subtotal: totalPrice,
+  //           totalAmount: totalPriceWithShipping,
+  //           binNumber:
+  //             installmentReq.data.installmentDetails[0].binNumber || null,
+  //           cardAssociation:
+  //             installmentReq.data.installmentDetails[0].cardAssociation || null,
+  //           cardFamily:
+  //             installmentReq.data.installmentDetails[0].cardFamilyName || null,
+  //           cardType:
+  //             installmentReq.data.installmentDetails[0].cardType || null,
+  //           lastFourDigits:
+  //             paymentData.creditCardNumber.replace(/\s+/g, '').slice(-4) ||
+  //             null,
+  //           currency: 'TRY',
+  //           locale: 'TR',
+  //           billingAddress: billingAddress
+  //             ? JSON.parse(
+  //                 JSON.stringify({
+  //                   ...billingAddress,
+  //                   email: buyer.email,
+  //                   phone: buyer.gsmNumber,
+  //                 }),
+  //               )
+  //             : JSON.parse(
+  //                 JSON.stringify({
+  //                   ...shippingAddress,
+  //                   email: buyer.email,
+  //                   phone: buyer.gsmNumber,
+  //                 }),
+  //               ),
+  //           shippingAddress: JSON.parse(
+  //             JSON.stringify({
+  //               ...shippingAddress,
+  //               email: buyer.email,
+  //               phone: buyer.gsmNumber,
+  //             }),
+  //           ),
+  //           paymentType: 'NON_THREE_D_SECURE',
+  //         },
+  //       });
 
-        await this.prisma.cart.update({
-          where: {
-            id: cart.id,
-          },
-          data: {
-            status: 'CONVERTED',
-          },
-        });
+  //       await this.prisma.cart.update({
+  //         where: {
+  //           id: cart.id,
+  //         },
+  //         data: {
+  //           status: 'CONVERTED',
+  //         },
+  //       });
 
-        await this.orderService.createOrderItem(
-          createdOrder.id,
-          nonThreeDReq.itemTransactions,
-        );
-        return {
-          success: true,
-          message: 'Ödeme işlemi başarılı.',
-          initThreeD: false,
-          orderNumber: orderNumber,
-        };
-      }
-    }
-  }
+  //       await this.orderService.createOrderItem(
+  //         createdOrder.id,
+  //         nonThreeDReq.itemTransactions,
+  //       );
+  //       return {
+  //         success: true,
+  //         message: 'Ödeme işlemi başarılı.',
+  //         initThreeD: false,
+  //         orderNumber: orderNumber,
+  //       };
+  //     }
+  //   }
+  // }
 
   private createBasketItems(
     cartItems: GetCartByIdReturn['items'],
@@ -862,15 +858,15 @@ export class PaymentService {
         },
       });
 
-      await this.orderService.createOrderItem(
-        updatedOrder.id,
-        paymentDetail.itemTransactions,
-        true,
-      );
+      // await this.orderService.createOrderItem(
+      //   updatedOrder.id,
+      //   paymentDetail.itemTransactions,
+      //   true,
+      // );
 
       return res.redirect(`${webUrl}/orders/${updatedOrder.orderNumber}`);
     } catch (error) {
-      await this.orderService.deleteOrderAndOrderItems(cartId);
+      // await this.orderService.deleteOrderAndOrderItems(cartId);
       return res.redirect(
         `${webUrl}/checkout/${cartId}?step=payment&error=${encodeURIComponent(
           error instanceof Error ? error.message : 'Bilinmeyen hata',

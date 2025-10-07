@@ -57,7 +57,8 @@ export type CartActionResponseV3 = {
 export type CartV3ContextType = {
   /** Mevcut sepet verisi */
   cart: CartV3;
-
+  /** Sepet işlemlerinin yüklenme durumu */
+  isCartLoading: boolean;
   /**
    * Sepeti yeniler ve güncel sepet verisini getirir
    * @returns Başarı durumu ve güncellenmiş sepet bilgisi
@@ -162,6 +163,25 @@ export const AddCartReqBodyV3Schema = z.object({
   whereAdded: z.enum($Enums.WhereAdded),
 });
 export type AddCartReqBodyV3Type = z.infer<typeof AddCartReqBodyV3Schema>;
+
+export const DecraseOrIncreaseCartItemReqBodyV3Schema = z.object({
+  cartId: z.cuid2({
+    error: "Geçersiz sepet kimliği",
+  }),
+  productId: z.cuid2({
+    error: "Geçersiz ürün kimliği",
+  }),
+  variantId: z
+    .cuid2({
+      error: "Geçersiz varyant kimliği",
+    })
+    .optional()
+    .nullable(),
+});
+
+export type DecraseOrIncreaseCartItemReqBodyV3Type = z.infer<
+  typeof DecraseOrIncreaseCartItemReqBodyV3Schema
+>;
 
 export type CartItemWithRelations = Prisma.CartItemGetPayload<{
   include: {

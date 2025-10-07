@@ -289,11 +289,7 @@ const ProductRightSection = ({
           }),
         }}
       />
-      {/* <AddToCartButton
-        productId={productId}
-        variantId={selectedVariant.id}
-        quantity={1}
-      /> */}
+
       {(selectedVariantTranslation.description ||
         productTranslation.description) &&
         productTranslation.description !== "<p></p>" && (

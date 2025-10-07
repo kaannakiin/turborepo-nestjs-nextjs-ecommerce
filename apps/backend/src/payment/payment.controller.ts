@@ -31,7 +31,7 @@ export class PaymentController {
     @CurrentUser() user: User | null,
     @Req() req: Request,
   ) {
-    return this.paymentService.createPaymentIntent(cartId, data, user, req);
+    // return this.paymentService.createPaymentIntent(cartId, data, user, req);
   }
 
   @Post('bin-check')

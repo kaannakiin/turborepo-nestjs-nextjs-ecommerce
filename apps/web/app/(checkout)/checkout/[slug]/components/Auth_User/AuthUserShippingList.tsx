@@ -15,6 +15,7 @@ import {
 import { notifications } from "@mantine/notifications";
 import { useQuery } from "@repo/shared";
 import {
+  GetCartClientCheckoutReturnType,
   GetUserCartInfoForCheckoutReturn,
   ShippingMethodsResponse,
 } from "@repo/types";
@@ -24,17 +25,14 @@ import { useEffect, useState } from "react";
 import AddressCard from "../AddressCard";
 
 interface AuthUserShippingListProps {
-  cart: Pick<
-    GetUserCartInfoForCheckoutReturn,
-    "id" | "cargoRuleId" | "shippingAddress"
-  >;
+  cart: Pick<GetCartClientCheckoutReturnType, "cart">;
 }
 const AuthUserShippingList = ({ cart }: AuthUserShippingListProps) => {
   const { media } = useTheme();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
   const [selectedCargoRuleId, setSelectedCargoRuleId] = useState<string | null>(
-    cart.cargoRuleId || null
+    cart.cart?.cargoRule?.id || null
   );
   const [loading, setLoading] = useState(false);
   const {
@@ -43,10 +41,10 @@ const AuthUserShippingList = ({ cart }: AuthUserShippingListProps) => {
     isLoading: shippingRulesIsLoading,
     isPending: shippingRulesIsPending,
   } = useQuery({
-    queryKey: ["shipping-rules", cart.id],
+    queryKey: ["shipping-rules", cart?.cart?.cartId],
     queryFn: async () => {
       const res = await fetchWrapper.get<ShippingMethodsResponse>(
-        `/shipping/get-available-shipping-methods/${cart.id}`,
+        `/shipping/get-available-shipping-methods/${cart?.cart?.cartId}`,
         {
           method: "GET",
           headers: {
@@ -58,7 +56,7 @@ const AuthUserShippingList = ({ cart }: AuthUserShippingListProps) => {
       if (!res.success) throw new Error("Failed to fetch shipping methods");
       return res.data.shippingMethods;
     },
-    enabled: !!cart.id,
+    enabled: !!cart?.cart?.cartId,
   });
   useEffect(() => {
     if (
@@ -83,7 +81,7 @@ const AuthUserShippingList = ({ cart }: AuthUserShippingListProps) => {
         shippingRulesIsPending ||
         loading) && <GlobalLoadingOverlay />}
       <AddressCard
-        data={cart.shippingAddress}
+        data={cart?.cart?.shippingAddress}
         onEdit={() => {
           const params = new URLSearchParams(searchParams.toString());
           params.set("step", "info");
@@ -156,7 +154,7 @@ const AuthUserShippingList = ({ cart }: AuthUserShippingListProps) => {
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
                 body: JSON.stringify({
-                  cartId: cart.id,
+                  cartId: cart?.cart?.cartId,
                   cargoRuleId: selectedCargoRuleId,
                 }),
               });

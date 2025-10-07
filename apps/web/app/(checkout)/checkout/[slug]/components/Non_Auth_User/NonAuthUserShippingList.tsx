@@ -157,41 +157,46 @@ const NonAuthUserShippingList = ({ cart }: NonAuthUserShippingListProps) => {
             variant="filled"
             color="black"
             onClick={async () => {
-              setLoading(true);
-              if (!selectedCargoRuleId) return;
-              const res = await fetchWrapper.put<{
-                success: boolean;
-                message: string;
-              }>(`/cart-v2/set-cart-cargo-rule`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({
-                  cartId: cart.id,
-                  cargoRuleId: selectedCargoRuleId,
-                }),
-              });
-              if (!res.success) {
-                notifications.show({
-                  title: "Hata",
-                  message: "Kargo kuralı seçilirken bir hata oluştu",
-                  color: "red",
+              try {
+                setLoading(true);
+                if (!selectedCargoRuleId) return;
+                const res = await fetchWrapper.put<{
+                  success: boolean;
+                  message: string;
+                }>(`/cart-v2/set-cart-cargo-rule`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  credentials: "include",
+                  body: JSON.stringify({
+                    cartId: cart.id,
+                    cargoRuleId: selectedCargoRuleId,
+                  }),
                 });
-                return;
-              }
+                if (!res.success) {
+                  notifications.show({
+                    title: "Hata",
+                    message: "Kargo kuralı seçilirken bir hata oluştu",
+                    color: "red",
+                  });
+                  return;
+                }
 
-              if (!res.success) {
-                notifications.show({
-                  title: "Hata",
-                  message: "Kargo kuralı seçilirken bir hata oluştu",
-                  color: "red",
-                });
-              } else {
-                const params = new URLSearchParams(searchParams.toString());
-                params.set("step", "payment");
-                replace(`?${params.toString()}`);
+                if (!res.success) {
+                  notifications.show({
+                    title: "Hata",
+                    message: "Kargo kuralı seçilirken bir hata oluştu",
+                    color: "red",
+                  });
+                } else {
+                  const params = new URLSearchParams(searchParams.toString());
+                  params.set("step", "payment");
+                  replace(`?${params.toString()}`);
+                }
+              } catch (error) {
+                console.error(error);
+              } finally {
+                setLoading(false);
               }
-              setLoading(false);
             }}
           >
             Ödeme ile Devam Et

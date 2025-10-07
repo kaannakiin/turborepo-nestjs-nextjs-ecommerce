@@ -1,7 +1,7 @@
 "use client";
 
-import { useCartV2 } from "@/context/cart-context/CartContextV2";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { LOCALE_CART_COOKIE } from "@lib/constants";
 import fetchWrapper from "@lib/fetchWrapper";
 import {
   Button,
@@ -17,11 +17,8 @@ import { RegisterSchema, RegisterSchemaType } from "@repo/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import CustomPhoneInput from "../../(user)/components/CustomPhoneInput";
 import GlobalLoadingOverlay from "../../components/GlobalLoadingOverlay";
-import { LOCALE_CART_COOKIE } from "@lib/constants";
 
 const RegisterForm = () => {
-  const { mergeCarts } = useCartV2();
-
   const {
     control,
     handleSubmit,

@@ -5,5 +5,6 @@ import { CartV3Controller } from './cart-v3.controller';
 @Module({
   controllers: [CartV3Controller],
   providers: [CartV3Service],
+  exports: [CartV3Service],
 })
 export class CartV3Module {}

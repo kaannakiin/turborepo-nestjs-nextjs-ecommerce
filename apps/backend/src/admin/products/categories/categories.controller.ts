@@ -22,7 +22,7 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { FilesValidationPipe } from 'src/common/pipes/file-validation.pipe';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
-import { Roles } from 'src/reflectors/roles.decorator';
+import { Roles } from 'src/user/reflectors/roles.decorator';
 import { CategoriesService } from './categories.service';
 
 @Controller('/admin/products/categories')

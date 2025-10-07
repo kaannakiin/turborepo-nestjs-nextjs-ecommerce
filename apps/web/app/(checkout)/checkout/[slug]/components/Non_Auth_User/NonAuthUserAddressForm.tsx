@@ -158,7 +158,7 @@ const NonAuthUserAddressForm = ({
 
   const onSubmit: SubmitHandler<NonAuthUserAddressZodType> = async (data) => {
     const res = await fetchWrapper.post(
-      `/cart-v2/set-non-auth-user-address-to-cart/${cartId}`,
+      `/cart-v3/set-non-auth-user-address-to-cart/${cartId}`,
       {
         body: JSON.stringify(data),
         credentials: "include",

@@ -317,17 +317,17 @@ const AuthUserAddressList = ({
 
               try {
                 setLoading(true);
-                const res = await fetchWrapper.post(
-                  `/cart-v2/update-cart-address`,
-                  {
-                    credentials: "include",
-                    body: JSON.stringify({
-                      cartId,
-                      addressId: selectedAddressId,
-                    }),
-                  }
-                );
-                if (!res.success) {
+                const res = await fetchWrapper.post<{
+                  success: boolean;
+                  message: string;
+                }>(`/cart-v3/update-cart-address`, {
+                  credentials: "include",
+                  body: JSON.stringify({
+                    cartId,
+                    addressId: selectedAddressId,
+                  }),
+                });
+                if (!res.success || !res.data.success) {
                   notifications.show({
                     title: "Adres seçilemedi",
                     message: "Lütfen tekrar deneyin.",

@@ -6,6 +6,9 @@ import {
   CartItemV3,
   CartItemWithRelations,
   CartV3,
+  DecraseOrIncreaseCartItemReqBodyV3Type,
+  GetCartClientCheckoutReturnType,
+  NonAuthUserAddressZodType,
 } from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -426,11 +429,251 @@ export class CartV3Service {
     });
   }
 
+  async getCartForClientCheckout(
+    cartId: string,
+  ): Promise<GetCartClientCheckoutReturnType> {
+    const cart = await this.prisma.cart.findUnique({
+      where: {
+        id: cartId,
+        status: 'ACTIVE',
+      },
+      include: {
+        items: {
+          where: {
+            isVisible: true,
+            deletedAt: null,
+            visibleCause: null,
+            quantity: { gt: 0 },
+          },
+          include: {
+            product: {
+              include: {
+                categories: {
+                  orderBy: {
+                    createdAt: 'asc',
+                  },
+                  select: {
+                    category: {
+                      select: {
+                        id: true,
+
+                        translations: true,
+                        image: { select: { url: true, type: true } },
+                      },
+                    },
+                  },
+                },
+                translations: true,
+                prices: true,
+                brand: {
+                  select: {
+                    id: true,
+                    translations: true,
+                    image: { select: { url: true, type: true } },
+                  },
+                },
+                assets: {
+                  orderBy: {
+                    order: 'asc',
+                  },
+                  take: 1,
+                  where: {
+                    asset: {
+                      type: 'IMAGE',
+                    },
+                  },
+                  select: {
+                    asset: {
+                      select: {
+                        url: true,
+                        type: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            variant: {
+              include: {
+                assets: {
+                  orderBy: { order: 'asc' },
+                  take: 1,
+                  where: { asset: { type: 'IMAGE' } },
+                  select: { asset: { select: { url: true, type: true } } },
+                },
+                options: {
+                  orderBy: [
+                    {
+                      productVariantOption: {
+                        productVariantGroup: { order: 'asc' },
+                      },
+                    },
+                    { productVariantOption: { order: 'asc' } },
+                  ],
+                  include: {
+                    productVariantOption: {
+                      include: {
+                        variantOption: {
+                          select: {
+                            id: true,
+                            asset: { select: { url: true, type: true } },
+                            hexValue: true,
+                            translations: true,
+                            variantGroup: {
+                              select: {
+                                id: true,
+                                translations: true,
+                                type: true,
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+                prices: true,
+                translations: true,
+                product: {
+                  include: {
+                    categories: {
+                      orderBy: { createdAt: 'asc' },
+                      select: {
+                        category: {
+                          select: {
+                            id: true,
+                            translations: true,
+                            image: { select: { url: true, type: true } },
+                          },
+                        },
+                      },
+                    },
+                    translations: true,
+                    brand: {
+                      select: {
+                        id: true,
+                        translations: true,
+                        image: { select: { url: true, type: true } },
+                      },
+                    },
+                    assets: {
+                      orderBy: { order: 'asc' },
+                      take: 1,
+                      where: { asset: { type: 'IMAGE' } },
+                      select: { asset: { select: { url: true, type: true } } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        billingAddress: {
+          include: {
+            city: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            country: {
+              select: {
+                id: true,
+                name: true,
+                translations: true,
+                emoji: true,
+              },
+            },
+            state: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        shippingAddress: {
+          include: {
+            city: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            country: {
+              select: {
+                id: true,
+                name: true,
+                translations: true,
+                emoji: true,
+              },
+            },
+            state: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        cargoRule: {
+          select: {
+            id: true,
+            currency: true,
+            name: true,
+            price: true,
+            ruleType: true,
+          },
+        },
+      },
+    });
+
+    if (!cart) {
+      return {
+        success: false,
+      };
+    }
+
+    const items: CartItemV3[] = cart.items.map((item) =>
+      this.mapCartItemToV3(item),
+    );
+
+    const totalPrice = items.reduce(
+      (acc, item) => acc + item.price * item.quantity,
+      0,
+    );
+
+    const totalDiscount = items.reduce((acc, item) => {
+      if (item.discountedPrice) {
+        return acc + (item.price - item.discountedPrice) * item.quantity;
+      }
+      return acc;
+    }, 0);
+
+    const cartForClientCheckout: GetCartClientCheckoutReturnType['cart'] = {
+      cartId: cart.id,
+      createdAt: cart.createdAt,
+      currency: cart.currency as CartV3['currency'],
+      lastActivityAt: cart.updatedAt,
+      locale: cart.locale as CartV3['locale'],
+      items,
+      totalDiscount,
+      totalPrice,
+      totalItems: items.length,
+      updatedAt: cart.updatedAt,
+      orderNote: undefined,
+      userId: cart.userId || undefined,
+      billingAddress: cart.billingAddress || null,
+      shippingAddress: cart.shippingAddress || null,
+      cargoRule: cart.cargoRule || null,
+    };
+    return { success: true, cart: cartForClientCheckout };
+  }
+
   async getCartForClient(
     userId: string | undefined,
     cartId: string,
   ): Promise<{ success: boolean; cart?: CartV3 }> {
-    console.log('Getting cart for client:', { userId, cartId });
     const cart = await this.prisma.cart.findUnique({
       where: {
         id: cartId,
@@ -645,6 +888,9 @@ export class CartV3Service {
           quantity: { increment: 1 },
           whereAdded: data.whereAdded, // Son nereden eklendiğini güncelle
           updatedAt: new Date(),
+          isVisible: true,
+          deletedAt: null,
+          visibleCause: null,
         },
       });
     } else {
@@ -666,5 +912,389 @@ export class CartV3Service {
       };
     }
     return { success: true, newCart: clientCart.cart, message: 'Başarılı' };
+  }
+
+  async decreaseItemQuantity({
+    cartId,
+    userId,
+    data,
+  }: {
+    cartId: string;
+    userId: string | null;
+    data: DecraseOrIncreaseCartItemReqBodyV3Type;
+  }): Promise<CartActionResponseV3> {
+    const cart = await this.prisma.cart.findUnique({
+      where: {
+        id: cartId,
+      },
+      include: {
+        items: true,
+      },
+    });
+
+    if (!cart || (userId && cart.userId !== userId)) {
+      return {
+        success: false,
+        message: 'Sepet bulunamadı.',
+      };
+    }
+    const item = cart.items.find(
+      (i) => i.productId === data.productId && i.variantId === data.variantId,
+    );
+
+    if (!item) {
+      return {
+        success: false,
+        message: 'Sepet ürünü bulunamadı.',
+      };
+    }
+
+    if (item.quantity <= 1) {
+      await this.prisma.cartItem.update({
+        where: {
+          cartId_productId_variantId: {
+            cartId: cart.id,
+            productId: data.productId,
+            variantId: data.variantId || null,
+          },
+        },
+        data: {
+          isVisible: false,
+          deletedAt: new Date(),
+          visibleCause: 'DELETED_BY_USER',
+          quantity: 0,
+        },
+      });
+    } else {
+      await this.prisma.cartItem.update({
+        where: {
+          cartId_productId_variantId: {
+            cartId: cart.id,
+            productId: data.productId,
+            variantId: data.variantId || null,
+          },
+        },
+        data: {
+          quantity: { decrement: 1 },
+        },
+      });
+    }
+    const clientCart = await this.getCartForClient(cart?.userId, cart.id);
+    if (!clientCart.success || !clientCart.cart) {
+      return {
+        success: false,
+        message: 'Güncellenmiş sepet bilgisi getirilemedi',
+      };
+    }
+    return { success: true, newCart: clientCart.cart, message: 'Başarılı' };
+  }
+
+  async increaseItemQuantity({
+    cartId,
+    userId,
+    data,
+  }: {
+    cartId: string;
+    userId: string | null;
+    data: DecraseOrIncreaseCartItemReqBodyV3Type;
+  }): Promise<CartActionResponseV3> {
+    const cart = await this.prisma.cart.findUnique({
+      where: {
+        id: cartId,
+      },
+      include: {
+        items: {
+          where: {
+            isVisible: true,
+            deletedAt: null,
+            visibleCause: null,
+            quantity: { gt: 0 },
+          },
+        },
+      },
+    });
+
+    if (!cart || (userId && cart.userId !== userId)) {
+      return {
+        success: false,
+        message: 'Sepet bulunamadı.',
+      };
+    }
+
+    const item = cart.items.find(
+      (i) => i.productId === data.productId && i.variantId === data.variantId,
+    );
+
+    if (!item) {
+      return {
+        success: false,
+        message: 'Sepet ürünü bulunamadı.',
+      };
+    }
+
+    await this.prisma.cartItem.update({
+      where: {
+        cartId_productId_variantId: {
+          cartId: cart.id,
+          productId: data.productId,
+          variantId: data.variantId || null,
+        },
+      },
+      data: {
+        quantity: { increment: 1 },
+      },
+    });
+
+    const clientCart = await this.getCartForClient(cart?.userId, cart.id);
+    if (!clientCart.success || !clientCart.cart) {
+      return {
+        success: false,
+        message: 'Güncellenmiş sepet bilgisi getirilemedi',
+      };
+    }
+    return { success: true, newCart: clientCart.cart, message: 'Başarılı' };
+  }
+
+  async clearCart(
+    cartId: string,
+    userId: string | null,
+  ): Promise<CartActionResponseV3> {
+    const cart = await this.prisma.cart.findUnique({
+      where: {
+        id: cartId,
+        ...(userId && { userId }),
+      },
+    });
+
+    if (!cart || (userId && cart.userId !== userId)) {
+      return {
+        success: false,
+        message: 'Sepet bulunamadı',
+      };
+    }
+
+    await this.prisma.cartItem.updateMany({
+      where: {
+        cartId: cart.id,
+      },
+      data: {
+        isVisible: false,
+        deletedAt: new Date(),
+        visibleCause: 'DELETED_BY_USER',
+        quantity: 0,
+      },
+    });
+
+    const clientCart = await this.getCartForClient(cart?.userId, cart.id);
+
+    if (!clientCart.success || !clientCart.cart) {
+      return {
+        success: false,
+        message: 'Güncellenmiş sepet bilgisi getirilemedi',
+      };
+    }
+    return { success: true, newCart: clientCart.cart, message: 'Başarılı' };
+  }
+
+  async removeItem(
+    userId: string | null,
+    data: DecraseOrIncreaseCartItemReqBodyV3Type,
+  ): Promise<CartActionResponseV3> {
+    const cart = await this.prisma.cart.findUnique({
+      where: {
+        id: data.cartId,
+        ...(userId && { userId }),
+      },
+    });
+
+    if (!cart || (userId && cart.userId !== userId)) {
+      return {
+        success: false,
+        message: 'Sepet bulunamadı',
+      };
+    }
+
+    const item = await this.prisma.cartItem.findUnique({
+      where: {
+        cartId_productId_variantId: {
+          cartId: cart.id,
+          productId: data.productId,
+          variantId: data.variantId || null,
+        },
+      },
+    });
+
+    if (!item) {
+      return {
+        success: false,
+        message: 'Sepet ürünü bulunamadı',
+      };
+    }
+
+    await this.prisma.cartItem.update({
+      where: {
+        cartId_productId_variantId: {
+          cartId: cart.id,
+          productId: data.productId,
+          variantId: data.variantId || null,
+        },
+      },
+      data: {
+        quantity: 0,
+        isVisible: false,
+        deletedAt: new Date(),
+        visibleCause: 'DELETED_BY_USER',
+      },
+    });
+    const clientCart = await this.getCartForClient(cart?.userId, cart.id);
+    if (!clientCart.success || !clientCart.cart) {
+      return {
+        success: false,
+        message: 'Güncellenmiş sepet bilgisi getirilemedi',
+      };
+    }
+    return { success: true, newCart: clientCart.cart, message: 'Başarılı' };
+  }
+
+  async updateCartAddress(
+    cartId: string,
+    addressId: string,
+    userId: string | null,
+  ): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    // 1. Sepeti kontrol et
+    const cart = await this.prisma.cart.findUnique({
+      where: {
+        id: cartId,
+        ...(userId && { userId }),
+      },
+    });
+
+    if (!cart) {
+      return { success: false, message: 'Sepet bulunamadı' };
+    }
+
+    // 2. Adresi kontrol et
+    const address = await this.prisma.addressSchema.findUnique({
+      where: {
+        id: addressId,
+      },
+    });
+
+    if (!address) {
+      return { success: false, message: 'Adres bulunamadı' };
+    }
+
+    // 3. Eğer kullanıcı giriş yapmışsa, adresin ona ait olup olmadığını kontrol et
+    if (userId && address.userId !== userId) {
+      return {
+        success: false,
+        message: 'Bu adres size ait değil',
+      };
+    }
+
+    // 4. Eğer adres başka bir kullanıcıya aitse (ve mevcut kullanıcı null ise) hata ver
+    if (!userId && address.userId) {
+      return {
+        success: false,
+        message: 'Bu adres kullanılamaz',
+      };
+    }
+
+    // 5. Transaction ile sepeti ve kullanıcının default adresini güncelle
+    await this.prisma.$transaction(async (prisma) => {
+      // Sepete adresi ata
+      await prisma.cart.update({
+        where: { id: cart.id },
+        data: {
+          shippingAddressId: address.id,
+        },
+      });
+
+      // Eğer kullanıcı varsa, default adresini güncelle
+      if (userId) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            defaultAddressId: address.id,
+          },
+        });
+      }
+    });
+
+    return {
+      success: true,
+      message: 'Adres başarıyla güncellendi',
+    };
+  }
+
+  async setNonAuthUserAddressToCart(
+    cartId: string,
+    data: NonAuthUserAddressZodType,
+  ): Promise<{
+    succses: boolean;
+    message: string;
+  }> {
+    try {
+      await this.prisma.$transaction(async (prisma) => {
+        const cart = await prisma.cart.findUnique({
+          where: { id: cartId },
+        });
+
+        if (!cart) {
+          throw new Error('Sepet bulunamadı.');
+        }
+
+        const addressData = {
+          name: data.name,
+          surname: data.surname,
+          phone: data.phone,
+          email: data.email,
+          addressLine1: data.addressLine1,
+          addressLine2: data.addressLine2 || null,
+          zipCode: data.postalCode,
+          addressLocationType: data.addressType,
+          ...(data.addressType === 'CITY'
+            ? { cityId: data.cityId }
+            : data.addressType === 'STATE'
+              ? { stateId: data.stateId }
+              : {
+                  stateId: null,
+                  cityId: null,
+                }),
+          countryId: data.countryId,
+        };
+
+        if (cart.shippingAddressId) {
+          // Mevcut adresi güncelle
+          await prisma.addressSchema.update({
+            where: { id: cart.shippingAddressId },
+            data: addressData,
+          });
+        } else {
+          // Yeni adres oluştur ve sepete bağla
+          const newAddress = await prisma.addressSchema.create({
+            data: addressData,
+          });
+
+          await prisma.cart.update({
+            where: { id: cartId },
+            data: { shippingAddressId: newAddress.id },
+          });
+        }
+      });
+
+      return {
+        succses: true,
+        message: 'Adres başarıyla kaydedildi.',
+      };
+    } catch (error) {
+      return {
+        succses: false,
+        message: error.message || 'Bir hata oluştu.',
+      };
+    }
   }
 }

@@ -1,5 +1,5 @@
 "use client";
-import { GetUserCartInfoForCheckoutReturn, TokenPayload } from "@repo/types";
+import { GetCartClientCheckoutReturnType, TokenPayload } from "@repo/types";
 import { CheckoutStep } from "../../page";
 import PaymentStep from "../PaymentStep";
 import AuthUserAddressList from "./AuthUserAddressList";
@@ -9,7 +9,7 @@ interface AuthUserCheckoutPageProps {
   cartId: string;
   userInfo: TokenPayload;
   step: CheckoutStep;
-  data: GetUserCartInfoForCheckoutReturn;
+  data: GetCartClientCheckoutReturnType["cart"] | null;
 }
 
 const AuthUserCheckoutPage = ({
@@ -24,14 +24,18 @@ const AuthUserCheckoutPage = ({
         <AuthUserAddressList cartId={cartId} userInfo={userInfo} />
       ) : step === "shipping" &&
         data &&
-        data.shippingAddressId &&
+        data.shippingAddress?.id &&
         data.shippingAddress ? (
-        <AuthUserShippingList cart={data} />
+        <AuthUserShippingList
+          cart={{
+            cart: data,
+          }}
+        />
       ) : data &&
-        data.shippingAddressId &&
+        data.shippingAddress?.id &&
         data.shippingAddress &&
         data.cargoRule &&
-        data.cargoRuleId ? (
+        data.cargoRule?.id ? (
         <PaymentStep cart={data} />
       ) : null}
     </>
