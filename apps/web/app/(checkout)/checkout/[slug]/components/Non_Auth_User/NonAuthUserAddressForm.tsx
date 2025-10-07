@@ -8,6 +8,7 @@ import {
   Checkbox,
   Divider,
   Group,
+  InputBase,
   Select,
   SimpleGrid,
   Stack,
@@ -34,6 +35,7 @@ import {
 } from "@repo/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { IMaskInput } from "react-imask";
 
 type DeliveryType = "address" | "pickup";
 
@@ -472,6 +474,23 @@ const NonAuthUserAddressForm = ({
                 />
               )}
             />
+            {countryId === TURKEY_DB_ID && (
+              <Controller
+                control={control}
+                name="tcKimlikNo"
+                render={({ field, fieldState }) => (
+                  <InputBase
+                    component={IMaskInput}
+                    mask={"00000000000"}
+                    {...field}
+                    error={fieldState.error?.message}
+                    radius={"md"}
+                    size="lg"
+                    placeholder="T.C. Kimlik No"
+                  />
+                )}
+              />
+            )}
           </Stack>
         )}
         <Button

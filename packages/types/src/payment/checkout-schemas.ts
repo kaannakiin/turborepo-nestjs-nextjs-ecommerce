@@ -42,5 +42,13 @@ export type GetCartClientCheckoutReturnType = {
     billingAddress: CheckoutAddressType | null;
     shippingAddress: CheckoutAddressType | null;
     cargoRule: CheckoutCargoRule | null;
+    user: Prisma.UserGetPayload<{
+      select: {
+        email: true;
+        name: true;
+        phone: true;
+        surname: true;
+      };
+    }> | null;
   };
 };

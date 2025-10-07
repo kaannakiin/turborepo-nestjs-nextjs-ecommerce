@@ -8,17 +8,17 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import { type User } from '@repo/database';
 import {
-  PaymentSchema,
-  type PaymentType,
+  PaymentZodSchema,
+  type PaymentZodType,
   type ThreeDCallback,
 } from '@repo/types';
 import { type Request, type Response } from 'express';
-import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
-import { PaymentService } from './payment.service';
 import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
-import { type User } from '@repo/database';
+import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
+import { PaymentService } from './payment.service';
 @Controller('payment')
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
@@ -27,7 +27,7 @@ export class PaymentController {
   @UseGuards(OptionalJwtAuthGuard)
   async createPaymentIntent(
     @Param('cartId') cartId: string,
-    @Body(new ZodValidationPipe(PaymentSchema)) data: PaymentType,
+    @Body(new ZodValidationPipe(PaymentZodSchema)) data: PaymentZodType,
     @CurrentUser() user: User | null,
     @Req() req: Request,
   ) {
@@ -36,7 +36,7 @@ export class PaymentController {
 
   @Post('bin-check')
   async binCheck(@Body('binNumber') binNumber: string) {
-    return this.paymentService.binCheck(binNumber);
+    return this.paymentService.iyzicoBinCheck(binNumber);
   }
 
   @Post('/iyzico/three-d-callback')
@@ -45,6 +45,6 @@ export class PaymentController {
     @Body() body: ThreeDCallback,
     @Res({ passthrough: true }) res: Response,
   ) {
-    return this.paymentService.threeDCallback(body, res, cartId);
+    // return this.paymentService.threeDCallback(body, res, cartId);
   }
 }

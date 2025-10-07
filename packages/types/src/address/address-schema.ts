@@ -2,6 +2,8 @@ import { CountryType, Prisma } from "@repo/database";
 import { isPossiblePhoneNumber } from "libphonenumber-js";
 import * as z from "zod";
 
+const TURKEY_DB_ID = "da8c5f2a-8d37-48a8-beff-6ab3793a1861";
+const tcKimlikNoRegex = /^[1-9]{1}[0-9]{9}[02468]{1}$/;
 const BaseAddressSchema = z
   .object({
     id: z.cuid2({
@@ -54,6 +56,13 @@ const BaseAddressSchema = z
       .max(512, "Adres Satırı 2 en fazla 512 karakter olabilir")
       .optional()
       .nullable(),
+    tcKimlikNo: z
+      .string({
+        error: ' "T.C. Kimlik Numarası gereklidir"',
+      })
+      .length(11, "T.C. Kimlik Numarası 11 karakter olmalıdır")
+      .optional()
+      .nullable(),
     postalCode: z
       .string({
         error: "Posta Kodu gereklidir",
@@ -88,6 +97,23 @@ const BaseAddressSchema = z
         input: ["stateId"],
         path: ["cityId"],
       });
+    }
+    if (value.countryId && value.countryId === TURKEY_DB_ID) {
+      if (!value.tcKimlikNo) {
+        issues.push({
+          code: "custom",
+          message: "T.C. Kimlik Numarası gereklidir",
+          input: ["tcKimlikNo"],
+          path: ["tcKimlikNo"],
+        });
+      } else if (!tcKimlikNoRegex.test(value.tcKimlikNo)) {
+        issues.push({
+          code: "custom",
+          message: "Geçerli bir T.C. Kimlik Numarası giriniz",
+          input: ["tcKimlikNo"],
+          path: ["tcKimlikNo"],
+        });
+      }
     }
   });
 

@@ -1,7 +1,7 @@
 import { OrderItem, Prisma } from "@repo/database";
 import * as z from "zod";
 import { BillingAddressSchema } from "../address/address-schema";
-export const PaymentSchema = z
+export const PaymentZodSchema = z
   .object({
     creditCardName: z
       .string({
@@ -119,7 +119,7 @@ export const PaymentSchema = z
     }
   });
 
-export type PaymentType = z.infer<typeof PaymentSchema>;
+export type PaymentZodType = z.infer<typeof PaymentZodSchema>;
 
 export type OrderPageGetOrderReturnType = {
   success: boolean;

@@ -7,6 +7,7 @@ import {
   Card,
   Checkbox,
   Group,
+  InputBase,
   Select,
   SimpleGrid,
   Text,
@@ -16,24 +17,18 @@ import {
 import {
   Control,
   Controller,
-  createId,
-  SubmitHandler,
-  useForm,
   UseFormSetValue,
   UseFormWatch,
   useQuery,
-  zodResolver,
 } from "@repo/shared";
 import {
-  BillingAddressSchema,
-  BillingAddressZodType,
   GetAllCityReturnType,
   GetAllCountryReturnType,
   GetAllStateReturnType,
   PaymentType,
-  TokenPayload,
 } from "@repo/types";
 import { IconCheck } from "@tabler/icons-react";
+import { IMaskInput } from "react-imask";
 
 interface BillingAddressFormProps {
   control: Control<PaymentType>;
@@ -315,6 +310,23 @@ const BillingAddressForm = ({
           />
         )}
       />
+      {countryId === TURKEY_DB_ID && (
+        <Controller
+          control={control}
+          name="billingAddress.tcKimlikNo"
+          render={({ field, fieldState }) => (
+            <InputBase
+              component={IMaskInput}
+              mask={"00000000000"}
+              radius={"md"}
+              {...field}
+              error={fieldState.error?.message}
+              size="lg"
+              placeholder="T.C. Kimlik Numarası"
+            />
+          )}
+        />
+      )}
       <Controller
         control={control}
         name="billingAddress.isCorporateInvoice"

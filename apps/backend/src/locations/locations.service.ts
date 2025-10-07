@@ -113,6 +113,7 @@ export class LocationsService {
             : {}),
         countryId: address.countryId,
         userId: user.id,
+        tcKimlikNo: address.tcKimlikNo || null,
       },
       update: {
         addressLine1: address.addressLine1,
@@ -122,6 +123,7 @@ export class LocationsService {
         phone: address.phone,
         surname: address.surname,
         addressTitle: address.addressTitle,
+        tcKimlikNo: address.tcKimlikNo || null,
         ...(address.addressType === 'CITY'
           ? { cityId: address.cityId, stateId: null }
           : address.addressType === 'STATE'

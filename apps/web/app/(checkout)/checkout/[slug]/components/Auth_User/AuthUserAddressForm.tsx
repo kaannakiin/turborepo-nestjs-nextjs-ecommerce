@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   Group,
+  InputBase,
   Select,
   SimpleGrid,
   Stack,
@@ -31,6 +32,7 @@ import {
   GetAllStateReturnType,
 } from "@repo/types";
 import { IconCheck } from "@tabler/icons-react";
+import { IMaskInput } from "react-imask";
 
 interface AuthUserAddressFormProps {
   defaultValues?: AuthUserAddressZodType;
@@ -354,6 +356,23 @@ const AuthUserAddressForm = ({
               />
             )}
           />
+          {countryId === TURKEY_DB_ID && (
+            <Controller
+              control={control}
+              name="tcKimlikNo"
+              render={({ field, fieldState }) => (
+                <InputBase
+                  component={IMaskInput}
+                  mask={"00000000000"}
+                  radius={"md"}
+                  {...field}
+                  error={fieldState.error?.message}
+                  size="lg"
+                  placeholder="T.C. Kimlik Numarası"
+                />
+              )}
+            />
+          )}
         </Card>
         <Button
           variant="filled"

@@ -298,11 +298,7 @@ const ShoppingBagDrawerV2 = () => {
                         fz={"md"}
                         fw={500}
                         c={"dimmed"}
-                        price={
-                          cart.totalDiscount > 0
-                            ? cart.totalDiscount + cart.totalPrice
-                            : cart.totalPrice
-                        }
+                        price={cart.totalPrice}
                       />
                     </Stack>
                   </Group>
@@ -343,7 +339,7 @@ const ShoppingBagDrawerV2 = () => {
                           fz={"md"}
                           fw={500}
                           c={"dimmed"}
-                          price={cart.totalPrice}
+                          price={cart.totalPrice - cart.totalDiscount}
                         />
                       </Stack>
                     </Group>

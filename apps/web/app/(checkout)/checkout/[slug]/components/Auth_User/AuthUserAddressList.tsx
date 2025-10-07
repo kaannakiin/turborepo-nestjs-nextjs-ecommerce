@@ -1,7 +1,9 @@
 "use client";
 
 import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
+import GlobalLoader from "@/components/GlobalLoader";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import fetchWrapper from "@lib/fetchWrapper";
 import {
   Button,
   Divider,
@@ -15,11 +17,9 @@ import { notifications } from "@mantine/notifications";
 import { useQuery } from "@repo/shared";
 import { TokenPayload, UserDbAddressType } from "@repo/types";
 import { IconCheck } from "@tabler/icons-react";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import fetchWrapper from "@lib/fetchWrapper";
-import dynamic from "next/dynamic";
-import GlobalLoader from "@/components/GlobalLoader";
 
 const AuthUserAddressForm = dynamic(() => import("./AuthUserAddressForm"), {
   ssr: false,
@@ -257,6 +257,7 @@ const AuthUserAddressList = ({
                         stateId: editingAddress.stateId || undefined,
                         addressLine2: editingAddress.addressLine2 || undefined,
                         postalCode: editingAddress.zipCode || undefined,
+                        tcKimlikNo: editingAddress.tcKimlikNo || undefined,
                       }
                     : undefined
                 }

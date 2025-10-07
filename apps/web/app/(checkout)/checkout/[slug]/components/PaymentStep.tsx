@@ -31,7 +31,6 @@ import {
 import {
   BinCheckSuccessResponse,
   GetCartClientCheckoutReturnType,
-  GetUserCartInfoForCheckoutReturn,
   PaymentSchema,
   PaymentType,
 } from "@repo/types";

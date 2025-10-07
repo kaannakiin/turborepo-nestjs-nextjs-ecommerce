@@ -1040,6 +1040,7 @@ model AddressSchema {
   email                      String?
   addressTitle               String?
   phone                      String
+  tcKimlikNo                 String?
   name                       String
   surname                    String
   addressLine1               String

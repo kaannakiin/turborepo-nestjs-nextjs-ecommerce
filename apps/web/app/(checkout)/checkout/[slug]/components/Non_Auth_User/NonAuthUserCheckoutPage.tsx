@@ -3,10 +3,7 @@
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import { TURKEY_DB_ID } from "@lib/constants";
 import { createId } from "@repo/shared";
-import {
-  GetCartClientCheckoutReturnType,
-  GetUserCartInfoForCheckoutReturn,
-} from "@repo/types";
+import { GetCartClientCheckoutReturnType } from "@repo/types";
 import dynamic from "next/dynamic";
 import { CheckoutStep } from "../../page";
 import PaymentStep from "../PaymentStep";
@@ -59,6 +56,7 @@ const NonAuthUserCheckoutPage = ({
                   surname: data.shippingAddress.surname || "",
                   cityId: data.shippingAddress.cityId || null,
                   stateId: data.shippingAddress.stateId || null,
+                  tcKimlikNo: data.shippingAddress.tcKimlikNo || null,
                 }
               : null
           }

@@ -629,6 +629,14 @@ export class CartV3Service {
             ruleType: true,
           },
         },
+        user: {
+          select: {
+            phone: true,
+            email: true,
+            name: true,
+            surname: true,
+          },
+        },
       },
     });
 
@@ -670,6 +678,7 @@ export class CartV3Service {
       billingAddress: cart.billingAddress || null,
       shippingAddress: cart.shippingAddress || null,
       cargoRule: cart.cargoRule || null,
+      user: cart.user || null,
     };
     return { success: true, cart: cartForClientCheckout };
   }
@@ -1260,6 +1269,7 @@ export class CartV3Service {
           addressLine2: data.addressLine2 || null,
           zipCode: data.postalCode,
           addressLocationType: data.addressType,
+          tcKimlikNo: data.tcKimlikNo || null,
           ...(data.addressType === 'CITY'
             ? { cityId: data.cityId }
             : data.addressType === 'STATE'
