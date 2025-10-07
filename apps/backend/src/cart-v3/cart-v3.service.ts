@@ -11,10 +11,14 @@ import {
   NonAuthUserAddressZodType,
 } from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { ShippingService } from 'src/shipping/shipping.service';
 
 @Injectable()
 export class CartV3Service {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly shippingService: ShippingService,
+  ) {}
 
   private mapCartItemToV3(item: CartItemWithRelations): CartItemV3 {
     const isVariant = !!item.variant && !!item.variantId;
@@ -1296,5 +1300,40 @@ export class CartV3Service {
         message: error.message || 'Bir hata oluştu.',
       };
     }
+  }
+
+  async setCartCargoRule(
+    cartId: string,
+    cargoRuleId: string,
+  ): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    const availableMethos =
+      await this.shippingService.getAvailableShippingMethods(cartId);
+
+    if (!availableMethos.success) {
+      return {
+        success: false,
+        message: 'Gönderim yöntemleri alınamadı',
+      };
+    }
+    const isCargoRuleValid = availableMethos.shippingMethods.rules.find(
+      (method) => method.id === cargoRuleId,
+    );
+    if (!isCargoRuleValid) {
+      return {
+        success: false,
+        message: 'Geçersiz kargo kuralı',
+      };
+    }
+    await this.prisma.cart.update({
+      where: { id: cartId },
+      data: { cargoRuleId },
+    });
+    return {
+      success: true,
+      message: 'Kargo kuralı başarıyla güncellendi',
+    };
   }
 }

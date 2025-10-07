@@ -149,7 +149,7 @@ const AuthUserShippingList = ({ cart }: AuthUserShippingListProps) => {
               const res = await fetchWrapper.put<{
                 success: boolean;
                 message: string;
-              }>(`/cart-v2/set-cart-cargo-rule`, {
+              }>(`/cart-v3/set-cart-cargo-rule`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",

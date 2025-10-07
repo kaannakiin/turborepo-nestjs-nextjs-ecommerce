@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Put,
   UseGuards,
 } from '@nestjs/common';
 import { type User } from '@repo/database';
@@ -121,5 +122,12 @@ export class CartV3Controller {
     data: NonAuthUserAddressZodType,
   ) {
     return this.cartV3Service.setNonAuthUserAddressToCart(cartId, data);
+  }
+
+  @Put('set-cart-cargo-rule')
+  async setCartCargoRule(
+    @Body() body: { cartId: string; cargoRuleId: string },
+  ) {
+    return this.cartV3Service.setCartCargoRule(body.cartId, body.cargoRuleId);
   }
 }
