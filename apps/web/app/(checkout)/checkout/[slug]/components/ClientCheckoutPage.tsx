@@ -79,7 +79,7 @@ const ClientCheckoutPage = ({
           credentials: "include",
         }
       );
-      if (res.success) {
+      if (res.success && res.data && res.data.success) {
         return res.data.cart;
       }
       throw new Error("Failed to fetch cart info");
@@ -89,7 +89,9 @@ const ClientCheckoutPage = ({
   if (isLoading || isPending || isFetching) {
     return <GlobalLoadingOverlay />;
   }
-  if (!data) {
+
+  if (!data || !data.items) {
+    localStorage.removeItem("cartIdV3");
     return notFound();
   }
 

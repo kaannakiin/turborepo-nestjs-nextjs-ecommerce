@@ -70,7 +70,7 @@ const NonAuthUserCheckoutPage = ({
       ) : (
         <PaymentStep
           cart={{
-            billingAddress: data.billingAddress,
+            billingAddress: data.billingAddress || null,
             cargoRule: data.cargoRule,
             cartId: data.cartId,
             currency: data.currency,

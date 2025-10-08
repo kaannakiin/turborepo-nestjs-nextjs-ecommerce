@@ -243,7 +243,7 @@ const ProductRightSection = ({
       <AddToCartButtonV2
         data={{
           price: selectedVariant.prices[0].price,
-          productId: selectedVariant.productId,
+          productId: productId,
           productName: productTranslation.name,
           productSlug: productTranslation.slug,
           quantity: 1,

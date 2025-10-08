@@ -31,8 +31,8 @@ import {
 import {
   BinCheckSuccessResponse,
   GetCartClientCheckoutReturnType,
-  PaymentSchema,
-  PaymentType,
+  PaymentZodSchema,
+  PaymentZodType,
 } from "@repo/types";
 import { IconCheck } from "@tabler/icons-react";
 import dynamic from "next/dynamic";
@@ -72,15 +72,14 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
   );
   const previousBinRef = useRef<string>("");
   const binCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
   const {
     control,
     handleSubmit,
-    formState: { isSubmitting },
+    formState: { isSubmitting, errors },
     watch,
     setValue,
-  } = useForm<PaymentType>({
-    resolver: zodResolver(PaymentSchema),
+  } = useForm<PaymentZodType>({
+    resolver: zodResolver(PaymentZodSchema),
     defaultValues: {
       creditCardName: "",
       creditCardNumber: "",
@@ -103,6 +102,7 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
             id: cart.billingAddress.id || createId(),
             isCorporateInvoice: cart.billingAddress.isCorporateInvoice || false,
             taxNumber: cart.billingAddress.taxNumber || null,
+            tcKimlikNo: cart.billingAddress.tcKimlikNo || null,
             companyName: cart.billingAddress.companyName || null,
             companyRegistrationAddress:
               cart.billingAddress.companyRegistrationAddress || null,
@@ -119,10 +119,11 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
               postalCode: null,
               stateId: cart.shippingAddress.stateId || null,
               addressType: cart.shippingAddress.addressLocationType || "CITY",
-              id: cart.shippingAddress.id || createId(),
+              id: createId(),
               isCorporateInvoice: false,
               taxNumber: null,
               companyName: null,
+              tcKimlikNo: cart.shippingAddress.tcKimlikNo || null,
               companyRegistrationAddress: null,
             }
           : null,
@@ -208,12 +209,14 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
     };
   }, [creditCardNumber]);
 
-  const onSubmit: SubmitHandler<PaymentType> = async (data: PaymentType) => {
+  const onSubmit: SubmitHandler<PaymentZodType> = async (
+    data: PaymentZodType
+  ) => {
     const paymentReq = await fetchWrapper.post<{
       success: boolean;
       message: string;
       initThreeD?: boolean;
-      threeDSHtmlContent?: string;
+      threeDHtmlContent?: string;
       orderNumber?: string;
     }>(`/payment/create-payment/${cart.cartId}`, {
       body: JSON.stringify(data),
@@ -223,9 +226,10 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
 
     if (paymentReq.success) {
       if (paymentReq.data.success) {
-        if (paymentReq.data.initThreeD && paymentReq.data.threeDSHtmlContent) {
+        if (paymentReq.data.initThreeD && paymentReq.data.threeDHtmlContent) {
+          console.log(paymentReq.data);
           const tempDiv = document.createElement("div");
-          tempDiv.innerHTML = atob(paymentReq.data.threeDSHtmlContent);
+          tempDiv.innerHTML = atob(paymentReq.data.threeDHtmlContent);
           document.body.appendChild(tempDiv);
           const form = tempDiv.querySelector("form");
           if (form) {
@@ -244,7 +248,6 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
       }
     }
   };
-
   return (
     <>
       {isSubmitting && <GlobalLoadingOverlay />}

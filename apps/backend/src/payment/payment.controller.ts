@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Headers,
   Param,
   Post,
   Query,
@@ -10,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { type User } from '@repo/database';
 import {
+  type IyzicoWebhookPayload,
   PaymentZodSchema,
   type PaymentZodType,
   type ThreeDCallback,
@@ -31,7 +33,7 @@ export class PaymentController {
     @CurrentUser() user: User | null,
     @Req() req: Request,
   ) {
-    // return this.paymentService.createPaymentIntent(cartId, data, user, req);
+    return this.paymentService.createPaymentIntent({ data, cartId, user, req });
   }
 
   @Post('bin-check')
@@ -41,10 +43,23 @@ export class PaymentController {
 
   @Post('/iyzico/three-d-callback')
   async threeDCallback(
-    @Query('cartId') cartId: string,
+    @Query('uu') paymentReqId: string,
     @Body() body: ThreeDCallback,
     @Res({ passthrough: true }) res: Response,
   ) {
-    // return this.paymentService.threeDCallback(body, res, cartId);
+    return this.paymentService.iyzicoThreeDCallback({
+      paymentReqId,
+      body: body,
+      res: res,
+    });
+  }
+
+  @Post('iyzico/webhook')
+  async iyzicoWebhook(
+    @Body() body: IyzicoWebhookPayload,
+    @Res() res: Response,
+    @Headers() headers: Headers,
+  ) {
+    console.log('Iyzico Webhook received:', body, headers);
   }
 }

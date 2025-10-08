@@ -1,6 +1,10 @@
 import { OrderItem, Prisma } from "@repo/database";
 import * as z from "zod";
-import { BillingAddressSchema } from "../address/address-schema";
+import {
+  BillingAddressSchema,
+  tcKimlikNoRegex,
+  TURKEY_DB_ID,
+} from "../address/address-schema";
 export const PaymentZodSchema = z
   .object({
     creditCardName: z
@@ -78,41 +82,58 @@ export const PaymentZodSchema = z
     billingAddress: BillingAddressSchema.optional().nullable(),
   })
   .check(({ value, issues }) => {
-    if (!value.isBillingAddressSame && !value.billingAddress) {
-      if (value?.billingAddress?.isCorporateInvoice) {
+    // 👇 Mantık hatası düzeltildi: ! işareti kaldırıldı
+    if (!value.isBillingAddressSame && value.billingAddress) {
+      // Türkiye ise TC Kimlik No kontrolü
+      if (value.billingAddress.countryId === TURKEY_DB_ID) {
         if (
-          !value?.billingAddress?.companyName ||
-          value?.billingAddress?.companyName.trim().length === 0
+          !value.billingAddress.tcKimlikNo ||
+          !tcKimlikNoRegex.test(value.billingAddress.tcKimlikNo)
+        ) {
+          issues.push({
+            code: "custom",
+            message: "Geçersiz TC Kimlik Numarası",
+            path: ["billingAddress", "tcKimlikNo"],
+            input: value.billingAddress.tcKimlikNo,
+          });
+        }
+      }
+
+      // Kurumsal fatura kontrolü
+      if (value.billingAddress.isCorporateInvoice) {
+        if (
+          !value.billingAddress.companyName ||
+          value.billingAddress.companyName.trim().length === 0
         ) {
           issues.push({
             code: "custom",
             message: "Firma Adı gereklidir",
-            path: ["companyName"],
-            input: ["companyName"],
+            path: ["billingAddress", "companyName"],
+            input: value.billingAddress.companyName,
           });
         }
 
         if (
-          !value?.billingAddress?.taxNumber ||
-          value?.billingAddress?.taxNumber.trim().length === 0
+          !value.billingAddress.taxNumber ||
+          value.billingAddress.taxNumber.trim().length === 0
         ) {
           issues.push({
             code: "custom",
             message: "Vergi Numarası gereklidir",
-            path: ["taxNumber"],
-            input: ["taxNumber"],
+            path: ["billingAddress", "taxNumber"],
+            input: value.billingAddress.taxNumber,
           });
         }
 
         if (
-          !value?.billingAddress?.companyRegistrationAddress ||
-          value?.billingAddress?.companyRegistrationAddress.trim().length === 0
+          !value.billingAddress.companyRegistrationAddress ||
+          value.billingAddress.companyRegistrationAddress.trim().length === 0
         ) {
           issues.push({
             code: "custom",
             message: "Vergi dairesi gereklidir",
-            path: ["companyRegistrationAddress"],
-            input: ["companyRegistrationAddress"],
+            path: ["billingAddress", "companyRegistrationAddress"],
+            input: value.billingAddress.companyRegistrationAddress,
           });
         }
       }

@@ -109,6 +109,7 @@ model User {
   defaultAddressId String?                @unique
   defaultAddress   AddressSchema?         @relation("UserDefaultAddress", fields: [defaultAddressId], references: [id], onDelete: SetNull)
   refreshTokens    RefreshTokens[]
+  paymentRequests  PaymentRequestSchema[]
 
   @@index([id, email, phone])
 }
@@ -656,7 +657,8 @@ model Cart {
   updatedAt DateTime   @updatedAt
   items     CartItem[]
 
-  order Order?
+  order           Order?
+  paymentRequests PaymentRequestSchema[] // Değişti: array oldu
 }
 
 // İNDİRİM SİSTEMİ MODELLERİ
@@ -1066,7 +1068,7 @@ model AddressSchema {
 
   shippingCarts  Cart[] @relation("CartShippingAddress")
   billingCarts   Cart[] @relation("CartBillingAddress")
-  defaultForUser User?  @relation("UserDefaultAddress") // Bu satırı ekleyin
+  defaultForUser User?  @relation("UserDefaultAddress")
 
   @@index([userId])
   @@index([countryId])
@@ -1121,16 +1123,17 @@ model CargoRule {
   id   String @id @default(cuid())
   name String
 
-  ruleType    RuleType   @default(SalesPrice)
-  minValue    Float?
-  maxValue    Float?
-  price       Float?
-  currency    Currency   @default(TRY)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  CargoZone   CargoZone? @relation(fields: [cargoZoneId], references: [id])
-  cargoZoneId String?
-  carts       Cart[]
+  ruleType        RuleType               @default(SalesPrice)
+  minValue        Float?
+  maxValue        Float?
+  price           Float?
+  currency        Currency               @default(TRY)
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  CargoZone       CargoZone?             @relation(fields: [cargoZoneId], references: [id])
+  cargoZoneId     String?
+  carts           Cart[]
+  paymentRequests PaymentRequestSchema[]
 
   @@index([ruleType])
 }
@@ -1192,60 +1195,148 @@ enum PaymentType {
 }
 
 model Order {
-  id String @id @default(cuid()) // Benzersiz sipariş ID'si
+  id String @id @default(cuid())
 
   // Ödeme Bilgileri
-  paymentId      String  @unique // İyzico'dan gelen ödeme ID'si
-  conversationId String? // İyzico conversation ID (signature doğrulama için)
-  orderNumber    String  @unique // Müşteriye gösterilen sipariş numarası
+  paymentId      String  @unique
+  conversationId String?
+  orderNumber    String  @unique
 
   // Durum Bilgileri
-  orderStatus   OrderStatus   @default(PENDING) // Sipariş durumu
-  paymentStatus PaymentStatus @default(PENDING) // Ödeme durumu
-  paymentType   PaymentType   @default(THREE_D_SECURE) // Ödeme tipi
-  // Bölgesel Ayarlar
-  currency      Currency      @default(TRY) // Para birimi
-  locale        Locale        @default(TR) // Dil/bölge
+  orderStatus   OrderStatus   @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
+  paymentType   PaymentType   @default(THREE_D_SECURE)
+
+  currency Currency @default(TRY)
+  locale   Locale   @default(TR)
 
   // Fiyat Bilgileri
-  subtotal       Float // Ürünlerin toplam tutarı
-  totalAmount    Float // Müşterinin ödediği genel toplam
-  taxAmount      Float? // KDV tutarı (varsa)
-  shippingCost   Float? // Kargo ücreti
-  discountAmount Float? // İndirim tutarı
+  subtotal       Float
+  totalAmount    Float
+  taxAmount      Float?
+  shippingCost   Float?
+  discountAmount Float?
 
   // Notlar
-  customerNotes String? @db.Text // Müşteri notu
-  adminNotes    String? @db.Text // Admin/operasyon notu
+  customerNotes String? @db.Text
+  adminNotes    String? @db.Text
 
   // Tarih Takibi
-  confirmedAt DateTime? // Sipariş onaylanma tarihi
-  shippedAt   DateTime? // Kargoya verilme tarihi
-  deliveredAt DateTime? // Teslim tarihi
-  cancelledAt DateTime? // İptal tarihi
+  confirmedAt DateTime?
+  shippedAt   DateTime?
+  deliveredAt DateTime?
+  cancelledAt DateTime?
 
   // İlişkiler
-  orderItems OrderItem[] // Sipariş kalemleri
+  orderItems OrderItem[]
 
   //Cart Info
-  cardType        String? // Kart tipi (Visa, MasterCard vs.)
+  cardType        String?
   cardFamily      String?
   cardAssociation String?
   binNumber       String?
-  lastFourDigits  String? // Kartın son 4 hanesi
+  lastFourDigits  String?
 
-  // Adres Bilgileri (JSON olarak saklanıyor - sipariş anındaki snapshot)
-  shippingAddress Json? // Teslimat adresi
-  billingAddress  Json? // Fatura adresi
+  // Adres Bilgileri
+  shippingAddress Json?
+  billingAddress  Json?
 
   // Kullanıcı İlişkisi
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userId String? // Kullanıcı ID'si (misafir siparişlerde null)
+  userId String?
 
-  // Sepet İlişkisi (Hangi sepetten oluşturuldu)
-  cartId String? @unique // Kaynak sepet ID'si
-  cart   Cart?   @relation(fields: [cartId], references: [id], onDelete: SetNull)
+  // Sepet İlişkisi
+  cartId          String?               @unique
+  cart            Cart?                 @relation(fields: [cartId], references: [id], onDelete: SetNull)
+  paymentRequests PaymentRequestSchema?
 
   // Hızlı arama için indeksler
   @@index([paymentId, orderNumber, paymentStatus, orderStatus])
+}
+
+enum PaymentProvider {
+  IYZICO
+  PAYTR
+  STRIPE
+  PAYPAL
+}
+
+enum PaymentRequestStatus {
+  PENDING // İşlem başlatıldı
+  WAITING_THREE_D_SECURE // 3D Secure bekleniyor
+  THREE_D_SECURE_FAILED // 3D Secure başarısız
+  THREE_D_SECURE_SUCCESS // 3D Secure başarılı
+  PROCESSING // İşleniyor
+  SUCCESS // Başarılı
+  FAILED // Başarısız
+  CANCELLED // İptal edildi
+  REFUNDED // İade edildi
+  TIMEOUT // Zaman aşımı
+}
+
+model PaymentRequestSchema {
+  id String @id @default(cuid())
+
+  // Mevcut alanlar
+  userId          String?
+  user            User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+  paymentProvider PaymentProvider      @default(IYZICO)
+  paymentStatus   PaymentRequestStatus @default(WAITING_THREE_D_SECURE)
+
+  // Kargo ve Adres
+  cargoRuleId     String?
+  cargoRule       CargoRule? @relation(fields: [cargoRuleId], references: [id], onDelete: SetNull)
+  billingAddress  Json?
+  shippingAddress Json?
+
+  // Ödeme Detayları
+  transactionId  String? // Ödeme sağlayıcısından gelen işlem ID'si
+  paymentId      String? // iyzico paymentId
+  conversationId String? // iyzico conversationId
+
+  // Tutar Bilgileri - YENI!
+  amount         Decimal  @db.Decimal(10, 2) // Toplam tutar
+  currency       Currency @default(TRY)
+  subtotal       Decimal? @db.Decimal(10, 2) // Ara toplam
+  shippingCost   Decimal? @db.Decimal(10, 2) // Kargo ücreti
+  discountAmount Decimal? @db.Decimal(10, 2) // İndirim tutarı
+  taxAmount      Decimal? @db.Decimal(10, 2) // Vergi tutarı
+
+  // Kart Bilgileri (Güvenlik için sadece gerekli bilgiler) - YENI!
+  cardType        String? // Kredi/Banka kartı
+  cardFamily      String? // Bonus, Axess, vb.
+  cardAssociation String? // Visa, Mastercard
+  binNumber       String? // İlk 6 hane
+  lastFourDigits  String? // Son 4 hane
+  installment     Int     @default(1) // Taksit sayısı
+
+  // Hata Takibi - YENI!
+  errorCode     String? // Hata kodu
+  errorMessage  String? @db.Text // Hata mesajı
+  errorGroup    String? // Hata kategorisi (CARD_ERROR, NETWORK_ERROR, vb.)
+  failureReason String? @db.Text // Başarısızlık nedeni detayı
+
+  // Admin Bilgilendirme - YENI!
+  isReviewed Boolean   @default(false) // Admin tarafından incelendi mi?
+  reviewedAt DateTime? // İnceleme tarihi
+  reviewedBy String? // İnceleyen admin ID
+  adminNotes String?   @db.Text // Admin notları
+
+  // İlişkiler
+  cart    Cart?   @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cartId  String?
+  order   Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  orderId String? @unique
+
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime? // İşlem tamamlanma zamanı
+
+  @@index([cartId])
+  @@index([orderId])
+  @@index([paymentStatus])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([paymentId])
 }

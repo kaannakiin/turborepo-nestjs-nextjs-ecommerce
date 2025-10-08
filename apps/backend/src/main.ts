@@ -108,6 +108,7 @@ async function bootstrap() {
         const excludedPaths = [
           '/auth/csrf',
           '/auth/refresh',
+          '/payment/iyzico/webhook',
           paymentCallbackUrl.pathname,
         ];
 

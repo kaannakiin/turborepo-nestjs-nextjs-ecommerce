@@ -9,7 +9,7 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { type User } from '@repo/database';
+import { PaymentType, type User } from '@repo/database';
 import {
   AddCartReqBodyV3Schema,
   DecraseOrIncreaseCartItemReqBodyV3Schema,
@@ -17,6 +17,8 @@ import {
   type AddCartReqBodyV3Type,
   type DecraseOrIncreaseCartItemReqBodyV3Type,
   NonAuthUserAddressSchema,
+  PaymentZodType,
+  PaymentZodSchema,
 } from '@repo/types';
 import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';

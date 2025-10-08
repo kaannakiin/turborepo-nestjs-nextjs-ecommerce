@@ -25,15 +25,15 @@ import {
   GetAllCityReturnType,
   GetAllCountryReturnType,
   GetAllStateReturnType,
-  PaymentType,
+  PaymentZodType,
 } from "@repo/types";
 import { IconCheck } from "@tabler/icons-react";
 import { IMaskInput } from "react-imask";
 
 interface BillingAddressFormProps {
-  control: Control<PaymentType>;
-  setValue: UseFormSetValue<PaymentType>;
-  watch: UseFormWatch<PaymentType>;
+  control: Control<PaymentZodType>;
+  setValue: UseFormSetValue<PaymentZodType>;
+  watch: UseFormWatch<PaymentZodType>;
 }
 
 const BillingAddressForm = ({

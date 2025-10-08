@@ -73,9 +73,11 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
       );
       if (!res.success) {
         console.error("Failed to fetch cart:");
+        localStorage.removeItem("cartIdV3");
         throw new Error("Failed to fetch cart");
       }
       if (!res.data.success || !res.data.cart) {
+        localStorage.removeItem("cartIdV3");
         throw new Error("No cart data found");
       }
       return res.data.cart;

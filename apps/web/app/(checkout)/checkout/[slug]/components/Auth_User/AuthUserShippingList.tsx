@@ -23,6 +23,7 @@ import { IconCheck } from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import AddressCard from "../AddressCard";
+import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 
 interface AuthUserShippingListProps {
   cart: Pick<GetCartClientCheckoutReturnType, "cart">;
@@ -134,6 +135,11 @@ const AuthUserShippingList = ({ cart }: AuthUserShippingListProps) => {
                     />
                     <Text>{rule.name}</Text>
                   </Group>
+                  {rule.price === 0 ? (
+                    <Text> Ücretsiz Kargo</Text>
+                  ) : (
+                    <ProductPriceFormatter price={rule.price} />
+                  )}
                 </Group>
               ))
             : null}
