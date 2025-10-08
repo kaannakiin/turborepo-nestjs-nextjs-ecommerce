@@ -805,3 +805,18 @@ export function getOrderStatusInfos(status: $Enums.OrderStatus): string {
       return "İade Edildi";
   }
 }
+
+export function getPaymentStatusInfos(status: $Enums.PaymentStatus): string {
+  switch (status) {
+    case "FAILED":
+      return "Başarısız";
+    case "PAID":
+      return "Ödendi";
+    case "PARTIAL_REFUND":
+      return "Kısmi İade";
+    case "PENDING":
+      return "Beklemede";
+    case "REFUNDED":
+      return "İade Edildi";
+  }
+}

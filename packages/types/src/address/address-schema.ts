@@ -42,6 +42,12 @@ const BaseAddressSchema = z
       })
       .optional()
       .nullable(),
+    districtId: z
+      .uuid({
+        error: "Geçersiz Semt Kimliği",
+      })
+      .optional()
+      .nullable(),
     addressType: z.enum(CountryType, {
       error: "Geçersiz Adres Türü",
     }),
@@ -90,6 +96,17 @@ const BaseAddressSchema = z
         message: "State seçimi gereklidir",
         input: ["stateId"],
         path: ["cityId"],
+      });
+    }
+    if (
+      value.addressType === "CITY" &&
+      value.countryId === TURKEY_DB_ID &&
+      !value.districtId
+    ) {
+      issues.push({
+        code: "custom",
+        message: "Semt/Mahalle seçimi gereklidir",
+        input: ["districtId"],
       });
     }
   });

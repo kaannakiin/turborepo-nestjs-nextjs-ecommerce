@@ -9,6 +9,7 @@ import {
   DecraseOrIncreaseCartItemReqBodyV3Type,
   GetCartClientCheckoutReturnType,
   NonAuthUserAddressZodType,
+  TURKEY_DB_ID,
 } from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ShippingService } from 'src/shipping/shipping.service';
@@ -580,6 +581,12 @@ export class CartV3Service {
                 name: true,
               },
             },
+            district: {
+              select: {
+                name: true,
+                id: true,
+              },
+            },
             country: {
               select: {
                 id: true,
@@ -610,6 +617,12 @@ export class CartV3Service {
                 name: true,
                 translations: true,
                 emoji: true,
+              },
+            },
+            district: {
+              select: {
+                id: true,
+                name: true,
               },
             },
             state: {
@@ -1270,14 +1283,27 @@ export class CartV3Service {
           zipCode: data.postalCode,
           addressLocationType: data.addressType,
           tcKimlikNo: data.tcKimlikNo || null,
-          ...(data.addressType === 'CITY'
-            ? { cityId: data.cityId }
-            : data.addressType === 'STATE'
-              ? { stateId: data.stateId }
-              : {
+          ...(data.addressType === 'CITY' &&
+          data.countryId === TURKEY_DB_ID &&
+          data.districtId
+            ? {
+                cityId: data.cityId,
+                stateId: null,
+                districtId: data.districtId,
+              }
+            : data.addressType === 'CITY'
+              ? {
+                  cityId: data.cityId,
                   stateId: null,
-                  cityId: null,
-                }),
+                  districtId: null,
+                }
+              : data.addressType === 'STATE'
+                ? {
+                    stateId: data.stateId,
+                    cityId: null,
+                    districtId: null,
+                  }
+                : {}),
           countryId: data.countryId,
         };
 

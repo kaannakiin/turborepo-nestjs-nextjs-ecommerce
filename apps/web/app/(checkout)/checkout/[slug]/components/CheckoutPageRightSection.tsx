@@ -251,7 +251,8 @@ const CartSummary = ({
         <ProductPriceFormatter c="dimmed" price={calculateTotal()} />
       </Group>
 
-      {step === "info" ? null : cargoRule && cargoRule.price > 0 ? (
+      {step === "info" || step === "shipping" ? null : cargoRule &&
+        cargoRule.price > 0 ? (
         <Group justify="space-between">
           <Text c="dimmed">Kargo Ücreti</Text>
           <ProductPriceFormatter c="dimmed" price={cargoRule.price} />

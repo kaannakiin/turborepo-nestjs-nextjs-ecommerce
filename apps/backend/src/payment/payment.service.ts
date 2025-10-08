@@ -15,6 +15,7 @@ import {
   InstallmentResponse,
   InstallmentSuccessResponse,
   NonThreeDSRequest,
+  NonThreeDSResponse,
   PaymentZodType,
   SignatureValidationData,
   ThreeDCallback,
@@ -573,7 +574,7 @@ export class PaymentService {
     }
 
     const shippingAddress: NonThreeDSRequest['shippingAddress'] = {
-      address: `${checkoutCart.shippingAddress.addressLine1}, ${checkoutCart.shippingAddress.addressLine2 || ' '}  ${checkoutCart.shippingAddress.city.name}, ${checkoutCart.shippingAddress.country.name}`,
+      address: `${checkoutCart.shippingAddress.addressLine1}, ${checkoutCart.shippingAddress.addressLine2 || ' '}`,
       city:
         checkoutCart.shippingAddress.city?.name ||
         checkoutCart.shippingAddress.state?.name ||
@@ -589,7 +590,7 @@ export class PaymentService {
     const billingAddress: NonThreeDSRequest['billingAddress'] =
       !data.isBillingAddressSame && createdBillingAddress
         ? {
-            address: `${createdBillingAddress.addressLine1}, ${createdBillingAddress.addressLine2 || ' '}  ${createdBillingAddress.city.name}, ${createdBillingAddress.country.name}`,
+            address: `${createdBillingAddress.addressLine1}, ${createdBillingAddress.addressLine2 || ' '} `,
             city:
               createdBillingAddress.city?.name ||
               createdBillingAddress.state?.name ||
@@ -745,6 +746,335 @@ export class PaymentService {
       installmentReq.data.installmentDetails &&
       installmentReq.data.installmentDetails[0].force3ds === 0
     ) {
+      const nonThreeDSRequest = await this.iyzicoFetch<
+        NonThreeDSRequest,
+        NonThreeDSResponse
+      >('/payment/auth', paymentRequest);
+      if (nonThreeDSRequest.status === 'failure') {
+        await this.prisma.paymentRequestSchema.update({
+          where: {
+            id: cretedReq.id,
+          },
+          data: {
+            errorCode: nonThreeDSRequest.errorCode,
+            errorMessage: nonThreeDSRequest.errorMessage,
+            failureReason: nonThreeDSRequest.errorMessage,
+            paymentStatus: 'FAILED',
+          },
+        });
+        return {
+          success: false,
+          message:
+            'Ödeme işlemi gerçekleştirilemedi. Lütfen daha sonra tekrar deneyiniz.',
+        };
+      }
+
+      if (nonThreeDSRequest.conversationId === paymentReqConversationId) {
+        const isValidSignature = this.iyzicoValidateSignature('non-3ds-auth', {
+          paymentId: nonThreeDSRequest.paymentId,
+          currency: nonThreeDSRequest.currency,
+          basketId: nonThreeDSRequest.basketId,
+          conversationId: nonThreeDSRequest.conversationId,
+          paidPrice: nonThreeDSRequest.paidPrice,
+          price: nonThreeDSRequest.price,
+          signature: nonThreeDSRequest.signature,
+        });
+
+        if (!isValidSignature) {
+          return {
+            success: false,
+            message:
+              'Ödeme işlemi gerçekleştirilemedi. Lütfen daha sonra tekrar deneyiniz.',
+          };
+        }
+
+        let orderNumber = this.generateUniqueOrderNumber();
+        const orderNumberisUnique = async (orderNumber: string) => {
+          const existingOrder = await this.prisma.order.findUnique({
+            where: { orderNumber },
+          });
+          return !existingOrder;
+        };
+        while (!(await orderNumberisUnique(orderNumber))) {
+          orderNumber = this.generateUniqueOrderNumber();
+        }
+        await this.prisma.$transaction(
+          async (prisma) => {
+            const order = await prisma.order.create({
+              data: {
+                orderNumber,
+                paymentId: nonThreeDSRequest.paymentId,
+                subtotal: this.toFixedPrice(nonThreeDSRequest.price),
+                totalAmount: this.toFixedPrice(nonThreeDSRequest.paidPrice),
+                ...(paymentRequest.billingAddress
+                  ? {
+                      billingAddress: JSON.parse(
+                        JSON.stringify(paymentRequest.billingAddress),
+                      ),
+                    }
+                  : {}),
+                shippingAddress: JSON.parse(
+                  JSON.stringify(paymentRequest.shippingAddress),
+                ),
+                currency: paymentRequest.currency,
+                binNumber: nonThreeDSRequest.binNumber,
+                lastFourDigits: nonThreeDSRequest.lastFourDigits,
+                cardType: nonThreeDSRequest.cardType,
+                cardAssociation: nonThreeDSRequest.cardAssociation,
+                cardFamily: nonThreeDSRequest.cardFamily,
+                paymentType: 'NON_THREE_D_SECURE',
+                shippingCost: checkoutCart?.cargoRule?.price || 0,
+                paymentStatus: 'PAID',
+                userId: checkoutCart?.userId || null,
+                cartId: checkoutCart.cartId,
+                locale: checkoutCart?.locale || 'TR',
+              },
+            });
+
+            const groupedItems = nonThreeDSRequest.itemTransactions.reduce(
+              (acc, item) => {
+                if (!acc[item.itemId]) {
+                  acc[item.itemId] = {
+                    items: [],
+                    totalQuantity: 0,
+                    totalPaidPrice: 0,
+                    firstItem: item,
+                  };
+                }
+
+                acc[item.itemId].items.push(item);
+                acc[item.itemId].totalQuantity += 1;
+                acc[item.itemId].totalPaidPrice += item.paidPrice;
+
+                return acc;
+              },
+              {} as Record<
+                string,
+                {
+                  items: typeof nonThreeDSRequest.itemTransactions;
+                  totalQuantity: number;
+                  totalPaidPrice: number;
+                  firstItem: (typeof nonThreeDSRequest.itemTransactions)[0];
+                }
+              >,
+            );
+            await Promise.all(
+              Object.entries(groupedItems).map(
+                async ([itemId, groupedData]) => {
+                  const [productId, variantId] = itemId.split('-');
+                  const { totalQuantity, totalPaidPrice, firstItem } =
+                    groupedData;
+
+                  // VARIANT İÇİN
+                  if (variantId) {
+                    const productVariant =
+                      await prisma.productVariantCombination.findUnique({
+                        where: {
+                          id: variantId,
+                          productId,
+                        },
+                        include: {
+                          assets: {
+                            take: 1,
+                            orderBy: {
+                              order: 'asc',
+                            },
+                            select: {
+                              asset: {
+                                select: {
+                                  url: true,
+                                  type: true,
+                                },
+                              },
+                            },
+                          },
+                          prices: true,
+                          translations: true,
+                          options: {
+                            orderBy: [
+                              {
+                                productVariantOption: {
+                                  productVariantGroup: {
+                                    order: 'asc',
+                                  },
+                                },
+                              },
+                              {
+                                productVariantOption: { order: 'asc' },
+                              },
+                            ],
+                            select: {
+                              productVariantOption: {
+                                select: {
+                                  variantOption: {
+                                    select: {
+                                      id: true,
+                                      hexValue: true,
+                                      translations: true,
+                                      asset: {
+                                        select: {
+                                          url: true,
+                                          type: true,
+                                        },
+                                      },
+                                      variantGroup: {
+                                        select: {
+                                          id: true,
+                                          translations: true,
+                                          type: true,
+                                        },
+                                      },
+                                    },
+                                  },
+                                },
+                              },
+                            },
+                          },
+                          product: {
+                            include: {
+                              translations: true,
+                              assets: {
+                                take: 1,
+                                select: {
+                                  asset: {
+                                    select: {
+                                      url: true,
+                                      type: true,
+                                    },
+                                  },
+                                },
+                              },
+                            },
+                          },
+                        },
+                      });
+
+                    if (!productVariant) {
+                      return;
+                    }
+
+                    const { options, ...rest } = productVariant;
+
+                    // Birim fiyat hesapla (ortalama)
+                    const avgPaidPrice = this.toFixedPrice(
+                      totalPaidPrice / totalQuantity,
+                    );
+
+                    await prisma.orderItem.upsert({
+                      where: {
+                        orderId_productId_variantId: {
+                          orderId: order.id,
+                          productId,
+                          variantId,
+                        },
+                      },
+                      update: {
+                        quantity: { increment: totalQuantity },
+                        totalPrice: {
+                          increment: this.toFixedPrice(totalPaidPrice),
+                        },
+                        buyedPrice: avgPaidPrice,
+                      },
+                      create: {
+                        buyedPrice: avgPaidPrice,
+                        productId,
+                        variantId,
+                        quantity: totalQuantity,
+                        orderId: order.id,
+                        totalPrice: this.toFixedPrice(totalPaidPrice),
+                        originalPrice: this.toFixedPrice(firstItem.price),
+                        buyedVariants: JSON.parse(
+                          JSON.stringify(
+                            options.map(
+                              (o) => o.productVariantOption.variantOption,
+                            ),
+                          ),
+                        ),
+                        productSnapshot: JSON.parse(JSON.stringify(rest)),
+                        transactionId: firstItem.paymentTransactionId, // İlk transaction ID
+                      },
+                    });
+                  }
+
+                  // NORMAL ÜRÜN İÇİN (Variant olmayan)
+                  if (!variantId && productId) {
+                    const product = await prisma.product.findUnique({
+                      where: { id: productId },
+                      include: {
+                        assets: {
+                          take: 1,
+                          orderBy: {
+                            order: 'asc',
+                          },
+                          select: {
+                            asset: {
+                              select: {
+                                url: true,
+                                type: true,
+                              },
+                            },
+                          },
+                        },
+                        prices: true,
+                        translations: true,
+                      },
+                    });
+
+                    if (!product) {
+                      return;
+                    }
+
+                    // Birim fiyat hesapla (ortalama)
+                    const avgPaidPrice = this.toFixedPrice(
+                      totalPaidPrice / totalQuantity,
+                    );
+
+                    await prisma.orderItem.upsert({
+                      where: {
+                        orderId_productId_variantId: {
+                          orderId: order.id,
+                          productId,
+                          variantId: null,
+                        },
+                      },
+                      update: {
+                        quantity: { increment: totalQuantity },
+                        totalPrice: {
+                          increment: this.toFixedPrice(totalPaidPrice),
+                        },
+                        // Ortalama fiyatı güncelle
+                        buyedPrice: avgPaidPrice,
+                      },
+                      create: {
+                        buyedPrice: avgPaidPrice,
+                        productId,
+                        quantity: totalQuantity,
+                        orderId: order.id,
+                        totalPrice: this.toFixedPrice(totalPaidPrice),
+                        originalPrice: this.toFixedPrice(firstItem.price),
+                        productSnapshot: JSON.parse(JSON.stringify(product)),
+                        transactionId: firstItem.paymentTransactionId,
+                      },
+                    });
+                  }
+                },
+              ),
+            );
+          },
+          { timeout: 10 * 60 * 1000 }, // 10 dakika
+        );
+        await this.prisma.cart.update({
+          where: { id: checkoutCart.cartId },
+          data: {
+            status: 'CONVERTED',
+          },
+        });
+        return {
+          orderNumber: orderNumber,
+          message: 'Ödeme işlemi başarılı. Yönlendiriliyorsunuz.',
+          success: true,
+        };
+      }
     }
   }
 
@@ -867,8 +1197,8 @@ export class PaymentService {
             data: {
               orderNumber,
               paymentId: completeThreeDReq.paymentId,
-              subtotal: parseFloat(completeThreeDReq.price.toFixed(2)),
-              totalAmount: parseFloat(completeThreeDReq.paidPrice.toFixed(2)),
+              subtotal: this.toFixedPrice(completeThreeDReq.price),
+              totalAmount: this.toFixedPrice(completeThreeDReq.paidPrice),
               ...(paymentReq.billingAddress
                 ? {
                     billingAddress: JSON.parse(
@@ -1035,7 +1365,6 @@ export class PaymentService {
                     totalPrice: {
                       increment: this.toFixedPrice(totalPaidPrice),
                     },
-                    // Ortalama fiyatı güncelle
                     buyedPrice: avgPaidPrice,
                   },
                   create: {
@@ -1135,6 +1464,7 @@ export class PaymentService {
       return res.redirect(`${this.webUrl}/order/${orderNumber}`);
     }
   }
+
   private toFixedPrice(price: number): number {
     return parseFloat(price.toFixed(2));
   }

@@ -239,7 +239,7 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
           }
         } else {
           if (!paymentReq.data.initThreeD && paymentReq.data.orderNumber) {
-            push(`/orders/${paymentReq.data.orderNumber}`);
+            push(`/order/${paymentReq.data.orderNumber}`);
           }
         }
       } else {

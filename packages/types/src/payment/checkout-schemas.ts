@@ -17,6 +17,12 @@ export type CheckoutAddressType = Prisma.AddressSchemaGetPayload<{
         emoji: true;
       };
     };
+    district: {
+      select: {
+        id: true;
+        name: true;
+      };
+    };
     state: {
       select: {
         id: true;

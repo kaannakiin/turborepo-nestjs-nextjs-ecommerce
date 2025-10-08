@@ -593,10 +593,25 @@ model City {
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   addressSchema AddressSchema[]
+  districts     District[]
 
   @@index([countryId])
   @@index([name])
   @@index([latitude, longitude])
+}
+
+model District {
+  id            String          @id
+  name          String
+  addressSchema AddressSchema[]
+
+  cityId String
+  city   City   @relation(fields: [cityId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([cityId])
 }
 
 enum WhereAdded {
@@ -1062,6 +1077,8 @@ model AddressSchema {
   companyName                String?
   taxNumber                  String?
   companyRegistrationAddress String?
+  district                   District?   @relation(fields: [districtId], references: [id])
+  districtId                 String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1249,6 +1266,9 @@ model Order {
   cartId          String?               @unique
   cart            Cart?                 @relation(fields: [cartId], references: [id], onDelete: SetNull)
   paymentRequests PaymentRequestSchema?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Hızlı arama için indeksler
   @@index([paymentId, orderNumber, paymentStatus, orderStatus])
