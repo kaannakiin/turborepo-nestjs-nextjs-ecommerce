@@ -1,252 +1,53 @@
 "use client";
 import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
-import { useCartV2 } from "@/context/cart-context/CartContextV2";
+import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
+import { useCartV3 } from "@/context/cart-context/CartContextV3";
 import {
   ActionIcon,
   AspectRatio,
   Box,
   Button,
-  CloseButton,
   Drawer,
   Group,
   Indicator,
-  Popover,
   ScrollArea,
   Stack,
   Text,
-  ThemeIcon,
   Title,
 } from "@mantine/core";
-import { useDisclosure, useInViewport } from "@mantine/hooks";
+import { useDisclosure } from "@mantine/hooks";
 import {
-  IconCheck,
   IconMinus,
   IconPlus,
   IconShoppingBag,
   IconShoppingBagX,
   IconTrash,
 } from "@tabler/icons-react";
-import { usePathname, useRouter } from "next/navigation";
-import ProductPriceFormatter from "../(user)/components/ProductPriceFormatter";
+import { useRouter } from "next/navigation";
 import CustomImage from "./CustomImage";
 
-const ShoppingBagDrawer = () => {
-  const pathname = usePathname();
-  const { ref, inViewport } = useInViewport();
-  const [opened, { open, close, toggle }] = useDisclosure();
+const ShoppingBagDrawerV2 = () => {
+  const [opened, { close, toggle }] = useDisclosure();
+  const { cart, decreaseItemQuantity, increaseItemQuantity, removeItem } =
+    useCartV3();
+  const isEmpty = !cart || cart.items.length === 0;
   const { media } = useTheme();
-  const {
-    cart,
-    removeItem,
-    decreaseItemQuantity,
-    increaseItemQuantity,
-    popoverOpened,
-    closePopover,
-    lastAddedItem,
-  } = useCartV2();
-
-  const isEmpty = !cart || !cart.items || cart.items.length === 0;
-
   const { push } = useRouter();
-
-  if (pathname.startsWith("/cart") || pathname.startsWith("/checkout")) {
-    return (
-      <ActionIcon variant="transparent">
-        <IconShoppingBag size={28} />
-      </ActionIcon>
-    );
-  }
 
   return (
     <>
-      <Popover
-        withArrow={false}
-        offset={16}
-        opened={Boolean(lastAddedItem) && popoverOpened && inViewport}
-        position={
-          media === "mobile" || media === "tablet" ? "bottom" : "bottom-end"
-        }
-        onClose={closePopover}
-        withOverlay
-        overlayProps={{ zIndex: 10000, blur: "8px" }}
-        zIndex={100011}
-        styles={{
-          dropdown: {
-            padding: 0,
-            maxWidth:
-              media === "mobile"
-                ? "calc(100vw - 32px)"
-                : media === "tablet"
-                  ? "calc(100vw - 64px)"
-                  : "400px",
-            width:
-              media === "mobile"
-                ? "calc(100vw - 32px)"
-                : media === "tablet"
-                  ? "calc(100vw - 64px)"
-                  : "400px",
-          },
-        }}
+      <Indicator
+        inline
+        label={cart?.items.length}
+        size={20}
+        offset={2}
+        withBorder={false}
+        className="cursor-pointer"
+        disabled={!cart}
+        onClick={toggle}
       >
-        <Popover.Target>
-          <ActionIcon
-            ref={ref}
-            variant="transparent"
-            size={"xl"}
-            onClick={toggle}
-          >
-            {cart && cart.items && cart.items.length > 0 ? (
-              <Indicator
-                label={cart.totalItems}
-                classNames={{ indicator: "font-semibold" }}
-                inline
-                size={20}
-                offset={3}
-                withBorder={false}
-                styles={{
-                  indicator: {
-                    minWidth: "20px",
-                    height: "20px",
-                    padding: "0 4px",
-                    fontSize: "11px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  },
-                }}
-              >
-                <IconShoppingBag size={28} />
-              </Indicator>
-            ) : (
-              <IconShoppingBag size={28} />
-            )}
-          </ActionIcon>
-        </Popover.Target>
-        <Popover.Dropdown>
-          {lastAddedItem && (
-            <Stack gap={0} w={"100%"}>
-              <Group
-                justify="space-between"
-                align="center"
-                p={"md"}
-                className="border-b border-b-[var(--mantine-color-dimmed)]"
-              >
-                <Group gap="xs">
-                  <ThemeIcon
-                    variant="primary"
-                    size={media === "mobile" ? "sm" : "md"}
-                    radius="xl"
-                    color="primary"
-                  >
-                    <IconCheck size={media === "mobile" ? 14 : 18} />
-                  </ThemeIcon>
-                  <Text
-                    fw={600}
-                    c="primary"
-                    size={media === "mobile" ? "xs" : "sm"}
-                  >
-                    ÜRÜN SEPETE EKLENDİ
-                  </Text>
-                </Group>
-                <CloseButton
-                  size={media === "mobile" ? "sm" : "md"}
-                  c="primary"
-                  onClick={closePopover}
-                  variant="transparent"
-                />
-              </Group>
-
-              {/* Content */}
-              <Stack gap="md" p={media === "mobile" ? "sm" : "lg"}>
-                <Group
-                  gap={media === "mobile" ? "sm" : "md"}
-                  align="flex-start"
-                >
-                  <AspectRatio ratio={1} w={media === "mobile" ? 60 : 80}>
-                    <CustomImage
-                      src={
-                        lastAddedItem.variantAsset?.url ||
-                        lastAddedItem.productAsset?.url ||
-                        ""
-                      }
-                      alt={lastAddedItem.productName}
-                      className="rounded-md"
-                    />
-                  </AspectRatio>
-
-                  <Stack gap="xs" style={{ flex: 1, minWidth: 0 }}>
-                    <Text
-                      fw={600}
-                      size={media === "mobile" ? "xs" : "sm"}
-                      lineClamp={2}
-                    >
-                      {lastAddedItem.productName}
-                    </Text>
-
-                    {lastAddedItem.variantOptions &&
-                      lastAddedItem.variantOptions.length > 0 && (
-                        <Text
-                          size="xs"
-                          c="dimmed"
-                          tt="capitalize"
-                          lineClamp={1}
-                        >
-                          {lastAddedItem.variantOptions
-                            .map((vo) => `${vo.variantOptionName}`)
-                            .join(", ")}
-                        </Text>
-                      )}
-
-                    <Group gap="xs" wrap="nowrap">
-                      <Text size="xs" c="dimmed">
-                        Adet: {lastAddedItem.quantity}
-                      </Text>
-                      <Text size="xs" c="dimmed">
-                        •
-                      </Text>
-                      <ProductPriceFormatter
-                        size="xs"
-                        fw={600}
-                        price={
-                          (lastAddedItem.discountedPrice ||
-                            lastAddedItem.price) * lastAddedItem.quantity
-                        }
-                      />
-                    </Group>
-                  </Stack>
-                </Group>
-
-                {/* Buttons */}
-                <Stack gap="sm">
-                  <Button
-                    variant="default"
-                    size={media === "mobile" ? "xs" : "sm"}
-                    radius="xl"
-                    fullWidth
-                    onClick={() => {
-                      closePopover();
-                      push("/cart");
-                    }}
-                  >
-                    SEPETİM ({cart?.totalItems || 0})
-                  </Button>
-                  <Button
-                    size={media === "mobile" ? "xs" : "sm"}
-                    radius="xl"
-                    fullWidth
-                    onClick={() => {
-                      closePopover();
-                      push(`/checkout${cart?.cartId ? `/${cart.cartId}` : ""}`);
-                    }}
-                  >
-                    ÖDEME
-                  </Button>
-                </Stack>
-              </Stack>
-            </Stack>
-          )}
-        </Popover.Dropdown>
-      </Popover>
+        <IconShoppingBag size={28} color="var(--mantine-primary-color-5)" />
+      </Indicator>
       <Drawer.Root
         position="left"
         size={media === "mobile" || media === "tablet" ? "lg" : "md"}
@@ -331,7 +132,21 @@ const ShoppingBagDrawer = () => {
                           px={0}
                           onClick={() => {
                             close();
-                            push(item.productUrl);
+                            if (item.variantId && item.variantOptions) {
+                              const searchParams = new URLSearchParams();
+                              item.variantOptions.forEach((vo) => {
+                                searchParams.append(
+                                  vo.variantGroupSlug,
+                                  vo.variantOptionSlug
+                                );
+                              });
+                              push(
+                                `/${item.productSlug}?${searchParams.toString()}`
+                              );
+                              return;
+                            } else {
+                              push(`/${item.productSlug}`);
+                            }
                           }}
                           h={"100%"}
                         >
@@ -341,14 +156,10 @@ const ShoppingBagDrawer = () => {
                             className="h-full"
                             w={100}
                           >
-                            {item.productAsset || item.variantAsset ? (
+                            {item.productAsset ? (
                               <CustomImage
                                 src={
-                                  item.variantAsset
-                                    ? item.variantAsset.url
-                                    : item.productAsset
-                                      ? item.productAsset.url
-                                      : ""
+                                  item.productAsset ? item.productAsset.url : ""
                                 }
                                 alt={item.productName}
                                 className="rounded-md"
@@ -393,11 +204,15 @@ const ShoppingBagDrawer = () => {
                                   onClick={async (e) => {
                                     e.stopPropagation();
                                     if (item.quantity > 1) {
-                                      await decreaseItemQuantity({
-                                        itemId: item.itemId,
-                                      });
+                                      await decreaseItemQuantity(
+                                        item.productId,
+                                        item.variantId || undefined
+                                      );
                                     } else {
-                                      await removeItem({ itemId: item.itemId });
+                                      await removeItem(
+                                        item.productId,
+                                        item.variantId || undefined
+                                      );
                                     }
                                   }}
                                   size={"md"}
@@ -417,9 +232,10 @@ const ShoppingBagDrawer = () => {
                                   size={"md"}
                                   onClick={async (e) => {
                                     e.stopPropagation();
-                                    await increaseItemQuantity({
-                                      itemId: item.itemId,
-                                    });
+                                    await increaseItemQuantity(
+                                      item.productId,
+                                      item.variantId || undefined
+                                    );
                                   }}
                                 >
                                   <IconPlus size={16} />
@@ -482,11 +298,7 @@ const ShoppingBagDrawer = () => {
                         fz={"md"}
                         fw={500}
                         c={"dimmed"}
-                        price={
-                          cart.totalDiscount > 0
-                            ? cart.totalDiscount + cart.totalPrice
-                            : cart.totalPrice
-                        }
+                        price={cart.totalPrice}
                       />
                     </Stack>
                   </Group>
@@ -527,7 +339,7 @@ const ShoppingBagDrawer = () => {
                           fz={"md"}
                           fw={500}
                           c={"dimmed"}
-                          price={cart.totalPrice}
+                          price={cart.totalPrice - cart.totalDiscount}
                         />
                       </Stack>
                     </Group>
@@ -565,4 +377,4 @@ const ShoppingBagDrawer = () => {
   );
 };
 
-export default ShoppingBagDrawer;
+export default ShoppingBagDrawerV2;

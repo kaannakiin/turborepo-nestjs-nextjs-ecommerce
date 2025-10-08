@@ -7,7 +7,6 @@ import Redis from 'ioredis';
 import { NestMinioModule } from 'nestjs-minio';
 import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
-import { CartV2Module } from './cart-v2/cart-v2.module';
 import { DiscountsModule } from './discounts/discounts.module';
 import { LocationsModule } from './locations/locations.module';
 import { MinioModule } from './minio/minio.module';
@@ -16,7 +15,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { UserPageModule } from './user-page/user-page.module';
 import { UserModule } from './user/user.module';
-import { OrdersModule } from './orders/orders.module';
+import { CartV3Module } from './cart-v3/cart-v3.module';
 
 @Module({
   imports: [
@@ -44,8 +43,7 @@ import { OrdersModule } from './orders/orders.module';
     UserPageModule,
     ShippingModule,
     PaymentModule,
-    CartV2Module,
-    OrdersModule,
+    CartV3Module,
     // ThrottlerModule.forRootAsync({
     //   imports: [ConfigModule],
     //   inject: [ConfigService],

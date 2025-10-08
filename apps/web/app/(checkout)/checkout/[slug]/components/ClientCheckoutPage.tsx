@@ -3,7 +3,7 @@ import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper from "@lib/fetchWrapper";
 import { Group, Text } from "@mantine/core";
 import { useQuery } from "@repo/shared";
-import { GetUserCartInfoForCheckoutReturn, TokenPayload } from "@repo/types";
+import { GetCartClientCheckoutReturnType, TokenPayload } from "@repo/types";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
@@ -73,14 +73,14 @@ const ClientCheckoutPage = ({
   const { data, isLoading, isPending, isFetching } = useQuery({
     queryKey: ["non-auth-user-cart", slug, step],
     queryFn: async () => {
-      const res = await fetchWrapper.get<GetUserCartInfoForCheckoutReturn>(
-        `/cart-v2/get-user-cart-info-for-checkout/${slug}`,
+      const res = await fetchWrapper.get<GetCartClientCheckoutReturnType>(
+        `/cart-v3/get-user-cart-info-for-checkout/${slug}`,
         {
           credentials: "include",
         }
       );
-      if (res.success) {
-        return res.data;
+      if (res.success && res.data && res.data.success) {
+        return res.data.cart;
       }
       throw new Error("Failed to fetch cart info");
     },
@@ -89,9 +89,12 @@ const ClientCheckoutPage = ({
   if (isLoading || isPending || isFetching) {
     return <GlobalLoadingOverlay />;
   }
-  if (!data) {
+
+  if (!data || !data.items) {
+    localStorage.removeItem("cartIdV3");
     return notFound();
   }
+
   return (
     <div className="min-h-screen flex flex-col">
       <div className="flex-1 w-full max-w-[1250px] lg:mx-auto px-4 ">

@@ -18,23 +18,19 @@ import {
   Tooltip,
   UnstyledButton,
 } from "@mantine/core";
-import { GetUserCartInfoForCheckoutReturn } from "@repo/types";
+import { CartV3, CheckoutCargoRule } from "@repo/types";
+import { IconInfoCircleFilled } from "@tabler/icons-react";
 import { useState } from "react";
 import { CheckoutStep } from "../page";
-import { IconInfoCircleFilled } from "@tabler/icons-react";
 
 interface CheckoutPageRightSectionProps {
   step: CheckoutStep;
-  cartItems: GetUserCartInfoForCheckoutReturn["items"];
-  cargoRule: GetUserCartInfoForCheckoutReturn["cargoRule"];
+  cartItems: CartV3["items"];
+  cargoRule: CheckoutCargoRule | null;
 }
 
 // Cart Item Component
-const CartItem = ({
-  item,
-}: {
-  item: GetUserCartInfoForCheckoutReturn["items"][0];
-}) => (
+const CartItem = ({ item }: { item: CartV3["items"][0] }) => (
   <div className="flex gap-3 w-full">
     <div className="relative flex-shrink-0">
       <Avatar size="xl" radius="xs" src={item.productAsset.url} />
@@ -194,7 +190,6 @@ const OrderNoteSection = ({
   </>
 );
 
-// Cart Summary Component
 const CartSummary = ({
   cartItems,
   openDiscount,
@@ -204,16 +199,16 @@ const CartSummary = ({
   step,
   cargoRule,
 }: {
-  cartItems: GetUserCartInfoForCheckoutReturn["items"];
+  cartItems: CartV3["items"];
   openDiscount: boolean;
   setOpenDiscount: (value: boolean) => void;
   openNote: boolean;
   setOpenNote: (value: boolean) => void;
   step: CheckoutStep;
-  cargoRule: GetUserCartInfoForCheckoutReturn["cargoRule"];
+  cargoRule: CheckoutCargoRule | null;
 }) => {
   const calculateTotal = () =>
-    cartItems.reduce(
+    cartItems?.reduce(
       (sum, i) => sum + (i.discountedPrice || i.price) * i.quantity,
       0
     );
@@ -230,7 +225,10 @@ const CartSummary = ({
       >
         <Stack gap="xl" p="md">
           {cartItems?.map((item) => (
-            <CartItem key={item.itemId} item={item} />
+            <CartItem
+              key={`$${item.productId}-${item.variantId || "default"}`}
+              item={item}
+            />
           ))}
         </Stack>
       </ScrollArea.Autosize>
@@ -253,7 +251,8 @@ const CartSummary = ({
         <ProductPriceFormatter c="dimmed" price={calculateTotal()} />
       </Group>
 
-      {step === "info" ? null : cargoRule && cargoRule.price > 0 ? (
+      {step === "info" || step === "shipping" ? null : cargoRule &&
+        cargoRule.price > 0 ? (
         <Group justify="space-between">
           <Text c="dimmed">Kargo Ücreti</Text>
           <ProductPriceFormatter c="dimmed" price={cargoRule.price} />

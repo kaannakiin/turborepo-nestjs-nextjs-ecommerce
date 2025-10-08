@@ -258,7 +258,7 @@ export interface ThreeDCallback {
   paymentId: string;
   conversationData?: string;
   conversationId: string;
-  mdStatus: "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8";
+  mdStatus: "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "-1";
   signature: string;
 }
 
@@ -345,3 +345,71 @@ export interface CompleteThreeDSFailureResponse {
 export type CompleteThreeDSResponse =
   | CompleteThreeDSSuccessResponse
   | CompleteThreeDSFailureResponse;
+
+export enum IyzicoWebhookStatus {
+  FAILURE = "FAILURE",
+  SUCCESS = "SUCCESS",
+  INIT_THREEDS = "INIT_THREEDS",
+  CALLBACK_THREEDS = "CALLBACK_THREEDS",
+  BKM_POS_SELECTED = "BKM_POS_SELECTED",
+  INIT_APM = "INIT_APM",
+  INIT_CONTACTLESS = "INIT_CONTACTLESS",
+}
+
+// Webhook event type enum
+export enum IyzicoWebhookEventType {
+  PAYMENT_API = "PAYMENT_API",
+  API_AUTH = "API_AUTH",
+  THREE_DS_AUTH = "THREE_DS_AUTH",
+  THREE_DS_CALLBACK = "THREE_DS_CALLBACK",
+  BKM_AUTH = "BKM_AUTH",
+  BALANCE = "BALANCE",
+  CONTACTLESS_AUTH = "CONTACTLESS_AUTH",
+  CONTACTLESS_REFUND = "CONTACTLESS_REFUND",
+}
+export interface IyzicoWebhookPayload {
+  /**
+   * İlgili ödemenin üye işyeri tarafından gönderilmiş referans numarası
+   */
+  paymentConversationId: string;
+
+  /**
+   * Merchant'ın iyzico tarafından atanmış ID numarası
+   */
+  merchantId: string;
+
+  /**
+   * İlgili ödemenin paymentId bilgisi
+   */
+  paymentId: string;
+
+  /**
+   * Ödeme durumu
+   * Alabileceği değerler: FAILURE, SUCCESS, INIT_THREEDS,
+   * CALLBACK_THREEDS, BKM_POS_SELECTED, INIT_APM, INIT_CONTACTLESS
+   */
+  status: IyzicoWebhookStatus;
+
+  /**
+   * İstek için üretilen unique iyzico referans kodu
+   */
+  iyziReferenceCode: string;
+
+  /**
+   * İstek tipini belirtir
+   * Alabileceği değerler: PAYMENT_API, API_AUTH, THREE_DS_AUTH,
+   * THREE_DS_CALLBACK, BKM_AUTH, BALANCE,
+   * CONTACTLESS_AUTH, CONTACTLESS_REFUND
+   */
+  iyziEventType: IyzicoWebhookEventType;
+
+  /**
+   * Notification oluşturulma zamanının unix timestamp değeridir
+   */
+  iyziEventTime: number;
+
+  /**
+   * Ödemeye ait ilgili paymentId
+   */
+  iyziPaymentId: number;
+}

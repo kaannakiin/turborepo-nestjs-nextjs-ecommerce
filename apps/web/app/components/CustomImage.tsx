@@ -20,6 +20,7 @@ const CustomImage = ({
         alt={alt}
         src={src}
         onClick={onClick}
+        fallbackSrc="https://placehold.co/600x400?text=Placeholder"
         className={`w-full h-full object-contain `}
       />
     </div>

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Headers,
   Param,
   Post,
   Query,
@@ -8,17 +9,18 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import { type User } from '@repo/database';
 import {
-  PaymentSchema,
-  type PaymentType,
+  type IyzicoWebhookPayload,
+  PaymentZodSchema,
+  type PaymentZodType,
   type ThreeDCallback,
 } from '@repo/types';
 import { type Request, type Response } from 'express';
-import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
-import { PaymentService } from './payment.service';
 import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
-import { type User } from '@repo/database';
+import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
+import { PaymentService } from './payment.service';
 @Controller('payment')
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
@@ -27,24 +29,37 @@ export class PaymentController {
   @UseGuards(OptionalJwtAuthGuard)
   async createPaymentIntent(
     @Param('cartId') cartId: string,
-    @Body(new ZodValidationPipe(PaymentSchema)) data: PaymentType,
+    @Body(new ZodValidationPipe(PaymentZodSchema)) data: PaymentZodType,
     @CurrentUser() user: User | null,
     @Req() req: Request,
   ) {
-    return this.paymentService.createPaymentIntent(cartId, data, user, req);
+    return this.paymentService.createPaymentIntent({ data, cartId, user, req });
   }
 
   @Post('bin-check')
   async binCheck(@Body('binNumber') binNumber: string) {
-    return this.paymentService.binCheck(binNumber);
+    return this.paymentService.iyzicoBinCheck(binNumber);
   }
 
   @Post('/iyzico/three-d-callback')
   async threeDCallback(
-    @Query('cartId') cartId: string,
+    @Query('uu') paymentReqId: string,
     @Body() body: ThreeDCallback,
     @Res({ passthrough: true }) res: Response,
   ) {
-    return this.paymentService.threeDCallback(body, res, cartId);
+    return this.paymentService.iyzicoThreeDCallback({
+      paymentReqId,
+      body: body,
+      res: res,
+    });
+  }
+
+  @Post('iyzico/webhook')
+  async iyzicoWebhook(
+    @Body() body: IyzicoWebhookPayload,
+    @Res() res: Response,
+    @Headers() headers: Headers,
+  ) {
+    console.log('Iyzico Webhook received:', body, headers);
   }
 }

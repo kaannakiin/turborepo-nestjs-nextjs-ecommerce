@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { AuthUserAddressZodType, success } from '@repo/types';
+import { AuthUserAddressZodType, success, TURKEY_DB_ID } from '@repo/types';
+import { add } from 'date-fns';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -45,7 +46,28 @@ export class LocationsService {
       },
     });
   }
-
+  async getDistrictTurkeyCity(countryId: string, cityId: string) {
+    if (countryId !== TURKEY_DB_ID) {
+      throw new BadRequestException('Geçersiz ülke kimliği');
+    }
+    const city = await this.prisma.city.findUnique({
+      where: {
+        id: cityId,
+      },
+      select: {
+        districts: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+    return {
+      success: true,
+      data: city?.districts || [],
+    };
+  }
   async getUserAddresses(userId: string) {
     const [addresses, user] = await Promise.all([
       this.prisma.addressSchema.findMany({
@@ -104,15 +126,30 @@ export class LocationsService {
         phone: address.phone,
         surname: address.surname,
         addressTitle: address.addressTitle,
-        ...(address.addressType === 'CITY'
-          ? { cityId: address.cityId }
-          : address.addressType === 'STATE'
+        ...(address.addressType === 'CITY' &&
+        address.countryId === TURKEY_DB_ID &&
+        address.districtId
+          ? {
+              cityId: address.cityId,
+              stateId: null,
+              districtId: address.districtId,
+            }
+          : address.addressType === 'CITY'
             ? {
-                stateId: address.stateId,
+                cityId: address.cityId,
+                stateId: null,
+                districtId: null,
               }
-            : {}),
+            : address.addressType === 'STATE'
+              ? {
+                  stateId: address.stateId,
+                  cityId: null,
+                  districtId: null,
+                }
+              : {}),
         countryId: address.countryId,
         userId: user.id,
+        tcKimlikNo: address.tcKimlikNo || null,
       },
       update: {
         addressLine1: address.addressLine1,
@@ -122,17 +159,28 @@ export class LocationsService {
         phone: address.phone,
         surname: address.surname,
         addressTitle: address.addressTitle,
-        ...(address.addressType === 'CITY'
-          ? { cityId: address.cityId, stateId: null }
-          : address.addressType === 'STATE'
+        tcKimlikNo: address.tcKimlikNo || null,
+        ...(address.addressType === 'CITY' &&
+        address.countryId === TURKEY_DB_ID &&
+        address.districtId
+          ? {
+              cityId: address.cityId,
+              stateId: null,
+              districtId: address.districtId,
+            }
+          : address.addressType === 'CITY'
             ? {
-                stateId: address.stateId,
-                cityId: null,
-              }
-            : {
+                cityId: address.cityId,
                 stateId: null,
-                cityId: null,
-              }),
+                districtId: null,
+              }
+            : address.addressType === 'STATE'
+              ? {
+                  stateId: address.stateId,
+                  cityId: null,
+                  districtId: null,
+                }
+              : {}),
         countryId: address.countryId,
         userId: user.id,
       },

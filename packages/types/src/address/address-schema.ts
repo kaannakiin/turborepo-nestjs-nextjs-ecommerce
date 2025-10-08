@@ -2,6 +2,8 @@ import { CountryType, Prisma } from "@repo/database";
 import { isPossiblePhoneNumber } from "libphonenumber-js";
 import * as z from "zod";
 
+export const TURKEY_DB_ID = "da8c5f2a-8d37-48a8-beff-6ab3793a1861";
+export const tcKimlikNoRegex = /^[1-9]{1}[0-9]{9}[02468]{1}$/;
 const BaseAddressSchema = z
   .object({
     id: z.cuid2({
@@ -40,6 +42,12 @@ const BaseAddressSchema = z
       })
       .optional()
       .nullable(),
+    districtId: z
+      .uuid({
+        error: "Geçersiz Semt Kimliği",
+      })
+      .optional()
+      .nullable(),
     addressType: z.enum(CountryType, {
       error: "Geçersiz Adres Türü",
     }),
@@ -54,6 +62,7 @@ const BaseAddressSchema = z
       .max(512, "Adres Satırı 2 en fazla 512 karakter olabilir")
       .optional()
       .nullable(),
+
     postalCode: z
       .string({
         error: "Posta Kodu gereklidir",
@@ -89,6 +98,17 @@ const BaseAddressSchema = z
         path: ["cityId"],
       });
     }
+    if (
+      value.addressType === "CITY" &&
+      value.countryId === TURKEY_DB_ID &&
+      !value.districtId
+    ) {
+      issues.push({
+        code: "custom",
+        message: "Semt/Mahalle seçimi gereklidir",
+        input: ["districtId"],
+      });
+    }
   });
 
 export const AuthUserAddressSchema = BaseAddressSchema.safeExtend({
@@ -98,13 +118,62 @@ export const AuthUserAddressSchema = BaseAddressSchema.safeExtend({
     })
     .min(2, "Adres Başlığı en az 2 karakter olmalıdır")
     .max(256, "Adres Başlığı en fazla 256 karakter olabilir"),
+  tcKimlikNo: z
+    .string({
+      error: ' "T.C. Kimlik Numarası gereklidir"',
+    })
+    .length(11, "T.C. Kimlik Numarası 11 karakter olmalıdır")
+    .optional()
+    .nullable(),
+}).check(({ value, issues }) => {
+  if (value.countryId && value.countryId === TURKEY_DB_ID) {
+    if (!value.tcKimlikNo) {
+      issues.push({
+        code: "custom",
+        message: "T.C. Kimlik Numarası gereklidir",
+        input: ["tcKimlikNo"],
+        path: ["tcKimlikNo"],
+      });
+    } else if (!tcKimlikNoRegex.test(value.tcKimlikNo)) {
+      issues.push({
+        code: "custom",
+        message: "Geçerli bir T.C. Kimlik Numarası giriniz",
+        input: ["tcKimlikNo"],
+        path: ["tcKimlikNo"],
+      });
+    }
+  }
 });
-
 export const NonAuthUserAddressSchema = BaseAddressSchema.safeExtend({
   email: z.email({
     error: "Geçersiz E-posta Adresi",
   }),
   campaignCheckbox: z.boolean(),
+  tcKimlikNo: z
+    .string({
+      error: ' "T.C. Kimlik Numarası gereklidir"',
+    })
+    .length(11, "T.C. Kimlik Numarası 11 karakter olmalıdır")
+    .optional()
+    .nullable(),
+}).check(({ value, issues }) => {
+  if (value.countryId && value.countryId === TURKEY_DB_ID) {
+    if (!value.tcKimlikNo) {
+      issues.push({
+        code: "custom",
+        message: "T.C. Kimlik Numarası gereklidir",
+        input: ["tcKimlikNo"],
+        path: ["tcKimlikNo"],
+      });
+    } else if (!tcKimlikNoRegex.test(value.tcKimlikNo)) {
+      issues.push({
+        code: "custom",
+        message: "Geçerli bir T.C. Kimlik Numarası giriniz",
+        input: ["tcKimlikNo"],
+        path: ["tcKimlikNo"],
+      });
+    }
+  }
 });
 
 export type NonAuthUserAddressZodType = z.infer<
@@ -166,6 +235,13 @@ export const BillingAddressSchema = BaseAddressSchema.safeExtend({
     })
     .min(2, "Vergi dairesi en az 2 karakter olmalıdır")
     .max(256, "Vergi dairesi en fazla 256 karakter olabilir")
+    .optional()
+    .nullable(),
+  tcKimlikNo: z
+    .string({
+      error: ' "T.C. Kimlik Numarası gereklidir"',
+    })
+    .length(11, "T.C. Kimlik Numarası 11 karakter olmalıdır")
     .optional()
     .nullable(),
 });

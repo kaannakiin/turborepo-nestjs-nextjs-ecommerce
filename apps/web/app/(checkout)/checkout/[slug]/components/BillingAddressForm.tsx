@@ -7,6 +7,7 @@ import {
   Card,
   Checkbox,
   Group,
+  InputBase,
   Select,
   SimpleGrid,
   Text,
@@ -16,29 +17,23 @@ import {
 import {
   Control,
   Controller,
-  createId,
-  SubmitHandler,
-  useForm,
   UseFormSetValue,
   UseFormWatch,
   useQuery,
-  zodResolver,
 } from "@repo/shared";
 import {
-  BillingAddressSchema,
-  BillingAddressZodType,
   GetAllCityReturnType,
   GetAllCountryReturnType,
   GetAllStateReturnType,
-  PaymentType,
-  TokenPayload,
+  PaymentZodType,
 } from "@repo/types";
 import { IconCheck } from "@tabler/icons-react";
+import { IMaskInput } from "react-imask";
 
 interface BillingAddressFormProps {
-  control: Control<PaymentType>;
-  setValue: UseFormSetValue<PaymentType>;
-  watch: UseFormWatch<PaymentType>;
+  control: Control<PaymentZodType>;
+  setValue: UseFormSetValue<PaymentZodType>;
+  watch: UseFormWatch<PaymentZodType>;
 }
 
 const BillingAddressForm = ({
@@ -103,6 +98,31 @@ const BillingAddressForm = ({
     enabled: !!countryId && addressType === "CITY",
   });
 
+  const cityId = watch("billingAddress.cityId");
+
+  const { data: district, isLoading: districtsLoading } = useQuery({
+    queryKey: ["get-districts-turkey-city", countryId, cityId],
+    queryFn: async () => {
+      const fetchReq = await fetchWrapper.get<{
+        success: boolean;
+        data: { id: string; name: string }[];
+      }>(`/locations/get-districts-turkey-city/${countryId}/${cityId}`, {
+        credentials: "include",
+      });
+      if (!fetchReq.success) {
+        throw new Error("Failed to fetch districts");
+      }
+      if (!fetchReq.data.success || !fetchReq.data.data) {
+        return [];
+      }
+      return fetchReq.data.data;
+    },
+    enabled:
+      !!countryId &&
+      !!cityId &&
+      countryId === TURKEY_DB_ID &&
+      addressType === "CITY",
+  });
   const countryExists = countries && countries.length > 0;
 
   const handleCountryChange = (selectedCountryId: string | null) => {
@@ -113,6 +133,7 @@ const BillingAddressForm = ({
 
     setValue("billingAddress.cityId", null);
     setValue("billingAddress.stateId", null);
+    setValue("billingAddress.districtId", null);
 
     setValue("billingAddress.addressType", selectedCountry.type);
     setValue("billingAddress.countryId", selectedCountry.id);
@@ -121,6 +142,13 @@ const BillingAddressForm = ({
   const handleStateChange = (selectedStateId: string | null) => {
     setValue("billingAddress.stateId", selectedStateId);
     setValue("billingAddress.cityId", null);
+    setValue("billingAddress.districtId", null);
+  };
+
+  const handleCityChange = (selectedCityId: string | null) => {
+    setValue("billingAddress.cityId", selectedCityId);
+    setValue("billingAddress.districtId", null);
+    setValue("billingAddress.stateId", null);
   };
 
   return (
@@ -260,6 +288,34 @@ const BillingAddressForm = ({
             )}
           />
         )}
+        {addressType === "CITY" && countryId === TURKEY_DB_ID && (
+          <Controller
+            control={control}
+            name="billingAddress.districtId"
+            render={({ field, fieldState }) => (
+              <Select
+                {...field}
+                error={fieldState.error?.message}
+                disabled={
+                  districtsLoading || !district || district.length === 0
+                }
+                data={
+                  district && !districtsLoading
+                    ? district.map((d) => ({
+                        value: d.id,
+                        label: d.name,
+                      }))
+                    : []
+                }
+                placeholder="Semt/Mahalle Seçin"
+                size="lg"
+                allowDeselect={false}
+                searchable
+                radius="md"
+              />
+            )}
+          />
+        )}
         <Controller
           control={control}
           name="billingAddress.addressLine2"
@@ -281,26 +337,28 @@ const BillingAddressForm = ({
           )}
         />
 
-        <Controller
-          control={control}
-          name="billingAddress.postalCode"
-          render={({ field, fieldState }) => (
-            <TextInput
-              {...field}
-              onChange={(e) => {
-                if (e.currentTarget.value.trim() === "") {
-                  field.onChange(null);
-                } else {
-                  field.onChange(e);
-                }
-              }}
-              error={fieldState.error?.message}
-              placeholder="Posta Kodu"
-              size="lg"
-              radius="md"
-            />
-          )}
-        />
+        {countryId !== TURKEY_DB_ID && (
+          <Controller
+            control={control}
+            name="billingAddress.postalCode"
+            render={({ field, fieldState }) => (
+              <TextInput
+                {...field}
+                onChange={(e) => {
+                  if (e.currentTarget.value.trim() === "") {
+                    field.onChange(null);
+                  } else {
+                    field.onChange(e);
+                  }
+                }}
+                error={fieldState.error?.message}
+                placeholder="Posta Kodu"
+                size="lg"
+                radius="md"
+              />
+            )}
+          />
+        )}
       </SimpleGrid>
       <Controller
         control={control}
@@ -315,6 +373,23 @@ const BillingAddressForm = ({
           />
         )}
       />
+      {countryId === TURKEY_DB_ID && (
+        <Controller
+          control={control}
+          name="billingAddress.tcKimlikNo"
+          render={({ field, fieldState }) => (
+            <InputBase
+              component={IMaskInput}
+              mask={"00000000000"}
+              radius={"md"}
+              {...field}
+              error={fieldState.error?.message}
+              size="lg"
+              placeholder="T.C. Kimlik Numarası"
+            />
+          )}
+        />
+      )}
       <Controller
         control={control}
         name="billingAddress.isCorporateInvoice"

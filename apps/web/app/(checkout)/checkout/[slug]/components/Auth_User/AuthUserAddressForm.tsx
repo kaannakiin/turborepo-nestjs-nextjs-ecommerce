@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   Group,
+  InputBase,
   Select,
   SimpleGrid,
   Stack,
@@ -31,6 +32,7 @@ import {
   GetAllStateReturnType,
 } from "@repo/types";
 import { IconCheck } from "@tabler/icons-react";
+import { IMaskInput } from "react-imask";
 
 interface AuthUserAddressFormProps {
   defaultValues?: AuthUserAddressZodType;
@@ -120,6 +122,31 @@ const AuthUserAddressForm = ({
     },
     enabled: !!countryId && addressType === "CITY",
   });
+  const cityId = watch("cityId");
+
+  const { data: district, isLoading: districtsLoading } = useQuery({
+    queryKey: ["get-districts-turkey-city", countryId, cityId],
+    queryFn: async () => {
+      const fetchReq = await fetchWrapper.get<{
+        success: boolean;
+        data: { id: string; name: string }[];
+      }>(`/locations/get-districts-turkey-city/${countryId}/${cityId}`, {
+        credentials: "include",
+      });
+      if (!fetchReq.success) {
+        throw new Error("Failed to fetch districts");
+      }
+      if (!fetchReq.data.success || !fetchReq.data.data) {
+        return [];
+      }
+      return fetchReq.data.data;
+    },
+    enabled:
+      !!countryId &&
+      !!cityId &&
+      countryId === TURKEY_DB_ID &&
+      addressType === "CITY",
+  });
 
   const countryExists = countries && countries.length > 0;
 
@@ -131,7 +158,7 @@ const AuthUserAddressForm = ({
 
     setValue("cityId", null);
     setValue("stateId", null);
-
+    setValue("districtId", null);
     setValue("addressType", selectedCountry.type);
     setValue("countryId", selectedCountry.id);
   };
@@ -139,6 +166,12 @@ const AuthUserAddressForm = ({
   const handleStateChange = (selectedStateId: string | null) => {
     setValue("stateId", selectedStateId);
     setValue("cityId", null);
+    setValue("districtId", null);
+  };
+  const handleCityChange = (selectedCityId: string | null) => {
+    setValue("cityId", selectedCityId);
+    setValue("districtId", null);
+    setValue("stateId", null);
   };
 
   return (
@@ -280,6 +313,7 @@ const AuthUserAddressForm = ({
                 render={({ field, fieldState }) => (
                   <Select
                     {...field}
+                    onChange={handleCityChange}
                     error={fieldState.error?.message}
                     placeholder="Şehir Seçin"
                     size="lg"
@@ -295,6 +329,34 @@ const AuthUserAddressForm = ({
                           }))
                         : []
                     }
+                  />
+                )}
+              />
+            )}
+            {addressType === "CITY" && countryId === TURKEY_DB_ID && (
+              <Controller
+                control={control}
+                name="districtId"
+                render={({ field, fieldState }) => (
+                  <Select
+                    {...field}
+                    error={fieldState.error?.message}
+                    disabled={
+                      districtsLoading || !district || district.length === 0
+                    }
+                    data={
+                      district && !districtsLoading
+                        ? district.map((d) => ({
+                            value: d.id,
+                            label: d.name,
+                          }))
+                        : []
+                    }
+                    placeholder="Semt/Mahalle Seçin"
+                    size="lg"
+                    allowDeselect={false}
+                    searchable
+                    radius="md"
                   />
                 )}
               />
@@ -320,26 +382,28 @@ const AuthUserAddressForm = ({
               )}
             />
 
-            <Controller
-              control={control}
-              name="postalCode"
-              render={({ field, fieldState }) => (
-                <TextInput
-                  {...field}
-                  onChange={(e) => {
-                    if (e.currentTarget.value.trim() === "") {
-                      field.onChange(null);
-                    } else {
-                      field.onChange(e);
-                    }
-                  }}
-                  error={fieldState.error?.message}
-                  placeholder="Posta Kodu"
-                  size="lg"
-                  radius="md"
-                />
-              )}
-            />
+            {countryId !== TURKEY_DB_ID && (
+              <Controller
+                control={control}
+                name="postalCode"
+                render={({ field, fieldState }) => (
+                  <TextInput
+                    {...field}
+                    onChange={(e) => {
+                      if (e.currentTarget.value.trim() === "") {
+                        field.onChange(null);
+                      } else {
+                        field.onChange(e);
+                      }
+                    }}
+                    error={fieldState.error?.message}
+                    placeholder="Posta Kodu"
+                    size="lg"
+                    radius="md"
+                  />
+                )}
+              />
+            )}
           </SimpleGrid>
           <Controller
             control={control}
@@ -354,6 +418,23 @@ const AuthUserAddressForm = ({
               />
             )}
           />
+          {countryId === TURKEY_DB_ID && (
+            <Controller
+              control={control}
+              name="tcKimlikNo"
+              render={({ field, fieldState }) => (
+                <InputBase
+                  component={IMaskInput}
+                  mask={"00000000000"}
+                  radius={"md"}
+                  {...field}
+                  error={fieldState.error?.message}
+                  size="lg"
+                  placeholder="T.C. Kimlik Numarası"
+                />
+              )}
+            />
+          )}
         </Card>
         <Button
           variant="filled"

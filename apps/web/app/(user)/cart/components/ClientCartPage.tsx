@@ -1,12 +1,12 @@
 "use client";
-import { useCartV2 } from "@/context/cart-context/CartContextV2";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import { useCartV3 } from "@/context/cart-context/CartContextV3";
 import {
   Accordion,
   ActionIcon,
   AspectRatio,
   Box,
   Button,
-  Container,
   Divider,
   Grid,
   Group,
@@ -14,13 +14,13 @@ import {
   Stack,
   Text,
   Title,
+  LoadingOverlay,
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import {
   IconMinus,
   IconPlus,
   IconShieldCheck,
-  IconShoppingBagX,
   IconTrash,
 } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
@@ -28,40 +28,36 @@ import CustomImage from "../../../components/CustomImage";
 import ProductPriceFormatter from "../../components/ProductPriceFormatter";
 
 const ClientCartPage = () => {
-  const { cart, removeItem, increaseItemQuantity, decreaseItemQuantity } =
-    useCartV2();
+  const {
+    cart,
+    removeItem,
+    increaseItemQuantity,
+    decreaseItemQuantity,
+    isCartLoading,
+  } = useCartV3();
   const { push } = useRouter();
   const isMobile = useMediaQuery("(max-width: 768px)");
   const isTablet = useMediaQuery("(max-width: 1024px)");
-  const isEmpty = !cart || !cart.items || cart.items.length === 0;
 
-  if (isEmpty) {
+  // İlk yükleme için loading - cart yoksa ve loading ise
+  const isInitialLoading = isCartLoading && !cart;
+
+  if (isInitialLoading) {
+    return <GlobalLoadingOverlay visible={true} />;
+  }
+
+  if (!cart || cart.items.length === 0) {
     return (
-      <Container
-        size="lg"
-        className="min-h-[60vh] flex items-center justify-center"
-      >
-        <Stack align="center" gap="xl" className="text-center">
-          <IconShoppingBagX size={120} color="var(--mantine-color-gray-5)" />
-          <Stack gap="md" align="center">
-            <Title order={2} c="dimmed">
-              Sepetiniz Boş
-            </Title>
-            <Text size="lg" c="dimmed" maw={500}>
-              Sepetinize henüz bir ürün eklenmedi. Alışverişe devam etmek için
-              ürünleri keşfedin ve favorilerinizi sepetinize ekleyin.
-            </Text>
-          </Stack>
-          <Button
-            size="lg"
-            radius="xl"
-            onClick={() => push("/")}
-            className="px-8"
-          >
+      <div className="w-full min-h-full max-w-[1250px] lg:mx-auto flex my-4 px-4">
+        <Paper p="xl" className="w-full text-center">
+          <Text size="xl" fw={500}>
+            Sepetiniz boş
+          </Text>
+          <Button mt="md" onClick={() => push("/")}>
             Alışverişe Başla
           </Button>
-        </Stack>
-      </Container>
+        </Paper>
+      </div>
     );
   }
 
@@ -94,14 +90,12 @@ const ClientCartPage = () => {
                         >
                           <Box style={{ cursor: "pointer" }}>
                             <AspectRatio ratio={1} w={120}>
-                              {item.productAsset || item.variantAsset ? (
+                              {item.productAsset ? (
                                 <CustomImage
                                   src={
-                                    item.variantAsset
-                                      ? item.variantAsset.url
-                                      : item.productAsset
-                                        ? item.productAsset.url
-                                        : ""
+                                    item.productAsset
+                                      ? item.productAsset.url
+                                      : ""
                                   }
                                   alt={item.productName}
                                   className="rounded-md"
@@ -116,7 +110,6 @@ const ClientCartPage = () => {
                             </AspectRatio>
                           </Box>
 
-                          {/* Ürün Bilgileri */}
                           <div className="flex-1">
                             <Stack gap="sm">
                               <div style={{ cursor: "pointer" }}>
@@ -143,9 +136,7 @@ const ClientCartPage = () => {
                                 )}
                               </div>
 
-                              {/* Miktar ve Fiyat Kontrolleri */}
                               <Group justify="space-between" align="flex-end">
-                                {/* Miktar Kontrolü */}
                                 <Group gap="xs" align="center">
                                   <ActionIcon
                                     variant="transparent"
@@ -153,13 +144,15 @@ const ClientCartPage = () => {
                                     onClick={async () => {
                                       if (item.quantity > 0) {
                                         if (item.quantity === 1) {
-                                          await removeItem({
-                                            itemId: item.itemId,
-                                          });
+                                          await removeItem(
+                                            item.productId,
+                                            item.variantId || undefined
+                                          );
                                         } else {
-                                          await decreaseItemQuantity({
-                                            itemId: item.itemId,
-                                          });
+                                          await decreaseItemQuantity(
+                                            item.productId,
+                                            item.variantId || undefined
+                                          );
                                         }
                                       }
                                     }}
@@ -186,16 +179,16 @@ const ClientCartPage = () => {
                                     variant="transparent"
                                     size="lg"
                                     onClick={async () => {
-                                      await increaseItemQuantity({
-                                        itemId: item.itemId,
-                                      });
+                                      await increaseItemQuantity(
+                                        item.productId,
+                                        item.variantId || undefined
+                                      );
                                     }}
                                   >
                                     <IconPlus size={18} />
                                   </ActionIcon>
                                 </Group>
 
-                                {/* Fiyat */}
                                 <Stack gap="xs" align="flex-end">
                                   {item.discountedPrice &&
                                     item.price !== item.discountedPrice && (
@@ -241,14 +234,10 @@ const ClientCartPage = () => {
                     >
                       <Box style={{ cursor: "pointer" }}>
                         <AspectRatio ratio={1} maw={120}>
-                          {item.productAsset || item.variantAsset ? (
+                          {item.productAsset ? (
                             <CustomImage
                               src={
-                                item.variantAsset
-                                  ? item.variantAsset.url
-                                  : item.productAsset
-                                    ? item.productAsset.url
-                                    : ""
+                                item.productAsset ? item.productAsset.url : ""
                               }
                               alt={item.productName}
                               className="rounded-md"
@@ -263,7 +252,6 @@ const ClientCartPage = () => {
                         </AspectRatio>
                       </Box>
 
-                      {/* Ürün Bilgileri */}
                       <div className="flex-1">
                         <Stack gap="sm">
                           <div style={{ cursor: "pointer" }}>
@@ -289,9 +277,7 @@ const ClientCartPage = () => {
                             )}
                           </div>
 
-                          {/* Miktar ve Fiyat Kontrolleri */}
                           <Group justify="space-between" align="flex-end">
-                            {/* Miktar Kontrolü */}
                             <Group gap="xs" align="center">
                               <ActionIcon
                                 variant="transparent"
@@ -299,13 +285,15 @@ const ClientCartPage = () => {
                                 onClick={async () => {
                                   if (item.quantity > 0) {
                                     if (item.quantity === 1) {
-                                      await removeItem({
-                                        itemId: item.itemId,
-                                      });
+                                      await removeItem(
+                                        item.productId,
+                                        item.variantId || undefined
+                                      );
                                     } else {
-                                      await decreaseItemQuantity({
-                                        itemId: item.itemId,
-                                      });
+                                      await decreaseItemQuantity(
+                                        item.productId,
+                                        item.variantId || undefined
+                                      );
                                     }
                                   }
                                 }}
@@ -330,16 +318,16 @@ const ClientCartPage = () => {
                                 variant="transparent"
                                 size="lg"
                                 onClick={async () => {
-                                  await increaseItemQuantity({
-                                    itemId: item.itemId,
-                                  });
+                                  await increaseItemQuantity(
+                                    item.productId,
+                                    item.variantId || undefined
+                                  );
                                 }}
                               >
                                 <IconPlus size={18} />
                               </ActionIcon>
                             </Group>
 
-                            {/* Fiyat */}
                             <Stack gap="xs" align="flex-end">
                               {item.discountedPrice &&
                                 item.price !== item.discountedPrice && (
@@ -424,7 +412,6 @@ const ClientCartPage = () => {
                   </>
                 )}
 
-                {/* Aksiyon Butonları */}
                 <Stack gap="md">
                   <Button
                     size="lg"

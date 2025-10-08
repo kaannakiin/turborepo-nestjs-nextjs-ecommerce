@@ -18,8 +18,8 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { FilesValidationPipe } from 'src/common/pipes/file-validation.pipe';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
-import { Public } from 'src/reflectors/public.decorator';
-import { Roles } from 'src/reflectors/roles.decorator';
+import { Public } from 'src/user/reflectors/public.decorator';
+import { Roles } from 'src/user/reflectors/roles.decorator';
 import { ThemeService } from './theme.service';
 
 @UseGuards(JwtAuthGuard, RolesGuard)

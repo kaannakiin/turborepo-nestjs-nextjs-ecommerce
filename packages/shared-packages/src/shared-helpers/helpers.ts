@@ -1,3 +1,4 @@
+import { OrderStatus, PaymentStatus } from "@repo/database";
 import { format, formatDistanceToNow } from "date-fns";
 import { tr } from "date-fns/locale";
 
@@ -326,5 +327,77 @@ export function getSortIndexFromQuery(index: number): ProductPageSortOption {
       return ProductPageSortOption.Z_A;
     default:
       return ProductPageSortOption.NEWEST;
+  }
+}
+
+export function getOrderStatusInt(status: OrderStatus): number {
+  switch (status) {
+    case "DELIVERED":
+      return 1;
+    case "SHIPPED":
+      return 2;
+    case "PROCESSING":
+      return 3;
+    case "PENDING":
+      return 4;
+    case "CANCELLED":
+      return 5;
+    case "CONFIRMED":
+      return 6;
+    case "REFUNDED":
+      return 7;
+  }
+}
+
+export function getOrderStatusFromInt(status: number): OrderStatus {
+  switch (status) {
+    case 1:
+      return "DELIVERED";
+    case 2:
+      return "SHIPPED";
+    case 3:
+      return "PROCESSING";
+    case 4:
+      return "PENDING";
+    case 5:
+      return "CANCELLED";
+    case 6:
+      return "CONFIRMED";
+    case 7:
+      return "REFUNDED";
+    default:
+      return "CONFIRMED";
+  }
+}
+
+export function getPaymentStatusInt(status: PaymentStatus): number {
+  switch (status) {
+    case "FAILED":
+      return 1;
+    case "PAID":
+      return 2;
+    case "PARTIAL_REFUND":
+      return 3;
+    case "PENDING":
+      return 4;
+    case "REFUNDED":
+      return 5;
+  }
+}
+
+export function getPaymentStatusFromInt(status: number): PaymentStatus {
+  switch (status) {
+    case 1:
+      return "FAILED";
+    case 2:
+      return "PAID";
+    case 3:
+      return "PARTIAL_REFUND";
+    case 4:
+      return "PENDING";
+    case 5:
+      return "REFUNDED";
+    default:
+      return "PENDING";
   }
 }
