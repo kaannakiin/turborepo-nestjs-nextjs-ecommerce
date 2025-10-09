@@ -4,8 +4,9 @@ import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import { Breadcrumbs, Grid, Stack, Text } from "@mantine/core";
 import { CategoryPagePreparePageReturnData } from "@repo/types";
 import { IconChevronRight } from "@tabler/icons-react";
-import CategoryPageFiltersSection from "./CategoryPageFiltersSection";
 import Link from "next/link";
+import CategoryPageFiltersSection from "./CategoryPageFiltersSection";
+import CategoryProductList from "./CategoryProductList";
 
 interface CategoryClientPageProps {
   id: string;
@@ -82,7 +83,17 @@ const CategoryClientPage = ({
           className="h-full w-full"
           bg={"red.5"}
           span={media === "desktop" ? 9 : media === "tablet" ? 9 : 12}
-        ></Grid.Col>
+        >
+          <CategoryProductList
+            categoryIds={[
+              id,
+              ...(hiearchy.childrenCategories &&
+              hiearchy.childrenCategories.length > 0
+                ? hiearchy.childrenCategories.map((cat) => cat.id)
+                : []),
+            ]}
+          />
+        </Grid.Col>
       </Grid>
     </Stack>
   );

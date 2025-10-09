@@ -6,35 +6,12 @@ import { Params, SearchParams } from "types/GlobalTypes";
 import CategoryClientPage from "../components/CategoryClientPage";
 
 const client = new QueryClient();
-const fetchCategory = async (
-  slug: string,
-  allSearchParams: Record<string, string | string[]>
-) => {
+const fetchCategory = async (slug: string) => {
   try {
-    const queryString = new URLSearchParams(
-      Object.entries(allSearchParams).flatMap(([key, value]) =>
-        Array.isArray(value) ? value.map((v) => [key, v]) : [[key, value]]
-      )
-    ).toString();
-
     const req = await client.fetchQuery({
-      queryKey: [
-        "get-category",
-        slug,
-        Object.keys(allSearchParams)
-          .sort()
-          .reduce(
-            (acc, key) => {
-              acc[key] = allSearchParams[key];
-              return acc;
-            },
-            {} as Record<string, string | string[]>
-          ),
-      ],
+      queryKey: ["get-category", slug],
       queryFn: async () => {
-        const url = `${process.env.BACKEND_URL}/user-page-v2/get-category/${slug}${
-          queryString ? `?${queryString}` : ""
-        }`;
+        const url = `${process.env.BACKEND_URL}/user-page-v2/get-category/${slug}`;
 
         const req = await fetch(url, {
           method: "GET",
@@ -111,23 +88,12 @@ const generateBreadcrumbStructuredData = (
 
 export async function generateMetadata({
   params,
-  searchParams,
 }: {
   params: Params;
-  searchParams: SearchParams;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const pageSearchParams = await searchParams;
-  const allSearchParams: Record<string, string | string[]> = Object.fromEntries(
-    Object.entries(pageSearchParams).map(([key, value]) => {
-      if (Array.isArray(value)) {
-        return [key, value];
-      }
-      return [key, value.split(",")];
-    })
-  );
 
-  const categoryData = await fetchCategory(slug, allSearchParams);
+  const categoryData = await fetchCategory(slug);
 
   if (!categoryData || !categoryData.success || !categoryData.category) {
     return {
@@ -227,7 +193,7 @@ const CategoriesPage = async ({
       return [key, value.split(",")];
     })
   );
-  const categoryData = await fetchCategory(slug, allSearchParams);
+  const categoryData = await fetchCategory(slug);
 
   if (!categoryData || !categoryData.success) {
     return <div>not found</div>;

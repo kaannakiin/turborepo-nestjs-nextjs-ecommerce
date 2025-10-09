@@ -1,5 +1,5 @@
 import { Prisma } from "@repo/database";
-
+import * as z from "zod";
 export const ProductAndVariantWhereInput: Prisma.ProductWhereInput = {
   OR: [
     {
@@ -134,3 +134,15 @@ export type CategoryPagePreparePageReturnData = {
     }>;
   } | null;
 };
+export const GetCategoryProductsSchema = z.object({
+  categoryIds: z.array(z.string()).catch([]),
+  page: z.number().int().min(1).catch(1),
+  sort: z.number().int().min(1).catch(1),
+  query: z
+    .record(z.string(), z.union([z.string(), z.array(z.string())]))
+    .default({}),
+});
+
+export type GetCategoryProductsZodType = z.infer<
+  typeof GetCategoryProductsSchema
+>;

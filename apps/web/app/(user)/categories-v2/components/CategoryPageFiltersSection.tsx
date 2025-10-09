@@ -2,6 +2,7 @@
 
 import {
   Accordion,
+  Button,
   Checkbox,
   Group,
   Stack,
@@ -9,6 +10,7 @@ import {
   UnstyledButton,
 } from "@mantine/core";
 import { $Enums, CategoryPagePreparePageReturnData } from "@repo/types";
+import { IconX } from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 interface CategoryPageFiltersSectionProps {
@@ -32,6 +34,23 @@ const CategoryPageFiltersSection = ({
         : null;
     })
     .filter(Boolean) as string[];
+
+  const hasFilters =
+    Object.keys(allSearchParams).some((key) =>
+      variantGroups.some((vg) =>
+        vg.translations.some(
+          (t) => t.locale === locale && t.slug === key && allSearchParams[key]
+        )
+      )
+    ) || allSearchParams["brand"];
+
+  if (
+    (!brands || brands.length === 0) &&
+    (!variantGroups || variantGroups.length === 0)
+  ) {
+    return null;
+  }
+
   return (
     <Stack gap={"2px"} p={0} className="w-full  h-full">
       <>
@@ -286,6 +305,21 @@ const CategoryPageFiltersSection = ({
               </Accordion>
             );
           })}
+        {hasFilters && (
+          <Button
+            variant="light"
+            color="red"
+            my={"xs"}
+            fz={"md"}
+            justify="center"
+            rightSection={<IconX size={20} />}
+            onClick={() => {
+              replace(`?`);
+            }}
+          >
+            Filtreleri Temizle
+          </Button>
+        )}
       </>
     </Stack>
   );

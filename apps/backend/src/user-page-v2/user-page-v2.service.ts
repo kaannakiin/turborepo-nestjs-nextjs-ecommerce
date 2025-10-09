@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { $Enums, Prisma } from '@repo/database';
+import { getSortIndexFromQuery } from '@repo/shared';
 import {
   CategoryPagePreparePageReturnData,
+  GetCategoryProductsZodType,
   ProductAndVariantWhereInput,
 } from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -117,10 +119,7 @@ export class UserPageV2Service {
   async getCategoryBySlug(
     slug: string,
     locale: $Enums.Locale = 'TR',
-    query: Record<string, string | string[]>,
   ): Promise<CategoryPagePreparePageReturnData> {
-    console.log('Received query parameters:', Object.keys(query));
-    console.log('Query parameters detail:', Object.entries(query));
     const category = await this.prisma.categoryTranslation.findUnique({
       where: {
         locale_slug: {
@@ -288,6 +287,23 @@ export class UserPageV2Service {
             parentCategories: hierarchy.parentCategories,
           }
         : null,
+    };
+  }
+
+  async getCategoryProducts({
+    query,
+    categoryIds,
+    page,
+    sort,
+  }: GetCategoryProductsZodType): Promise<{
+    success: boolean;
+  }> {
+    const take = 12;
+    const skip = (page - 1) * take;
+    const sortType = getSortIndexFromQuery(sort);
+
+    return {
+      success: true,
     };
   }
 }
