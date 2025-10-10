@@ -1,345 +1,135 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@repo/database';
+import { Injectable } from '@nestjs/common';
+import { $Enums, Prisma } from '@repo/database';
+import { getSortIndexFromQuery, ProductPageSortOption } from '@repo/shared';
 import {
-  $Enums,
-  CategoryGridComponentReturnData,
-  CategoryPageChildCategories,
-  CategoryPageDataType,
-  CategoryPageParentCategories,
-  CategoryPageProductsReturnType,
-  CategoryPageProductsType,
-  GetCategoryPageReturnType,
-  ProductCardProps,
+  CategoryHierarchyNode,
+  CategoryPagePreparePageReturnData,
+  GetCategoryProductsResponse,
+  GetCategoryProductsZodType,
+  ProductAndVariantWhereInput,
+  ProductUnifiedViewData,
 } from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
-interface GetProductsParams {
-  categoryId: string;
-  page: number;
-  sort: number;
-  otherParams: Record<string, string | string[]>;
-  locale?: $Enums.Locale;
-  currency?: $Enums.Currency;
-}
 
 @Injectable()
 export class CategoriesService {
-  constructor(private prisma: PrismaService) {}
-  private transformProductsToProductCards(
-    products: CategoryPageProductsType[],
+  constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Belirtilen bir kategorinin tüm üst ebeveynlerini (breadcrumb) ve tüm alt kategorilerini (çocukları, torunları vb.)
+   * tek ve performanslı bir veritabanı sorgusuyla getirir.
+   * @param categoryId Bilgileri alınacak olan kategorinin ID'si
+   * @param locale Dil seçeneği, varsayılan 'TR'
+   */
+  private async getAllCategoryParentAndChildren(
+    categoryId: string,
     locale: $Enums.Locale = 'TR',
-    currency: $Enums.Currency = 'TRY',
-  ): ProductCardProps[] {
-    const productCards: ProductCardProps[] = [];
+  ): Promise<{
+    success: boolean;
+    parentCategories?: Array<{
+      id: string;
+      name: string;
+      slug: string;
+      level: number;
+    }>;
+    childrenCategories?: Array<{
+      id: string;
+      name: string;
+      slug: string;
+      level: number;
+    }>;
+  }> {
+    const query = Prisma.sql`
+    WITH RECURSIVE
+      "FullHierarchy" AS (
+        SELECT id, "parentCategoryId", 0 AS level
+        FROM "Category" WHERE "parentCategoryId" IS NULL
+        UNION ALL
+        SELECT c.id, c."parentCategoryId", fh.level + 1
+        FROM "Category" c
+        JOIN "FullHierarchy" fh ON c."parentCategoryId" = fh.id
+      ),
+      "Ancestors" AS (
+        SELECT id, "parentCategoryId", level
+        FROM "FullHierarchy" WHERE id = ${categoryId}
+        UNION ALL
+        SELECT fh.id, fh."parentCategoryId", fh.level
+        FROM "FullHierarchy" fh
+        JOIN "Ancestors" a ON fh.id = a."parentCategoryId"
+      ),
+      "Descendants" AS (
+        SELECT id, "parentCategoryId", level
+        FROM "FullHierarchy" WHERE id = ${categoryId}
+        UNION ALL
+        SELECT fh.id, fh."parentCategoryId", fh.level
+        FROM "FullHierarchy" fh
+        JOIN "Descendants" d ON fh."parentCategoryId" = d.id
+      )
+    SELECT a.id, a.level, ct.name, ct.slug, 'parent' as type
+    FROM "Ancestors" a
+    JOIN "CategoryTranslation" ct ON a.id = ct."categoryId"
+    -- DEĞİŞİKLİK BURADA: Tip dönüşümü eklendi
+    WHERE a.id != ${categoryId} AND ct.locale = ${locale}::"Locale"
 
-    products.forEach((product) => {
-      // Product temel bilgileri
-      const productTranslation =
-        product.translations?.find((t) => t.locale === locale) ||
-        product.translations?.[0];
-      const productSlug = productTranslation?.slug || '';
+    UNION ALL
 
-      // Product assets
-      const firstAsset = product.assets?.[0] || null;
-      const secondAsset = product.assets?.[1] || null;
+    SELECT d.id, d.level, ct.name, ct.slug, 'child' as type
+    FROM "Descendants" d
+    JOIN "CategoryTranslation" ct ON d.id = ct."categoryId"
+    -- DEĞİŞİKLİK BURADA: Tip dönüşümü eklendi
+    WHERE d.id != ${categoryId} AND ct.locale = ${locale}::"Locale";
+  `;
 
-      // Product prices (sadece TRY currency olanları filtrele)
-      const productPrices =
-        product.prices?.filter((price) => price.currency === currency) || null;
+    try {
+      const results =
+        await this.prisma.$queryRaw<CategoryHierarchyNode[]>(query);
 
-      if (!product.isVariant) {
-        // Basit ürün - tek kart
-        productCards.push({
-          productId: product.id,
-          productTranslation: product.translations || [],
-          firstAsset,
-          secondAsset,
-          productPrices,
-          productBrand: product.brand,
-          productStock: product.stock,
-          productSlug,
-        });
-      } else {
-        // Variant ürün - her kombinasyon için ayrı kart
-        product.variantGroups?.forEach((variantGroup) => {
-          variantGroup.options?.forEach((option) => {
-            option.combinations?.forEach((combinationWrapper) => {
-              const combination = combinationWrapper.combination;
+      const parentCategories: CategoryHierarchyNode[] = [];
+      const childrenCategories: CategoryHierarchyNode[] = [];
 
-              // Variant prices (sadece TRY currency olanları filtrele)
-              const variantPrices =
-                combination.prices?.filter(
-                  (price) => price.currency === currency,
-                ) || [];
-
-              // Variant assets
-              const variantFirstAsset = combination.assets?.[0] || null;
-              const variantSecondAsset = combination.assets?.[1] || null;
-
-              // Variant slug oluştur
-              const variantGroupTranslation =
-                variantGroup.variantGroup?.translations?.find(
-                  (t) => t.locale === locale,
-                ) || variantGroup.variantGroup?.translations?.[0];
-              const variantOptionTranslation =
-                option.variantOption?.translations?.find(
-                  (t) => t.locale === locale,
-                ) || option.variantOption?.translations?.[0];
-
-              const variantGroupSlug = variantGroupTranslation?.slug || '';
-              const variantOptionSlug = variantOptionTranslation?.slug || '';
-
-              // Search params olarak variant slug oluştur
-              const variantSlug =
-                variantGroupSlug && variantOptionSlug
-                  ? `${productSlug}?${variantGroupSlug}=${variantOptionSlug}`
-                  : productSlug;
-
-              productCards.push({
-                productId: product.id,
-                productTranslation: product.translations || [],
-                firstAsset,
-                secondAsset,
-                productPrices,
-                productBrand: product.brand,
-                productStock: product.stock,
-                productSlug,
-                combinationInfo: {
-                  variantId: combination.id,
-                  variantSlug,
-                  variantPrices,
-                  variantGroups: [
-                    {
-                      variantGroupId: variantGroup.variantGroupId,
-                      translations:
-                        variantGroup.variantGroup?.translations || [],
-                      type: variantGroup.variantGroup?.type || 'LIST',
-                      options: option.variantOption,
-                    },
-                  ],
-                  variantFirstAsset,
-                  variantSecondAsset,
-                  variantTranslations: combination.translations || [],
-                },
-              });
-            });
-          });
-        });
+      for (const node of results) {
+        if (node.type === 'parent') {
+          parentCategories.push(node);
+        } else {
+          childrenCategories.push(node);
+        }
       }
-    });
 
-    return productCards;
-  }
-  private async getCategoryParents(
-    categoryId: string,
-    level: number = 1,
-  ): Promise<CategoryPageParentCategories[]> {
-    const parents: CategoryPageParentCategories[] = [];
-    const category = await this.prisma.category.findUnique({
-      where: { id: categoryId },
-      select: { parentCategoryId: true },
-    });
+      parentCategories.sort((a, b) => a.level - b.level);
 
-    if (!category?.parentCategoryId) {
-      return parents;
-    }
-
-    const parentCategory = await this.prisma.category.findUnique({
-      where: { id: category.parentCategoryId },
-      include: {
-        translations: {
-          select: {
-            locale: true,
-            name: true,
-            slug: true,
-          },
-        },
-        image: {
-          select: {
-            url: true,
-            type: true,
-          },
-        },
-      },
-    });
-
-    if (parentCategory) {
-      const grandParent = await this.prisma.category.findUnique({
-        where: { id: parentCategory.id },
-        select: { parentCategoryId: true },
-      });
-
-      parents.push({
-        parentId: grandParent?.parentCategoryId || null,
-        id: parentCategory.id,
-        level,
-        translations: parentCategory.translations,
-        image: parentCategory.image,
-      });
-
-      const grandParents = await this.getCategoryParents(
-        parentCategory.id,
-        level + 1,
+      return {
+        success: true,
+        parentCategories,
+        childrenCategories,
+      };
+    } catch (error) {
+      console.error(
+        `Failed to fetch hierarchy for category ${categoryId}:`,
+        error,
       );
-      parents.push(...grandParents);
+      return { success: false };
     }
-
-    return parents;
   }
 
-  private async getCategoryChildren(
-    categoryId: string,
-    level: number = 1,
-  ): Promise<CategoryPageChildCategories[]> {
-    const children: CategoryPageChildCategories[] = [];
-
-    const directChildren = await this.prisma.category.findMany({
-      where: {
-        parentCategoryId: categoryId,
-        products: {
-          some: {
-            product: {
-              OR: [
-                {
-                  active: true,
-                  isVariant: false,
-                  stock: {
-                    gt: 0,
-                  },
-                },
-                {
-                  active: true,
-                  variantCombinations: {
-                    some: {
-                      active: true,
-                      stock: { gt: 0 },
-                    },
-                  },
-                },
-              ],
-            },
-          },
-        },
-      },
-      include: {
-        translations: {
-          select: {
-            locale: true,
-            name: true,
-            slug: true,
-          },
-        },
-        image: {
-          select: {
-            url: true,
-            type: true,
-          },
-        },
-      },
-    });
-
-    // Her child için
-    for (const child of directChildren) {
-      // Child'ı listeye ekle
-      children.push({
-        parentId: categoryId,
-        id: child.id,
-        level,
-        translations: child.translations,
-        image: child.image,
-      });
-
-      // Bu child'ın child'larını recursive olarak al
-      const grandChildren = await this.getCategoryChildren(child.id, level + 1);
-      children.push(...grandChildren);
-    }
-
-    return children;
-  }
-
-  private async buildCategoryPageData(
-    categoryId: string,
-  ): Promise<CategoryPageDataType> {
-    const category = await this.prisma.category.findUnique({
-      where: { id: categoryId },
-      include: {
-        translations: {
-          select: {
-            locale: true,
-            metaTitle: true,
-            metaDescription: true,
-            name: true,
-            slug: true,
-            description: true,
-          },
-        },
-        image: {
-          select: {
-            url: true,
-            type: true,
-          },
-        },
-      },
-    });
-
-    if (!category) {
-      throw new NotFoundException('Kategori bulunamadı');
-    }
-
-    const parentCategories = await this.getCategoryParents(categoryId);
-
-    const childCategories = await this.getCategoryChildren(categoryId);
-
-    const sortedParents = parentCategories.sort((a, b) => b.level - a.level);
-    const sortedChildren = childCategories.sort((a, b) => a.level - b.level);
-
-    return {
-      id: category.id,
-      level: 0, // Ana kategori level 0
-      translations: category.translations,
-      image: category.image,
-      parentCategories: sortedParents,
-      childCategories: sortedChildren,
-    };
-  }
-
-  async getCategoryPage(
+  async getCategoryBySlug(
     slug: string,
-    allParams: Record<string, string | string[]>,
-  ): Promise<GetCategoryPageReturnType> {
-    const category = await this.prisma.category.findFirst({
+    locale: $Enums.Locale = 'TR',
+  ): Promise<CategoryPagePreparePageReturnData> {
+    const category = await this.prisma.categoryTranslation.findUnique({
       where: {
-        translations: {
-          some: {
-            slug: {
-              contains: slug,
-              mode: 'insensitive',
-            },
-          },
+        locale_slug: {
+          locale,
+          slug,
         },
-        products: {
-          some: {
-            product: {
-              OR: [
-                {
-                  active: true,
-                  isVariant: false,
-                  stock: {
-                    gt: 0,
-                  },
-                },
-                {
-                  isVariant: true,
-                  active: true,
-                  variantCombinations: {
-                    some: {
-                      active: true,
-                      stock: {
-                        gt: 0,
-                      },
-                    },
-                  },
-                },
-              ],
+      },
+      include: {
+        category: {
+          select: {
+            image: {
+              select: {
+                url: true,
+                type: true,
+              },
             },
           },
         },
@@ -347,77 +137,50 @@ export class CategoriesService {
     });
 
     if (!category) {
-      throw new NotFoundException('Kategori bulunamadı');
+      return {
+        success: false,
+        message: 'Kategori bulunamadı.',
+        brands: null,
+        hiearchy: null,
+        variantGroups: null,
+        category: null,
+      };
     }
 
-    const data = await this.buildCategoryPageData(category.id);
-    const categoryWithChildrenIds = [
-      category.id,
-      ...data.childCategories.map((child) => child.id),
+    const hierarchy = await this.getAllCategoryParentAndChildren(
+      category.categoryId,
+      locale,
+    );
+
+    const hierarchyCategoryIds = [
+      ...(hierarchy.success &&
+      hierarchy.childrenCategories &&
+      hierarchy.childrenCategories.length > 0
+        ? hierarchy.childrenCategories.map((c) => c.id)
+        : []),
+      category.categoryId,
     ];
 
-    const brands = await this.prisma.brand.findMany({
-      where: {
-        products: {
-          some: {
-            AND: [
-              {
-                OR: [
-                  {
-                    active: true,
-                    stock: {
-                      gt: 0,
-                    },
-                    isVariant: false,
-                  },
-                  {
-                    active: true,
-                    isVariant: true,
-                    variantCombinations: {
-                      some: {
-                        active: true,
-                        stock: {
-                          gt: 0,
-                        },
-                      },
-                    },
-                  },
-                ],
-              },
-              {
-                categories: {
-                  some: {
-                    categoryId: { in: categoryWithChildrenIds },
-                  },
-                },
-              },
-            ],
-          },
-        },
-      },
-      select: {
-        id: true,
-        translations: true,
-        image: {
-          select: {
-            url: true,
-            type: true,
-          },
-        },
-      },
-    });
-
-    const dynamicVariantGroups = await this.prisma.variantGroup.findMany({
+    const variantGroup = await this.prisma.variantGroup.findMany({
       where: {
         productVariantGroups: {
           some: {
             product: {
               categories: {
                 some: {
-                  categoryId: { in: categoryWithChildrenIds },
+                  categoryId: { in: hierarchyCategoryIds },
                 },
               },
               active: true,
+              isVariant: true,
+              variantCombinations: {
+                some: {
+                  active: true,
+                  stock: {
+                    gt: 0,
+                  },
+                },
+              },
             },
           },
         },
@@ -426,39 +189,33 @@ export class CategoriesService {
         createdAt: 'asc',
       },
       select: {
-        id: true,
+        translations: {
+          select: {
+            name: true,
+            locale: true,
+            slug: true,
+          },
+        },
         type: true,
-        translations: true,
         options: {
           where: {
             productVariantOptions: {
               some: {
-                productVariantGroup: {
-                  product: {
-                    OR: [
-                      {
-                        active: true,
-                        isVariant: false,
-                        stock: {
-                          gt: 0,
-                        },
+                combinations: {
+                  some: {
+                    combination: {
+                      active: true,
+                      stock: {
+                        gt: 0,
                       },
-                      {
+                      product: {
                         active: true,
                         isVariant: true,
-                        variantCombinations: {
+                        categories: {
                           some: {
-                            active: true,
-                            stock: {
-                              gt: 0,
-                            },
+                            categoryId: { in: hierarchyCategoryIds },
                           },
                         },
-                      },
-                    ],
-                    categories: {
-                      some: {
-                        categoryId: { in: categoryWithChildrenIds },
                       },
                     },
                   },
@@ -470,175 +227,8 @@ export class CategoriesService {
             createdAt: 'asc',
           },
           select: {
-            id: true,
-            asset: {
-              select: {
-                url: true,
-                type: true,
-              },
-            },
+            translations: true,
             hexValue: true,
-            translations: true,
-          },
-        },
-      },
-    });
-
-    return { variantGroups: dynamicVariantGroups, category: data, brands };
-  }
-
-  async getProductsByCategory({
-    categoryId,
-    otherParams,
-    page,
-    sort,
-    currency,
-    locale,
-  }: GetProductsParams): Promise<CategoryPageProductsReturnType> {
-    const take = 12;
-    const skip = (page - 1) * take;
-    const { brands, ...other } = otherParams;
-    const paramsVariantGroups = Object.keys(other);
-    const paramsVariantGroupsValues = Object.values(other);
-
-    const childCategories = await this.getCategoryChildren(categoryId);
-    const categoryIds = [
-      categoryId,
-      ...childCategories.map((child) => child.id),
-    ];
-
-    const productWhere: Prisma.ProductWhereInput = {
-      categories: {
-        some: {
-          categoryId: { in: categoryIds },
-        },
-      },
-      ...(brands && brands.length > 0
-        ? {
-            brand: {
-              translations: {
-                some: {
-                  OR: [
-                    {
-                      slug: {
-                        in: Array.isArray(brands) ? brands : [brands],
-                        mode: 'insensitive',
-                      },
-                    },
-                    {
-                      name: {
-                        in: Array.isArray(brands) ? brands : [brands],
-                        mode: 'insensitive',
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          }
-        : {}),
-      ...(paramsVariantGroups && paramsVariantGroups.length > 0
-        ? {
-            variantGroups: {
-              some: {
-                variantGroup: {
-                  translations: {
-                    some: {
-                      OR: [
-                        {
-                          slug: {
-                            in: paramsVariantGroups,
-                            mode: 'insensitive',
-                          },
-                        },
-                        {
-                          name: {
-                            in: paramsVariantGroups,
-                            mode: 'insensitive',
-                          },
-                        },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
-          }
-        : {}),
-      ...(paramsVariantGroupsValues && paramsVariantGroups.length > 0
-        ? {
-            variantCombinations: {
-              some: {
-                options: {
-                  some: {
-                    productVariantOption: {
-                      variantOption: {
-                        translations: {
-                          some: {
-                            OR: [
-                              {
-                                slug: {
-                                  in: paramsVariantGroupsValues.flatMap(
-                                    (value) =>
-                                      Array.isArray(value) ? value : [value],
-                                  ),
-                                  mode: 'insensitive',
-                                },
-                              },
-                              {
-                                name: {
-                                  in: paramsVariantGroupsValues.flatMap(
-                                    (value) =>
-                                      Array.isArray(value) ? value : [value],
-                                  ),
-                                  mode: 'insensitive',
-                                },
-                              },
-                            ],
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          }
-        : {}),
-      OR: [
-        {
-          active: true,
-          isVariant: false,
-          stock: {
-            gt: 0,
-          },
-        },
-        {
-          active: true,
-          isVariant: true,
-          variantCombinations: {
-            some: {
-              stock: {
-                gt: 0,
-              },
-              active: true,
-            },
-          },
-        },
-      ],
-    };
-
-    const products = await this.prisma.product.findMany({
-      where: { ...productWhere },
-      take,
-      skip,
-      include: {
-        translations: true,
-        assets: {
-          orderBy: {
-            order: 'asc',
-          },
-          select: {
             asset: {
               select: {
                 url: true,
@@ -647,143 +237,243 @@ export class CategoriesService {
             },
           },
         },
-        taxonomyCategory: true,
-        prices: true,
-        brand: {
-          select: {
-            translations: true,
-            image: {
-              select: {
-                url: true,
-                type: true,
-              },
-            },
-          },
-        },
-        variantGroups: {
-          orderBy: {
-            order: 'asc',
-          },
-          take: 1,
-          include: {
-            options: {
-              orderBy: {
-                order: 'asc',
-              },
-              include: {
-                combinations: {
-                  take: 1,
-                  orderBy: {
-                    productVariantOption: {
-                      order: 'asc',
-                    },
-                  },
-                  include: {
-                    combination: {
-                      include: {
-                        prices: true,
-                        translations: true,
-                        assets: {
-                          orderBy: {
-                            order: 'asc',
-                          },
-                          select: {
-                            asset: {
-                              select: {
-                                url: true,
-                                type: true,
-                              },
-                            },
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-                variantOption: {
-                  select: {
-                    translations: true,
-                    hexValue: true,
-                    asset: {
-                      select: {
-                        url: true,
-                        type: true,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-            variantGroup: {
-              include: {
-                translations: true,
-              },
-            },
-          },
-        },
       },
     });
 
-    const totalProducts = await this.prisma.product.count({
-      where: { ...productWhere },
-    });
-    const transformedProducts = this.transformProductsToProductCards(products);
-
-    return {
-      products: transformedProducts,
-      pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(totalProducts / take),
-        totalProducts,
-        hasNextPage: page < Math.ceil(totalProducts / take),
-        hasPreviousPage: page > 1,
-      },
-    };
-  }
-
-  async getCategoriesByIds(
-    categoryIds: string[],
-  ): Promise<CategoryGridComponentReturnData[]> {
-    const categories = await this.prisma.category.findMany({
+    const brands = await this.prisma.brand.findMany({
       where: {
-        imageId: { not: null },
-        id: { in: categoryIds },
         products: {
           some: {
-            product: {
-              OR: [
-                {
-                  active: true,
-                  isVariant: false,
-                  stock: {
-                    gt: 0,
+            AND: [
+              {
+                OR: [ProductAndVariantWhereInput],
+              },
+              {
+                categories: {
+                  some: {
+                    categoryId: { in: hierarchyCategoryIds },
                   },
                 },
-                {
-                  active: true,
-                  variantCombinations: {
-                    some: {
-                      active: true,
-                      stock: { gt: 0 },
-                    },
-                  },
-                },
-              ],
-            },
+              },
+            ],
           },
         },
       },
       select: {
+        translations: true,
         image: {
           select: {
             url: true,
             type: true,
           },
         },
-        translations: true,
-        id: true,
       },
     });
-    return categories;
+
+    return {
+      message: 'Kategori başarıyla yüklendi.',
+      success: true,
+      variantGroups: variantGroup,
+      category,
+      brands,
+      hiearchy: hierarchy.success
+        ? {
+            childrenCategories: hierarchy.childrenCategories,
+            parentCategories: hierarchy.parentCategories,
+          }
+        : null,
+    };
+  }
+
+  async getCategoryProducts({
+    query,
+    categoryIds,
+    page,
+    sort,
+  }: GetCategoryProductsZodType): Promise<GetCategoryProductsResponse> {
+    const take = 12;
+    const skip = (page - 1) * take;
+    const sortType = getSortIndexFromQuery(sort);
+    const currency: $Enums.Currency = 'TRY';
+    const locale: $Enums.Locale = 'TR';
+    if (!categoryIds || categoryIds.length === 0) {
+      return {
+        success: false,
+        message: "En az bir kategori ID'si sağlanmalıdır.",
+      };
+    }
+    const filterConditions: Prisma.Sql[] = [];
+    for (const [key, value] of Object.entries(query)) {
+      if (!value) continue;
+      const filterValues = Array.isArray(value) ? value : [value];
+      if (filterValues.length === 0) continue;
+      if (key === 'brand') {
+        filterConditions.push(Prisma.sql`
+      AND "brandId" IN (
+        SELECT "brandId" FROM "BrandTranslation" WHERE slug = ANY(${filterValues}::text[]) AND locale = ${locale}::"Locale"
+      )
+    `);
+      } else {
+        filterConditions.push(Prisma.sql`
+      AND EXISTS (
+        SELECT 1
+        FROM jsonb_array_elements("variantOptions") AS vo
+        WHERE vo->>'variantGroupSlug' = ${key}
+        AND vo->>'variantOptionSlug' = ANY(${filterValues}::text[])
+      )
+    `);
+      }
+    }
+    const dynamicFilters =
+      filterConditions.length > 0
+        ? Prisma.join(filterConditions, '\n')
+        : Prisma.empty;
+    const categoryFilter =
+      categoryIds && categoryIds.length > 0
+        ? Prisma.sql`
+    AND EXISTS (
+      SELECT 1
+      FROM jsonb_array_elements(categories) AS cat
+      WHERE cat->>'id' = ANY(${categoryIds}::text[])
+    )
+  `
+        : Prisma.empty;
+    const whereClause = Prisma.sql`
+  WHERE
+    active = true
+    AND "isProductActive" = true
+    AND stock > 0
+    AND EXISTS (
+      SELECT 1 FROM jsonb_array_elements(prices) AS price WHERE price->>'currency' = ${currency}
+    )
+    AND EXISTS (
+      SELECT 1 FROM jsonb_array_elements("productTranslations") AS trans WHERE trans->>'locale' = ${locale}
+    )
+    ${categoryFilter}
+    ${dynamicFilters}
+`;
+
+    const orderByClause = this.getOrderBySql(sortType, currency, locale);
+
+    // --- KOMPLE YENİLENEN SORGULAR ---
+
+    const baseQuery = Prisma.sql`
+    WITH "RankedView" AS (
+      SELECT
+        *,
+        -- YENİ SIRALAMA MANTIĞI:
+        -- Her bir ürünün, ANA VARYANT GRUBUNA (örn: beden) göre kendi içinde sıralanmasını sağlıyoruz.
+        -- 'l-kırmızı' -> rn:1, 'l-mavi' -> rn:2
+        -- 'xl-kırmızı' -> rn:1, 'xl-mavi' -> rn:2
+        ROW_NUMBER() OVER(
+          PARTITION BY "productId", (CASE WHEN "entryType" = 'VARIANT' THEN ("variantOptions"->0)->>'variantOptionSlug' ELSE id END)
+          ORDER BY "createdAt" ASC
+        ) as rn
+      FROM "ProductUnifiedView"
+    )
+    SELECT
+      id, "productId", "combinationId", "entryType", sku, barcode, type, stock, active,
+      "isProductActive", "brandId", "taxonomyCategoryId", "createdAt", "updatedAt",
+      "visibleAllCombinations", prices, "productTranslations", "productAssets",
+      categories, "discountIncluded", "variantTranslation", "variantAssets", "variantOptions"
+    FROM "RankedView"
+    ${whereClause}
+    -- ANAHTAR NOKTA:
+    -- Eğer visibleAllCombinations true ise, bu koşul her zaman geçerlidir ve TÜM varyantlar gelir.
+    -- Eğer false ise, SADECE rn=1 olanlar (yani her ana varyant grubunun ilk elemanı) gelir.
+    AND ("visibleAllCombinations" = true OR rn = 1)
+  `;
+
+    const productsQuery = Prisma.sql`
+    ${baseQuery}
+    ${orderByClause}
+    LIMIT ${take}
+    OFFSET ${skip}
+  `;
+
+    const countQuery = Prisma.sql`
+    SELECT COUNT(*)::int FROM (${baseQuery}) AS "final_products"
+  `;
+
+    const [products, countResult] = await this.prisma.$transaction([
+      this.prisma.$queryRaw<ProductUnifiedViewData[]>(productsQuery),
+      this.prisma.$queryRaw<{ count: number }[]>(countQuery),
+    ]);
+
+    const totalCount = Number(countResult[0]?.count || 0);
+    return {
+      success: true,
+      products,
+      pagination: {
+        totalCount: totalCount,
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / take),
+        hasNextPage: page * take < totalCount,
+        hasPreviousPage: page > 1,
+      },
+    };
+  }
+
+  private getOrderBySql(
+    sortType: ProductPageSortOption,
+    currency: string,
+    locale: string,
+  ): Prisma.Sql {
+    switch (sortType) {
+      case ProductPageSortOption.NEWEST:
+        return Prisma.sql`ORDER BY "createdAt" DESC`;
+
+      case ProductPageSortOption.OLDEST:
+        return Prisma.sql`ORDER BY "createdAt" ASC`;
+
+      case ProductPageSortOption.PRICE_ASC:
+        return Prisma.sql`
+        ORDER BY (
+          SELECT COALESCE(
+            NULLIF(CAST(price->>'discountedPrice' AS DECIMAL), 0),
+            CAST(price->>'price' AS DECIMAL)
+          )
+          FROM jsonb_array_elements(prices) AS price
+          WHERE price->>'currency' = ${currency}
+          LIMIT 1
+        ) ASC NULLS LAST
+      `;
+
+      case ProductPageSortOption.PRICE_DESC:
+        return Prisma.sql`
+        ORDER BY (
+          SELECT COALESCE(
+            NULLIF(CAST(price->>'discountedPrice' AS DECIMAL), 0),
+            CAST(price->>'price' AS DECIMAL)
+          )
+          FROM jsonb_array_elements(prices) AS price
+          WHERE price->>'currency' = ${currency}
+          LIMIT 1
+        ) DESC NULLS LAST
+      `;
+
+      case ProductPageSortOption.A_Z:
+        return Prisma.sql`
+        ORDER BY (
+          SELECT trans->>'name'
+          FROM jsonb_array_elements("productTranslations") AS trans
+          WHERE trans->>'locale' = ${locale}
+          LIMIT 1
+        ) ASC NULLS LAST
+      `;
+
+      case ProductPageSortOption.Z_A:
+        return Prisma.sql`
+        ORDER BY (
+          SELECT trans->>'name'
+          FROM jsonb_array_elements("productTranslations") AS trans
+          WHERE trans->>'locale' = ${locale}
+          LIMIT 1
+        ) DESC NULLS LAST
+      `;
+
+      default:
+        return Prisma.sql`ORDER BY "createdAt" DESC`;
+    }
   }
 }

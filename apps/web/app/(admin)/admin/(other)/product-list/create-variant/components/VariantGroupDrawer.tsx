@@ -583,7 +583,7 @@ const VariantGroupDrawer = ({
                   className: "w-full",
                 }}
                 label={
-                  <Group justify="space-between">
+                  <Group justify="space-between" my={"xs"}>
                     <Text>
                       Varyantlar <span className="text-red-500">*</span>
                     </Text>

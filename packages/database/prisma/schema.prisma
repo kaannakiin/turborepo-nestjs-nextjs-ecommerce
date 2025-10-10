@@ -193,7 +193,8 @@ model TaxonomyCategory {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  products Product[]
+  products           Product[]
+  productUnifiedView ProductUnifiedView[]
 
   @@index([googleId])
   @@index([parentId])
@@ -249,8 +250,9 @@ model Brand {
   translations  BrandTranslation[]
 
   // İndirim sistemi ilişkisi
-  discountIncluded DiscountIncludedBrand[]
-  footerLinks      FooterLinks[]
+  discountIncluded   DiscountIncludedBrand[]
+  footerLinks        FooterLinks[]
+  productUnifiedView ProductUnifiedView[]
 
   @@index([parentBrandId])
 }
@@ -397,21 +399,22 @@ model Product {
   updatedAt DateTime    @updatedAt
 
   // İndirim sistemi ilişkisi
-  discountIncluded    DiscountIncludedProduct[]
-  cartItems           CartItem[]
-  productListItems    ProductListCarouselItem[]
-  categories          ProductCategory[]
-  prices              ProductPrice[]
-  translations        ProductTranslation[]
-  assets              ProductAsset[]
-  variantGroups       ProductVariantGroup[]
-  variantCombinations ProductVariantCombination[]
-  brand               Brand?                      @relation(fields: [brandId], references: [id], onDelete: SetNull)
-  brandId             String?
-  taxonomyCategory    TaxonomyCategory?           @relation(fields: [taxonomyCategoryId], references: [id])
-  taxonomyCategoryId  String?
-  footerLinks         FooterLinks[]
-  orderItems          OrderItem[]
+  discountIncluded       DiscountIncludedProduct[]
+  cartItems              CartItem[]
+  productListItems       ProductListCarouselItem[]
+  categories             ProductCategory[]
+  prices                 ProductPrice[]
+  translations           ProductTranslation[]
+  assets                 ProductAsset[]
+  variantGroups          ProductVariantGroup[]
+  variantCombinations    ProductVariantCombination[]
+  brand                  Brand?                      @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  brandId                String?
+  taxonomyCategory       TaxonomyCategory?           @relation(fields: [taxonomyCategoryId], references: [id])
+  taxonomyCategoryId     String?
+  footerLinks            FooterLinks[]
+  orderItems             OrderItem[]
+  visibleAllCombinations Boolean                     @default(false) // Tüm varyant kombinasyonları görünür mü?
 
   @@index([brandId])
   @@index([taxonomyCategoryId])
@@ -1360,4 +1363,46 @@ model PaymentRequestSchema {
   @@index([userId])
   @@index([createdAt])
   @@index([paymentId])
+}
+
+// Bu enum, view'daki entryType alanını temsil eder.
+// Eğer schema'da zaten varsa tekrar ekleme.
+enum EntryType {
+  PRODUCT
+  VARIANT
+}
+
+// Bu modeli schema.prisma dosyanıza ekleyin.
+model ProductUnifiedView {
+  id                     String      @id @unique
+  productId              String
+  combinationId          String?
+  entryType              EntryType
+  sku                    String?
+  barcode                String?
+  type                   ProductType
+  stock                  Int
+  active                 Boolean
+  isProductActive        Boolean
+  brandId                String?
+  taxonomyCategoryId     String?
+  createdAt              DateTime
+  updatedAt              DateTime
+  visibleAllCombinations Boolean
+  // SQL'de jsonb olarak topladığımız alanlar
+  prices                 Json?
+  productTranslations    Json?
+  productAssets          Json?
+  categories             Json?
+  discountIncluded       Json? // <-- En son eklediğimiz alan
+  variantTranslation     Json?
+  variantAssets          Json?
+  variantOptions         Json?
+
+  // Opsiyonel ilişkiler
+  brand            Brand?            @relation(fields: [brandId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  taxonomyCategory TaxonomyCategory? @relation(fields: [taxonomyCategoryId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+
+  // Bu satır Prisma'ya bu modelin veritabanındaki VIEW'a karşılık geldiğini söyler.
+  @@map("ProductUnifiedView")
 }

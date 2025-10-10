@@ -1,6 +1,7 @@
-import * as bcrypt from "bcryptjs";
 import * as readline from "readline";
 import { PrismaClient } from "../../generated/prisma";
+import { hash } from "argon2";
+
 const prisma = new PrismaClient();
 
 // Terminal input interface
@@ -92,9 +93,7 @@ async function createOwnerUser() {
       process.exit(1);
     }
 
-    // Hash password
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const hashedPassword = await hash(password);
 
     // Format phone number
     const formattedPhone = phone.replace(/\s/g, "").replace(/^0/, "");

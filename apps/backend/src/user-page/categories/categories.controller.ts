@@ -1,37 +1,33 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+} from '@nestjs/common';
+import {
+  GetCategoryProductsSchema,
+  type GetCategoryProductsZodType,
+} from '@repo/types';
+import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import { CategoriesService } from './categories.service';
 
-@Controller('/users/categories')
+@Controller('user-categories')
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
-
-  @Get('get-category-page/:slug')
-  async getCategoryPage(
-    @Param('slug') slug: string,
-    @Query() allParams: Record<string, string | string[]>,
-  ) {
-    return this.categoriesService.getCategoryPage(slug, allParams);
+  @Get('get-category/:slug')
+  getCategoryBySlug(@Param('slug') slug: string) {
+    return this.categoriesService.getCategoryBySlug(slug, 'TR');
   }
 
-  @Get('get-products-categories/:categoryId')
-  async getProductsByCategory(
-    @Param('categoryId') categoryId: string,
-    @Query() allParams: Record<string, string | string[]>,
+  @HttpCode(HttpStatus.OK)
+  @Post(`get-category-products`)
+  async getCategoryProducts(
+    @Body(new ZodValidationPipe(GetCategoryProductsSchema))
+    data: GetCategoryProductsZodType,
   ) {
-    const { page: pageParam, sort: sortParam, ...otherParams } = allParams;
-
-    const page = parseInt((pageParam as string) || '1', 10);
-    const sort = parseInt((sortParam as string) || '0', 10);
-    return this.categoriesService.getProductsByCategory({
-      categoryId,
-      page,
-      sort,
-      otherParams,
-    });
-  }
-
-  @Post('get-categories-by-ids')
-  async getCategoriesByIds(@Body() body: { categoryIds: string[] }) {
-    return this.categoriesService.getCategoriesByIds(body.categoryIds);
+    return this.categoriesService.getCategoryProducts(data);
   }
 }

@@ -153,6 +153,7 @@ const BasicProductForm = ({
             color: "yellow",
             autoClose: 5000,
           });
+          push("/admin/product-list");
           return;
         }
       }

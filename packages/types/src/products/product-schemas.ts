@@ -7,7 +7,6 @@ import {
 } from "@repo/database";
 import { parseDocument } from "htmlparser2";
 import * as z from "zod";
-import { CategoryPageProductsType } from "./category-schema";
 export const MIME_TYPES = {
   IMAGE: [
     "image/jpeg", // .jpg, .jpeg - En yaygın
@@ -787,34 +786,6 @@ export type ProductPageDataType = Prisma.ProductGetPayload<{
     };
   };
 }>;
-export interface ProductCardProps {
-  productId: string;
-  productTranslation: CategoryPageProductsType["translations"];
-  firstAsset: CategoryPageProductsType["assets"][number] | null;
-  secondAsset: CategoryPageProductsType["assets"][number] | null;
-  productPrices: CategoryPageProductsType["prices"] | null;
-  productBrand: CategoryPageProductsType["brand"] | null;
-  productStock: number;
-  productSlug: string;
-  combinationInfo?: {
-    variantId: string;
-    variantSlug: string;
-    variantPrices: CategoryPageProductsType["variantGroups"][number]["options"][number]["combinations"][number]["combination"]["prices"];
-    variantGroups: {
-      variantGroupId: string;
-      translations: CategoryPageProductsType["variantGroups"][number]["variantGroup"]["translations"];
-      type: $Enums.VariantGroupType;
-      options: CategoryPageProductsType["variantGroups"][number]["options"][number]["variantOption"];
-    }[];
-    variantFirstAsset:
-      | CategoryPageProductsType["variantGroups"][number]["options"][number]["combinations"][number]["combination"]["assets"][number]
-      | null;
-    variantSecondAsset:
-      | CategoryPageProductsType["variantGroups"][number]["options"][number]["combinations"][number]["combination"]["assets"][number]
-      | null;
-    variantTranslations: CategoryPageProductsType["variantGroups"][number]["options"][number]["combinations"][number]["combination"]["translations"];
-  };
-}
 
 export type ModalProductCardForAdmin = {
   productId: string;

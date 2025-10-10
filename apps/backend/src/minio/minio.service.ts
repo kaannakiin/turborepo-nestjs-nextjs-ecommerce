@@ -338,6 +338,7 @@ export class MinioService {
             `Desteklenmeyen dosya tipi: ${file.mimetype}`,
           );
       }
+
       return { success: true, data: processedAsset };
     } catch (error) {
       console.log(error);
