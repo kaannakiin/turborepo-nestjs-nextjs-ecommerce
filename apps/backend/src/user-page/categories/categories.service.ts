@@ -291,43 +291,59 @@ export class CategoriesService {
     page,
     sort,
   }: GetCategoryProductsZodType): Promise<GetCategoryProductsResponse> {
-    const take = 12;
+    const take = 8;
     const skip = (page - 1) * take;
     const sortType = getSortIndexFromQuery(sort);
     const currency: $Enums.Currency = 'TRY';
     const locale: $Enums.Locale = 'TR';
+
     if (!categoryIds || categoryIds.length === 0) {
       return {
         success: false,
         message: "En az bir kategori ID'si sağlanmalıdır.",
       };
     }
-    const filterConditions: Prisma.Sql[] = [];
+
+    const productLevelFilterConditions: Prisma.Sql[] = [];
+    const variantLevelSubQueryConditions: Prisma.Sql[] = [];
+
     for (const [key, value] of Object.entries(query)) {
       if (!value) continue;
       const filterValues = Array.isArray(value) ? value : [value];
       if (filterValues.length === 0) continue;
+
       if (key === 'brand') {
-        filterConditions.push(Prisma.sql`
-      AND "brandId" IN (
-        SELECT "brandId" FROM "BrandTranslation" WHERE slug = ANY(${filterValues}::text[]) AND locale = ${locale}::"Locale"
-      )
-    `);
+        productLevelFilterConditions.push(Prisma.sql`
+          AND "brandId" IN (
+            SELECT "brandId" FROM "BrandTranslation" WHERE slug = ANY(${filterValues}::text[]) AND locale = ${locale}::"Locale"
+          )
+        `);
       } else {
-        filterConditions.push(Prisma.sql`
-      AND EXISTS (
-        SELECT 1
-        FROM jsonb_array_elements("variantOptions") AS vo
-        WHERE vo->>'variantGroupSlug' = ${key}
-        AND vo->>'variantOptionSlug' = ANY(${filterValues}::text[])
-      )
-    `);
+        variantLevelSubQueryConditions.push(Prisma.sql`
+          AND EXISTS (
+            SELECT 1
+            FROM jsonb_array_elements("variantOptions") AS vo
+            WHERE vo->>'variantGroupSlug' = ${key}
+            AND vo->>'variantOptionSlug' = ANY(${filterValues}::text[])
+          )
+        `);
       }
     }
-    const dynamicFilters =
-      filterConditions.length > 0
-        ? Prisma.join(filterConditions, '\n')
-        : Prisma.empty;
+
+    let dynamicFilters: Prisma.Sql = Prisma.empty;
+    if (productLevelFilterConditions.length > 0) {
+      dynamicFilters = Prisma.sql`${Prisma.join(productLevelFilterConditions, '\n')}`;
+    }
+    if (variantLevelSubQueryConditions.length > 0) {
+      dynamicFilters = Prisma.sql`${dynamicFilters}
+        AND "productId" IN (
+          SELECT DISTINCT "productId"
+          FROM "ProductUnifiedView"
+          WHERE 1=1 ${Prisma.join(variantLevelSubQueryConditions, '\n')}
+        )
+      `;
+    }
+
     const categoryFilter =
       categoryIds && categoryIds.length > 0
         ? Prisma.sql`
@@ -338,35 +354,31 @@ export class CategoriesService {
     )
   `
         : Prisma.empty;
+
     const whereClause = Prisma.sql`
-  WHERE
-    active = true
-    AND "isProductActive" = true
-    AND stock > 0
-    AND EXISTS (
-      SELECT 1 FROM jsonb_array_elements(prices) AS price WHERE price->>'currency' = ${currency}
-    )
-    AND EXISTS (
-      SELECT 1 FROM jsonb_array_elements("productTranslations") AS trans WHERE trans->>'locale' = ${locale}
-    )
-    ${categoryFilter}
-    ${dynamicFilters}
-`;
+      WHERE
+        active = true
+        AND "isProductActive" = true
+        AND stock > 0
+        AND EXISTS (
+          SELECT 1 FROM jsonb_array_elements(prices) AS price WHERE price->>'currency' = ${currency}
+        )
+        AND EXISTS (
+          SELECT 1 FROM jsonb_array_elements("productTranslations") AS trans WHERE trans->>'locale' = ${locale}
+        )
+        ${categoryFilter}
+        ${dynamicFilters}
+    `;
 
     const orderByClause = this.getOrderBySql(sortType, currency, locale);
 
-    // --- KOMPLE YENİLENEN SORGULAR ---
-
+    // --- ANA DEĞİŞİKLİK BURADA ---
     const baseQuery = Prisma.sql`
     WITH "RankedView" AS (
       SELECT
         *,
-        -- YENİ SIRALAMA MANTIĞI:
-        -- Her bir ürünün, ANA VARYANT GRUBUNA (örn: beden) göre kendi içinde sıralanmasını sağlıyoruz.
-        -- 'l-kırmızı' -> rn:1, 'l-mavi' -> rn:2
-        -- 'xl-kırmızı' -> rn:1, 'xl-mavi' -> rn:2
         ROW_NUMBER() OVER(
-          PARTITION BY "productId", (CASE WHEN "entryType" = 'VARIANT' THEN ("variantOptions"->0)->>'variantOptionSlug' ELSE id END)
+          PARTITION BY "productId"
           ORDER BY "createdAt" ASC
         ) as rn
       FROM "ProductUnifiedView"
@@ -378,22 +390,20 @@ export class CategoriesService {
       categories, "discountIncluded", "variantTranslation", "variantAssets", "variantOptions"
     FROM "RankedView"
     ${whereClause}
-    -- ANAHTAR NOKTA:
-    -- Eğer visibleAllCombinations true ise, bu koşul her zaman geçerlidir ve TÜM varyantlar gelir.
-    -- Eğer false ise, SADECE rn=1 olanlar (yani her ana varyant grubunun ilk elemanı) gelir.
     AND ("visibleAllCombinations" = true OR rn = 1)
   `;
+    // --- DEĞİŞİKLİK SONU ---
 
     const productsQuery = Prisma.sql`
-    ${baseQuery}
-    ${orderByClause}
-    LIMIT ${take}
-    OFFSET ${skip}
-  `;
+      ${baseQuery}
+      ${orderByClause}
+      LIMIT ${take}
+      OFFSET ${skip}
+    `;
 
     const countQuery = Prisma.sql`
-    SELECT COUNT(*)::int FROM (${baseQuery}) AS "final_products"
-  `;
+      SELECT COUNT(*)::int FROM (${baseQuery}) AS "final_products"
+    `;
 
     const [products, countResult] = await this.prisma.$transaction([
       this.prisma.$queryRaw<ProductUnifiedViewData[]>(productsQuery),
@@ -401,6 +411,7 @@ export class CategoriesService {
     ]);
 
     const totalCount = Number(countResult[0]?.count || 0);
+
     return {
       success: true,
       products,

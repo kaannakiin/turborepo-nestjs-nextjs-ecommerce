@@ -1,5 +1,6 @@
 "use client";
 
+import { queryClient } from "@lib/serverQueryClient";
 import {
   createTheme,
   MantineColorsTuple,
@@ -8,7 +9,7 @@ import {
 } from "@mantine/core";
 import { DatesProvider } from "@mantine/dates";
 import { Notifications } from "@mantine/notifications";
-import { QueryClient, QueryClientProvider } from "@repo/shared";
+import { QueryClientProvider } from "@repo/shared";
 import dayjs from "dayjs";
 import "dayjs/locale/tr";
 import customParseFormat from "dayjs/plugin/customParseFormat";
@@ -58,17 +59,7 @@ const LayoutProviderWrapper = ({ children }: { children: ReactNode }) => {
   });
   dayjs.extend(customParseFormat);
   return (
-    <QueryClientProvider
-      client={
-        new QueryClient({
-          defaultOptions: {
-            queries: {
-              refetchOnWindowFocus: false,
-            },
-          },
-        })
-      }
-    >
+    <QueryClientProvider client={queryClient}>
       <DatesProvider
         settings={{ locale: "tr", firstDayOfWeek: 1, weekendDays: [5, 6] }}
       >

@@ -1,8 +1,9 @@
 "use client";
 import CustomImage from "@/components/CustomImage";
-import { AspectRatio, Box, Card } from "@mantine/core";
+import { AspectRatio, Card } from "@mantine/core";
 import { useHover } from "@mantine/hooks";
 import { $Enums, GetCategoryProductsResponse } from "@repo/types";
+import { useRouter } from "next/navigation";
 
 interface CategoryPageProductCardProps {
   product: GetCategoryProductsResponse["products"][number];
@@ -10,24 +11,27 @@ interface CategoryPageProductCardProps {
 
 const CategoryPageProductCard = ({ product }: CategoryPageProductCardProps) => {
   const { ref, hovered } = useHover();
-
+  const { push } = useRouter();
   const isVariant =
     product.variantOptions &&
     product.variantOptions.length > 0 &&
     product.entryType === "VARIANT";
 
-  // Variant ise variantAssets'ten, değilse productAssets'ten al ve order'a göre sırala
   const assets = isVariant
     ? [...(product.variantAssets || []), ...(product?.productAssets || [])]
     : product.productAssets;
   const sortedAssets = assets?.sort((a, b) => a.order - b.order) || [];
   const firstTwoAssets = sortedAssets.slice(0, 2);
 
-  // Gösterilecek asset'i belirle (hover durumuna göre)
   const displayAsset =
     hovered && firstTwoAssets.length > 1
       ? firstTwoAssets[1]
       : firstTwoAssets[0];
+  const translation = product.productTranslations[0];
+
+  const productSlug = isVariant
+    ? `${translation.slug}?${product.variantOptions.map((vg) => `${vg.variantGroupSlug}=${vg.variantOptionSlug}`).join("&")}`
+    : `${translation.slug}`;
 
   const renderMedia = (asset: {
     order: number;
@@ -38,11 +42,7 @@ const CategoryPageProductCard = ({ product }: CategoryPageProductCardProps) => {
       return (
         <video
           src={asset.url}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
+          className={`w-full h-full object-contain `}
           autoPlay
           loop
           muted
@@ -55,7 +55,7 @@ const CategoryPageProductCard = ({ product }: CategoryPageProductCardProps) => {
   };
 
   return (
-    <Card ref={ref} withBorder p="md">
+    <Card ref={ref} withBorder p="md" onClick={() => push(`/${productSlug}`)}>
       <Card.Section>
         {firstTwoAssets.length > 0 ? (
           <AspectRatio ratio={1} maw={400} pos={"relative"}>
@@ -63,16 +63,7 @@ const CategoryPageProductCard = ({ product }: CategoryPageProductCardProps) => {
           </AspectRatio>
         ) : (
           <AspectRatio ratio={1} maw={400}>
-            <Box
-              style={{
-                position: "relative",
-                width: "100%",
-                height: "100%",
-                overflow: "hidden",
-              }}
-            >
-              <CustomImage src="/placeholder-image.png" alt="Placeholder" />
-            </Box>
+            <CustomImage src="/placeholder-image.png" alt="Placeholder" />
           </AspectRatio>
         )}
       </Card.Section>

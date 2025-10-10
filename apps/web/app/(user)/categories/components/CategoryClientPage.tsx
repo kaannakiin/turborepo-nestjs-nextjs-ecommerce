@@ -2,15 +2,17 @@
 
 import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import { Breadcrumbs, Grid, Stack, Text } from "@mantine/core";
-import { CategoryPagePreparePageReturnData } from "@repo/types";
+import { $Enums, CategoryPagePreparePageReturnData } from "@repo/types";
 import { IconChevronRight } from "@tabler/icons-react";
 import Link from "next/link";
-import CategoryPageFiltersSection from "./CategoryPageFiltersSection";
+import { useSearchParams } from "next/navigation";
+import CategoryPageDekstopFilter from "./CategoryPageDekstopFilter";
+import CategoryPageDesktopFiltersSection from "./CategoryPageDesktopFiltersSection";
+import CategoryPageMobileFiltersSection from "./CategoryPageMobileFiltersSection";
 import CategoryProductList from "./CategoryProductList";
 
 interface CategoryClientPageProps {
   id: string;
-  allSearchParams: Record<string, string | string[]>;
   variantGroups: CategoryPagePreparePageReturnData["variantGroups"];
   brands: CategoryPagePreparePageReturnData["brands"];
   hiearchy: CategoryPagePreparePageReturnData["hiearchy"];
@@ -18,7 +20,6 @@ interface CategoryClientPageProps {
 }
 
 const CategoryClientPage = ({
-  allSearchParams,
   brands,
   category,
   hiearchy,
@@ -26,6 +27,9 @@ const CategoryClientPage = ({
   id,
 }: CategoryClientPageProps) => {
   const { media } = useTheme();
+  const locale: $Enums.Locale = "TR";
+  const pageSearchParams = useSearchParams();
+
   return (
     <Stack
       gap={"lg"}
@@ -34,6 +38,7 @@ const CategoryClientPage = ({
     >
       {hiearchy && (
         <Breadcrumbs
+          px={"md"}
           separator={<IconChevronRight size={16} />}
           classNames={{
             separator: "text-gray-400",
@@ -46,8 +51,6 @@ const CategoryClientPage = ({
           >
             Ana Sayfa
           </Link>
-
-          {/* Parent Kategoriler */}
           {hiearchy.parentCategories &&
             hiearchy.parentCategories.length > 0 &&
             [...hiearchy.parentCategories]
@@ -69,30 +72,42 @@ const CategoryClientPage = ({
         </Breadcrumbs>
       )}
       <Grid className="h-full w-full" p={"xs"}>
-        <Grid.Col
-          className="h-full w-full"
-          span={media === "desktop" ? 3 : media === "tablet" ? 3 : 12}
-        >
-          <CategoryPageFiltersSection
-            allSearchParams={allSearchParams}
-            brands={brands}
-            variantGroups={variantGroups}
-          />
+        <Grid.Col className="h-full w-full" span={media === "desktop" ? 3 : 12}>
+          {media === "desktop" ? (
+            <CategoryPageDesktopFiltersSection
+              brands={brands}
+              variantGroups={variantGroups}
+              searchParams={pageSearchParams}
+            />
+          ) : (
+            <CategoryPageMobileFiltersSection
+              locale={locale}
+              pageSearchParams={pageSearchParams}
+              variantGroups={variantGroups}
+              brands={brands}
+            />
+          )}
         </Grid.Col>
-        <Grid.Col
-          className="h-full w-full"
-          bg={"red.5"}
-          span={media === "desktop" ? 9 : media === "tablet" ? 9 : 12}
-        >
-          <CategoryProductList
-            categoryIds={[
-              id,
-              ...(hiearchy.childrenCategories &&
-              hiearchy.childrenCategories.length > 0
-                ? hiearchy.childrenCategories.map((cat) => cat.id)
-                : []),
-            ]}
-          />
+        <Grid.Col className="h-full w-full" span={media === "desktop" ? 9 : 12}>
+          <Stack gap={"lg"}>
+            {media === "desktop" ? (
+              <CategoryPageDekstopFilter
+                locale={locale}
+                pageSearchParams={pageSearchParams}
+                variantGroups={variantGroups}
+              />
+            ) : null}
+            <CategoryProductList
+              searchParams={pageSearchParams}
+              categoryIds={[
+                id,
+                ...(hiearchy.childrenCategories &&
+                hiearchy.childrenCategories.length > 0
+                  ? hiearchy.childrenCategories.map((cat) => cat.id)
+                  : []),
+              ]}
+            />
+          </Stack>
         </Grid.Col>
       </Grid>
     </Stack>

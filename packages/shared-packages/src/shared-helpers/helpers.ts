@@ -279,15 +279,19 @@ export function generateProductCodes(
   };
 }
 
-export enum ProductPageSortOption {
-  NEWEST = "newest",
-  OLDEST = "oldest",
-  PRICE_DESC = "price-desc", // Azalan fiyat
-  PRICE_ASC = "price-asc", // Artan fiyat
-  BEST_SELLING = "best-selling", // En çok satan
-  A_Z = "a-z", // İsim A'dan Z'ye
-  Z_A = "z-a", // İsim Z'den A'ya
-}
+export const ProductPageSortOption = {
+  NEWEST: "newest",
+  OLDEST: "oldest",
+  PRICE_DESC: "price-desc", // Azalan fiyat
+  PRICE_ASC: "price-asc", // Artan fiyat
+  BEST_SELLING: "best-selling", // En çok satan
+  A_Z: "a-z", // İsim A'dan Z'ye
+  Z_A: "z-a", // İsim Z'den A'y
+};
+
+export type ProductPageSortOption =
+  (typeof ProductPageSortOption)[keyof typeof ProductPageSortOption];
+
 export function getSortProductPageLabel(sortOption: ProductPageSortOption) {
   switch (sortOption) {
     case ProductPageSortOption.NEWEST:
@@ -329,7 +333,28 @@ export function getSortIndexFromQuery(index: number): ProductPageSortOption {
       return ProductPageSortOption.NEWEST;
   }
 }
-
+export function getIndexFromSortOption(
+  sortOption: ProductPageSortOption
+): number {
+  switch (sortOption) {
+    case ProductPageSortOption.NEWEST:
+      return 0;
+    case ProductPageSortOption.OLDEST:
+      return 1;
+    case ProductPageSortOption.PRICE_DESC:
+      return 2;
+    case ProductPageSortOption.PRICE_ASC:
+      return 3;
+    case ProductPageSortOption.BEST_SELLING:
+      return 4;
+    case ProductPageSortOption.A_Z:
+      return 5;
+    case ProductPageSortOption.Z_A:
+      return 6;
+    default:
+      return 0;
+  }
+}
 export function getOrderStatusInt(status: OrderStatus): number {
   switch (status) {
     case "DELIVERED":

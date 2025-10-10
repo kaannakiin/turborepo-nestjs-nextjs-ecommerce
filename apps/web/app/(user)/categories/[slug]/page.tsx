@@ -175,23 +175,9 @@ export async function generateMetadata({
   return metadata;
 }
 
-const CategoriesPage = async ({
-  params,
-  searchParams,
-}: {
-  params: Params;
-  searchParams: SearchParams;
-}) => {
+const CategoriesPage = async ({ params }: { params: Params }) => {
   const { slug } = await params;
-  const pageSearchParams = await searchParams;
-  const allSearchParams: Record<string, string | string[]> = Object.fromEntries(
-    Object.entries(pageSearchParams).map(([key, value]) => {
-      if (Array.isArray(value)) {
-        return [key, value];
-      }
-      return [key, value.split(",")];
-    })
-  );
+
   const categoryData = await fetchCategory(slug);
 
   if (!categoryData || !categoryData.success) {
@@ -199,7 +185,6 @@ const CategoriesPage = async ({
   }
 
   const breadcrumbData = generateBreadcrumbStructuredData(categoryData, slug);
-  console.log("breadcrumbData", categoryData.category.categoryId);
   return (
     <>
       {breadcrumbData && (
@@ -213,7 +198,6 @@ const CategoriesPage = async ({
       )}
 
       <CategoryClientPage
-        allSearchParams={allSearchParams}
         brands={categoryData.brands}
         category={categoryData.category}
         hiearchy={categoryData.hiearchy}

@@ -15,13 +15,13 @@ const MainPageMarquee = dynamic(
   { ssr: false, loading: () => <GlobalLoadingOverlay visible /> }
 );
 
-const CategoryGridComponent = dynamic(
-  () => import("@/users-ui-components/CategoryGridComponent"),
-  {
-    ssr: false,
-    loading: () => <GlobalLoadingOverlay visible />,
-  }
-);
+// const CategoryGridComponent = dynamic(
+//   () => import("@/users-ui-components/CategoryGridComponent"),
+//   {
+//     ssr: false,
+//     loading: () => <GlobalLoadingOverlay visible />,
+//   }
+// );
 
 const FooterComponent = dynamic(() => import("./FooterComponent"), {
   ssr: false,
@@ -64,12 +64,13 @@ const AdminThemeViewer = ({ data }: AdminThemeViewerProps) => {
           />
         );
       case "CATEGORY_GRID":
-        return (
-          <CategoryGridComponent
-            data={component.data}
-            key={`category-grid-${component.data.uniqueId}`}
-          />
-        );
+        return null;
+      // return (
+      //   <CategoryGridComponent
+      //     data={component.data}
+      //     key={`category-grid-${component.data.uniqueId}`}
+      //   />
+      // );
       default:
         return null;
     }

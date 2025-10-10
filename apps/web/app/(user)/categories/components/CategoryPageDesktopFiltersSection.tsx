@@ -11,38 +11,59 @@ import {
 } from "@mantine/core";
 import { $Enums, CategoryPagePreparePageReturnData } from "@repo/types";
 import { IconX } from "@tabler/icons-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { ReadonlyURLSearchParams, useRouter } from "next/navigation";
 
 interface CategoryPageFiltersSectionProps {
-  allSearchParams: Record<string, string | string[]>;
   variantGroups: CategoryPagePreparePageReturnData["variantGroups"];
   brands: CategoryPagePreparePageReturnData["brands"];
+  searchParams: ReadonlyURLSearchParams;
 }
-const CategoryPageFiltersSection = ({
-  allSearchParams,
+const handleFilterChange = (
+  key: string,
+  value: string,
+  searchParams: ReadonlyURLSearchParams,
+  replace: (url: string) => void
+) => {
+  const params = new URLSearchParams(searchParams.toString());
+  const currentValues = params.get(key)?.split(",") || [];
+  const isSelected = currentValues.includes(value);
+
+  let newValues: string[];
+
+  if (isSelected) {
+    // Değer zaten seçiliyse, listeden çıkar
+    newValues = currentValues.filter((v) => v !== value);
+  } else {
+    newValues = [...currentValues, value];
+  }
+
+  if (newValues.length > 0) {
+    params.set(key, newValues.join(","));
+  } else {
+    params.delete(key);
+  }
+
+  // Her filtre değişiminde sayfayı 1'e sıfırla
+  params.delete("page");
+
+  replace(`?${params.toString()}`);
+};
+const CategoryPageDesktopFiltersSection = ({
   brands,
   variantGroups,
+  searchParams,
 }: CategoryPageFiltersSectionProps) => {
   const locale: $Enums.Locale = "TR";
   const { replace } = useRouter();
-  const searchParams = useSearchParams();
-  const defaultOpenValues = variantGroups
-    .map((vg) => {
-      const translation = vg.translations.find((t) => t.locale === locale);
-      return translation && allSearchParams[translation.slug]
-        ? translation.slug
-        : null;
-    })
-    .filter(Boolean) as string[];
 
-  const hasFilters =
-    Object.keys(allSearchParams).some((key) =>
-      variantGroups.some((vg) =>
-        vg.translations.some(
-          (t) => t.locale === locale && t.slug === key && allSearchParams[key]
-        )
-      )
-    ) || allSearchParams["brand"];
+  const allFilterKeys = [
+    "brand",
+    ...variantGroups.flatMap(
+      (vg) => vg.translations.find((t) => t.locale === locale)?.slug || []
+    ),
+  ];
+
+  const hasFilters = allFilterKeys.some((key) => searchParams.has(key));
 
   if (
     (!brands || brands.length === 0) &&
@@ -64,6 +85,7 @@ const CategoryPageFiltersSection = ({
               item: "border-none",
               panel: "py-2",
             }}
+            defaultValue={searchParams.has("brand") ? "brands" : null}
           >
             <Accordion.Item value="brands">
               <Accordion.Control>
@@ -71,7 +93,7 @@ const CategoryPageFiltersSection = ({
                   <Text fz={"md"} fw={700}>
                     Markalar
                   </Text>
-                  {allSearchParams["brand"] && (
+                  {searchParams.getAll("brand") && (
                     <UnstyledButton
                       fz={"xs"}
                       fw={500}
@@ -97,57 +119,24 @@ const CategoryPageFiltersSection = ({
                       (t) => t.locale === locale
                     );
                     if (!translation) return null;
-                    const isChecked =
-                      allSearchParams["brand"] === translation.slug ||
-                      (Array.isArray(allSearchParams["brand"]) &&
-                        (allSearchParams["brand"] as string[]).includes(
-                          translation.slug
-                        ));
+
+                    const selectedBrands =
+                      searchParams.get("brand")?.split(",") || [];
+                    const isChecked = selectedBrands.includes(translation.slug);
                     return (
                       <Group
                         key={idx}
                         gap={"xs"}
                         className="w-full cursor-pointer"
                         align="center"
-                        onClick={() => {
-                          const pageParams = new URLSearchParams(
-                            searchParams.toString()
-                          );
-                          if (isChecked) {
-                            const currentValues = allSearchParams["brand"];
-                            if (Array.isArray(currentValues)) {
-                              const filteredValues = currentValues.filter(
-                                (val) => val !== translation.slug
-                              );
-                              if (filteredValues.length > 0) {
-                                pageParams.set(
-                                  "brand",
-                                  filteredValues.join(",")
-                                );
-                              } else {
-                                pageParams.delete("brand");
-                              }
-                            } else {
-                              pageParams.delete("brand");
-                            }
-                          } else {
-                            const currentValues = allSearchParams["brand"];
-                            if (currentValues) {
-                              const existingValues = Array.isArray(
-                                currentValues
-                              )
-                                ? currentValues
-                                : [currentValues];
-                              pageParams.set(
-                                "brand",
-                                [...existingValues, translation.slug].join(",")
-                              );
-                            } else {
-                              pageParams.set("brand", translation.slug);
-                            }
-                          }
-                          replace(`?${pageParams.toString()}`);
-                        }}
+                        onClick={() =>
+                          handleFilterChange(
+                            "brand",
+                            translation.slug,
+                            searchParams,
+                            replace
+                          )
+                        }
                       >
                         <Checkbox
                           color="black"
@@ -173,14 +162,16 @@ const CategoryPageFiltersSection = ({
               (t) => t.locale === locale
             );
             if (!translation) return null;
+
+            const filterKey = translation.slug;
             return (
               <Accordion
                 key={index}
-                defaultValue={defaultOpenValues}
                 multiple
                 variant="default"
                 chevronIconSize={24}
                 transitionDuration={200}
+                defaultValue={searchParams.has(filterKey) ? [filterKey] : []}
                 classNames={{
                   control: "hover:bg-transparent border-b ",
                   item: "border-none",
@@ -193,7 +184,7 @@ const CategoryPageFiltersSection = ({
                       <Text fz={"md"} fw={700}>
                         {translation.name}
                       </Text>
-                      {allSearchParams[translation.slug] && (
+                      {searchParams.get(translation.slug) && (
                         <UnstyledButton
                           fz={"xs"}
                           fw={500}
@@ -219,13 +210,12 @@ const CategoryPageFiltersSection = ({
                           (t) => t.locale === locale
                         );
                         if (!optionTranslation) return null;
-                        const isChecked =
-                          allSearchParams[translation.slug] ===
-                            optionTranslation.slug ||
-                          (Array.isArray(allSearchParams[translation.slug]) &&
-                            (
-                              allSearchParams[translation.slug] as string[]
-                            ).includes(optionTranslation.slug));
+
+                        const currentValues =
+                          searchParams.get(filterKey)?.split(",") || [];
+                        const isChecked = currentValues.includes(
+                          optionTranslation.slug
+                        );
 
                         return (
                           <Group
@@ -233,59 +223,14 @@ const CategoryPageFiltersSection = ({
                             gap={"xs"}
                             className="w-full cursor-pointer"
                             align="center"
-                            onClick={() => {
-                              const pageParams = new URLSearchParams(
-                                searchParams.toString()
-                              );
-
-                              if (isChecked) {
-                                const currentValues =
-                                  allSearchParams[translation.slug];
-
-                                if (Array.isArray(currentValues)) {
-                                  const filteredValues = currentValues.filter(
-                                    (val) => val !== optionTranslation.slug
-                                  );
-
-                                  if (filteredValues.length > 0) {
-                                    pageParams.set(
-                                      translation.slug,
-                                      filteredValues.join(",")
-                                    );
-                                  } else {
-                                    pageParams.delete(translation.slug);
-                                  }
-                                } else {
-                                  pageParams.delete(translation.slug);
-                                }
-                              } else {
-                                const currentValues =
-                                  allSearchParams[translation.slug];
-
-                                if (currentValues) {
-                                  const existingValues = Array.isArray(
-                                    currentValues
-                                  )
-                                    ? currentValues
-                                    : [currentValues];
-
-                                  pageParams.set(
-                                    translation.slug,
-                                    [
-                                      ...existingValues,
-                                      optionTranslation.slug,
-                                    ].join(",")
-                                  );
-                                } else {
-                                  pageParams.set(
-                                    translation.slug,
-                                    optionTranslation.slug
-                                  );
-                                }
-                              }
-
-                              replace(`?${pageParams.toString()}`);
-                            }}
+                            onClick={() =>
+                              handleFilterChange(
+                                filterKey,
+                                optionTranslation.slug,
+                                searchParams,
+                                replace
+                              )
+                            }
                           >
                             <Checkbox
                               color="black"
@@ -314,7 +259,11 @@ const CategoryPageFiltersSection = ({
             justify="center"
             rightSection={<IconX size={20} />}
             onClick={() => {
-              replace(`?`);
+              // Sadece filtreleri temizle, diğer parametreler (örn: sort) kalabilir
+              const params = new URLSearchParams(searchParams.toString());
+              allFilterKeys.forEach((key) => params.delete(key));
+              params.delete("page");
+              replace(`?${params.toString()}`);
             }}
           >
             Filtreleri Temizle
@@ -325,4 +274,4 @@ const CategoryPageFiltersSection = ({
   );
 };
 
-export default CategoryPageFiltersSection;
+export default CategoryPageDesktopFiltersSection;
