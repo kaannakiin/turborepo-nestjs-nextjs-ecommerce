@@ -12,7 +12,7 @@ export class ProductsController {
 
   @Get('get-product/:slug')
   getProduct(@Param('slug') slug: string) {
-    return this.productsService.getProductBySlug(slug);
+    return this.productsService.getProductBySlug(slug, 'TR');
   }
 
   @Get('similar-products/:productId')

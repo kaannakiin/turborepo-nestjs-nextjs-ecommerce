@@ -25,6 +25,7 @@ interface CustomPhoneInputProps
   error?: string;
   placeholder?: string;
   label?: string;
+  disabled?: boolean;
 }
 
 const CustomPhoneInput = ({
@@ -38,10 +39,10 @@ const CustomPhoneInput = ({
   styles = {
     label: {
       fontWeight: 600,
-      marginBottom: "8px",
       color: "#191414",
     },
   },
+  disabled = false,
   label,
 }: CustomPhoneInputProps) => {
   const [searchValue, setSearchValue] = useState("");
@@ -84,6 +85,7 @@ const CustomPhoneInput = ({
       radius={radius}
       styles={styles}
       size={size}
+      disabled={disabled}
       leftSection={
         <Combobox
           store={combobox}
@@ -127,7 +129,6 @@ const CustomPhoneInput = ({
           <Combobox.Dropdown
             style={{
               zIndex: 1000,
-              // ✅ Width düzeltmeleri
               width: "300px", // Sabit genişlik ver
               minWidth: "300px", // Minimum genişlik
               maxWidth: "400px", // Maximum genişlik

@@ -1,13 +1,13 @@
 "use client";
 
+import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
+import fetchWrapper from "@lib/fetchWrapper";
 import { Carousel } from "@mantine/carousel";
 import { Stack, Title } from "@mantine/core";
-import { useMediaQuery } from "@mantine/hooks";
 import { useQuery } from "@repo/shared";
 import { ProductPageDataType } from "@repo/types";
 import ProductCard from "./ProductCard";
 import styles from "./ProductCarousel.module.css";
-import fetchWrapper from "@lib/fetchWrapper";
 
 interface ProductsCarouselsProps {
   title: string;
@@ -19,8 +19,7 @@ const ProductsCarousels = ({
   stackClassName,
   productId,
 }: ProductsCarouselsProps) => {
-  const isMobile = useMediaQuery("(max-width: 768px)");
-  const isTablet = useMediaQuery("(max-width: 1024px)");
+  const { media } = useTheme();
   const { data, isError } = useQuery({
     queryKey: ["products", "similar-products", productId],
     queryFn: async () => {
@@ -42,13 +41,15 @@ const ProductsCarousels = ({
   return (
     <Stack gap={"lg"} mt={"xl"} className={stackClassName} bg={"primary.0"}>
       {data && data.products.length > 0 && !isError && (
-        <div className="w-full flex flex-col gap-4 max-w-[1250px] mx-auto">
+        <div className="w-full flex flex-col gap-4 max-w-[1500px] mx-auto">
           <Title order={4} pt={"md"} px={"md"}>
             {title}
           </Title>
           <Carousel
             classNames={styles}
-            slideSize={isMobile ? "50%" : isTablet ? "33.33%" : "20%"}
+            slideSize={
+              media === "mobile" ? "50%" : media === "tablet" ? "33.33%" : "20%"
+            }
             controlsOffset={"md"}
           >
             {data.products.map((product) => (

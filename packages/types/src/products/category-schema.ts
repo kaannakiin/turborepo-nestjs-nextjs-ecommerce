@@ -233,7 +233,6 @@ export interface ProductUnifiedViewData {
   isProductActive: boolean;
   brandId?: string;
   taxonomyCategoryId?: string;
-
   prices: ProductPrice[];
   productTranslations: ProductTranslation[];
   productAssets: ProductAsset[];

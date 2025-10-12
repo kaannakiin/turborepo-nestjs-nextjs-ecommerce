@@ -1,5 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { ProductListComponentType, ProductPageDataType } from '@repo/types';
+import {
+  $Enums,
+  GetProductPageReturnType,
+  ProductListComponentType,
+  ProductPageDataType,
+} from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ProductsService as AdminProductService } from '../../admin/products/products.service';
 
@@ -10,31 +15,37 @@ export class ProductsService {
     private readonly adminProductService: AdminProductService,
   ) {}
 
-  async getProductBySlug(slug: string): Promise<ProductPageDataType> {
-    const product = await this.prisma.product.findFirst({
+  async getProductBySlug(
+    slug: string,
+    locale: $Enums.Locale,
+  ): Promise<GetProductPageReturnType> {
+    const productTranslation = await this.prisma.productTranslation.findUnique({
       where: {
-        translations: {
-          some: {
-            OR: [
-              {
-                slug: { equals: slug, mode: 'insensitive' },
-              },
-              {
-                name: { equals: slug, mode: 'insensitive' },
-              },
-            ],
-          },
+        locale_slug: {
+          locale,
+          slug,
         },
-        active: true,
+      },
+    });
+    if (!productTranslation) {
+      console.log('Ürün çevirisi bulunamadı:', { slug, locale });
+      return {
+        success: false,
+        message: 'Ürün bulunamadı.',
+        data: null,
+      };
+    }
+
+    const mainProduct = await this.prisma.product.findUnique({
+      where: {
+        id: productTranslation.productId,
       },
       include: {
-        prices: true,
-
         assets: {
           orderBy: {
             order: 'asc',
           },
-          select: {
+          include: {
             asset: {
               select: {
                 url: true,
@@ -46,25 +57,86 @@ export class ProductsService {
         brand: {
           select: {
             translations: {
+              where: { locale },
               select: {
-                name: true,
-                locale: true,
+                description: true,
                 metaDescription: true,
                 metaTitle: true,
+                name: true,
                 slug: true,
               },
             },
           },
         },
-        taxonomyCategory: true,
+        categories: {
+          where: {
+            category: {
+              translations: {
+                some: { locale },
+              },
+              products: {
+                some: {
+                  product: {
+                    OR: [
+                      {
+                        active: true,
+                        stock: { gt: 0 },
+                        isVariant: false,
+                      },
+                      {
+                        active: true,
+                        variantCombinations: {
+                          some: {
+                            active: true,
+                            stock: { gt: 0 },
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+          select: {
+            category: {
+              select: {
+                id: true,
+                translations: {
+                  where: { locale },
+                  select: {
+                    name: true,
+                    slug: true,
+                    locale: true,
+                    metaTitle: true,
+                    metaDescription: true,
+                    description: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        prices: {
+          select: {
+            price: true,
+            currency: true,
+            discountedPrice: true,
+          },
+        },
         translations: {
+          where: { locale },
           select: {
             name: true,
             locale: true,
             metaDescription: true,
             metaTitle: true,
             slug: true,
-            description: true,
+          },
+        },
+        taxonomyCategory: {
+          select: {
+            googleId: true,
           },
         },
         variantGroups: {
@@ -73,72 +145,82 @@ export class ProductsService {
           },
           where: {
             product: {
-              translations: {
+              active: true,
+              variantCombinations: {
                 some: {
-                  slug: { contains: slug, mode: 'insensitive' },
+                  active: true,
+                  stock: { gt: 0 },
                 },
               },
             },
           },
           include: {
+            variantGroup: {
+              select: {
+                id: true,
+                type: true,
+                translations: {
+                  where: {
+                    locale,
+                  },
+                  select: {
+                    locale: true,
+                    name: true,
+                    slug: true,
+                  },
+                },
+              },
+            },
             options: {
+              orderBy: {
+                order: 'asc',
+              },
               where: {
-                productVariantGroup: {
-                  product: {
-                    translations: {
-                      some: {
-                        slug: { contains: slug, mode: 'insensitive' },
+                combinations: {
+                  some: {
+                    combination: {
+                      active: true,
+                      stock: { gt: 0 },
+                    },
+                    productVariantOption: {
+                      productVariantGroup: {
+                        product: {
+                          active: true,
+                        },
                       },
                     },
                   },
                 },
               },
-              orderBy: {
-                order: 'asc',
-              },
-              include: {
+              select: {
                 variantOption: {
-                  include: {
+                  select: {
+                    id: true,
                     asset: { select: { url: true, type: true } },
-                    translations: true,
+                    hexValue: true,
+                    translations: {
+                      where: { locale },
+                      select: {
+                        locale: true,
+                        name: true,
+                        slug: true,
+                      },
+                    },
                   },
                 },
-              },
-            },
-            variantGroup: {
-              include: {
-                translations: true,
               },
             },
           },
         },
         variantCombinations: {
           where: {
-            AND: [
-              {
-                stock: {
-                  gt: 0,
-                },
-              },
-              { active: true },
-            ],
+            active: true,
+            stock: { gt: 0 },
+            product: {
+              active: true,
+            },
           },
           include: {
-            translations: {
-              select: {
-                locale: true,
-                metaDescription: true,
-                metaTitle: true,
-                description: true,
-              },
-            },
-            prices: {
-              select: {
-                price: true,
-                currency: true,
-                discountedPrice: true,
-              },
-            },
             assets: {
               orderBy: {
                 order: 'asc',
@@ -152,88 +234,27 @@ export class ProductsService {
                 },
               },
             },
+            translations: {
+              where: { locale },
+              select: {
+                locale: true,
+                metaDescription: true,
+                metaTitle: true,
+                description: true,
+              },
+            },
+            prices: true,
             options: {
-              where: {
-                combination: {
-                  AND: [
-                    {
-                      active: true,
-                    },
-                    {
-                      stock: { gt: 0 },
-                    },
-                  ],
-                },
-
-                productVariantOption: {
-                  productVariantGroup: {
-                    product: {
-                      translations: {
-                        some: {
-                          slug: { contains: slug, mode: 'insensitive' },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-              orderBy: {
-                productVariantOption: {
-                  productVariantGroup: {
-                    order: 'asc',
-                  },
-                },
-              },
-              include: {
+              select: {
                 productVariantOption: {
                   select: {
                     variantOption: {
                       select: {
-                        asset: { select: { url: true, type: true } },
-                        translations: {
-                          select: {
-                            locale: true,
-                            name: true,
-                            slug: true,
-                          },
-                        },
-                        hexValue: true,
-                        variantGroup: {
-                          select: {
-                            translations: {
-                              select: {
-                                name: true,
-                                slug: true,
-                                locale: true,
-                              },
-                            },
-                            type: true,
-                          },
-                        },
+                        id: true,
                       },
                     },
                   },
                 },
-              },
-            },
-          },
-        },
-        categories: {
-          where: {
-            product: {
-              translations: {
-                some: {
-                  slug: { contains: slug, mode: 'insensitive' },
-                },
-              },
-            },
-          },
-          include: {
-            category: {
-              select: {
-                translations: true,
-                childCategories: true,
-                parentCategory: true,
               },
             },
           },
@@ -241,11 +262,18 @@ export class ProductsService {
       },
     });
 
-    if (!product) {
-      throw new BadRequestException('Product not found or inactive');
+    if (!mainProduct) {
+      return {
+        success: false,
+        message: 'Ürün bulunamadı.',
+        data: null,
+      };
     }
-
-    return product;
+    return {
+      success: true,
+      message: 'Ürün başarıyla bulundu.',
+      data: mainProduct,
+    };
   }
 
   async getProductSimilar(productId: string) {

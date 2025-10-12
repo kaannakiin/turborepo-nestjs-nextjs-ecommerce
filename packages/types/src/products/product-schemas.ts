@@ -573,6 +573,233 @@ export type AdminProductTableData = Prisma.ProductGetPayload<{
   finalImageType: AssetType | null;
 };
 
+export type GetProductPageReturnType = {
+  success: boolean;
+  message: string;
+  data: Prisma.ProductGetPayload<{
+    include: {
+      assets: {
+        orderBy: {
+          order: "asc";
+        };
+        include: {
+          asset: {
+            select: {
+              url: true;
+              type: true;
+            };
+          };
+        };
+      };
+      brand: {
+        select: {
+          translations: {
+            where: { locale };
+            select: {
+              description: true;
+              metaDescription: true;
+              metaTitle: true;
+              name: true;
+              slug: true;
+            };
+          };
+        };
+      };
+      categories: {
+        where: {
+          category: {
+            translations: {
+              some: { locale };
+            };
+            products: {
+              some: {
+                product: {
+                  OR: [
+                    {
+                      active: true;
+                      stock: { gt: 0 };
+                      isVariant: false;
+                    },
+                    {
+                      active: true;
+                      variantCombinations: {
+                        some: {
+                          active: true;
+                          stock: { gt: 0 };
+                        };
+                      };
+                    },
+                  ];
+                };
+              };
+            };
+          };
+        };
+        select: {
+          category: {
+            select: {
+              id: true;
+              translations: {
+                where: { locale };
+                select: {
+                  name: true;
+                  slug: true;
+                  locale: true;
+                  metaTitle: true;
+                  metaDescription: true;
+                  description: true;
+                };
+              };
+            };
+          };
+        };
+      };
+      prices: {
+        select: {
+          price: true;
+          currency: true;
+          discountedPrice: true;
+        };
+      };
+      translations: {
+        where: { locale };
+        select: {
+          name: true;
+          locale: true;
+          metaDescription: true;
+          metaTitle: true;
+          slug: true;
+        };
+      };
+      taxonomyCategory: {
+        select: {
+          googleId: true;
+        };
+      };
+      variantGroups: {
+        orderBy: {
+          order: "asc";
+        };
+        where: {
+          product: {
+            active: true;
+            variantCombinations: {
+              some: {
+                active: true;
+                stock: { gt: 0 };
+              };
+            };
+          };
+        };
+        include: {
+          variantGroup: {
+            select: {
+              id: true;
+              type: true;
+              translations: {
+                where: {
+                  locale;
+                };
+                select: {
+                  locale: true;
+                  name: true;
+                  slug: true;
+                };
+              };
+            };
+          };
+          options: {
+            orderBy: {
+              order: "asc";
+            };
+            where: {
+              combinations: {
+                some: {
+                  combination: {
+                    active: true;
+                    stock: { gt: 0 };
+                  };
+                  productVariantOption: {
+                    productVariantGroup: {
+                      product: {
+                        active: true;
+                      };
+                    };
+                  };
+                };
+              };
+            };
+            select: {
+              variantOption: {
+                select: {
+                  id: true;
+                  asset: { select: { url: true; type: true } };
+                  hexValue: true;
+                  translations: {
+                    where: { locale };
+                    select: {
+                      locale: true;
+                      name: true;
+                      slug: true;
+                    };
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+      variantCombinations: {
+        where: {
+          active: true;
+          stock: { gt: 0 };
+          product: {
+            active: true;
+          };
+        };
+        include: {
+          assets: {
+            orderBy: {
+              order: "asc";
+            };
+            select: {
+              asset: {
+                select: {
+                  url: true;
+                  type: true;
+                };
+              };
+            };
+          };
+          translations: {
+            where: { locale };
+            select: {
+              locale: true;
+              metaDescription: true;
+              metaTitle: true;
+              description: true;
+            };
+          };
+          prices: true;
+          options: {
+            select: {
+              productVariantOption: {
+                select: {
+                  variantOption: {
+                    select: {
+                      id: true;
+                    };
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+  }> | null;
+};
+
 export type ProductPageDataType = Prisma.ProductGetPayload<{
   include: {
     prices: true;
