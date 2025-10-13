@@ -18,12 +18,6 @@ const setCookieFromParsed = (response: NextResponse, cookie: Cookie) => {
   });
 };
 
-const clearAuthCookies = (response: NextResponse) => {
-  response.cookies.delete("token");
-  response.cookies.delete("refresh_token");
-  return response;
-};
-
 const setNewCookiesToResponse = (
   response: NextResponse,
   newCookies: Cookie[]
@@ -37,14 +31,9 @@ const setNewCookiesToResponse = (
 const createRedirectResponse = (
   url: string,
   req: NextRequest,
-  newCookies: Cookie[],
-  clearCookies: boolean = false
+  newCookies: Cookie[]
 ) => {
-  let response = NextResponse.redirect(new URL(url, req.url));
-
-  if (clearCookies) {
-    response = clearAuthCookies(response);
-  }
+  const response = NextResponse.redirect(new URL(url, req.url));
 
   return setNewCookiesToResponse(response, newCookies);
 };
@@ -79,8 +68,7 @@ export async function middleware(req: NextRequest) {
     return createRedirectResponse(
       `/auth?redirectUri=${encodeURIComponent(pathname)}`,
       req,
-      [],
-      false
+      []
     );
   }
 
@@ -131,15 +119,14 @@ export async function middleware(req: NextRequest) {
     return createRedirectResponse(
       `/auth?redirectUri=${encodeURIComponent(pathname)}`,
       req,
-      [],
-      true
+      []
     );
   }
 
   // Cookie temizliği gerekiyorsa ve auth route'daysa
   if (shouldClearCookies && isAuthRoute(pathname)) {
     const response = NextResponse.next();
-    return clearAuthCookies(response);
+    return setNewCookiesToResponse(response, []);
   }
 
   // Auth route kontrolü - token varsa dashboard'a yönlendir
@@ -167,8 +154,7 @@ export async function middleware(req: NextRequest) {
         return createRedirectResponse(
           `/auth?redirectUri=${encodeURIComponent(pathname)}`,
           req,
-          [],
-          true
+          []
         );
       }
     } catch {
@@ -176,8 +162,7 @@ export async function middleware(req: NextRequest) {
       return createRedirectResponse(
         `/auth?redirectUri=${encodeURIComponent(pathname)}`,
         req,
-        [],
-        true
+        []
       );
     }
 

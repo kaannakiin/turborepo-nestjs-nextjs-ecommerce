@@ -126,6 +126,7 @@ const ShoppingBagDrawerV2 = () => {
                         <Group
                           key={index}
                           align="flex-start"
+                          className="cursor-pointer"
                           justify="flex-start"
                           gap={"xs"}
                           py={0}
@@ -170,6 +171,7 @@ const ShoppingBagDrawerV2 = () => {
                             justify="space-between"
                             className="flex-1 h-full"
                             align="flex-start"
+                            wrap="nowrap"
                           >
                             <div className="flex flex-col gap-1">
                               <Title order={5}>{item.productName}</Title>
@@ -198,6 +200,7 @@ const ShoppingBagDrawerV2 = () => {
                                 justify="center"
                                 h={"100%"}
                                 align="center"
+                                wrap="nowrap"
                               >
                                 <ActionIcon
                                   variant="transparent"

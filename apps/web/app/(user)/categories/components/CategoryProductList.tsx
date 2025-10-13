@@ -1,10 +1,12 @@
 "use client";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper from "@lib/fetchWrapper";
-import { Button, Loader, SimpleGrid, Skeleton, Stack } from "@mantine/core";
+import { Button, Loader, SimpleGrid, Stack, Text } from "@mantine/core";
 import { useIntersection } from "@mantine/hooks";
 import { useInfiniteQuery } from "@repo/shared";
 import { GetCategoryProductsResponse } from "@repo/types";
-import { ReadonlyURLSearchParams } from "next/navigation";
+import { ReadonlyURLSearchParams, useRouter } from "next/navigation";
+import { notFound } from "next/navigation";
 import { useEffect } from "react";
 import CategoryPageProductCard from "./CategoryPageProductCard";
 
@@ -17,8 +19,10 @@ const CategoryProductList = ({
   categoryIds,
   searchParams,
 }: CategoryProductListProps) => {
+  const router = useRouter();
   const { entry: nextEntry, ref: nextRef } = useIntersection();
   const { ref: previousRef } = useIntersection();
+
   const filterQueryWithoutPageAndSort: Record<
     string,
     string | string[] | undefined
@@ -32,6 +36,8 @@ const CategoryProductList = ({
     },
     {} as Record<string, string | string[] | undefined>
   );
+
+  const hasFilters = Object.keys(filterQueryWithoutPageAndSort).length > 0;
 
   const pageParam = parseInt((searchParams.get("page") as string) || "1");
   const sortParam = parseInt((searchParams.get("sort") as string) || "1");
@@ -102,35 +108,40 @@ const CategoryProductList = ({
   const allProducts = data?.pages.flatMap((page) => page.products) || [];
 
   if (isLoading) {
-    return (
-      <Stack className="flex-1" gap={"lg"}>
-        <SimpleGrid
-          cols={{
-            base: 2,
-            xs: 2,
-            md: 4,
-            lg: 4,
-          }}
-          className="space-y-4"
-          spacing={"xl"}
-        >
-          {/* Genellikle ilk yüklemede görünecek kadar iskelet elemanı oluşturulur (örn: 8 adet) */}
-          {Array.from({ length: 8 }).map((_, index) => (
-            <Stack key={index} gap="sm">
-              <Skeleton height={180} radius="md" />
-              <Skeleton height={10} radius="xl" />
-              <Skeleton height={10} mt={6} width="70%" radius="xl" />
-            </Stack>
-          ))}
-        </SimpleGrid>
-      </Stack>
-    );
+    return <GlobalLoadingOverlay />;
   }
+
+  // Eğer hiç ürün yoksa ve filtre de yoksa notFound
+  if (allProducts.length === 0 && !hasFilters) {
+    notFound();
+  }
+
+  const handleClearFilters = () => {
+    // Sadece sort parametresini koru, diğerlerini temizle
+    const currentPath = window.location.pathname;
+    const sortValue = searchParams.get("sort");
+    const newUrl = sortValue ? `${currentPath}?sort=${sortValue}` : currentPath;
+    router.push(newUrl);
+  };
 
   return (
     <Stack className="flex-1 min-h-screen" gap={"lg"}>
       {allProducts.length === 0 ? (
-        <>Ürün Bulunamadı</>
+        <div className="w-full flex flex-col items-center justify-center gap-4 py-10">
+          <Text size="lg" c="dimmed">
+            Aradığınız kriterlere uygun ürün bulunamadı
+          </Text>
+          {hasFilters && (
+            <Button
+              onClick={handleClearFilters}
+              variant="filled"
+              size="md"
+              color="black"
+            >
+              Filtreleri Temizle
+            </Button>
+          )}
+        </div>
       ) : (
         <>
           {hasPreviousPage && (

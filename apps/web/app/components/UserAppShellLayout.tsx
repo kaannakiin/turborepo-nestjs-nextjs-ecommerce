@@ -60,7 +60,7 @@ const UserAppShellLayout = ({
   return (
     <CartProviderV3>
       <AppShell
-        header={{ height: 80 }}
+        header={{ height: 80, collapsed: !pinned, offset: false }}
         styles={{
           main: {
             display: "flex",
@@ -68,7 +68,6 @@ const UserAppShellLayout = ({
             flexGrow: 1,
           },
         }}
-        zIndex={10000}
       >
         <AppShell.Header className="h-20 border-none!">
           <Group
@@ -148,7 +147,7 @@ const UserAppShellLayout = ({
           </Drawer.Content>
         </Drawer.Root>
 
-        <AppShell.Main>
+        <AppShell.Main pt={"80px"}>
           <Stack style={{ flexGrow: 1 }}>
             {children}
             {data?.footer && <FooterComponent footerData={data.footer} />}

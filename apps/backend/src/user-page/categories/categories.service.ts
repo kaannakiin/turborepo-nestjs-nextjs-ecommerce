@@ -291,7 +291,7 @@ export class CategoriesService {
     page,
     sort,
   }: GetCategoryProductsZodType): Promise<GetCategoryProductsResponse> {
-    const take = 8;
+    const take = 12;
     const skip = (page - 1) * take;
     const sortType = getSortIndexFromQuery(sort);
     const currency: $Enums.Currency = 'TRY';
@@ -304,23 +304,35 @@ export class CategoriesService {
       };
     }
 
-    const productLevelFilterConditions: Prisma.Sql[] = [];
-    const variantLevelSubQueryConditions: Prisma.Sql[] = [];
+    const filterConditions: Prisma.Sql[] = [];
 
     for (const [key, value] of Object.entries(query)) {
       if (!value) continue;
-      const filterValues = Array.isArray(value) ? value : [value];
+
+      let filterValues: string[];
+
+      if (typeof value === 'string') {
+        filterValues = value
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+      } else if (Array.isArray(value)) {
+        filterValues = value;
+      } else {
+        continue;
+      }
+
       if (filterValues.length === 0) continue;
 
       if (key === 'brand') {
-        productLevelFilterConditions.push(Prisma.sql`
-          AND "brandId" IN (
+        filterConditions.push(Prisma.sql`
+          "brandId" IN (
             SELECT "brandId" FROM "BrandTranslation" WHERE slug = ANY(${filterValues}::text[]) AND locale = ${locale}::"Locale"
           )
         `);
       } else {
-        variantLevelSubQueryConditions.push(Prisma.sql`
-          AND EXISTS (
+        filterConditions.push(Prisma.sql`
+          EXISTS (
             SELECT 1
             FROM jsonb_array_elements("variantOptions") AS vo
             WHERE vo->>'variantGroupSlug' = ${key}
@@ -330,19 +342,10 @@ export class CategoriesService {
       }
     }
 
-    let dynamicFilters: Prisma.Sql = Prisma.empty;
-    if (productLevelFilterConditions.length > 0) {
-      dynamicFilters = Prisma.sql`${Prisma.join(productLevelFilterConditions, '\n')}`;
-    }
-    if (variantLevelSubQueryConditions.length > 0) {
-      dynamicFilters = Prisma.sql`${dynamicFilters}
-        AND "productId" IN (
-          SELECT DISTINCT "productId"
-          FROM "ProductUnifiedView"
-          WHERE 1=1 ${Prisma.join(variantLevelSubQueryConditions, '\n')}
-        )
-      `;
-    }
+    const dynamicFilters =
+      filterConditions.length > 0
+        ? Prisma.sql`AND ${Prisma.join(filterConditions, ' AND ')}`
+        : Prisma.empty;
 
     const categoryFilter =
       categoryIds && categoryIds.length > 0
@@ -372,16 +375,29 @@ export class CategoriesService {
 
     const orderByClause = this.getOrderBySql(sortType, currency, locale);
 
-    // --- ANA DEĞİŞİKLİK BURADA ---
+    // --- DEĞİŞİKLİK BURADA: ROW_NUMBER() içindeki ORDER BY güncellendi ---
     const baseQuery = Prisma.sql`
     WITH "RankedView" AS (
       SELECT
         *,
         ROW_NUMBER() OVER(
           PARTITION BY "productId"
-          ORDER BY "createdAt" ASC
+          -- Sıralamayı en ucuz fiyata göre yap, fiyatlar eşitse en yeni ekleneni önceliklendir
+          ORDER BY (
+            SELECT
+              -- Önce discountedPrice'ı kontrol et, null veya 0 ise price'ı al
+              COALESCE(
+                NULLIF(CAST(p->>'discountedPrice' AS DECIMAL), 0),
+                CAST(p->>'price' AS DECIMAL)
+              )
+            FROM jsonb_array_elements(prices) AS p
+            WHERE p->>'currency' = ${currency}::text
+            LIMIT 1
+          ) ASC NULLS LAST, -- En ucuz olan (ASC) başa gelsin. Fiyatı olmayanlar (NULLS LAST) sona gitsin.
+          "createdAt" DESC -- Fiyatlar aynıysa en yeni ürün öne çıksın diye ek bir sıralama
         ) as rn
       FROM "ProductUnifiedView"
+      ${whereClause}
     )
     SELECT
       id, "productId", "combinationId", "entryType", sku, barcode, type, stock, active,
@@ -389,8 +405,7 @@ export class CategoriesService {
       "visibleAllCombinations", prices, "productTranslations", "productAssets",
       categories, "discountIncluded", "variantTranslation", "variantAssets", "variantOptions"
     FROM "RankedView"
-    ${whereClause}
-    AND ("visibleAllCombinations" = true OR rn = 1)
+    WHERE ("visibleAllCombinations" = true OR rn = 1)
   `;
     // --- DEĞİŞİKLİK SONU ---
 

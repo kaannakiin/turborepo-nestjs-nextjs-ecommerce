@@ -1,6 +1,6 @@
+import { hash } from "argon2";
 import * as readline from "readline";
 import { PrismaClient } from "../../generated/prisma";
-import { hash } from "argon2";
 
 const prisma = new PrismaClient();
 
@@ -104,7 +104,7 @@ async function createOwnerUser() {
         name: firstName,
         surname: lastName,
         email,
-        phone: formattedPhone,
+        phone: `${formattedPhone.startsWith("+90") ? formattedPhone : "+90"}${formattedPhone}`,
         password: hashedPassword,
         role: "OWNER", // assuming you have role field
       },

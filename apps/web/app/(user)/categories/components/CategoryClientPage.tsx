@@ -34,7 +34,7 @@ const CategoryClientPage = ({
     <Stack
       gap={"lg"}
       p={"md"}
-      className="w-full min-h-full max-w-[1250px] lg:mx-auto flex flex-1"
+      className="w-full min-h-full max-w-[1500px] lg:mx-auto flex flex-1"
     >
       {hiearchy && (
         <Breadcrumbs
