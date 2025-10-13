@@ -132,6 +132,7 @@ export class ProductsService {
             metaDescription: true,
             metaTitle: true,
             slug: true,
+            description: true,
           },
         },
         taxonomyCategory: {

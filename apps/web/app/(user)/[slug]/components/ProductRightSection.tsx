@@ -3,6 +3,7 @@
 import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 import AddToCartButtonV2 from "@/components/AddToCartButtonV2";
 import {
+  Accordion,
   Avatar,
   Badge,
   Button,
@@ -82,7 +83,7 @@ const ProductRightSection = ({
         variantPrice.discountedPrice &&
         variantPrice.discountedPrice < variantPrice.price ? (
           <Group gap={"xs"}>
-            <Badge radius={0} size="xl" variant="filled" color="red">
+            <Badge radius={0} size="xl" variant="filled" color="primary">
               {`%${Math.round(
                 ((variantPrice.price - variantPrice.discountedPrice) /
                   variantPrice.price) *
@@ -221,6 +222,7 @@ const ProductRightSection = ({
           />
         </Stack>
       )}
+      {otherDetails?.translations[0]?.description && <Accordion></Accordion>}
     </Stack>
   );
 };

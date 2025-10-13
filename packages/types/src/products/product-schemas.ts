@@ -669,6 +669,7 @@ export type GetProductPageReturnType = {
           metaDescription: true;
           metaTitle: true;
           slug: true;
+          description: true;
         };
       };
       taxonomyCategory: {
