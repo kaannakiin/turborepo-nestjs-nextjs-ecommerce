@@ -806,6 +806,48 @@ export function getOrderStatusInfos(status: $Enums.OrderStatus): string {
   }
 }
 
+export function getOrderStatusPageLabel(status?: $Enums.OrderStatus): string {
+  if (!status) return "Tüm Siparişler";
+  switch (status) {
+    case "CANCELLED":
+      return "İptal Edilen Siparişler";
+    case "CONFIRMED":
+      return "Onaylanan Siparişler";
+    case "DELIVERED":
+      return "Teslim Edilen Siparişler";
+    case "PENDING":
+      return "Bekleyen Siparişler";
+    case "PROCESSING":
+      return "İşlenen Siparişler";
+    case "REFUNDED":
+      return "İade Edilen Siparişler";
+    case "SHIPPED":
+      return "Kargolanan Siparişler";
+    default:
+      return "Tüm Siparişler";
+  }
+}
+
+export function getPaymentStatusPageLabel(
+  status?: $Enums.PaymentStatus
+): string {
+  if (!status) return "Tüm Ödeme Durumları";
+  switch (status) {
+    case "FAILED":
+      return "Başarısız Ödemeler";
+    case "PAID":
+      return "Ödemesi Yapılanlar";
+    case "PARTIAL_REFUND":
+      return "Kısmi İade Edilenler";
+    case "PENDING":
+      return "Bekleyen Ödemeler";
+    case "REFUNDED":
+      return "İade Edilen Ödemeler";
+    default:
+      return "Tüm Ödeme Durumları";
+  }
+}
+
 export function getPaymentStatusInfos(status: $Enums.PaymentStatus): string {
   switch (status) {
     case "FAILED":

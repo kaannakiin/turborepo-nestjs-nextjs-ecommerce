@@ -1,3 +1,4 @@
+//apps\web\app\(user)\[slug]\page.tsx
 import { queryClient } from "@lib/serverQueryClient";
 import { GetProductPageReturnType } from "@repo/types";
 import { notFound } from "next/navigation";

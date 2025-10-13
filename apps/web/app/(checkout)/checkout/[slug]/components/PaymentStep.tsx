@@ -103,6 +103,7 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
             isCorporateInvoice: cart.billingAddress.isCorporateInvoice || false,
             taxNumber: cart.billingAddress.taxNumber || null,
             tcKimlikNo: cart.billingAddress.tcKimlikNo || null,
+            districtId: cart.billingAddress.districtId || null,
             companyName: cart.billingAddress.companyName || null,
             companyRegistrationAddress:
               cart.billingAddress.companyRegistrationAddress || null,
@@ -125,6 +126,7 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
               companyName: null,
               tcKimlikNo: cart.shippingAddress.tcKimlikNo || null,
               companyRegistrationAddress: null,
+              districtId: cart.shippingAddress.districtId || null,
             }
           : null,
     },
@@ -132,7 +134,6 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
 
   const isBillingAddressSame = watch("isBillingAddressSame");
   const creditCardNumber = watch("creditCardNumber");
-
   useEffect(() => {
     if (errorMessage) {
       const params = new URLSearchParams(searchParams.toString());

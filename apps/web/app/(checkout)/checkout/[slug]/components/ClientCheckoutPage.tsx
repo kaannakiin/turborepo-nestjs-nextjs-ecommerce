@@ -79,6 +79,7 @@ const ClientCheckoutPage = ({
           credentials: "include",
         }
       );
+      console.log(res);
       if (res.success && res.data && res.data.success) {
         return res.data.cart;
       }

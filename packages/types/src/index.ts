@@ -19,3 +19,4 @@ export * from "./products/cart-schemas-v3";
 export * from "./payment/checkout-schemas";
 export * from "./admin-ui/order-types";
 export * from "./user-ui/helperPrismaQueries";
+export * from "./admin/orders/orders-schema";

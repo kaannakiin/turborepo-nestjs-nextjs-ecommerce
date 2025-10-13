@@ -34,6 +34,7 @@ import {
   ProductSnapshot,
   ProductSnapshotForVariant,
   ThreeDSRequest,
+  TokenPayload,
 } from "@repo/types";
 import {
   IconCreditCard,
@@ -42,8 +43,16 @@ import {
   IconReceipt,
   IconTruck,
 } from "@tabler/icons-react";
+import { useRouter } from "next/navigation";
 
-const OrderClientPage = ({ slug }: { slug: string }) => {
+const OrderClientPage = ({
+  slug,
+  session,
+}: {
+  slug: string;
+  session: TokenPayload | null;
+}) => {
+  const { push } = useRouter();
   const { data, isLoading } = useQuery({
     queryKey: ["user-order", slug],
     queryFn: async () => {
@@ -86,13 +95,20 @@ const OrderClientPage = ({ slug }: { slug: string }) => {
     );
   }
 
+  if (data.userId !== null) {
+    if (session) {
+      push(`/dashboard/orders/${slug}`);
+    } else {
+      push(`/auth/login?redirectUri=/dashboard/orders/${slug}`);
+    }
+  }
+
   const {
     orderItems,
     shippingAddress: rawShippingAddress,
     billingAddress: rawBillingAddress,
   } = data;
 
-  // Parse JSON addresses
   const shippingAddress = rawShippingAddress
     ? (JSON.parse(
         JSON.stringify(rawShippingAddress)
@@ -104,8 +120,6 @@ const OrderClientPage = ({ slug }: { slug: string }) => {
         JSON.stringify(rawBillingAddress)
       ) as ThreeDSRequest["billingAddress"])
     : null;
-
-  // Kart tipi mapping
 
   return (
     <div className="flex flex-col gap-3 w-full">
@@ -330,13 +344,17 @@ const OrderClientPage = ({ slug }: { slug: string }) => {
               </Text>
               <ProductPriceFormatter price={data.subtotal} fz="sm" />
             </Group>
-            {data.shippingCost && data.shippingCost > 0 && (
+            {data.shippingCost && data.shippingCost > 0 ? (
               <Group justify="space-between">
                 <Text size="sm" c="dimmed">
                   Kargo Ücreti
                 </Text>
                 <ProductPriceFormatter price={data.shippingCost} fz="sm" />
               </Group>
+            ) : (
+              <Text size="sm" c="dimmed">
+                Ücretsiz Kargo
+              </Text>
             )}
             {data.discountAmount && data.discountAmount > 0 && (
               <Group justify="space-between">

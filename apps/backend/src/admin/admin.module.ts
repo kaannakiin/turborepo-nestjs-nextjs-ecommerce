@@ -4,10 +4,11 @@ import { AdminController } from './admin.controller';
 import { UsersModule } from './users/users.module';
 import { ProductsModule } from './products/products.module';
 import { ThemeModule } from './theme/theme.module';
+import { OrdersModule } from './orders/orders.module';
 
 @Module({
   controllers: [AdminController],
   providers: [AdminService],
-  imports: [UsersModule, ProductsModule, ThemeModule],
+  imports: [UsersModule, ProductsModule, ThemeModule, OrdersModule],
 })
 export class AdminModule {}

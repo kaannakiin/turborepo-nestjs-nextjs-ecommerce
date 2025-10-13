@@ -475,6 +475,9 @@ export class PaymentService {
             name: true;
           };
         };
+        district: {
+          select: { name: true };
+        };
       };
     }> | null = null;
     if (!data.isBillingAddressSame && data.billingAddress) {
@@ -490,6 +493,7 @@ export class PaymentService {
             ? {
                 stateId: null,
                 cityId: data.billingAddress.cityId,
+                districtId: data.billingAddress.districtId || null,
               }
             : data.billingAddress.addressType === 'STATE'
               ? {
@@ -523,6 +527,7 @@ export class PaymentService {
             ? {
                 stateId: null,
                 cityId: data.billingAddress.cityId,
+                districtId: data.billingAddress.districtId || null,
               }
             : data.billingAddress.addressType === 'STATE'
               ? {
@@ -563,6 +568,11 @@ export class PaymentService {
               name: true,
             },
           },
+          district: {
+            select: {
+              name: true,
+            },
+          },
         },
       });
       await this.prisma.cart.update({
@@ -574,7 +584,7 @@ export class PaymentService {
     }
 
     const shippingAddress: NonThreeDSRequest['shippingAddress'] = {
-      address: `${checkoutCart.shippingAddress.addressLine1}, ${checkoutCart.shippingAddress.addressLine2 || ' '}`,
+      address: `${checkoutCart.shippingAddress.addressLine1}, ${checkoutCart.shippingAddress.addressLine2 || ' '} ${checkoutCart.shippingAddress.district?.name || ''}`,
       city:
         checkoutCart.shippingAddress.city?.name ||
         checkoutCart.shippingAddress.state?.name ||
@@ -590,7 +600,7 @@ export class PaymentService {
     const billingAddress: NonThreeDSRequest['billingAddress'] =
       !data.isBillingAddressSame && createdBillingAddress
         ? {
-            address: `${createdBillingAddress.addressLine1}, ${createdBillingAddress.addressLine2 || ' '} `,
+            address: `${createdBillingAddress.addressLine1}, ${createdBillingAddress.addressLine2 || ' '} ${createdBillingAddress.district?.name || ''}`,
             city:
               createdBillingAddress.city?.name ||
               createdBillingAddress.state?.name ||

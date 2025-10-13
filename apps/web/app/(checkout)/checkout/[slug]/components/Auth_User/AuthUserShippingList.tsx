@@ -1,6 +1,7 @@
 "use client";
 
 import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
+import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper from "@lib/fetchWrapper";
 import {
@@ -16,14 +17,12 @@ import { notifications } from "@mantine/notifications";
 import { useQuery } from "@repo/shared";
 import {
   GetCartClientCheckoutReturnType,
-  GetUserCartInfoForCheckoutReturn,
   ShippingMethodsResponse,
 } from "@repo/types";
 import { IconCheck } from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import AddressCard from "../AddressCard";
-import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 
 interface AuthUserShippingListProps {
   cart: Pick<GetCartClientCheckoutReturnType, "cart">;
@@ -108,50 +107,59 @@ const AuthUserShippingList = ({ cart }: AuthUserShippingListProps) => {
         >
           {shippingRules &&
           shippingRules.rules &&
-          shippingRules.rules.length > 0
-            ? shippingRules.rules.map((rule) => (
-                <Group
-                  key={rule.id}
-                  bg={"#F7F7F9"}
-                  justify="space-between"
-                  align="center"
-                  py={"md"}
-                  px={"lg"}
-                  onClick={() => {
-                    if (selectedCargoRuleId === rule.id) return;
-                    setSelectedCargoRuleId(rule.id);
-                  }}
-                  className="w-full border-gray-900 border-2 gap-2 rounded-md"
-                >
-                  <Group gap={"xs"} align="center">
-                    <Radio.Indicator
-                      icon={IconCheck}
-                      checked={selectedCargoRuleId === rule.id}
-                      color={"black"}
-                      classNames={{
-                        icon: "size-4",
-                      }}
-                      size="md"
-                    />
-                    <Text>{rule.name}</Text>
-                  </Group>
-                  {rule.price === 0 ? (
-                    <Text> Ücretsiz Kargo</Text>
-                  ) : (
-                    <ProductPriceFormatter price={rule.price} />
-                  )}
+          shippingRules.rules.length > 0 ? (
+            shippingRules.rules.map((rule) => (
+              <Group
+                key={rule.id}
+                bg={"#F7F7F9"}
+                justify="space-between"
+                align="center"
+                py={"md"}
+                px={"lg"}
+                onClick={() => {
+                  if (selectedCargoRuleId === rule.id) return;
+                  setSelectedCargoRuleId(rule.id);
+                }}
+                className="w-full border-gray-900 border-2 gap-2 rounded-md"
+              >
+                <Group gap={"xs"} align="center">
+                  <Radio.Indicator
+                    icon={IconCheck}
+                    checked={selectedCargoRuleId === rule.id}
+                    color={"black"}
+                    classNames={{
+                      icon: "size-4",
+                    }}
+                    size="md"
+                  />
+                  <Text>{rule.name}</Text>
                 </Group>
-              ))
-            : null}
+                {rule && rule.price === 0 ? (
+                  <Text> Ücretsiz Kargo</Text>
+                ) : (
+                  <ProductPriceFormatter price={rule.price} />
+                )}
+              </Group>
+            ))
+          ) : (
+            <Text>
+              Maalesef adresinize bir gönderi tanımlanmamıştır. Satıcıyla
+              görüşebilirsiniz. Ya da başka bir adres belirtebilirsiniz.
+            </Text>
+          )}
           <Button
             fullWidth
             size="lg"
             radius={"md"}
             variant="filled"
             color="black"
+            disabled={!selectedCargoRuleId || loading}
             onClick={async () => {
               setLoading(true);
-              if (!selectedCargoRuleId) return;
+              if (!selectedCargoRuleId) {
+                setLoading(false);
+                return;
+              }
               const res = await fetchWrapper.put<{
                 success: boolean;
                 message: string;

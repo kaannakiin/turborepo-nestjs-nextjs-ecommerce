@@ -13,6 +13,7 @@ const ProductPriceFormatter = ({
   currency = "TRY",
   ...props
 }: ProductPriceFormatterProps) => {
+  if (!price) return null;
   return (
     <Text {...props}>
       {price.toLocaleString(getCurrencyIntlFormat(currency), {

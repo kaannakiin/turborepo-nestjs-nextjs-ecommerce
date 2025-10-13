@@ -252,6 +252,7 @@ const CartSummary = ({
       </Group>
 
       {step === "info" || step === "shipping" ? null : cargoRule &&
+        cargoRule.price &&
         cargoRule.price > 0 ? (
         <Group justify="space-between">
           <Text c="dimmed">Kargo Ücreti</Text>
