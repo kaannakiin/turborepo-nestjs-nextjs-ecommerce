@@ -49,7 +49,7 @@ const ShippingTable = () => {
   return (
     <>
       <Card withBorder>
-        <Card.Section className="border border-b-gray-400">
+        <Card.Section className="border-b-gray-400">
           <Group p={"md"} justify="space-between" align="center">
             <Stack gap={"xs"}>
               <Title order={4}>Kurallar</Title>

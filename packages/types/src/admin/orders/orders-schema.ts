@@ -1,7 +1,7 @@
 import { Prisma } from "@repo/database";
 import * as z from "zod";
 
-export type GetOrderReturnType = {
+export type GetOrdersReturnType = {
   success: boolean;
   message: string;
   orders?: Prisma.OrderGetPayload<{
@@ -27,6 +27,7 @@ export type GetOrderReturnType = {
     hasPreviousPage: boolean;
   };
 };
+
 export const GetOrdersSchema = z.object({
   page: z.number().int().min(1, "Page must be at least 1"),
   orderStatus: z.number().int().optional(),
@@ -35,3 +36,30 @@ export const GetOrdersSchema = z.object({
 });
 
 export type GetOrderZodType = z.infer<typeof GetOrdersSchema>;
+
+type BaseOrderPayload = Prisma.OrderGetPayload<{
+  include: {
+    user: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+        phone: true;
+        surname: true;
+      };
+    };
+    orderItems: true;
+  };
+}>;
+
+type ExtendedOrder = Omit<BaseOrderPayload, "user"> & {
+  user: BaseOrderPayload["user"] & {
+    successfulOrderCount: number;
+  };
+};
+
+export type GetOrderReturnType = {
+  success: boolean;
+  message: string;
+  order?: ExtendedOrder; // Artık genişletilmiş tipi kullanıyoruz
+};

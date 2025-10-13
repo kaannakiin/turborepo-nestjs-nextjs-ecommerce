@@ -1,4 +1,4 @@
-import { MantineColorsTuple } from "@mantine/core";
+import { MantineColor, MantineColorsTuple } from "@mantine/core";
 import { $Enums, UserRole } from "@repo/database";
 import {
   CardAssociation,
@@ -805,6 +805,24 @@ export function getOrderStatusInfos(status: $Enums.OrderStatus): string {
       return "İade Edildi";
   }
 }
+export function getOrderStatusColor(status: $Enums.OrderStatus): MantineColor {
+  switch (status) {
+    case "CANCELLED":
+      return "red.5";
+    case "CONFIRMED":
+      return "green.5";
+    case "DELIVERED":
+      return "blue.5";
+    case "PENDING":
+      return "yellow.5";
+    case "PROCESSING":
+      return "cyan.5";
+    case "REFUNDED":
+      return "grape.5";
+    case "SHIPPED":
+      return "teal.5";
+  }
+}
 
 export function getOrderStatusPageLabel(status?: $Enums.OrderStatus): string {
   if (!status) return "Tüm Siparişler";
@@ -860,5 +878,21 @@ export function getPaymentStatusInfos(status: $Enums.PaymentStatus): string {
       return "Beklemede";
     case "REFUNDED":
       return "İade Edildi";
+  }
+}
+export function getPaymentStatusColor(
+  status: $Enums.PaymentStatus
+): MantineColor {
+  switch (status) {
+    case "FAILED":
+      return "red.5";
+    case "PAID":
+      return "green.5";
+    case "PARTIAL_REFUND":
+      return "yellow.5";
+    case "PENDING":
+      return "blue.5";
+    case "REFUNDED":
+      return "gray.5";
   }
 }

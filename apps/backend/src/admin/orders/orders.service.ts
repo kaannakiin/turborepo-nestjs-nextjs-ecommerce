@@ -1,27 +1,26 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@repo/database';
 import { getOrderStatusFromInt, getPaymentStatusFromInt } from '@repo/shared';
-import { GetOrderReturnType, GetOrderZodType } from '@repo/types';
+import {
+  GetOrderReturnType,
+  GetOrdersReturnType,
+  GetOrderZodType,
+} from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class OrdersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getOrder({
+  async getOrders({
     page,
     orderStatus,
     paymentStatus,
     search,
-  }: GetOrderZodType): Promise<GetOrderReturnType> {
+  }: GetOrderZodType): Promise<GetOrdersReturnType> {
     const take = 10;
     const skip = (page - 1) * take;
-    console.log({
-      page,
-      orderStatus,
-      paymentStatus,
-      search,
-    });
+
     const searchTerm = search?.trim();
     const hasSearch = searchTerm && searchTerm.length > 0;
 
@@ -158,6 +157,73 @@ export class OrdersService {
         hasNextPage: skip + take < totalCount,
         hasPreviousPage: page > 1,
       },
+    };
+  }
+
+  async getOrderByOrderNumber(
+    orderNumber: string,
+  ): Promise<GetOrderReturnType> {
+    if (!orderNumber || orderNumber.trim().length === 0) {
+      return {
+        success: false,
+        message: 'Geçersiz sipariş numarası.',
+      };
+    }
+
+    // 1. Prisma sorgusunda kullanıcı ID'sini de istiyoruz.
+    const order = await this.prisma.order.findUnique({
+      where: {
+        orderNumber,
+      },
+      include: {
+        user: {
+          select: {
+            id: true, // ID eklendi
+            name: true,
+            email: true,
+            phone: true,
+            surname: true,
+          },
+        },
+        orderItems: true,
+      },
+    });
+
+    if (!order) {
+      return {
+        success: false,
+        message: 'Sipariş bulunamadı.',
+      };
+    }
+
+    let resultOrder: GetOrderReturnType['order'];
+
+    if (order.user) {
+      const successfulOrderCount = await this.prisma.order.count({
+        where: {
+          userId: order.user.id,
+          paymentStatus: { not: 'FAILED' },
+        },
+      });
+
+      resultOrder = {
+        ...order,
+        user: {
+          ...order.user,
+          successfulOrderCount: successfulOrderCount,
+        },
+      };
+    } else {
+      resultOrder = {
+        ...order,
+        user: null,
+      };
+    }
+
+    return {
+      success: true,
+      message: 'Sipariş başarıyla getirildi.',
+      order: resultOrder,
     };
   }
 }

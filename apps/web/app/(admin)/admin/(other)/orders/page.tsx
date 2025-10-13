@@ -3,11 +3,15 @@ import CustomSearchInput from "@/components/CustomSearchInput";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper from "@lib/fetchWrapper";
 import {
+  getOrderStatusColor,
   getOrderStatusInfos,
   getOrderStatusPageLabel,
+  getPaymentStatusColor,
   getPaymentStatusInfos,
 } from "@lib/helpers";
 import {
+  ActionIcon,
+  Badge,
   Divider,
   Group,
   Select,
@@ -24,18 +28,12 @@ import {
   getPaymentStatusInt,
   useQuery,
 } from "@repo/shared";
-import { GetOrderReturnType } from "@repo/types";
-import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
+import { $Enums, GetOrderReturnType, GetOrdersReturnType } from "@repo/types";
+import { IconFileDescriptionFilled } from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  $Enums,
-  OrderStatus,
-} from "../../../../../../../packages/database/generated/prisma";
-
-ModuleRegistry.registerModules([AllCommunityModule]);
 
 const AdminOrdersPage = () => {
-  const { refresh, replace } = useRouter();
+  const { replace, push } = useRouter();
   const params = useSearchParams();
   const page = parseInt(params.get("page") || "1", 10) || 1;
   const osParam = params.get("os")
@@ -49,7 +47,7 @@ const AdminOrdersPage = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["admin-orders", { osParam, psParam, search, page }],
     queryFn: async ({ pageParam }) => {
-      const res = await fetchWrapper.post<GetOrderReturnType>(
+      const res = await fetchWrapper.post<GetOrdersReturnType>(
         "/admin/orders/get-orders",
         {
           body: JSON.stringify({
@@ -79,7 +77,7 @@ const AdminOrdersPage = () => {
             if (val === "all") {
               pageSearchParams.delete("os");
             } else {
-              const statusInt = getOrderStatusInt(val as OrderStatus);
+              const statusInt = getOrderStatusInt(val as $Enums.OrderStatus);
               pageSearchParams.set("os", statusInt.toString());
             }
             pageSearchParams.delete("page");
@@ -88,7 +86,7 @@ const AdminOrdersPage = () => {
         >
           <Tabs.List>
             <Tabs.Tab value="all">Tümü</Tabs.Tab>
-            {Object.entries(OrderStatus).map(([key, value]) => (
+            {Object.entries($Enums.OrderStatus).map(([key, value]) => (
               <Tabs.Tab key={key} value={value}>
                 {getOrderStatusPageLabel(value)}
               </Tabs.Tab>
@@ -148,14 +146,25 @@ const AdminOrdersPage = () => {
               <Table.Th>Müşteri</Table.Th>
               <Table.Th>Sipariş Durumu</Table.Th>
               <Table.Th>Ödeme Durumu</Table.Th>
+              <Table.Th w={24} />
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
             {data?.orders &&
               data?.orders.length > 0 &&
               data.orders.map((order) => (
-                <Table.Tr key={order.id}>
-                  <Table.Td>{order.orderNumber}</Table.Td>
+                <Table.Tr
+                  key={order.id}
+                  className="cursor-pointer"
+                  onClick={() => push(`/admin/orders/${order.orderNumber}`)}
+                >
+                  <Table.Td w="18%">
+                    <Group gap={"xs"} align="center">
+                      <Text fw={700} fz={"md"}>
+                        {order.orderNumber}
+                      </Text>
+                    </Group>
+                  </Table.Td>
                   <Table.Td>{DateFormatter.withTime(order.createdAt)}</Table.Td>
                   <Table.Td>
                     {order.user ? (
@@ -166,9 +175,37 @@ const AdminOrdersPage = () => {
                       <Text>Bilinmiyor</Text>
                     )}
                   </Table.Td>
-                  <Table.Td>{getOrderStatusInfos(order.orderStatus)}</Table.Td>
                   <Table.Td>
-                    {getPaymentStatusInfos(order.paymentStatus)}
+                    <Badge
+                      color={getOrderStatusColor(order.orderStatus)}
+                      variant="filled"
+                      radius={"sm"}
+                      size="md"
+                    >
+                      {getOrderStatusInfos(order.orderStatus)}
+                    </Badge>
+                  </Table.Td>
+                  <Table.Td>
+                    <Badge
+                      color={getPaymentStatusColor(order.paymentStatus)}
+                      variant="light"
+                      radius={"sm"}
+                      size="md"
+                    >
+                      {getPaymentStatusInfos(order.paymentStatus)}
+                    </Badge>
+                  </Table.Td>
+                  <Table.Td>
+                    <ActionIcon
+                      variant="transparent"
+                      size={"lg"}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        push(`/admin/orders/${order.orderNumber}`);
+                      }}
+                    >
+                      <IconFileDescriptionFilled />
+                    </ActionIcon>
                   </Table.Td>
                 </Table.Tr>
               ))}

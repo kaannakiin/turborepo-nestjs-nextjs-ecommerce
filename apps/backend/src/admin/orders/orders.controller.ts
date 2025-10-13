@@ -1,4 +1,12 @@
-import { Body, Controller, Post, UseGuards, UsePipes } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  UseGuards,
+  UsePipes,
+} from '@nestjs/common';
 import { type GetOrderZodType, GetOrdersSchema } from '@repo/types';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
@@ -15,6 +23,11 @@ export class OrdersController {
   @Post('get-orders')
   @UsePipes(new ZodValidationPipe(GetOrdersSchema))
   async getOrders(@Body() body: GetOrderZodType) {
-    return this.ordersService.getOrder(body);
+    return this.ordersService.getOrders(body);
+  }
+
+  @Get(':orderNumber')
+  async getOrder(@Param('orderNumber') orderNumber: string) {
+    return this.ordersService.getOrderByOrderNumber(orderNumber);
   }
 }
