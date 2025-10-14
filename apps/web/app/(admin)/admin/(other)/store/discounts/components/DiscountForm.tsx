@@ -246,11 +246,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
   const onSubmit: SubmitHandler<DiscountZodType> = async (data) => {
     try {
       const response = await fetchWrapper.post(`/discounts/create-or-update`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(data),
+        data,
       });
       if (!response.success) {
         notifications.show({

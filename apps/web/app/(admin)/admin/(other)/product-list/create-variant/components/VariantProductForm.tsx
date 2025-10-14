@@ -112,13 +112,9 @@ const VariantProductForm = ({
           }[];
         };
       }>(`/admin/products/create-or-update-variant-product`, {
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...productData,
-          combinatedVariants: cleanCombinatedVariants,
-          existingVariants: cleanExistingVariants,
-        }),
-        credentials: "include",
+        ...productData,
+        combinatedVariants: cleanCombinatedVariants,
+        existingVariants: cleanExistingVariants,
       });
 
       if (!mainDataResponse.success) {
@@ -340,15 +336,7 @@ const VariantProductForm = ({
               existingImages={existingImages}
               existingImagesDelete={async (imageUrl) => {
                 const deleteResponse = await fetchWrapper.delete(
-                  `/admin/products/delete-product-image`,
-                  {
-                    body: JSON.stringify({ imageUrl }),
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    credentials: "include",
-                    cache: "no-store",
-                  }
+                  `/admin/products/delete-product-image/${encodeURIComponent(imageUrl)}`
                 );
                 if (!deleteResponse.success) {
                   notifications.show({

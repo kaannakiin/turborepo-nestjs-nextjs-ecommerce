@@ -61,7 +61,6 @@ const AdminAppShellLayout = ({
               visibleFrom="sm"
               size="md"
             />
-            {/* Rest of header */}
           </Group>
         </Group>
       </AppShell.Header>

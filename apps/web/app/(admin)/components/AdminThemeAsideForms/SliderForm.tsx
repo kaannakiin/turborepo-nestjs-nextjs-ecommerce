@@ -87,12 +87,7 @@ const SliderForm = ({ defaultValues, onSubmit }: SliderFormProps) => {
   const uniqueId = watch("uniqueId");
   const onRemove = async (uniqueId: string, type: "DESKTOP" | "MOBILE") => {
     const res = await fetchWrapper.delete(
-      `/admin/theme/delete-slider/${uniqueId}?type=${type}`,
-      {
-        method: "DELETE",
-        credentials: "include",
-        cache: "no-store",
-      }
+      `/admin/theme/delete-slider/${uniqueId}?type=${type}`
     );
     if (res.success) {
       if (type === "DESKTOP") {

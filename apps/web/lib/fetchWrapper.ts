@@ -1,26 +1,37 @@
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from "axios";
+
+// Bu tipleri değiştirmeden kullanmaya devam ediyoruz
 type ApiSuccess<T> = { success: true; data: T; status: number };
 type ApiError = { success: false; error: string; status: number };
 type ApiResponse<T> = ApiSuccess<T> | ApiError;
 
-class FetchWrapperV2 {
-  baseUrl: string =
-    process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
-
+class AxiosWrapper {
+  private api: AxiosInstance;
   private isRefreshing: boolean = false;
-  private refreshPromise: Promise<boolean> | null = null;
+  private failedQueue: {
+    resolve: (value: unknown) => void;
+    reject: (reason?: unknown) => void;
+  }[] = [];
 
-  constructor() {}
+  constructor() {
+    this.api = axios.create({
+      baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001",
+      withCredentials: true,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    this.initializeInterceptors();
+  }
 
   private getCsrfTokenFromCookie(): string | null {
     if (typeof document === "undefined") return null;
-
     let match = document.cookie.match(/__Host-csrf-token=([^;]+)/);
-
     if (!match) {
       match = document.cookie.match(/csrf-token=([^;]+)/);
     }
-
-    return match ? match[1] : null;
+    return match ? match[1].trim() : null;
   }
 
   private hasRefreshToken(): boolean {
@@ -28,160 +39,202 @@ class FetchWrapperV2 {
     return document.cookie.includes("refreshToken");
   }
 
-  private async refreshToken(): Promise<boolean> {
-    if (this.isRefreshing && this.refreshPromise) {
-      return this.refreshPromise;
-    }
-
-    this.isRefreshing = true;
-    this.refreshPromise = (async () => {
-      try {
-        const response = await fetch(`${this.baseUrl}/auth/refresh`, {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        return response.ok;
-      } catch (error) {
-        return false;
-      } finally {
-        this.isRefreshing = false;
-        this.refreshPromise = null;
+  private processQueue(error: Error | null, token: string | null = null) {
+    this.failedQueue.forEach((prom) => {
+      if (error) {
+        prom.reject(error);
+      } else {
+        prom.resolve(token);
       }
-    })();
-
-    return this.refreshPromise;
+    });
+    this.failedQueue = [];
   }
 
-  private async request<T>(
-    url: string,
-    init: RequestInit,
-    retryCount: number = 0
-  ): Promise<ApiResponse<T>> {
-    try {
-      const method = init.method || "GET";
-      const needsCsrf = !["GET", "HEAD", "OPTIONS"].includes(
-        method.toUpperCase()
-      );
+  private initializeInterceptors() {
+    this.api.interceptors.request.use(
+      (config) => {
+        const method = config.method || "get";
+        const needsCsrf = !["get", "head", "options"].includes(
+          method.toLowerCase()
+        );
 
-      const headers: HeadersInit = {
-        ...(init.headers || {}),
-      };
-
-      if (init.body && typeof init.body === "string") {
-        headers["Content-Type"] = "application/json";
-      }
-
-      if (needsCsrf) {
-        const csrfToken = this.getCsrfTokenFromCookie();
-        if (csrfToken) {
-          headers["X-CSRF-Token"] = csrfToken;
-        }
-      }
-
-      const response = await fetch(this.baseUrl + url, {
-        ...init,
-        headers,
-        credentials: "include",
-      });
-
-      // 403 Forbidden - CSRF token geçersiz/eksik
-      if (response.status === 403 && retryCount === 0 && needsCsrf) {
-        // Backend yeni cookie set edecek, sadece retry
-        return this.request<T>(url, init, retryCount + 1);
-      }
-
-      // 401 Unauthorized - Access token süresi dolmuş
-      if (response.status === 401 && retryCount === 0) {
-        if (this.hasRefreshToken()) {
-          const isRefreshed = await this.refreshToken();
-
-          if (isRefreshed) {
-            return this.request<T>(url, init, retryCount + 1);
+        if (needsCsrf) {
+          const csrfToken = this.getCsrfTokenFromCookie();
+          if (csrfToken) {
+            config.headers["X-CSRF-Token"] = csrfToken;
           }
         }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
 
-        return {
-          success: false,
-          error: "Token yenilenemedi",
-          status: 401,
+    // 2. Cevap (Response) Interceptor'ı: Gelen hataları yönetir (401, 403 vb.)
+    this.api.interceptors.response.use(
+      (response) => response, // Başarılı cevapları doğrudan geçir
+      async (error: AxiosError) => {
+        const originalRequest = error.config as AxiosRequestConfig & {
+          _retry?: boolean;
         };
+
+        if (!error.response || !originalRequest) {
+          return Promise.reject(error);
+        }
+
+        // 403 Forbidden - CSRF token hatası olabilir. Bir kez tekrar dene.
+        if (error.response.status === 403 && !originalRequest._retry) {
+          originalRequest._retry = true;
+          return this.api(originalRequest);
+        }
+
+        // 401 Unauthorized - Access token süresi dolmuş
+        if (error.response.status === 401 && !originalRequest._retry) {
+          if (this.isRefreshing) {
+            // Zaten bir token yenileme işlemi var, isteği kuyruğa al
+            return new Promise((resolve, reject) => {
+              this.failedQueue.push({ resolve, reject });
+            })
+              .then(() => this.api(originalRequest))
+              .catch((err) => Promise.reject(err));
+          }
+
+          originalRequest._retry = true;
+          this.isRefreshing = true;
+
+          if (!this.hasRefreshToken()) {
+            this.isRefreshing = false;
+            // Logout logic can be triggered here
+            return Promise.reject(new Error("Refresh token bulunamadı."));
+          }
+
+          return new Promise((resolve, reject) => {
+            // Refresh token endpoint'ine istek at.
+            // Burada 'axios' yerine 'this.api' kullanıyoruz ki baseURL'i alsın.
+            this.api
+              .post("/auth/refresh", {})
+              .then(() => {
+                this.processQueue(null, "refreshed");
+                resolve(this.api(originalRequest));
+              })
+              .catch((refreshError) => {
+                this.processQueue(refreshError, null);
+                // Logout logic can be triggered here
+                reject(refreshError);
+              })
+              .finally(() => {
+                this.isRefreshing = false;
+              });
+          });
+        }
+
+        return Promise.reject(error);
       }
+    );
+  }
 
-      if (retryCount > 0 && !response.ok) {
-        const errorText = await response.text();
-        return {
-          success: false,
-          error: errorText || `Request başarısız (${retryCount}. deneme)`,
-          status: response.status,
-        };
-      }
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        return {
-          success: false,
-          error: errorText || response.statusText,
-          status: response.status,
-        };
-      }
-
-      const contentType = response.headers.get("content-type");
-      const data =
-        contentType && contentType.includes("application/json")
-          ? await response.json()
-          : ({} as T);
-
-      return {
-        success: true,
-        data,
-        status: response.status,
-      };
-    } catch (error) {
+  // Hata formatını `ApiResponse<T>`'ye uygun hale getiren yardımcı metod
+  private formatError<T>(error: unknown): ApiError {
+    if (axios.isAxiosError(error)) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Bilinmeyen hata",
-        status: 0,
+        error:
+          error.response?.data?.message || error.message || "Bir hata oluştu.",
+        status: error.response?.status || 0,
       };
+    }
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.",
+      status: 0,
+    };
+  }
+
+  // --- PUBLIC API METODLARI ---
+  // Bu metodlar eski FetchWrapper'ınız ile birebir aynı imzaya sahip.
+
+  public async get<T>(
+    url: string,
+    config: AxiosRequestConfig = {}
+  ): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.api.get<T>(url, config);
+      return { success: true, data: response.data, status: response.status };
+    } catch (error) {
+      return this.formatError(error);
     }
   }
 
-  async post<T>(url: string, init: RequestInit = {}): Promise<ApiResponse<T>> {
-    return this.request<T>(url, { ...init, method: "POST" });
-  }
-
-  async get<T>(url: string, init: RequestInit = {}): Promise<ApiResponse<T>> {
-    return this.request<T>(url, { ...init, method: "GET" });
-  }
-
-  async put<T>(url: string, init: RequestInit = {}): Promise<ApiResponse<T>> {
-    return this.request<T>(url, { ...init, method: "PUT" });
-  }
-
-  async delete<T>(
+  public async post<T>(
     url: string,
-    init: RequestInit = {}
+    data?: unknown,
+    config: AxiosRequestConfig = {}
   ): Promise<ApiResponse<T>> {
-    return this.request<T>(url, { ...init, method: "DELETE" });
+    try {
+      const response = await this.api.post<T>(url, data, config);
+      return { success: true, data: response.data, status: response.status };
+    } catch (error) {
+      return this.formatError(error);
+    }
   }
 
-  async patch<T>(url: string, init: RequestInit = {}): Promise<ApiResponse<T>> {
-    return this.request<T>(url, { ...init, method: "PATCH" });
+  public async put<T>(
+    url: string,
+    data?: unknown,
+    config: AxiosRequestConfig = {}
+  ): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.api.put<T>(url, data, config);
+      return { success: true, data: response.data, status: response.status };
+    } catch (error) {
+      return this.formatError(error);
+    }
   }
 
-  async postFormData<T>(
+  public async delete<T>(
+    url: string,
+    config: AxiosRequestConfig = {}
+  ): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.api.delete<T>(url, config);
+      return { success: true, data: response.data, status: response.status };
+    } catch (error) {
+      return this.formatError(error);
+    }
+  }
+
+  public async patch<T>(
+    url: string,
+    data?: unknown,
+    config: AxiosRequestConfig = {}
+  ): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.api.patch<T>(url, data, config);
+      return { success: true, data: response.data, status: response.status };
+    } catch (error) {
+      return this.formatError(error);
+    }
+  }
+
+  public async postFormData<T>(
     url: string,
     formData: FormData
   ): Promise<ApiResponse<T>> {
-    return this.request<T>(url, {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const response = await this.api.post<T>(url, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return { success: true, data: response.data, status: response.status };
+    } catch (error) {
+      return this.formatError(error);
+    }
   }
 }
 
-const fetchWrapper = new FetchWrapperV2();
+// Singleton instance oluşturup export ediyoruz.
+// Bu sayede projenizin her yerinde aynı instance kullanılır.
+
+const fetchWrapper = new AxiosWrapper();
 export default fetchWrapper;

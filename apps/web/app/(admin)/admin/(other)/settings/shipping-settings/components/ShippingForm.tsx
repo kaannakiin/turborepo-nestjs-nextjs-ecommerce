@@ -117,10 +117,7 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
     queryKey: ["get-all-countries"],
     queryFn: async () => {
       const res = await fetchWrapper.get<GetAllCountryReturnType[]>(
-        `/locations/get-all-countries`,
-        {
-          credentials: "include",
-        }
+        `/locations/get-all-countries`
       );
       if (!res.success) {
         throw new Error("Failed to fetch countries");
@@ -149,12 +146,7 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
     const req = await fetchWrapper.post<{ success: boolean; message: string }>(
       `/shipping/create-or-update-cargo-zone`,
       {
-        method: "POST",
-        credentials: "include",
-        body: JSON.stringify(data),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        data,
       }
     );
     if (!req.success) {

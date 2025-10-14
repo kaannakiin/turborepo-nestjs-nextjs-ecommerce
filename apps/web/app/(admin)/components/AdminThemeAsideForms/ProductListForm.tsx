@@ -62,11 +62,7 @@ const ProductListForm = ({ defaultValues, onSubmit }: ProductListFormProps) => {
       const res = await fetchWrapper.post<ModalProductCardForAdmin[]>(
         `/admin/products/get-selected-products`,
         {
-          body: JSON.stringify({
-            selectedItems: defaultValues.items,
-          }),
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
+          selectedItems: defaultValues.items,
         }
       );
       if (!res.success) throw new Error("Failed to fetch");
@@ -86,14 +82,7 @@ const ProductListForm = ({ defaultValues, onSubmit }: ProductListFormProps) => {
     queryKey: ["search-products-for-modals", debouncedQuery],
     queryFn: async () => {
       const res = await fetchWrapper.get<ModalProductCardForAdmin[]>(
-        `/admin/products/get-product-and-variants-for-modal?search=${debouncedQuery}`,
-        {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        `/admin/products/get-product-and-variants-for-modal?search=${debouncedQuery}`
       );
       if (!res.success) throw new Error("Failed to fetch");
       return res.data;

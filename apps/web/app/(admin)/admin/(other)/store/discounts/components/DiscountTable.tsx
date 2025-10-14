@@ -50,11 +50,7 @@ const DiscountTable = () => {
         totalCount: number;
         currentPage: number;
         totalPages: number;
-      }>(`/discounts/get-all-discounts-for-admin?${params.toString()}`, {
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
-      });
+      }>(`/discounts/get-all-discounts-for-admin?${params.toString()}`);
       if (!response.success) throw new Error("Failed to fetch discounts");
       return response.data;
     },
@@ -188,10 +184,7 @@ const DiscountTable = () => {
                                       setLoading(true);
                                       const response =
                                         await fetchWrapper.delete(
-                                          `/discounts/delete-discount/${discount.id}`,
-                                          {
-                                            credentials: "include",
-                                          }
+                                          `/discounts/delete-discount/${discount.id}`
                                         );
                                       if (!response.status) {
                                         notifications.show({

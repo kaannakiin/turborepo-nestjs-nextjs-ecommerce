@@ -37,8 +37,7 @@ const CategoriesModal = ({
     queryKey: ["get-categories-only-id-and-name"],
     queryFn: async () => {
       const response = await fetchWrapper.get<CategoryIdAndName[]>(
-        `/admin/products/categories/get-all-categories-only-id-and-name`,
-        { credentials: "include" }
+        `/admin/products/categories/get-all-categories-only-id-and-name`
       );
       if (!response.success) {
         throw new Error("Network response was not ok");

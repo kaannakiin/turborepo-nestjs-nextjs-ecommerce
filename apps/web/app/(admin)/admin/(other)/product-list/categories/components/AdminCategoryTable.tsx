@@ -47,11 +47,7 @@ const fetchCategories = async (
   params.append("page", page.toString());
 
   const response = await fetchWrapper.get<CategoriesResponse>(
-    `/admin/products/categories/get-all-categories?${params}`,
-    {
-      credentials: "include",
-      cache: "no-cache",
-    }
+    `/admin/products/categories/get-all-categories?${params}`
   );
 
   if (!response.success) {
@@ -64,11 +60,7 @@ const fetchCategories = async (
 // Delete function
 const deleteCategory = async (id: string) => {
   const response = await fetchWrapper.delete(
-    `/admin/products/categories/delete-category/${id}`,
-    {
-      credentials: "include",
-      cache: "no-cache",
-    }
+    `/admin/products/categories/delete-category/${id}`
   );
 
   if (!response.success) {

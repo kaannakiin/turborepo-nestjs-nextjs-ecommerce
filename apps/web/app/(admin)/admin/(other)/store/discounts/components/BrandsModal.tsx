@@ -36,8 +36,7 @@ const BrandsModal = ({
     queryKey: ["get-brands-only-id-and-name"],
     queryFn: async () => {
       const response = await fetchWrapper.get<BrandIdAndName[]>(
-        `/admin/products/brands/get-all-brands-only-id-and-name`,
-        { credentials: "include" }
+        `/admin/products/brands/get-all-brands-only-id-and-name`
       );
       if (!response.success) {
         throw new Error("Network response was not ok");

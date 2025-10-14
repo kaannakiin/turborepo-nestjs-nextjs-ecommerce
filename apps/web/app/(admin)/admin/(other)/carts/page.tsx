@@ -29,12 +29,14 @@ const AdminCartsPage = () => {
       { status, search, startDate, endDate, page },
     ],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (status && status !== "all") params.append("status", status);
-      if (search) params.append("search", search);
-      if (startDate) params.append("startDate", startDate);
-      if (endDate) params.append("endDate", endDate);
-      params.append("page", page.toString());
+      const params = {
+        status: status && status !== "all" ? status : undefined,
+        search: search || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+        page: page,
+      };
+
       const req = await fetchWrapper.get<{
         carts: AdminCartTableData[];
         success: boolean;
@@ -47,13 +49,9 @@ const AdminCartsPage = () => {
           hasNextPage: boolean;
           hasPreviousPage: boolean;
         };
-      }>(
-        `/cart-v2/admin-cart-list${params.toString() ? `?${params.toString()}` : ""}`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
+      }>(`/cart-v2/admin-cart-list`, {
+        params,
+      });
       if (!req.success) {
         throw new Error("Failed to fetch carts");
       }

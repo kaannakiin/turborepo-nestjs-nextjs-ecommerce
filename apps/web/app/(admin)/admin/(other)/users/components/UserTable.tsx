@@ -45,11 +45,7 @@ const UserTable = () => {
             fetchSearchParams.toString()
               ? `?${fetchSearchParams.toString()}`
               : ""
-          }`,
-          {
-            method: "GET",
-            credentials: "include",
-          }
+          }`
         );
 
         if (!response?.success) {

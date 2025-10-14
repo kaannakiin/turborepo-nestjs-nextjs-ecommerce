@@ -52,10 +52,7 @@ const BrandsTable = () => {
       params.set("page", page.toString());
 
       const result = await fetchWrapper.get<BrandsResponse>(
-        `/admin/products/brands/get-all-brands?${params}`,
-        {
-          credentials: "include",
-        }
+        `/admin/products/brands/get-all-brands?${params}`
       );
 
       if (!result.success) {
@@ -73,10 +70,7 @@ const BrandsTable = () => {
   const deleteBrandMutation = useMutation({
     mutationFn: async (brandId: string) => {
       const result = await fetchWrapper.delete<{ message: string }>(
-        `/admin/products/brands/delete-brand/${brandId}`,
-        {
-          credentials: "include",
-        }
+        `/admin/products/brands/delete-brand/${brandId}`
       );
 
       if (!result.success) {

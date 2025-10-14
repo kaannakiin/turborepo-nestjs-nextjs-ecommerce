@@ -112,12 +112,7 @@ const BasicProductForm = ({
       const productResponse = await fetchWrapper.post(
         `/admin/products/create-or-update-basic-product`,
         {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          cache: "no-store",
-          body: JSON.stringify(productDataWithoutImages),
+          productDataWithoutImages,
         }
       );
 
@@ -476,15 +471,7 @@ const BasicProductForm = ({
               existingImages={existingImages}
               existingImagesDelete={async (imageUrl) => {
                 const deleteResponse = await fetchWrapper.delete(
-                  `/admin/products/delete-product-image`,
-                  {
-                    body: JSON.stringify({ imageUrl }),
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    credentials: "include",
-                    cache: "no-store",
-                  }
+                  `/admin/products/delete-product-image/${imageUrl}`
                 );
                 if (!deleteResponse.success) {
                   notifications.show({

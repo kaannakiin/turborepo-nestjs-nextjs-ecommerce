@@ -64,14 +64,10 @@ const CategoryProductList = ({
       const response = await fetchWrapper.post<GetCategoryProductsResponse>(
         "/user-categories/get-category-products",
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            categoryIds,
-            page: pageParam,
-            sort: sortParam,
-            query: filterQueryWithoutPageAndSort,
-          }),
+          categoryIds,
+          page: pageParam,
+          sort: sortParam,
+          query: filterQueryWithoutPageAndSort,
         }
       );
       if (

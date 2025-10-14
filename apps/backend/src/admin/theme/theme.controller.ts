@@ -28,7 +28,7 @@ import { ThemeService } from './theme.service';
 export class ThemeController {
   constructor(private readonly themeService: ThemeService) {}
 
-  @Delete('delete-sliders')
+  @Post('delete-sliders')
   async deleteMultipleSliders(@Body() body: { uniqueIds: string[] }) {
     return this.themeService.deleteMultipleSliders(body.uniqueIds);
   }

@@ -73,8 +73,7 @@ const ProductsModal = ({
     queryKey: ["get-products-and-variants"],
     queryFn: async () => {
       const response = await fetchWrapper.get<ProductWithVariants[]>(
-        `/admin/products/get-products-and-variants`,
-        { credentials: "include" }
+        `/admin/products/get-products-and-variants`
       );
 
       if (!response.success) {

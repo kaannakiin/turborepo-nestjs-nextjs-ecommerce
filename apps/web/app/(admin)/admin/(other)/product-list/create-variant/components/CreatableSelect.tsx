@@ -43,8 +43,7 @@ const CreatableSelect = ({
     queryKey: ["variants"],
     queryFn: async (): Promise<VariantGroupZodType[]> => {
       const response = await fetchWrapper.get<VariantGroupZodType[]>(
-        `/admin/products/get-variants`,
-        { credentials: "include", cache: "no-cache" }
+        `/admin/products/get-variants`
       );
 
       if (!response.success) {

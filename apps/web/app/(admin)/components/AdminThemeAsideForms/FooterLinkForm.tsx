@@ -91,9 +91,7 @@ const FooterLinkForm = ({
             image: { url: string; type: $Enums.AssetType } | null;
           }
         >
-      >(`/admin/products/brands/get-all-brands-only-id-name-image`, {
-        credentials: "include",
-      });
+      >(`/admin/products/brands/get-all-brands-only-id-name-image`, {});
       if (!response.success) {
         console.error("Marka verisi alınamadı");
         return [];
@@ -116,10 +114,7 @@ const FooterLinkForm = ({
             image: { url: string; type: $Enums.AssetType } | null;
           }
         >
-      >(`/admin/products/categories/get-all-categories-only-id-name-image`, {
-        method: "GET",
-        credentials: "include",
-      });
+      >(`/admin/products/categories/get-all-categories-only-id-name-image`, {});
       if (!res.success) {
         console.error("Kategori verisi alınamadı");
         return [];
@@ -142,10 +137,7 @@ const FooterLinkForm = ({
           name: string;
           image: { url: string; type: $Enums.AssetType } | null;
         }>
-      >(`/admin/products/get-all-products-id-name-image`, {
-        method: "GET",
-        credentials: "include",
-      });
+      >(`/admin/products/get-all-products-id-name-image`, {});
       if (!res.success) {
         return [];
       }

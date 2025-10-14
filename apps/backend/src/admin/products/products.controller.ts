@@ -83,9 +83,9 @@ export class ProductsController {
     return result;
   }
 
-  @Delete('delete-product-image')
-  async deleteProductImage(@Body() body: { imageUrl: string }) {
-    return this.productsService.deleteProductImage(body.imageUrl);
+  @Delete('delete-product-image/:imageUrl')
+  async deleteProductImage(@Param('imageUrl') imageUrl: string) {
+    return this.productsService.deleteProductImage(imageUrl);
   }
 
   @Post('upload-product-image')

@@ -44,10 +44,7 @@ const RegisterForm = () => {
         success: boolean;
         message: string;
       }>("/auth/register", {
-        body: JSON.stringify(data),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        data,
       });
 
       if (!registerReq.success) {
@@ -65,16 +62,9 @@ const RegisterForm = () => {
         return;
       }
       const authReq = await fetchWrapper.post("/auth/login", {
-        body: JSON.stringify({
-          username:
-            data.email && data.email.trim() !== "" ? data.email : data.phone,
-          password: data.password,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        cache: "no-cache",
+        username:
+          data.email && data.email.trim() !== "" ? data.email : data.phone,
+        password: data.password,
       });
       if (!authReq.success) {
         setError("root", {

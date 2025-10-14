@@ -745,8 +745,7 @@ const VariantGroupDrawer = ({
                     }
                     existingImagesDelete={async (imageUrl) => {
                       const fetchRes = await fetchWrapper.delete(
-                        `/admin/products/delete-option-asset/${encodeURIComponent(imageUrl)}`,
-                        { credentials: "include" }
+                        `/admin/products/delete-option-asset/${encodeURIComponent(imageUrl)}`
                       );
                       if (!fetchRes.success) {
                         console.warn("Görsel silinirken bir hata oluştu.");

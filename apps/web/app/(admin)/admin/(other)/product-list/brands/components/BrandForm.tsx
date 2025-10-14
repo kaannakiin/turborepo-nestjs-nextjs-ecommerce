@@ -66,7 +66,7 @@ const BrandForm = ({ defaultValues }: BrandFormProps) => {
       const brandRes = await fetchWrapper.post(
         "/admin/products/brands/create-or-update-brand",
         {
-          body: JSON.stringify(rest),
+          rest,
         }
       );
       if (!brandRes.success) {
@@ -178,10 +178,7 @@ const BrandForm = ({ defaultValues }: BrandFormProps) => {
               }
               existingImagesDelete={async (fileUrl) => {
                 const result = await fetchWrapper.delete<void>(
-                  `/admin/products/brands/delete-brand-image/${encodeURIComponent(fileUrl)}`,
-                  {
-                    credentials: "include",
-                  }
+                  `/admin/products/brands/delete-brand-image/${encodeURIComponent(fileUrl)}`
                 );
 
                 if (!result.success) {

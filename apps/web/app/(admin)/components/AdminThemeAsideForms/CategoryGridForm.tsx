@@ -75,10 +75,7 @@ const CategoryGridForm = ({
     queryKey: ["get-all-categories-only-id-and-name"],
     queryFn: async () => {
       const res = await fetchWrapper.get<CategoryIdAndName[]>(
-        `/admin/products/categories/get-all-categories-only-id-and-name`,
-        {
-          credentials: "include",
-        }
+        `/admin/products/categories/get-all-categories-only-id-and-name`
       );
       if (!res.success) {
         return [];

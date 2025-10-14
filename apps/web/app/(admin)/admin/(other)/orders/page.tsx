@@ -50,12 +50,10 @@ const AdminOrdersPage = () => {
       const res = await fetchWrapper.post<GetOrdersReturnType>(
         "/admin/orders/get-orders",
         {
-          body: JSON.stringify({
-            page: pageParam || 1,
-            ...(osParam !== undefined && { orderStatus: osParam }),
-            ...(psParam !== undefined && { paymentStatus: psParam }),
-            ...(search && { search }),
-          }),
+          page: pageParam || 1,
+          ...(osParam !== undefined && { orderStatus: osParam }),
+          ...(psParam !== undefined && { paymentStatus: psParam }),
+          ...(search && { search }),
         }
       );
       if (!res.success || !res.data.success || !res.data.orders) {

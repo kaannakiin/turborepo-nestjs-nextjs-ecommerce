@@ -37,13 +37,7 @@ const GoogleTaxonomySelectV2 = ({
     queryKey: ["googleTaxonomyCategoriesNoRoot"],
     queryFn: async (): Promise<TaxonomyCategoryWithChildren[]> => {
       const response = await fetchWrapper.get<TaxonomyCategoryWithChildren[]>(
-        `/admin/products/google-categories/taxonomy`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        }
+        `/admin/products/google-categories/taxonomy`
       );
       if (!response.success) {
         throw new Error(`HTTP error! status: ${response.status}`);

@@ -38,10 +38,7 @@ const UserAppShellLayout = ({
     queryFn: async (): Promise<{
       footer: MainPageComponentsType["footer"] | null;
     }> => {
-      const footerReq = await fetchWrapper.get(`/admin/theme/get-footer`, {
-        method: "GET",
-        credentials: "include",
-      });
+      const footerReq = await fetchWrapper.get(`/admin/theme/get-footer`, {});
 
       if (!footerReq.success) {
         return { footer: null };

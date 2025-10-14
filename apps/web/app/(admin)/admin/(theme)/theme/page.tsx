@@ -13,10 +13,7 @@ const ThemePage = () => {
       const res = await fetchWrapper.get<{
         components: MainPageComponentsType["components"];
         footer: MainPageComponentsType["footer"] | null;
-      } | null>(`/admin/theme/get-layout`, {
-        method: "GET",
-        credentials: "include",
-      });
+      } | null>(`/admin/theme/get-layout`, {});
       if (!res.success) {
         throw new Error("Layout verisi alınamadı");
       }
@@ -53,15 +50,8 @@ const ThemePage = () => {
 
           // Slider silme
           if (slidersToDelete.length > 0) {
-            await fetchWrapper.delete(`/admin/theme/delete-sliders`, {
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                uniqueIds: slidersToDelete,
-              }),
-              credentials: "include",
-              cache: "no-store",
+            await fetchWrapper.post(`/admin/theme/delete-sliders`, {
+              uniqueIds: slidersToDelete,
             });
           }
 

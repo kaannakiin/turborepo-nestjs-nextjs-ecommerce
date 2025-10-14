@@ -23,8 +23,7 @@ const UsersModal = ({
     queryKey: ["get-users-id-and-name"],
     queryFn: async () => {
       const response = await fetchWrapper.get<UserIdAndName[]>(
-        `/admin/users/get-users-id-and-name`,
-        { method: "GET", credentials: "include" }
+        `/admin/users/get-users-id-and-name`
       );
 
       if (!response.success) throw new Error("Failed to fetch users");

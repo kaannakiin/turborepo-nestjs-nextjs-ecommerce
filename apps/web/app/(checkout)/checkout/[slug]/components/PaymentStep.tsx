@@ -147,11 +147,7 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
       const res = await fetchWrapper.post<BinCheckResponse>(
         `/payment/bin-check`,
         {
-          credentials: "include",
-          body: JSON.stringify({ binNumber: bin }),
-          headers: {
-            "Content-Type": "application/json",
-          },
+          binNumber: bin,
         }
       );
 
@@ -220,9 +216,7 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
       threeDHtmlContent?: string;
       orderNumber?: string;
     }>(`/payment/create-payment/${cart.cartId}`, {
-      body: JSON.stringify(data),
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
+      data,
     });
 
     if (paymentReq.success) {

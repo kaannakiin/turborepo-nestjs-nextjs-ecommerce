@@ -98,9 +98,8 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
       const updateRes = await fetchWrapper.post<CartActionResponseV3>(
         "/cart-v3/increase-item",
         {
-          method: "POST",
-          credentials: "include",
-          body: JSON.stringify({ ...params, cartId }),
+          ...params,
+          cartId,
         }
       );
 
@@ -195,9 +194,8 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
       const updateRes = await fetchWrapper.post<CartActionResponseV3>(
         "/cart-v3/decrease-item",
         {
-          method: "POST",
-          credentials: "include",
-          body: JSON.stringify({ ...params, cartId }),
+          ...params,
+          cartId,
         }
       );
 
@@ -301,9 +299,8 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
       const updateRes = await fetchWrapper.post<CartActionResponseV3>(
         "/cart-v3/remove-item",
         {
-          method: "POST",
-          credentials: "include",
-          body: JSON.stringify({ ...params, cartId }),
+          ...params,
+          cartId,
         }
       );
       if (!updateRes.success) {
@@ -376,9 +373,8 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
       const updateRes = await fetchWrapper.post<CartActionResponseV3>(
         "/cart-v3/add-item",
         {
-          body: JSON.stringify({ ...params, cartId }),
-          method: "POST",
-          credentials: "include",
+          ...params,
+          cartId,
         }
       );
       if (!updateRes.success) {
@@ -497,11 +493,7 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
   const clearCart = useMutation({
     mutationFn: async (cartId: string) => {
       const updateRes = await fetchWrapper.post<CartActionResponseV3>(
-        `/cart-v3/clear-cart/${cartId}`,
-        {
-          method: "POST",
-          credentials: "include",
-        }
+        `/cart-v3/clear-cart/${cartId}`
       );
       if (!updateRes.success) {
         throw new Error("Failed to clear cart");

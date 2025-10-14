@@ -70,10 +70,7 @@ const ShippingLocationDrawer = ({
     queryKey: ["get-states-by-country", defaultValues.countryId],
     queryFn: async () => {
       const res = await fetchWrapper.get<GetAllStateReturnType[]>(
-        `/locations/get-states-by-country/${defaultValues.countryId}`,
-        {
-          credentials: "include",
-        }
+        `/locations/get-states-by-country/${defaultValues.countryId}`
       );
       if (!res.success) {
         throw new Error("Failed to fetch states");
@@ -87,10 +84,7 @@ const ShippingLocationDrawer = ({
     queryKey: ["get-cities-by-country", defaultValues.countryId],
     queryFn: async () => {
       const res = await fetchWrapper.get<GetAllCityReturnType[]>(
-        `/locations/get-cities-by-country/${defaultValues.countryId}`,
-        {
-          credentials: "include",
-        }
+        `/locations/get-cities-by-country/${defaultValues.countryId}`
       );
       if (!res.success) {
         throw new Error("Failed to fetch cities");

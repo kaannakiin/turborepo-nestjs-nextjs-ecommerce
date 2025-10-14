@@ -57,10 +57,7 @@ const OrderClientPage = ({
     queryKey: ["user-order", slug],
     queryFn: async () => {
       const orderRes = await fetchWrapper.get<OrderPageReturnType>(
-        `/order/get-order/${slug}`,
-        {
-          credentials: "include",
-        }
+        `/order/get-order/${slug}`
       );
       if (!orderRes.success) {
         throw new Error("Failed to fetch order");

@@ -33,7 +33,7 @@ const MainPageProductList = ({ data }: MainPageProductListProps) => {
       const apiRes = await fetchWrapper.post<ModalProductCardForAdmin[]>(
         `/users/products/get-products-by-ids-for-product-list-carousel`,
         {
-          body: JSON.stringify({ items: data.items }),
+          items: data.items,
         }
       );
       if (apiRes.success) {

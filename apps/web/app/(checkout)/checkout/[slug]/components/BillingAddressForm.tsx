@@ -49,11 +49,7 @@ const BillingAddressForm = ({
     queryKey: ["get-all-countries"],
     queryFn: async () => {
       const res = await fetchWrapper.get<GetAllCountryReturnType[]>(
-        `/locations/get-all-countries`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
+        `/locations/get-all-countries`
       );
       if (!res.success) {
         throw new Error("Failed to fetch countries");
@@ -68,10 +64,7 @@ const BillingAddressForm = ({
     queryFn: async () => {
       const res = await fetchWrapper.get<GetAllStateReturnType[]>(
         `/locations/get-states-by-country/${countryId}`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
+        {}
       );
       if (!res.success) {
         throw new Error("Failed to fetch states");
@@ -85,10 +78,7 @@ const BillingAddressForm = ({
     queryKey: ["get-cities-by-country", countryId],
     queryFn: async () => {
       const res = await fetchWrapper.get<GetAllCityReturnType[]>(
-        `/locations/get-cities-by-country/${countryId}`,
-        {
-          credentials: "include",
-        }
+        `/locations/get-cities-by-country/${countryId}`
       );
       if (!res.success) {
         throw new Error("Failed to fetch cities");
@@ -106,9 +96,7 @@ const BillingAddressForm = ({
       const fetchReq = await fetchWrapper.get<{
         success: boolean;
         data: { id: string; name: string }[];
-      }>(`/locations/get-districts-turkey-city/${countryId}/${cityId}`, {
-        credentials: "include",
-      });
+      }>(`/locations/get-districts-turkey-city/${countryId}/${cityId}`, {});
       if (!fetchReq.success) {
         throw new Error("Failed to fetch districts");
       }

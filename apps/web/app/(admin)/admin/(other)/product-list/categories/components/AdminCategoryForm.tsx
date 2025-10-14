@@ -100,7 +100,7 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
       const categoryRes = await fetchWrapper.post<void>(
         "/admin/products/categories/create-or-update-category",
         {
-          body: JSON.stringify(rest),
+          rest,
         }
       );
 
@@ -216,12 +216,7 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
               }
               existingImagesDelete={async (fileUrl) => {
                 const response = await fetchWrapper.delete(
-                  `/admin/products/categories/delete-category-image/${encodeURIComponent(fileUrl)}`,
-                  {
-                    method: "DELETE",
-                    credentials: "include",
-                    cache: "no-cache",
-                  }
+                  `/admin/products/categories/delete-category-image/${encodeURIComponent(fileUrl)}`
                 );
 
                 if (!response.success) {

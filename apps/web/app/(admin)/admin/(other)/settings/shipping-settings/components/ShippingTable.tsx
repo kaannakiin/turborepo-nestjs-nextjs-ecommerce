@@ -27,9 +27,7 @@ const ShippingTable = () => {
       const req = await fetchWrapper.get<{
         success: boolean;
         cargoZones: Array<CargoZones>;
-      }>(`/shipping/get-all-cargo-zones`, {
-        credentials: "include",
-      });
+      }>(`/shipping/get-all-cargo-zones`, {});
       if (!req.success) {
         return null;
       }

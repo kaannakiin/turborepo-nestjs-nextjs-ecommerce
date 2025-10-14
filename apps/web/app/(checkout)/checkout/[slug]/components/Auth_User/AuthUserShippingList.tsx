@@ -44,14 +44,7 @@ const AuthUserShippingList = ({ cart }: AuthUserShippingListProps) => {
     queryKey: ["shipping-rules", cart?.cart?.cartId],
     queryFn: async () => {
       const res = await fetchWrapper.get<ShippingMethodsResponse>(
-        `/shipping/get-available-shipping-methods/${cart?.cart?.cartId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        }
+        `/shipping/get-available-shipping-methods/${cart?.cart?.cartId}`
       );
       if (!res.success) throw new Error("Failed to fetch shipping methods");
       return res.data.shippingMethods;
@@ -164,13 +157,8 @@ const AuthUserShippingList = ({ cart }: AuthUserShippingListProps) => {
                 success: boolean;
                 message: string;
               }>(`/cart-v3/set-cart-cargo-rule`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({
-                  cartId: cart?.cart?.cartId,
-                  cargoRuleId: selectedCargoRuleId,
-                }),
+                cartId: cart?.cart?.cartId,
+                cargoRuleId: selectedCargoRuleId,
               });
               if (!res.success) {
                 notifications.show({

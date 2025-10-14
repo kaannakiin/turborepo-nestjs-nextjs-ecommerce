@@ -41,15 +41,8 @@ const LoginForm = () => {
   const onSubmit: SubmitHandler<LoginSchemaType> = async (data) => {
     try {
       const authReq = await fetchWrapper.post("/auth/login", {
-        body: JSON.stringify({
-          username: data.type === "email" ? data.email : data.phone,
-          password: data.password,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        cache: "no-cache",
+        username: data.type === "email" ? data.email : data.phone,
+        password: data.password,
       });
 
       if (!authReq.success) {

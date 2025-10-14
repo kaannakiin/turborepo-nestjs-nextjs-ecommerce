@@ -155,15 +155,7 @@ const CombinatedVariantsFormDrawer = ({
               existingImages={existingImages || []}
               existingImagesDelete={async (imageUrl) => {
                 const deleteResponse = await fetchWrapper.delete(
-                  `/admin/products/delete-product-image`,
-                  {
-                    body: JSON.stringify({ imageUrl }),
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    credentials: "include",
-                    cache: "no-store",
-                  }
+                  `/admin/products/delete-product-image/${imageUrl}`
                 );
                 if (!deleteResponse.success) {
                   notifications.show({

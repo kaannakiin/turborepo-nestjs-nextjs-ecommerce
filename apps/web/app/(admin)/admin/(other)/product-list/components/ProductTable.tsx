@@ -54,11 +54,7 @@ const fetchProducts = async (
   params.append("page", page.toString());
 
   const response = await fetchWrapper.get<ProductsResponse>(
-    `/admin/products/get-products?${params.toString()}`,
-    {
-      credentials: "include",
-      cache: "no-store",
-    }
+    `/admin/products/get-products?${params.toString()}`
   );
 
   if (!response.success) {

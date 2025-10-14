@@ -74,12 +74,8 @@ const ClientCheckoutPage = ({
     queryKey: ["non-auth-user-cart", slug, step],
     queryFn: async () => {
       const res = await fetchWrapper.get<GetCartClientCheckoutReturnType>(
-        `/cart-v3/get-user-cart-info-for-checkout/${slug}`,
-        {
-          credentials: "include",
-        }
+        `/cart-v3/get-user-cart-info-for-checkout/${slug}`
       );
-      console.log(res);
       if (res.success && res.data && res.data.success) {
         return res.data.cart;
       }

@@ -42,9 +42,7 @@ const AuthUserAddressList = ({
     queryFn: async () => {
       const res = await fetchWrapper.get<
         Array<UserDbAddressType & { isDefault: boolean }>
-      >(`/locations/get-user-addresses`, {
-        credentials: "include",
-      });
+      >(`/locations/get-user-addresses`);
       if (!res.success) {
         notifications.show({
           title: "Adresler yüklenemedi",
@@ -265,11 +263,7 @@ const AuthUserAddressList = ({
                   const res = await fetchWrapper.post(
                     `/locations/add-user-address`,
                     {
-                      credentials: "include",
-                      body: JSON.stringify(data),
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
+                      data,
                     }
                   );
                   if (!res.success) {
@@ -322,11 +316,8 @@ const AuthUserAddressList = ({
                   success: boolean;
                   message: string;
                 }>(`/cart-v3/update-cart-address`, {
-                  credentials: "include",
-                  body: JSON.stringify({
-                    cartId,
-                    addressId: selectedAddressId,
-                  }),
+                  cartId,
+                  addressId: selectedAddressId,
                 });
                 if (!res.success || !res.data.success) {
                   notifications.show({
