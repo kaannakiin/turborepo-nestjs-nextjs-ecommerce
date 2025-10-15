@@ -71,8 +71,8 @@ const ProductTable = () => {
   const search = searchParams.get("search") || "";
   const page = parseInt(searchParams.get("page") || "1");
 
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["products", search, page],
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin-products", search, page],
     queryFn: () => fetchProducts(search || undefined, page),
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,

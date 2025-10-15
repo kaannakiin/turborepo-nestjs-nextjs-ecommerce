@@ -25,6 +25,7 @@ import {
   CardAssociation,
   GetOrderReturnType,
   NonThreeDSRequest,
+  ProductSnapshot,
   ProductSnapshotForVariant,
 } from "@repo/types";
 import { IconMail, IconPhone } from "@tabler/icons-react";
@@ -235,9 +236,55 @@ const AdminOrderPage = () => {
                             </Group>
                           </Group>
                         );
+                      } else {
+                        const productDetail = JSON.parse(
+                          JSON.stringify(item.productSnapshot)
+                        ) as ProductSnapshot;
+                        const { assets, translations } = productDetail;
+                        const asset = assets?.[0]?.asset || null;
+                        const translation = translations?.[0] || null;
+                        return (
+                          <Group
+                            key={item.id}
+                            gap={"xs"}
+                            align="start"
+                            px={"xs"}
+                          >
+                            {asset && (
+                              <AspectRatio ratio={1} pos={"relative"} w={160}>
+                                {asset.type === "IMAGE" ? (
+                                  <CustomImage src={asset.url} />
+                                ) : (
+                                  <video src={asset.url} />
+                                )}
+                              </AspectRatio>
+                            )}
+                            <Group
+                              align="start"
+                              className="w-full flex-1"
+                              justify="space-between"
+                            >
+                              <div className="flex flex-col gap-1">
+                                <Text fz={"md"} fw={700}>
+                                  {translation?.name || "İsimsiz Ürün"}
+                                </Text>
+                              </div>
+                              <Stack gap={"xs"}>
+                                <div className="flex flex-row items-end gap-1">
+                                  <ProductPriceFormatter
+                                    fz={"md"}
+                                    fw={700}
+                                    price={item.buyedPrice}
+                                  />
+                                  <Text fz={"sm"} c="dimmed">
+                                    x{item.quantity}
+                                  </Text>
+                                </div>
+                              </Stack>
+                            </Group>
+                          </Group>
+                        );
                       }
-
-                      return <Group key={item.id}></Group>;
                     })}
                 </Stack>
               </ScrollArea>
@@ -529,28 +576,30 @@ const AdminOrderPage = () => {
                 </div>
               </Stack>
             </Card>
-            <Card className="rounded-2xl" withBorder>
-              <Card.Section
-                p={"sm"}
-                className="border-b border-b-gray-400 font-semibold"
-              >
-                <Title order={4}>Fatura Bilgileri</Title>
-              </Card.Section>
-              <Stack gap={"2px"} py={"xs"}>
-                <Text fz={"sm"} fw={500}>
-                  {formattedBillingAddress.contactName}
-                </Text>
-                <div>
+            {formattedBillingAddress && (
+              <Card className="rounded-2xl" withBorder>
+                <Card.Section
+                  p={"sm"}
+                  className="border-b border-b-gray-400 font-semibold"
+                >
+                  <Title order={4}>Fatura Bilgileri</Title>
+                </Card.Section>
+                <Stack gap={"2px"} py={"xs"}>
                   <Text fz={"sm"} fw={500}>
-                    {formattedBillingAddress.address}
+                    {formattedBillingAddress.contactName}
                   </Text>
-                  <Text fz={"sm"} fw={500}>
-                    {formattedBillingAddress.city} /{" "}
-                    {formattedBillingAddress.country}{" "}
-                  </Text>
-                </div>
-              </Stack>
-            </Card>
+                  <div>
+                    <Text fz={"sm"} fw={500}>
+                      {formattedBillingAddress.address}
+                    </Text>
+                    <Text fz={"sm"} fw={500}>
+                      {formattedBillingAddress.city} /{" "}
+                      {formattedBillingAddress.country}{" "}
+                    </Text>
+                  </div>
+                </Stack>
+              </Card>
+            )}
             {(restOrderDetails.customerNotes ||
               restOrderDetails.adminNotes) && (
               <Card className="rounded-2xl" withBorder>
@@ -580,7 +629,7 @@ const AdminOrderPage = () => {
               >
                 <Title order={4}>Sipariş Durumu</Title>
               </Card.Section>
-              <Stack gap={"2px"} py={"xs"}>
+              <Stack py={"md"}>
                 <OrderStatusStepper status={restOrderDetails.orderStatus} />
               </Stack>
             </Card>

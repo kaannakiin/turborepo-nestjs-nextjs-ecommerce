@@ -51,12 +51,13 @@ const OrderStatusStepper = ({ status }: OrderStatusStepperProps) => {
 
   const getActiveStep = () => {
     if (isCancelled || isRefunded) {
-      return -1; // Stepper'da hiçbir adım aktif olmasın
+      return -1;
     }
     const currentStep = steps.find((step) => step.value === status);
-    return currentStep ? currentStep.order : 0;
-  };
+    if (!currentStep) return 0;
 
+    return currentStep.order + 1;
+  };
   return (
     <div>
       {isCancelled && (
@@ -76,10 +77,17 @@ const OrderStatusStepper = ({ status }: OrderStatusStepperProps) => {
       )}
 
       {!isCancelled && !isRefunded && (
-        <Stepper active={getActiveStep()} orientation="vertical" color="blue">
+        <Stepper
+          active={getActiveStep()}
+          orientation="vertical"
+          color="primary"
+        >
           {steps.map((step) => (
             <Stepper.Step
               key={step.value}
+              c={"primary"}
+              color="primary"
+              classNames={{}}
               label={step.label}
               description={step.description}
             />

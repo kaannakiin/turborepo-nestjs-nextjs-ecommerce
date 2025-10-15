@@ -1,9 +1,26 @@
-//apps\web\app\(user)\[slug]\page.tsx
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import { queryClient } from "@lib/serverQueryClient";
 import { GetProductPageReturnType } from "@repo/types";
+import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
 import { Params } from "types/GlobalTypes";
-import VariantProductClient from "./components/VariantProductClient";
+
+const VariantProductClient = dynamic(
+  () => import("./components/VariantProductClient"),
+  {
+    ssr: true,
+    loading: () => <GlobalLoadingOverlay />,
+  }
+);
+
+const BasicProductClient = dynamic(
+  () => import("./components/BasicProductClient"),
+  {
+    ssr: true,
+    loading: () => <GlobalLoadingOverlay />,
+  }
+);
+
 const client = queryClient;
 
 const ProductPage = async ({ params }: { params: Params }) => {
@@ -28,10 +45,16 @@ const ProductPage = async ({ params }: { params: Params }) => {
   if (!productMainData) {
     return notFound();
   }
+
   if (productMainData.isVariant) {
     return <VariantProductClient productData={productMainData} />;
   }
-  return <pre>{JSON.stringify(productMainData, null, 2)}</pre>;
+
+  if (!productMainData.isVariant) {
+    return <BasicProductClient productData={productMainData} />;
+  }
+
+  return notFound();
 };
 
 export default ProductPage;

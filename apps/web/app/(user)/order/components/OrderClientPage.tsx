@@ -95,8 +95,10 @@ const OrderClientPage = ({
   if (data.userId !== null) {
     if (session) {
       push(`/dashboard/orders/${slug}`);
+      return <GlobalLoadingOverlay />;
     } else {
       push(`/auth/login?redirectUri=/dashboard/orders/${slug}`);
+      return <GlobalLoadingOverlay />;
     }
   }
 

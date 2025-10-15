@@ -262,9 +262,7 @@ const AuthUserAddressList = ({
                 onSubmit={async (data) => {
                   const res = await fetchWrapper.post(
                     `/locations/add-user-address`,
-                    {
-                      data,
-                    }
+                    data
                   );
                   if (!res.success) {
                     notifications.show({

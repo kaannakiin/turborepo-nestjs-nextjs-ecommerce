@@ -20,6 +20,7 @@ import {
   slugify,
   SubmitHandler,
   useForm,
+  useMutation,
   zodResolver,
 } from "@repo/shared";
 import {
@@ -38,6 +39,7 @@ import GlobalSeoCard from "../../../../../../components/GlobalSeoCard";
 import ExistingVariantCard from "./ExistingVariantCard";
 import GoogleTaxonomySelectV2 from "./GoogleTaxonomySelectV2";
 import ProductDetailCard from "./ProductDetailCard";
+import { queryClient } from "@lib/serverQueryClient";
 
 const GlobalTextEditor = dynamic(
   () => import("../../../../../../components/GlobalTextEditor"),
@@ -85,8 +87,9 @@ const VariantProductForm = ({
   const existingImages = watch("existingImages") || [];
 
   const { push } = useRouter();
-  const onSubmit: SubmitHandler<VariantProductZodType> = async (data) => {
-    try {
+
+  const createOrUpdateVariantProductMutation = useMutation({
+    mutationFn: async (data: VariantProductZodType) => {
       const { images, combinatedVariants, ...productData } = data;
 
       // Resim ve dosya verilerini temizleyerek sadece JSON verisi hazırla
@@ -118,15 +121,12 @@ const VariantProductForm = ({
       });
 
       if (!mainDataResponse.success) {
-        notifications.show({
-          title: "Hata!",
-          message: "Ürün kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.",
-          color: "red",
-        });
-        return;
+        throw new Error(
+          "Ürün kaydedilirken bir hata oluştu. Lütfen tekrar deneyin."
+        );
       }
-      const { data: mdData, success } = mainDataResponse.data;
 
+      const { data: mdData } = mainDataResponse.data;
       const { productId, combinations: updatedCombinations = [] } = mdData as {
         productId: string;
         combinations: {
@@ -134,6 +134,12 @@ const VariantProductForm = ({
           sku: string | null;
         }[];
       };
+
+      return { data, productId, updatedCombinations };
+    },
+
+    onSuccess: async (result, variables, _, context) => {
+      const { data, productId, updatedCombinations } = result;
 
       notifications.show({
         title: "Başarılı!",
@@ -143,20 +149,30 @@ const VariantProductForm = ({
         color: "green",
       });
 
-      await uploadAllImagesInBackground(data, productId, updatedCombinations);
+      // Arka planda resim yükleme işlemini başlat
+      uploadAllImagesInBackground(data, productId, updatedCombinations);
+
+      context.client.invalidateQueries({ queryKey: ["admin-products"] });
 
       push("/admin/product-list");
-    } catch (error) {
+    },
+
+    onError: (error, variables, context) => {
       const errorMessage =
         error instanceof Error
           ? error.message
           : "İnternet bağlantınızı kontrol edin.";
+
       notifications.show({
         title: "Bağlantı Hatası!",
         message: errorMessage,
         color: "red",
       });
-    }
+    },
+  });
+
+  const onSubmit: SubmitHandler<VariantProductZodType> = async (data) => {
+    createOrUpdateVariantProductMutation.mutate(data);
   };
 
   const uploadAllImagesInBackground = async (
@@ -165,15 +181,14 @@ const VariantProductForm = ({
     updatedCombinations: { id: string; sku: string | null }[]
   ) => {
     try {
+      // --- 1. ANA ÜRÜN RESİMLERİNİN YÜKLENMESİ ---
       if (formData.images && formData.images.length > 0) {
         const productImageFormData = new FormData();
         formData.images.forEach((imageFile) => {
-          // NestJS'teki FilesInterceptor('files') bunu bekliyor.
           productImageFormData.append("files", imageFile);
         });
         productImageFormData.append("productId", productId);
 
-        // İSTEK: /admin/products/upload-product-image endpoint'ine gidiyor.
         const productImageResponse = await fetchWrapper.postFormData(
           `/admin/products/upload-product-image`,
           productImageFormData
@@ -181,15 +196,12 @@ const VariantProductForm = ({
 
         if (!productImageResponse.success) {
           console.warn("Ana ürün resimleri yüklenemedi:");
-          // İsteğe bağlı: Kullanıcıya bir bildirim gösterilebilir.
         }
       }
 
       // --- 2. YENİ OLUŞTURULAN VARYANT KOMBİNASYONLARININ RESİMLERİNİN YÜKLENMESİ ---
-      // Formdaki her bir yeni varyant kombinasyonu için döngüye gir.
       for (const variant of formData.combinatedVariants) {
         if (variant.images && variant.images.length > 0) {
-          // Formdaki SKU'yu kullanarak backend'den gelen doğru kombinasyon ID'sini bul.
           const combinationInfo = updatedCombinations.find(
             (c) => c.sku === variant.sku
           );
@@ -198,7 +210,7 @@ const VariantProductForm = ({
             console.warn(
               `SKU'su ${variant.sku} olan kombinasyon için ID bulunamadı, resimler yüklenemiyor.`
             );
-            continue; // Bu varyantı atla, sonrakine geç.
+            continue;
           }
 
           const variantImageFormData = new FormData();
@@ -207,7 +219,6 @@ const VariantProductForm = ({
           });
           variantImageFormData.append("variantId", combinationInfo.id);
 
-          // İSTEK: /admin/products/upload-variant-image endpoint'ine gidiyor.
           const variantImageResponse = await fetchWrapper.postFormData(
             `/admin/products/upload-variant-image`,
             variantImageFormData
@@ -221,16 +232,13 @@ const VariantProductForm = ({
         }
       }
 
-      // --- 3. MEVCUT VARYANTLARIN OPSİYON RESİMLERİNİN YÜKLENMESİ (Örn: Renk için resim) ---
-      // Mevcut varyant gruplarının opsiyonları için döngüye gir.
+      // --- 3. MEVCUT VARYANTLARIN OPSİYON RESİMLERİNİN YÜKLENMESİ ---
       for (const existingVariant of formData.existingVariants) {
         for (const option of existingVariant.options) {
-          // Eğer opsiyon için yeni bir dosya seçilmişse (örn: kırmızı rengi için yeni bir görsel).
           if (option.file) {
             const optionFormData = new FormData();
             optionFormData.append("file", option.file);
 
-            // İSTEK: /admin/products/upload-option-asset/:optionUniqueId endpoint'ine gidiyor.
             const fetchRes = await fetchWrapper.postFormData(
               `/admin/products/upload-option-asset/${option.uniqueId}`,
               optionFormData
@@ -244,15 +252,15 @@ const VariantProductForm = ({
           }
         }
       }
+
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
     } catch (error) {
       console.error(
         "Resimler yüklenirken arka planda genel bir hata oluştu:",
         error
       );
-      // Burada da kullanıcıya genel bir hata bildirimi gösterilebilir.
     }
   };
-
   return (
     <Stack gap={"lg"}>
       {isSubmitting && <GlobalLoadingOverlay />}

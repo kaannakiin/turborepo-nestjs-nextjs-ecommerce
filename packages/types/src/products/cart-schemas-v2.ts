@@ -103,6 +103,9 @@ export type GetCartByIdReturn = Prisma.CartGetPayload<{
         state: {
           select: { id: true; name: true };
         };
+        district: {
+          select: { id: true; name: true };
+        };
       };
     };
     shippingAddress: {
@@ -112,6 +115,9 @@ export type GetCartByIdReturn = Prisma.CartGetPayload<{
           select: { id: true; name: true; emoji: true; translations: true };
         };
         state: {
+          select: { id: true; name: true };
+        };
+        district: {
           select: { id: true; name: true };
         };
       };

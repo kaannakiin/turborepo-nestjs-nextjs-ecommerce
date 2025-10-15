@@ -20,6 +20,7 @@ import {
   slugify,
   SubmitHandler,
   useForm,
+  useMutation,
   zodResolver,
 } from "@repo/shared";
 import {
@@ -32,14 +33,14 @@ import {
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 
+import fetchWrapper from "@lib/fetchWrapper";
 import { getProductTypeLabel } from "../../../../../../../../lib/helpers";
 import GlobalDropzone from "../../../../../../../components/GlobalDropzone";
 import GlobalLoadingOverlay from "../../../../../../../components/GlobalLoadingOverlay";
 import GlobalSeoCard from "../../../../../../../components/GlobalSeoCard";
+import GoogleTaxonomySelectV2 from "../../../create-variant/components/GoogleTaxonomySelectV2";
 import ProductDetailCard from "../../../create-variant/components/ProductDetailCard";
 import ProductPriceNumberInput from "../../../create-variant/components/ProductPriceNumberInput";
-import GoogleTaxonomySelectV2 from "../../../create-variant/components/GoogleTaxonomySelectV2";
-import fetchWrapper from "@lib/fetchWrapper";
 
 const GlobalTextEditor = dynamic(
   () => import("../../../../../../../components/GlobalTextEditor"),
@@ -103,36 +104,24 @@ const BasicProductForm = ({
   const slug = watch("translations.0.slug") || null;
   const { push } = useRouter();
 
-  const onSubmit: SubmitHandler<BaseProductZodType> = async (data) => {
-    try {
-      // 1. Önce images'ları ayır
+  const mutation = useMutation({
+    mutationFn: async (data: BaseProductZodType) => {
       const { images, ...productDataWithoutImages } = data;
 
-      // 2. İlk olarak ürünü oluştur/güncelle (images olmadan)
       const productResponse = await fetchWrapper.post(
         `/admin/products/create-or-update-basic-product`,
-        {
-          productDataWithoutImages,
-        }
+        productDataWithoutImages
       );
 
       if (!productResponse.success) {
-        notifications.show({
-          title: "Hata!",
-          message: "Ürün işlemi sırasında bir hata oluştu.",
-          color: "red",
-          autoClose: 5000,
-        });
-        return;
+        throw new Error("Ürün işlemi sırasında bir hata oluştu.");
       }
 
       if (images && images.length > 0) {
         const formData = new FormData();
-
         images.forEach((file) => {
           formData.append("files", file);
         });
-
         formData.append("productId", data.uniqueId);
 
         const imageUploadResponse = await fetchWrapper.postFormData(
@@ -141,17 +130,14 @@ const BasicProductForm = ({
         );
 
         if (!imageUploadResponse.success) {
-          notifications.show({
-            title: "Uyarı!",
-            message:
-              "Ürün kaydedildi ancak resim yükleme sırasında hata oluştu.",
-            color: "yellow",
-            autoClose: 5000,
-          });
-          push("/admin/product-list");
-          return;
+          throw new Error("Resim yükleme sırasında hata oluştu.");
         }
       }
+
+      return productResponse;
+    },
+    onSuccess: (data1, data, _, context) => {
+      context.client.invalidateQueries({ queryKey: ["admin-products"] });
 
       notifications.show({
         title: "Başarılı!",
@@ -161,21 +147,27 @@ const BasicProductForm = ({
         color: "green",
         autoClose: 3000,
       });
+
       push("/admin/product-list");
-    } catch (error) {
+    },
+    onError: (error: Error) => {
       console.error("Genel hata:", error);
       notifications.show({
         title: "Hata!",
-        message: "Beklenmeyen bir hata oluştu.",
+        message: error.message || "Beklenmeyen bir hata oluştu.",
         color: "red",
         autoClose: 5000,
       });
-    }
+    },
+  });
+
+  const onSubmit: SubmitHandler<BaseProductZodType> = async (data) => {
+    mutation.mutate(data);
   };
 
   return (
     <Stack gap={"lg"}>
-      {isSubmitting && <GlobalLoadingOverlay />}
+      {isSubmitting || mutation.isPending ? <GlobalLoadingOverlay /> : null}
       <Group align="center" justify="space-between">
         <Title order={4}>
           Basit Ürün {defaultValues ? "Güncelle" : "Oluştur"}

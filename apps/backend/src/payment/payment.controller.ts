@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Headers,
@@ -47,11 +48,16 @@ export class PaymentController {
     @Body() body: ThreeDCallback,
     @Res({ passthrough: true }) res: Response,
   ) {
-    return this.paymentService.iyzicoThreeDCallback({
-      paymentReqId,
-      body: body,
-      res: res,
-    });
+    try {
+      const data = this.paymentService.iyzicoThreeDCallback({
+        paymentReqId,
+        body: body,
+        res: res,
+      });
+      return data;
+    } catch (error) {
+      throw new BadRequestException('3D doğrulama işlemi başarısız oldu.');
+    }
   }
 
   @Post('iyzico/webhook')

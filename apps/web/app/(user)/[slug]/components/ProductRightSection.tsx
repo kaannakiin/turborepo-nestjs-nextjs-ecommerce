@@ -11,6 +11,7 @@ import {
   Group,
   Stack,
   Title,
+  Typography,
   UnstyledButton,
   rem,
 } from "@mantine/core";
@@ -40,7 +41,6 @@ const ProductRightSection = ({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // 1. Seçili olan tüm opsiyonların ID'lerini hızlı erişim için bir Set'e alıyoruz.
   const selectedOptionIds = useMemo(() => {
     if (!selectedVariant) return new Set();
     return new Set(
@@ -50,7 +50,6 @@ const ProductRightSection = ({
     );
   }, [selectedVariant]);
 
-  // Opsiyon seçildiğinde URL'i güncelleyecek fonksiyon
   const handleOptionClick = (groupSlug: string, optionSlug: string) => {
     const currentParams = new URLSearchParams(
       Array.from(searchParams.entries())
@@ -60,7 +59,7 @@ const ProductRightSection = ({
   };
 
   if (!otherDetails || !selectedVariant) {
-    return null; // Gerekli data yoksa render etme
+    return null;
   }
 
   const translation = otherDetails.translations[0];
@@ -93,11 +92,11 @@ const ProductRightSection = ({
             <div className="flex-1 flex flex-col">
               <ProductPriceFormatter
                 fz={"xs"}
-                price={selectedVariant.prices[0].discountedPrice}
+                price={variantPrice.price}
                 className="line-through text-gray-500"
               />
               <ProductPriceFormatter
-                price={selectedVariant.prices[0].price}
+                price={variantPrice.discountedPrice}
                 fz={"md"}
                 fw={700}
               />
@@ -105,7 +104,7 @@ const ProductRightSection = ({
           </Group>
         ) : (
           <ProductPriceFormatter
-            price={selectedVariant.prices[0].price}
+            price={variantPrice.price}
             fz={"md"}
             fw={700}
           />
@@ -222,7 +221,24 @@ const ProductRightSection = ({
           />
         </Stack>
       )}
-      {otherDetails?.translations[0]?.description && <Accordion></Accordion>}
+      {translation?.description &&
+        translation.description.length > 0 &&
+        translation.description !== "<p></p>" && (
+          <Accordion variant="contained">
+            <Accordion.Item value="description">
+              <Accordion.Control>Ürün Açıklaması</Accordion.Control>
+              <Accordion.Panel>
+                <Typography>
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: translation.description,
+                    }}
+                  />
+                </Typography>
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion>
+        )}
     </Stack>
   );
 };

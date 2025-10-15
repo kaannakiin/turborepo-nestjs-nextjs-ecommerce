@@ -352,7 +352,7 @@ export class PaymentService {
   ): Array<BasketItem & { quantity: number }> {
     return items.map((item) => ({
       id: item.variantId
-        ? `${item.productId}-${item.variantId}`
+        ? `${item.productId}|${item.variantId}`
         : item.productId,
       name: item.productName,
       price: item.discountedPrice ? item.discountedPrice : item.price,
@@ -868,27 +868,88 @@ export class PaymentService {
                 }
               >,
             );
-            await Promise.all(
-              Object.entries(groupedItems).map(
-                async ([itemId, groupedData]) => {
-                  const [productId, variantId] = itemId.split('-');
-                  const { totalQuantity, totalPaidPrice, firstItem } =
-                    groupedData;
 
-                  // VARIANT İÇİN
-                  if (variantId) {
-                    const productVariant =
-                      await prisma.productVariantCombination.findUnique({
-                        where: {
-                          id: variantId,
-                          productId,
+            const itemEntries = Object.entries(groupedItems);
+
+            for (const [itemId, groupedData] of itemEntries) {
+              const parts = itemId.split('|');
+              const productId = parts[0];
+              const variantId = parts[1] || null;
+              const { totalQuantity, totalPaidPrice, firstItem } = groupedData;
+              const avgPaidPrice = this.toFixedPrice(
+                totalPaidPrice / totalQuantity,
+              );
+
+              if (variantId) {
+                // VARIANT İÇİN
+                const productVariant =
+                  await prisma.productVariantCombination.findUnique({
+                    where: {
+                      id: variantId,
+                      productId,
+                    },
+                    include: {
+                      assets: {
+                        take: 1,
+                        orderBy: {
+                          order: 'asc',
                         },
+                        select: {
+                          asset: {
+                            select: {
+                              url: true,
+                              type: true,
+                            },
+                          },
+                        },
+                      },
+                      prices: true,
+                      translations: true,
+                      options: {
+                        orderBy: [
+                          {
+                            productVariantOption: {
+                              productVariantGroup: {
+                                order: 'asc',
+                              },
+                            },
+                          },
+                          {
+                            productVariantOption: { order: 'asc' },
+                          },
+                        ],
+                        select: {
+                          productVariantOption: {
+                            select: {
+                              variantOption: {
+                                select: {
+                                  id: true,
+                                  hexValue: true,
+                                  translations: true,
+                                  asset: {
+                                    select: {
+                                      url: true,
+                                      type: true,
+                                    },
+                                  },
+                                  variantGroup: {
+                                    select: {
+                                      id: true,
+                                      translations: true,
+                                      type: true,
+                                    },
+                                  },
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                      product: {
                         include: {
+                          translations: true,
                           assets: {
                             take: 1,
-                            orderBy: {
-                              order: 'asc',
-                            },
                             select: {
                               asset: {
                                 select: {
@@ -898,178 +959,122 @@ export class PaymentService {
                               },
                             },
                           },
-                          prices: true,
-                          translations: true,
-                          options: {
-                            orderBy: [
-                              {
-                                productVariantOption: {
-                                  productVariantGroup: {
-                                    order: 'asc',
-                                  },
-                                },
-                              },
-                              {
-                                productVariantOption: { order: 'asc' },
-                              },
-                            ],
-                            select: {
-                              productVariantOption: {
-                                select: {
-                                  variantOption: {
-                                    select: {
-                                      id: true,
-                                      hexValue: true,
-                                      translations: true,
-                                      asset: {
-                                        select: {
-                                          url: true,
-                                          type: true,
-                                        },
-                                      },
-                                      variantGroup: {
-                                        select: {
-                                          id: true,
-                                          translations: true,
-                                          type: true,
-                                        },
-                                      },
-                                    },
-                                  },
-                                },
-                              },
-                            },
-                          },
-                          product: {
-                            include: {
-                              translations: true,
-                              assets: {
-                                take: 1,
-                                select: {
-                                  asset: {
-                                    select: {
-                                      url: true,
-                                      type: true,
-                                    },
-                                  },
-                                },
-                              },
-                            },
-                          },
-                        },
-                      });
-
-                    if (!productVariant) {
-                      return;
-                    }
-
-                    const { options, ...rest } = productVariant;
-
-                    // Birim fiyat hesapla (ortalama)
-                    const avgPaidPrice = this.toFixedPrice(
-                      totalPaidPrice / totalQuantity,
-                    );
-
-                    await prisma.orderItem.upsert({
-                      where: {
-                        orderId_productId_variantId: {
-                          orderId: order.id,
-                          productId,
-                          variantId,
                         },
                       },
-                      update: {
-                        quantity: { increment: totalQuantity },
-                        totalPrice: {
-                          increment: this.toFixedPrice(totalPaidPrice),
-                        },
-                        buyedPrice: avgPaidPrice,
-                      },
-                      create: {
-                        buyedPrice: avgPaidPrice,
-                        productId,
-                        variantId,
-                        quantity: totalQuantity,
-                        orderId: order.id,
-                        totalPrice: this.toFixedPrice(totalPaidPrice),
-                        originalPrice: this.toFixedPrice(firstItem.price),
-                        buyedVariants: JSON.parse(
-                          JSON.stringify(
-                            options.map(
-                              (o) => o.productVariantOption.variantOption,
-                            ),
-                          ),
+                    },
+                  });
+
+                if (!productVariant) {
+                  console.error(
+                    `!!! DÖNGÜ ATLANIYOR: productVariant bulunamadı! productId: ${productId}, variantId: ${variantId}`,
+                  );
+                  continue;
+                }
+
+                const { options, ...rest } = productVariant;
+
+                await prisma.orderItem.upsert({
+                  where: {
+                    orderId_productId_variantId: {
+                      orderId: order.id,
+                      productId,
+                      variantId,
+                    },
+                  },
+                  update: {
+                    quantity: { increment: totalQuantity },
+                    totalPrice: {
+                      increment: this.toFixedPrice(totalPaidPrice),
+                    },
+                    buyedPrice: avgPaidPrice,
+                  },
+                  create: {
+                    buyedPrice: avgPaidPrice,
+                    productId,
+                    variantId,
+                    quantity: totalQuantity,
+                    orderId: order.id,
+                    totalPrice: this.toFixedPrice(totalPaidPrice),
+                    originalPrice: this.toFixedPrice(firstItem.price),
+                    buyedVariants: JSON.parse(
+                      JSON.stringify(
+                        options.map(
+                          (o) => o.productVariantOption.variantOption,
                         ),
-                        productSnapshot: JSON.parse(JSON.stringify(rest)),
-                        transactionId: firstItem.paymentTransactionId, // İlk transaction ID
+                      ),
+                    ),
+                    productSnapshot: JSON.parse(JSON.stringify(rest)),
+                    transactionId: firstItem.paymentTransactionId,
+                  },
+                });
+              } else {
+                // NORMAL ÜRÜN İÇİN (Variant olmayan)
+                const product = await prisma.product.findUnique({
+                  where: { id: productId },
+                  include: {
+                    assets: {
+                      take: 1,
+                      orderBy: {
+                        order: 'asc',
                       },
-                    });
-                  }
-
-                  // NORMAL ÜRÜN İÇİN (Variant olmayan)
-                  if (!variantId && productId) {
-                    const product = await prisma.product.findUnique({
-                      where: { id: productId },
-                      include: {
-                        assets: {
-                          take: 1,
-                          orderBy: {
-                            order: 'asc',
-                          },
+                      select: {
+                        asset: {
                           select: {
-                            asset: {
-                              select: {
-                                url: true,
-                                type: true,
-                              },
-                            },
+                            url: true,
+                            type: true,
                           },
                         },
-                        prices: true,
-                        translations: true,
                       },
-                    });
+                    },
+                    prices: true,
+                    translations: true,
+                  },
+                });
 
-                    if (!product) {
-                      return;
-                    }
+                if (!product) {
+                  console.error(
+                    `!!! DÖNGÜ ATLANIYOR: product bulunamadı! productId: ${productId}`,
+                  );
+                  continue;
+                }
+                //TODO BURADA KARGO FİYATI YANSIDIĞINDA ÜRÜNLERİN FİYATLARINA PAİDPRİCE'DAN GELEN AKTARILIYOR HATALI BİR YAKLAŞIM MEVCUT DÜZENLENECEK
 
-                    // Birim fiyat hesapla (ortalama)
-                    const avgPaidPrice = this.toFixedPrice(
-                      totalPaidPrice / totalQuantity,
-                    );
+                const existingItem = await prisma.orderItem.findFirst({
+                  where: {
+                    orderId: order.id,
+                    productId,
+                    variantId: null,
+                  },
+                });
 
-                    await prisma.orderItem.upsert({
-                      where: {
-                        orderId_productId_variantId: {
-                          orderId: order.id,
-                          productId,
-                          variantId: null,
-                        },
+                if (existingItem) {
+                  await prisma.orderItem.update({
+                    where: { id: existingItem.id },
+                    data: {
+                      quantity: { increment: totalQuantity },
+                      totalPrice: {
+                        increment: this.toFixedPrice(totalPaidPrice),
                       },
-                      update: {
-                        quantity: { increment: totalQuantity },
-                        totalPrice: {
-                          increment: this.toFixedPrice(totalPaidPrice),
-                        },
-                        // Ortalama fiyatı güncelle
-                        buyedPrice: avgPaidPrice,
-                      },
-                      create: {
-                        buyedPrice: avgPaidPrice,
-                        productId,
-                        quantity: totalQuantity,
-                        orderId: order.id,
-                        totalPrice: this.toFixedPrice(totalPaidPrice),
-                        originalPrice: this.toFixedPrice(firstItem.price),
-                        productSnapshot: JSON.parse(JSON.stringify(product)),
-                        transactionId: firstItem.paymentTransactionId,
-                      },
-                    });
-                  }
-                },
-              ),
-            );
+                      buyedPrice: avgPaidPrice,
+                    },
+                  });
+                } else {
+                  await prisma.orderItem.create({
+                    data: {
+                      buyedPrice: avgPaidPrice,
+                      productId,
+                      variantId: null,
+                      quantity: totalQuantity,
+                      orderId: order.id,
+                      totalPrice: this.toFixedPrice(totalPaidPrice),
+                      originalPrice: this.toFixedPrice(firstItem.price),
+                      productSnapshot: JSON.parse(JSON.stringify(product)),
+                      transactionId: firstItem.paymentTransactionId,
+                    },
+                  });
+                }
+              }
+            }
           },
           { timeout: 10 * 60 * 1000 }, // 10 dakika
         );
@@ -1261,147 +1266,25 @@ export class PaymentService {
             >,
           );
 
-          // Tüm ürünleri paralel olarak işle
-          await Promise.all(
-            Object.entries(groupedItems).map(async ([itemId, groupedData]) => {
-              const [productId, variantId] = itemId.split('-');
-              const { totalQuantity, totalPaidPrice, firstItem } = groupedData;
+          const itemEntries = Object.entries(groupedItems);
 
+          for (const [itemId, groupedData] of itemEntries) {
+            const parts = itemId.split('|');
+            const productId = parts[0];
+            const variantId = parts[1] || null;
+            const { totalQuantity, totalPaidPrice, firstItem } = groupedData;
+            const avgPaidPrice = this.toFixedPrice(
+              totalPaidPrice / totalQuantity,
+            );
+
+            if (variantId) {
               // VARIANT İÇİN
-              if (variantId) {
-                const productVariant =
-                  await prisma.productVariantCombination.findUnique({
-                    where: {
-                      id: variantId,
-                      productId,
-                    },
-                    include: {
-                      assets: {
-                        take: 1,
-                        orderBy: {
-                          order: 'asc',
-                        },
-                        select: {
-                          asset: {
-                            select: {
-                              url: true,
-                              type: true,
-                            },
-                          },
-                        },
-                      },
-                      prices: true,
-                      translations: true,
-                      options: {
-                        orderBy: [
-                          {
-                            productVariantOption: {
-                              productVariantGroup: {
-                                order: 'asc',
-                              },
-                            },
-                          },
-                          {
-                            productVariantOption: { order: 'asc' },
-                          },
-                        ],
-                        select: {
-                          productVariantOption: {
-                            select: {
-                              variantOption: {
-                                select: {
-                                  id: true,
-                                  hexValue: true,
-                                  translations: true,
-                                  asset: {
-                                    select: {
-                                      url: true,
-                                      type: true,
-                                    },
-                                  },
-                                  variantGroup: {
-                                    select: {
-                                      id: true,
-                                      translations: true,
-                                      type: true,
-                                    },
-                                  },
-                                },
-                              },
-                            },
-                          },
-                        },
-                      },
-                      product: {
-                        include: {
-                          translations: true,
-                          assets: {
-                            take: 1,
-                            select: {
-                              asset: {
-                                select: {
-                                  url: true,
-                                  type: true,
-                                },
-                              },
-                            },
-                          },
-                        },
-                      },
-                    },
-                  });
-
-                if (!productVariant) {
-                  return;
-                }
-
-                const { options, ...rest } = productVariant;
-
-                // Birim fiyat hesapla (ortalama)
-                const avgPaidPrice = this.toFixedPrice(
-                  totalPaidPrice / totalQuantity,
-                );
-
-                await prisma.orderItem.upsert({
+              const productVariant =
+                await prisma.productVariantCombination.findUnique({
                   where: {
-                    orderId_productId_variantId: {
-                      orderId: order.id,
-                      productId,
-                      variantId,
-                    },
-                  },
-                  update: {
-                    quantity: { increment: totalQuantity },
-                    totalPrice: {
-                      increment: this.toFixedPrice(totalPaidPrice),
-                    },
-                    buyedPrice: avgPaidPrice,
-                  },
-                  create: {
-                    buyedPrice: avgPaidPrice,
+                    id: variantId,
                     productId,
-                    variantId,
-                    quantity: totalQuantity,
-                    orderId: order.id,
-                    totalPrice: this.toFixedPrice(totalPaidPrice),
-                    originalPrice: this.toFixedPrice(firstItem.price),
-                    buyedVariants: JSON.parse(
-                      JSON.stringify(
-                        options.map(
-                          (o) => o.productVariantOption.variantOption,
-                        ),
-                      ),
-                    ),
-                    productSnapshot: JSON.parse(JSON.stringify(rest)),
-                    transactionId: firstItem.paymentTransactionId, // İlk transaction ID
                   },
-                });
-              }
-
-              // NORMAL ÜRÜN İÇİN (Variant olmayan)
-              if (!variantId && productId) {
-                const product = await prisma.product.findUnique({
-                  where: { id: productId },
                   include: {
                     assets: {
                       take: 1,
@@ -1419,19 +1302,144 @@ export class PaymentService {
                     },
                     prices: true,
                     translations: true,
+                    options: {
+                      orderBy: [
+                        {
+                          productVariantOption: {
+                            productVariantGroup: {
+                              order: 'asc',
+                            },
+                          },
+                        },
+                        {
+                          productVariantOption: { order: 'asc' },
+                        },
+                      ],
+                      select: {
+                        productVariantOption: {
+                          select: {
+                            variantOption: {
+                              select: {
+                                id: true,
+                                hexValue: true,
+                                translations: true,
+                                asset: {
+                                  select: {
+                                    url: true,
+                                    type: true,
+                                  },
+                                },
+                                variantGroup: {
+                                  select: {
+                                    id: true,
+                                    translations: true,
+                                    type: true,
+                                  },
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                    product: {
+                      include: {
+                        translations: true,
+                        assets: {
+                          take: 1,
+                          select: {
+                            asset: {
+                              select: {
+                                url: true,
+                                type: true,
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
                   },
                 });
 
-                if (!product) {
-                  return;
-                }
-
-                // Birim fiyat hesapla (ortalama)
-                const avgPaidPrice = this.toFixedPrice(
-                  totalPaidPrice / totalQuantity,
+              if (!productVariant) {
+                console.error(
+                  `!!! DÖNGÜ ATLANIYOR: productVariant bulunamadı! productId: ${productId}, variantId: ${variantId}`,
                 );
+                continue; // Bu döngü adımını atla, sonrakine geç
+              }
 
-                await prisma.orderItem.upsert({
+              const { options, ...rest } = productVariant;
+
+              const whereClause = {
+                orderId_productId_variantId: {
+                  orderId: order.id,
+                  productId: productId,
+                  variantId: variantId,
+                },
+              };
+              // --- LOGLAMA BİTİŞİ ---
+
+              await prisma.orderItem.upsert({
+                where: whereClause,
+                update: {
+                  quantity: { increment: totalQuantity },
+                  totalPrice: {
+                    increment: this.toFixedPrice(totalPaidPrice),
+                  },
+                  buyedPrice: avgPaidPrice,
+                },
+                create: {
+                  buyedPrice: avgPaidPrice,
+                  productId,
+                  variantId,
+                  quantity: totalQuantity,
+                  orderId: order.id,
+                  totalPrice: this.toFixedPrice(totalPaidPrice),
+                  originalPrice: this.toFixedPrice(firstItem.price),
+                  buyedVariants: JSON.parse(
+                    JSON.stringify(
+                      options.map((o) => o.productVariantOption.variantOption),
+                    ),
+                  ),
+                  productSnapshot: JSON.parse(JSON.stringify(rest)),
+                  transactionId: firstItem.paymentTransactionId,
+                },
+              });
+            } else {
+              const product = await prisma.product.findUnique({
+                where: { id: productId },
+                include: {
+                  assets: {
+                    take: 1,
+                    orderBy: {
+                      order: 'asc',
+                    },
+                    select: {
+                      asset: {
+                        select: {
+                          url: true,
+                          type: true,
+                        },
+                      },
+                    },
+                  },
+                  prices: true,
+                  translations: true,
+                },
+              });
+
+              if (!product) {
+                continue; // Bu döngü adımını atla, sonrakine geç
+              }
+              const existingItem = await prisma.orderItem.findFirst({
+                where: {
+                  orderId: order.id,
+                  productId,
+                  variantId: null,
+                },
+              });
+              if (existingItem) {
+                await prisma.orderItem.update({
                   where: {
                     orderId_productId_variantId: {
                       orderId: order.id,
@@ -1439,15 +1447,17 @@ export class PaymentService {
                       variantId: null,
                     },
                   },
-                  update: {
+                  data: {
                     quantity: { increment: totalQuantity },
                     totalPrice: {
                       increment: this.toFixedPrice(totalPaidPrice),
                     },
-                    // Ortalama fiyatı güncelle
                     buyedPrice: avgPaidPrice,
                   },
-                  create: {
+                });
+              } else {
+                await prisma.orderItem.create({
+                  data: {
                     buyedPrice: avgPaidPrice,
                     productId,
                     quantity: totalQuantity,
@@ -1459,8 +1469,8 @@ export class PaymentService {
                   },
                 });
               }
-            }),
-          );
+            }
+          }
         },
         { timeout: 10 * 60 * 1000 }, // 10 dakika
       );

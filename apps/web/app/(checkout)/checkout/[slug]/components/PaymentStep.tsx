@@ -215,9 +215,7 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
       initThreeD?: boolean;
       threeDHtmlContent?: string;
       orderNumber?: string;
-    }>(`/payment/create-payment/${cart.cartId}`, {
-      data,
-    });
+    }>(`/payment/create-payment/${cart.cartId}`, data);
 
     if (paymentReq.success) {
       if (paymentReq.data.success) {

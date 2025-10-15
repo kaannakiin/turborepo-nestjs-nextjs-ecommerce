@@ -96,7 +96,7 @@ const AddressCard = ({ data, onEdit }: AddressCardProps) => {
               </Text>
             ) : null}
             <Text size="sm" c="dimmed">
-              {data.addressLine1}
+              {data.district?.name || ""} {data.addressLine1}
               {data.addressLine2 && `, ${data.addressLine2}`}
             </Text>
           </Stack>

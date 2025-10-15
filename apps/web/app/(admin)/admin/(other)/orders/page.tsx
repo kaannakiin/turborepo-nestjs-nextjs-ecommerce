@@ -1,4 +1,5 @@
 "use client";
+import CustomPagination from "@/components/CustomPagination";
 import CustomSearchInput from "@/components/CustomSearchInput";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper from "@lib/fetchWrapper";
@@ -28,7 +29,7 @@ import {
   getPaymentStatusInt,
   useQuery,
 } from "@repo/shared";
-import { $Enums, GetOrderReturnType, GetOrdersReturnType } from "@repo/types";
+import { $Enums, GetOrdersReturnType } from "@repo/types";
 import { IconFileDescriptionFilled } from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -210,6 +211,9 @@ const AdminOrdersPage = () => {
           </Table.Tbody>
         </Table>
       </Table.ScrollContainer>
+      {data?.pagination && data.pagination.totalItems > 0 && (
+        <CustomPagination total={data.pagination.totalPages} />
+      )}
     </Stack>
   );
 };
