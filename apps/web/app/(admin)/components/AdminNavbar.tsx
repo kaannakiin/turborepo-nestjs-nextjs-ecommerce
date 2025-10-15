@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Group,
-  Stack,
-  Text,
-  TextInput,
-  Tooltip,
-  UnstyledButton,
-} from "@mantine/core";
+import { Group, Stack, Text, Tooltip, UnstyledButton } from "@mantine/core";
 import {
   IconBrush,
   IconBuildingWarehouse,
@@ -148,6 +141,7 @@ const data: NavbarButtonType[] = [
         icon: null,
         label: "Ayarlar",
       },
+      { href: "/settings/emails", label: "E-Posta Şablonları", icon: null },
     ],
   },
 ];

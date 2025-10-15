@@ -77,19 +77,21 @@ const AdminOrderPage = () => {
 
   return (
     <Stack gap={"xs"}>
-      <Group gap={"lg"} align="center" justify="space-between">
-        <Text fz={"md"} fw={700}>
-          {restOrderDetails.orderNumber}
-        </Text>
-        <Group gap={"xs"}></Group>
-      </Group>
-      <Divider my={"xs"} />
       <SimpleGrid
         cols={{
           xs: 2,
-          md: 4,
+          md: 6,
         }}
       >
+        <Group
+          className="border border-gray-400 rounded-2xl"
+          justify="center"
+          wrap="nowrap"
+        >
+          <Text fz={"md"} fw={700}>
+            {restOrderDetails.orderNumber}
+          </Text>
+        </Group>
         <Group
           className="border border-gray-400 rounded-2xl"
           p={"lg"}
@@ -126,25 +128,6 @@ const AdminOrderPage = () => {
           </Text>
           <ProductPriceFormatter fz={"md"} fw={500} price={500} />
           (TODO)
-        </Group>
-        <Group
-          justify="center"
-          className="border border-gray-400 rounded-2xl"
-          p={"lg"}
-          align="center"
-        >
-          <Text fz={"md"} fw={700}>
-            Ödeme Yöntemi
-          </Text>
-          <Group gap={"xs"} align="center">
-            <Text fz={"md"} fw={500}>
-              {restOrderDetails.cardType === "CREDIT_CARD"
-                ? "Kredi Kartı"
-                : restOrderDetails.cardType === "BANK_TRANSFER"
-                  ? "Banka Transferi"
-                  : "Diğer"}
-            </Text>
-          </Group>
         </Group>
       </SimpleGrid>
       <Grid gutter={"lg"}>
