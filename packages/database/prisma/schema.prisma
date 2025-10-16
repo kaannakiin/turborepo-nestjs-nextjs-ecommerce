@@ -280,8 +280,6 @@ model ProductAsset {
   combination   ProductVariantCombination? @relation(fields: [combinationId], references: [id], onDelete: Cascade)
   product       Product?                   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  @@unique([productId, order])
-  @@unique([combinationId, order])
   @@index([productId, order])
   @@index([combinationId, order])
 }

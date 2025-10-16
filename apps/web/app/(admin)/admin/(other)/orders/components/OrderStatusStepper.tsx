@@ -1,6 +1,6 @@
 "use client";
 import { Stepper } from "@mantine/core";
-import { $Enums } from "@repo/shared";
+import { $Enums } from "@repo/database";
 
 interface OrderStatusStepperProps {
   status: $Enums.OrderStatus;

@@ -24,7 +24,8 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { DateFormatter, useQuery,ProductTranslation } from "@repo/shared";
+import { ProductTranslation } from "@repo/database";
+import { DateFormatter, useQuery } from "@repo/shared";
 import {
   $Enums,
   BuyedVariant,

@@ -1,6 +1,6 @@
 "use client";
 import CustomImage from "@/components/CustomImage";
-import { AspectRatio, Badge, Card, Group, Stack, Text } from "@mantine/core";
+import { AspectRatio, Badge, Card, Stack, Text } from "@mantine/core";
 import { useHover } from "@mantine/hooks";
 import { $Enums, GetCategoryProductsResponse } from "@repo/types";
 import { useRouter } from "next/navigation";
@@ -13,10 +13,7 @@ const CategoryPageProductCard = ({ product }: CategoryPageProductCardProps) => {
   const { ref, hovered } = useHover();
   const { push } = useRouter();
 
-  const isVariant =
-    product.variantOptions &&
-    product.variantOptions.length > 0 &&
-    product.entryType === "VARIANT";
+  const isVariant = product.variantOptions && product.variantOptions.length > 0;
 
   const assets = isVariant
     ? [...(product.variantAssets || []), ...(product?.productAssets || [])]

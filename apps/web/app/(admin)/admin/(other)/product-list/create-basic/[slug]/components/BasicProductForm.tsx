@@ -4,6 +4,7 @@ import {
   Button,
   Grid,
   Group,
+  InputError,
   InputLabel,
   MultiSelect,
   Select,
@@ -34,10 +35,11 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 
 import fetchWrapper from "@lib/fetchWrapper";
-import { getProductTypeLabel } from "../../../../../../../../lib/helpers";
-import GlobalDropzone from "../../../../../../../components/GlobalDropzone";
-import GlobalLoadingOverlay from "../../../../../../../components/GlobalLoadingOverlay";
-import GlobalSeoCard from "../../../../../../../components/GlobalSeoCard";
+
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import GlobalSeoCard from "@/components/GlobalSeoCard";
+import { getProductTypeLabel } from "@lib/helpers";
+import ProductDropzone from "../../../components/ProductDropzone";
 import GoogleTaxonomySelectV2 from "../../../create-variant/components/GoogleTaxonomySelectV2";
 import ProductDetailCard from "../../../create-variant/components/ProductDetailCard";
 import ProductPriceNumberInput from "../../../create-variant/components/ProductPriceNumberInput";
@@ -97,7 +99,6 @@ const BasicProductForm = ({
     },
   });
 
-  const existingImages = watch("existingImages") || [];
   const name = watch("translations.0.name");
   const sku = watch("sku") || null;
   const barcode = watch("barcode") || null;
@@ -108,20 +109,30 @@ const BasicProductForm = ({
     mutationFn: async (data: BaseProductZodType) => {
       const { images, ...productDataWithoutImages } = data;
 
-      const productResponse = await fetchWrapper.post(
+      const productResponse = await fetchWrapper.post<{
+        success: boolean;
+        message: string;
+      }>(
         `/admin/products/create-or-update-basic-product`,
         productDataWithoutImages
       );
 
-      if (!productResponse.success) {
+      if (!productResponse.success || !productResponse.data.success) {
         throw new Error("Ürün işlemi sırasında bir hata oluştu.");
       }
 
       if (images && images.length > 0) {
         const formData = new FormData();
-        images.forEach((file) => {
-          formData.append("files", file);
+
+        const sortedImages = [...images].sort((a, b) => a.order - b.order);
+
+        sortedImages.forEach((item) => {
+          formData.append("files", item.file);
         });
+
+        const orders = sortedImages.map((item) => item.order);
+        formData.append("orders", JSON.stringify(orders));
+
         formData.append("productId", data.uniqueId);
 
         const imageUploadResponse = await fetchWrapper.postFormData(
@@ -151,7 +162,6 @@ const BasicProductForm = ({
       push("/admin/product-list");
     },
     onError: (error: Error) => {
-      console.error("Genel hata:", error);
       notifications.show({
         title: "Hata!",
         message: error.message || "Beklenmeyen bir hata oluştu.",
@@ -163,6 +173,185 @@ const BasicProductForm = ({
 
   const onSubmit: SubmitHandler<BaseProductZodType> = async (data) => {
     mutation.mutate(data);
+  };
+
+  const watchedImages = watch("images") || [];
+  const watchedExistingImages = watch("existingImages") || [];
+
+  const handleAddImages = (newFiles: File[]) => {
+    const currentImages = watchedImages;
+    const currentExistingCount = watchedExistingImages.length;
+    const startOrder = currentExistingCount + currentImages.length;
+
+    const newImagesWithOrder = newFiles.map((file, index) => ({
+      file,
+      order: startOrder + index,
+    }));
+
+    setValue("images", [...currentImages, ...newImagesWithOrder], {
+      shouldValidate: true,
+    });
+  };
+
+  const handleRemoveExistingImage = async (urlToRemove: string) => {
+    try {
+      const deleteResponse = await fetchWrapper.delete(
+        `/admin/products/delete-product-image?imageUrl=${encodeURIComponent(urlToRemove)}`
+      );
+
+      if (!deleteResponse.success) {
+        throw new Error("Resim silinemedi");
+      }
+
+      const filteredImages = watchedExistingImages.filter(
+        (image) => image.url !== urlToRemove
+      );
+
+      const removedImage = watchedExistingImages.find(
+        (image) => image.url === urlToRemove
+      );
+      const removedOrder = removedImage?.order;
+
+      if (removedOrder === undefined) {
+        throw new Error("Silinen görsel bulunamadı");
+      }
+
+      const reorderedExistingImages = filteredImages.map((img) => {
+        if (img.order > removedOrder) {
+          return { ...img, order: img.order - 1 };
+        }
+        return img;
+      });
+
+      const reorderedNewImages = watchedImages.map((img) => {
+        if (img.order > removedOrder) {
+          return { ...img, order: img.order - 1 };
+        }
+        return img;
+      });
+
+      setValue("existingImages", reorderedExistingImages, {
+        shouldValidate: true,
+      });
+      setValue("images", reorderedNewImages, { shouldValidate: true });
+
+      notifications.show({
+        title: "Başarılı!",
+        message: "Görsel başarıyla silindi.",
+        color: "green",
+        autoClose: 3000,
+      });
+    } catch (error) {
+      notifications.show({
+        title: "Hata!",
+        message: "Görsel silinirken bir hata oluştu.",
+        color: "red",
+        autoClose: 3000,
+      });
+      throw error;
+    }
+  };
+
+  const handleRemoveNewImage = (fileToRemove: File) => {
+    const filteredImages = watchedImages.filter(
+      (item) => item.file !== fileToRemove
+    );
+
+    const removedImage = watchedImages.find(
+      (item) => item.file === fileToRemove
+    );
+    const removedOrder = removedImage?.order;
+
+    if (removedOrder === undefined) {
+      console.error("Silinen görsel bulunamadı");
+      return;
+    }
+
+    const reorderedExistingImages = watchedExistingImages.map((img) => {
+      if (img.order > removedOrder) {
+        return { ...img, order: img.order - 1 };
+      }
+      return img;
+    });
+
+    const reorderedNewImages = filteredImages.map((img) => {
+      if (img.order > removedOrder) {
+        return { ...img, order: img.order - 1 };
+      }
+      return img;
+    });
+
+    setValue("existingImages", reorderedExistingImages, {
+      shouldValidate: true,
+    });
+
+    setValue("images", reorderedNewImages, { shouldValidate: true });
+  };
+
+  const handleReorder = (
+    newOrder: Array<{
+      url: string;
+      order: number;
+      file?: File;
+      isNew: boolean;
+    }>
+  ) => {
+    const existingImagesInOrder = newOrder.filter((item) => !item.isNew);
+    const newImagesInOrder = newOrder.filter((item) => item.isNew);
+
+    const updatedExistingImages = existingImagesInOrder
+      .map((item) => {
+        const existingImage = watchedExistingImages.find(
+          (img) => img.url === item.url
+        );
+
+        if (!existingImage) {
+          return null;
+        }
+
+        return {
+          ...existingImage,
+          order: item.order,
+        };
+      })
+      .filter((img): img is NonNullable<typeof img> => img !== null);
+
+    const updatedNewImages = newImagesInOrder
+      .map((item) => {
+        if (!item.file) {
+          return null;
+        }
+
+        const existingNewImage = watchedImages.find(
+          (img) => img.file === item.file
+        );
+
+        if (existingNewImage) {
+          return {
+            file: existingNewImage.file,
+            order: item.order,
+          };
+        }
+
+        const fallbackMatch = watchedImages.find(
+          (img) =>
+            img.file.name === item.file!.name &&
+            img.file.size === item.file!.size
+        );
+
+        if (fallbackMatch) {
+          return {
+            file: fallbackMatch.file,
+            order: item.order,
+          };
+        }
+
+        return null;
+      })
+      .filter((img): img is NonNullable<typeof img> => img !== null);
+
+    setValue("existingImages", updatedExistingImages, { shouldValidate: true });
+    setValue("images", updatedNewImages, { shouldValidate: true });
   };
 
   return (
@@ -449,41 +638,24 @@ const BasicProductForm = ({
       />
       <Stack gap={"xs"}>
         <InputLabel>Ürün Görselleri</InputLabel>
+
         <Controller
           control={control}
           name="images"
-          render={({ field, fieldState }) => (
-            <GlobalDropzone
-              error={fieldState.error?.message}
-              value={field.value || []}
-              onChange={field.onChange}
-              onDrop={(files) => {
-                field.onChange(files);
-              }}
-              existingImages={existingImages}
-              existingImagesDelete={async (imageUrl) => {
-                const deleteResponse = await fetchWrapper.delete(
-                  `/admin/products/delete-product-image/${imageUrl}`
-                );
-                if (!deleteResponse.success) {
-                  notifications.show({
-                    title: "Silme Hatası!",
-                    message: "Ürün görseli silinirken bir hata oluştu.",
-                    color: "red",
-                    autoClose: 3000,
-                  });
-                  return;
-                }
-                setValue(
-                  "existingImages",
-                  existingImages.filter((img) => img.url !== imageUrl)
-                );
-              }}
-              accept={["IMAGE", "VIDEO"]}
-              multiple
-              maxFiles={10 - existingImages.length || 0}
-              maxSize={10 * 1024 * 1024}
-            />
+          render={({ fieldState }) => (
+            <>
+              {fieldState?.error?.message && (
+                <InputError>{fieldState.error?.message}</InputError>
+              )}
+              <ProductDropzone
+                existingImages={watchedExistingImages}
+                images={watchedImages}
+                onAddImages={handleAddImages}
+                onRemoveNewImage={handleRemoveNewImage}
+                onRemoveExistingImage={handleRemoveExistingImage}
+                onReorder={handleReorder}
+              />
+            </>
           )}
         />
       </Stack>

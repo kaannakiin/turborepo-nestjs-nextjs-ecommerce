@@ -1,6 +1,7 @@
 "use client";
 
 import fetchWrapper from "@lib/fetchWrapper";
+import { queryClient } from "@lib/serverQueryClient";
 import {
   Button,
   Grid,
@@ -33,13 +34,12 @@ import {
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { getProductTypeLabel } from "../../../../../../../lib/helpers";
-import GlobalDropzone from "../../../../../../components/GlobalDropzone";
 import GlobalLoadingOverlay from "../../../../../../components/GlobalLoadingOverlay";
 import GlobalSeoCard from "../../../../../../components/GlobalSeoCard";
+import ProductDropzone from "../../components/ProductDropzone";
 import ExistingVariantCard from "./ExistingVariantCard";
 import GoogleTaxonomySelectV2 from "./GoogleTaxonomySelectV2";
 import ProductDetailCard from "./ProductDetailCard";
-import { queryClient } from "@lib/serverQueryClient";
 
 const GlobalTextEditor = dynamic(
   () => import("../../../../../../components/GlobalTextEditor"),
@@ -85,7 +85,7 @@ const VariantProductForm = ({
     },
   });
   const existingImages = watch("existingImages") || [];
-
+  const images = watch("images") || [];
   const { push } = useRouter();
 
   const createOrUpdateVariantProductMutation = useMutation({
@@ -184,9 +184,15 @@ const VariantProductForm = ({
       // --- 1. ANA ÜRÜN RESİMLERİNİN YÜKLENMESİ ---
       if (formData.images && formData.images.length > 0) {
         const productImageFormData = new FormData();
-        formData.images.forEach((imageFile) => {
-          productImageFormData.append("files", imageFile);
+        const sortedImages = [...formData.images].sort(
+          (a, b) => a.order - b.order
+        );
+        sortedImages.forEach((imageFile) => {
+          productImageFormData.append("files", imageFile.file);
         });
+        const orders = sortedImages.map((item) => item.order);
+        productImageFormData.append("orders", JSON.stringify(orders));
+
         productImageFormData.append("productId", productId);
 
         const productImageResponse = await fetchWrapper.postFormData(
@@ -261,9 +267,182 @@ const VariantProductForm = ({
       );
     }
   };
+
+  const handleAddImages = (newFiles: File[]) => {
+    const currentImages = images;
+    const currentExistingCount = existingImages.length;
+    const startOrder = currentExistingCount + currentImages.length;
+
+    const newImagesWithOrder = newFiles.map((file, index) => ({
+      file,
+      order: startOrder + index,
+    }));
+
+    setValue("images", [...currentImages, ...newImagesWithOrder], {
+      shouldValidate: true,
+    });
+  };
+
+  const handleRemoveNewImage = (fileToRemove: File) => {
+    const filteredImages = images.filter((item) => item.file !== fileToRemove);
+
+    const removedImage = images.find((item) => item.file === fileToRemove);
+    const removedOrder = removedImage?.order;
+
+    if (removedOrder === undefined) {
+      console.error("Silinen görsel bulunamadı");
+      return;
+    }
+
+    const reorderedExistingImages = existingImages.map((img) => {
+      if (img.order > removedOrder) {
+        return { ...img, order: img.order - 1 };
+      }
+      return img;
+    });
+
+    const reorderedNewImages = filteredImages.map((img) => {
+      if (img.order > removedOrder) {
+        return { ...img, order: img.order - 1 };
+      }
+      return img;
+    });
+
+    setValue("existingImages", reorderedExistingImages, {
+      shouldValidate: true,
+    });
+
+    setValue("images", reorderedNewImages, { shouldValidate: true });
+  };
+
+  const handleReorder = (
+    newOrder: Array<{
+      url: string;
+      order: number;
+      file?: File;
+      isNew: boolean;
+    }>
+  ) => {
+    const existingImagesInOrder = newOrder.filter((item) => !item.isNew);
+    const newImagesInOrder = newOrder.filter((item) => item.isNew);
+
+    const updatedExistingImages = existingImagesInOrder
+      .map((item) => {
+        const existingImage = existingImages.find(
+          (img) => img.url === item.url
+        );
+
+        if (!existingImage) {
+          return null;
+        }
+
+        return {
+          ...existingImage,
+          order: item.order,
+        };
+      })
+      .filter((img): img is NonNullable<typeof img> => img !== null);
+
+    const updatedNewImages = newImagesInOrder
+      .map((item) => {
+        if (!item.file) {
+          return null;
+        }
+
+        const existingNewImage = images.find((img) => img.file === item.file);
+
+        if (existingNewImage) {
+          return {
+            file: existingNewImage.file,
+            order: item.order,
+          };
+        }
+
+        const fallbackMatch = images.find(
+          (img) =>
+            img.file.name === item.file!.name &&
+            img.file.size === item.file!.size
+        );
+
+        if (fallbackMatch) {
+          return {
+            file: fallbackMatch.file,
+            order: item.order,
+          };
+        }
+
+        return null;
+      })
+      .filter((img): img is NonNullable<typeof img> => img !== null);
+
+    setValue("existingImages", updatedExistingImages, { shouldValidate: true });
+    setValue("images", updatedNewImages, { shouldValidate: true });
+  };
+
+  const handleRemoveExistingImage = async (urlToRemove: string) => {
+    try {
+      const deleteResponse = await fetchWrapper.delete(
+        `/admin/products/delete-product-image?imageUrl=${encodeURIComponent(urlToRemove)}`
+      );
+
+      if (!deleteResponse.success) {
+        throw new Error("Resim silinemedi");
+      }
+
+      const filteredImages = existingImages.filter(
+        (image) => image.url !== urlToRemove
+      );
+
+      const removedImage = existingImages.find(
+        (image) => image.url === urlToRemove
+      );
+      const removedOrder = removedImage?.order;
+
+      if (removedOrder === undefined) {
+        throw new Error("Silinen görsel bulunamadı");
+      }
+
+      const reorderedExistingImages = filteredImages.map((img) => {
+        if (img.order > removedOrder) {
+          return { ...img, order: img.order - 1 };
+        }
+        return img;
+      });
+
+      const reorderedNewImages = images.map((img) => {
+        if (img.order > removedOrder) {
+          return { ...img, order: img.order - 1 };
+        }
+        return img;
+      });
+
+      setValue("existingImages", reorderedExistingImages, {
+        shouldValidate: true,
+      });
+      setValue("images", reorderedNewImages, { shouldValidate: true });
+
+      notifications.show({
+        title: "Başarılı!",
+        message: "Görsel başarıyla silindi.",
+        color: "green",
+        autoClose: 3000,
+      });
+    } catch (error) {
+      notifications.show({
+        title: "Hata!",
+        message: "Görsel silinirken bir hata oluştu.",
+        color: "red",
+        autoClose: 3000,
+      });
+      throw error;
+    }
+  };
+
   return (
     <Stack gap={"lg"}>
-      {isSubmitting && <GlobalLoadingOverlay />}
+      {(isSubmitting || createOrUpdateVariantProductMutation.isPending) && (
+        <GlobalLoadingOverlay />
+      )}
       <Group align="center" justify="space-between">
         <Title order={4}>
           Varyantlı Ürün {defaultValues ? "Güncelle" : "Oluştur"}
@@ -333,37 +512,14 @@ const VariantProductForm = ({
         <Controller
           control={control}
           name="images"
-          render={({ field, fieldState }) => (
-            <GlobalDropzone
-              error={fieldState.error?.message}
-              value={field.value || []}
-              onChange={field.onChange}
-              onDrop={(files) => {
-                field.onChange(files);
-              }}
+          render={({ fieldState }) => (
+            <ProductDropzone
               existingImages={existingImages}
-              existingImagesDelete={async (imageUrl) => {
-                const deleteResponse = await fetchWrapper.delete(
-                  `/admin/products/delete-product-image/${encodeURIComponent(imageUrl)}`
-                );
-                if (!deleteResponse.success) {
-                  notifications.show({
-                    title: "Silme Hatası!",
-                    message: "Ürün görseli silinirken bir hata oluştu.",
-                    color: "red",
-                    autoClose: 3000,
-                  });
-                  return;
-                }
-                setValue(
-                  "existingImages",
-                  existingImages.filter((img) => img.url !== imageUrl)
-                );
-              }}
-              accept={["IMAGE", "VIDEO"]}
-              multiple
-              maxFiles={10 - existingImages.length || 0}
-              maxSize={10 * 1024 * 1024}
+              images={images}
+              onAddImages={handleAddImages}
+              onRemoveNewImage={handleRemoveNewImage}
+              onRemoveExistingImage={handleRemoveExistingImage}
+              onReorder={handleReorder}
             />
           )}
         />

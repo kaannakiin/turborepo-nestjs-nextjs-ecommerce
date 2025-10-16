@@ -36,9 +36,9 @@ import {
   useFieldArray,
   UseFormHandleSubmit,
   UseFormSetValue,
-  $Enums,
 } from "@repo/shared";
 import {
+  $Enums,
   CategoryGridComponentType,
   FontFamily,
   MainPageComponentsType,
