@@ -112,6 +112,17 @@
       "outputs": [],
       "env": ["DATABASE_URL"]
     },
+    "db:views": {
+      "cache": false,
+      "outputs": [],
+      "env": ["DATABASE_URL"]
+    },
+    "db:deploy:full": {
+      "dependsOn": ["db:deploy", "db:views"],
+      "cache": false,
+      "outputs": [],
+      "env": ["DATABASE_URL"]
+    },
     "db:prisma": {
       "cache": false,
       "env": ["DATABASE_URL"]
