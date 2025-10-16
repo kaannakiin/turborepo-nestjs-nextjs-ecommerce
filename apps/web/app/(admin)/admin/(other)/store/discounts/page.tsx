@@ -1,7 +1,5 @@
-import DiscountTable from "./components/DiscountTable";
-
 const AdminDiscountsPage = () => {
-  return <DiscountTable />;
+  return <div>AdminDiscountsPage</div>;
 };
 
 export default AdminDiscountsPage;

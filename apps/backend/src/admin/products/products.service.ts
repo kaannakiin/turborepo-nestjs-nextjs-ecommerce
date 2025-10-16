@@ -11,7 +11,6 @@ import {
   BaseProductZodType,
   Cuid2ZodType,
   ModalProductCardForAdmin,
-  ProductWithVariants,
   VariantGroupZodType,
   VariantProductZodType,
 } from '@repo/types';
@@ -2084,114 +2083,6 @@ export class ProductsService {
         totalPages: Math.ceil(totalCount / limit),
       },
     };
-  }
-
-  async getProductsAndVariants(): Promise<ProductWithVariants[]> {
-    const products = await this.prisma.product.findMany({
-      where: { isVariant: false },
-      select: {
-        id: true,
-        translations: {
-          select: {
-            locale: true,
-            name: true,
-          },
-        },
-      },
-    });
-
-    const variants = await this.prisma.product.findMany({
-      where: {
-        isVariant: true,
-      },
-      select: {
-        id: true,
-        translations: {
-          select: {
-            locale: true,
-            name: true,
-          },
-        },
-        variantCombinations: {
-          select: {
-            id: true,
-            options: {
-              orderBy: {
-                productVariantOption: {
-                  productVariantGroup: {
-                    order: 'asc',
-                  },
-                },
-              },
-              select: {
-                productVariantOption: {
-                  select: {
-                    variantOption: {
-                      select: {
-                        variantGroup: {
-                          select: {
-                            translations: {
-                              select: {
-                                name: true,
-                                locale: true,
-                              },
-                            },
-                          },
-                        },
-                        translations: {
-                          select: {
-                            locale: true,
-                            name: true,
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
-
-    const formattedProducts: ProductWithVariants[] = products.map((p) => ({
-      productId: p.id,
-      isVariant: false,
-      productName:
-        p.translations.find((t) => t.locale === 'TR')?.name ||
-        p.translations[0]?.name ||
-        'İsimsiz Ürün',
-    }));
-
-    const formattedVariants: ProductWithVariants[] = variants.map((v) => ({
-      productId: v.id,
-      isVariant: true,
-      productName:
-        v.translations.find((t) => t.locale === 'TR')?.name ||
-        v.translations[0]?.name ||
-        'İsimsiz Ürün',
-      variantInfo: v.variantCombinations.map((vc) => ({
-        variantId: vc.id,
-        variants: vc.options.map((option) => ({
-          groupName:
-            option.productVariantOption.variantOption.variantGroup.translations.find(
-              (t) => t.locale === 'TR',
-            )?.name ||
-            option.productVariantOption.variantOption.variantGroup
-              .translations[0]?.name ||
-            'İsimsiz Grup',
-          optionName:
-            option.productVariantOption.variantOption.translations.find(
-              (t) => t.locale === 'TR',
-            )?.name ||
-            option.productVariantOption.variantOption.translations[0]?.name ||
-            'İsimsiz Seçenek',
-        })),
-      })),
-    }));
-
-    return [...formattedProducts, ...formattedVariants];
   }
 
   async getProductsForSelection(): Promise<{

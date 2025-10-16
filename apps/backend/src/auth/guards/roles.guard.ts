@@ -6,7 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { UserRole } from '@repo/database';
+import { $Enums } from '@repo/database';
 import { Observable } from 'rxjs';
 import { IS_PUBLIC_KEY } from 'src/user/reflectors/public.decorator';
 import { Roles } from 'src/user/reflectors/roles.decorator';
@@ -28,10 +28,10 @@ export class RolesGuard implements CanActivate {
       return true; // Public endpoint ise direkt geç
     }
 
-    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(Roles, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiredRoles = this.reflector.getAllAndOverride<$Enums.UserRole[]>(
+      Roles,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (!requiredRoles || requiredRoles.length === 0) {
       return true;

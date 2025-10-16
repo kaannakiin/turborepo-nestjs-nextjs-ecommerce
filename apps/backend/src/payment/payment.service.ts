@@ -1,5 +1,4 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Prisma, User } from '@repo/database';
 import { createId } from '@repo/shared';
 import {
@@ -27,6 +26,7 @@ import { Request, Response } from 'express';
 import { CartV3Service } from 'src/cart-v3/cart-v3.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ShippingService } from 'src/shipping/shipping.service';
+import { ConfigService } from '@nestjs/config';
 
 type ValidateSignature =
   | '3ds-initialize'

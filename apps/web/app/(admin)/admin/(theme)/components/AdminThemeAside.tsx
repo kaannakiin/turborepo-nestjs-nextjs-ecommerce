@@ -28,7 +28,6 @@ import {
   Stack,
   Text,
 } from "@mantine/core";
-import { $Enums } from "@repo/database";
 import {
   Control,
   Controller,
@@ -37,6 +36,7 @@ import {
   useFieldArray,
   UseFormHandleSubmit,
   UseFormSetValue,
+  $Enums,
 } from "@repo/shared";
 import {
   CategoryGridComponentType,

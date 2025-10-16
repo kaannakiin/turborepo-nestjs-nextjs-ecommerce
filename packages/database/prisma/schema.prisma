@@ -9,11 +9,889 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Asset {
+  id                String             @id @default(cuid())
+  type              AssetType          @default(IMAGE)
+  url               String             @unique
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  brand             Brand?
+  category          Category?
+  productAsset      ProductAsset[]
+  desktopSliderItem SliderItemSchema[] @relation("DesktopAsset")
+  mobileSliderItem  SliderItemSchema[] @relation("MobileAsset")
+  variantOption     VariantOption?
+
+  @@index([url])
+}
+
+model User {
+  id               String                 @id @default(cuid())
+  role             UserRole               @default(USER)
+  name             String
+  surname          String
+  email            String?                @unique
+  phone            String?                @unique
+  password         String?
+  imageUrl         String?
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  defaultAddressId String?                @unique
+  addresses        AddressSchema[]
+  carts            Cart[]
+  orders           Order[]
+  paymentRequests  PaymentRequestSchema[]
+  refreshTokens    RefreshTokens[]
+  defaultAddress   AddressSchema?         @relation("UserDefaultAddress", fields: [defaultAddressId], references: [id])
+
+  @@index([id, email, phone])
+}
+
+model RefreshTokens {
+  id                 String    @id @default(cuid())
+  hashedRefreshToken String    @unique
+  userAgent          String?
+  browser            String?
+  browserVersion     String?
+  os                 String?
+  osVersion          String?
+  deviceType         String?
+  deviceName         String?
+  ipAddress          String?
+  userId             String
+  expiresAt          DateTime
+  revokedAt          DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([id, hashedRefreshToken])
+}
+
+model CategoryTranslation {
+  id              String   @id @default(cuid())
+  locale          Locale   @default(TR)
+  name            String
+  slug            String
+  description     String?
+  metaTitle       String?
+  metaDescription String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  categoryId      String
+  category        Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([locale, categoryId])
+  @@unique([locale, slug])
+}
+
+model Category {
+  id                      String                 @id @default(cuid())
+  imageId                 String?                @unique
+  parentCategoryId        String?
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+  categoryGridComponentId String?
+  categoryGridComponent   CategoryGridComponent? @relation(fields: [categoryGridComponentId], references: [id])
+  image                   Asset?                 @relation(fields: [imageId], references: [id])
+  parentCategory          Category?              @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id])
+  childCategories         Category[]             @relation("CategoryHierarchy")
+  translations            CategoryTranslation[]
+  footerLinks             FooterLinks[]
+  products                ProductCategory[]
+
+  @@index([parentCategoryId])
+}
+
+model TaxonomyCategory {
+  id           String             @id @default(cuid())
+  googleId     String             @unique
+  parentId     String?
+  path         String?
+  pathNames    String?
+  depth        Int                @default(0)
+  originalName String
+  isActive     Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  products     Product[]
+  parent       TaxonomyCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children     TaxonomyCategory[] @relation("CategoryHierarchy")
+
+  @@index([googleId])
+  @@index([parentId])
+  @@index([path])
+  @@index([depth])
+  @@index([isActive])
+}
+
+model ProductCategory {
+  id         String   @id @default(cuid())
+  productId  String
+  categoryId String
+  createdAt  DateTime @default(now())
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, categoryId])
+  @@index([productId])
+  @@index([categoryId])
+}
+
+model BrandTranslation {
+  id              String   @id @default(cuid())
+  locale          Locale   @default(TR)
+  name            String
+  slug            String
+  description     String?
+  metaTitle       String?
+  metaDescription String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  brandId         String
+  brand           Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([locale, brandId])
+  @@unique([locale, slug])
+}
+
+model Brand {
+  id            String             @id @default(cuid())
+  imageId       String?            @unique
+  parentBrandId String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  image         Asset?             @relation(fields: [imageId], references: [id])
+  parentBrand   Brand?             @relation("BrandHierarchy", fields: [parentBrandId], references: [id])
+  childBrands   Brand[]            @relation("BrandHierarchy")
+  translations  BrandTranslation[]
+  footerLinks   FooterLinks[]
+  products      Product[]
+
+  @@index([parentBrandId])
+}
+
+model VariantGroupTranslation {
+  id             String       @id @default(cuid())
+  locale         Locale       @default(TR)
+  name           String
+  slug           String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  variantGroupId String
+  VariantGroup   VariantGroup @relation(fields: [variantGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([locale, variantGroupId])
+  @@unique([locale, slug])
+  @@index([locale, slug])
+  @@index([variantGroupId])
+}
+
+model VariantGroup {
+  id                   String                    @id @default(cuid())
+  type                 VariantGroupType          @default(LIST)
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+  productVariantGroups ProductVariantGroup[]
+  translations         VariantGroupTranslation[]
+  options              VariantOption[]
+
+  @@index([type])
+}
+
+model VariantOptionTranslation {
+  id              String        @id @default(cuid())
+  locale          Locale        @default(TR)
+  name            String
+  slug            String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  variantOptionId String
+  variantOption   VariantOption @relation(fields: [variantOptionId], references: [id], onDelete: Cascade)
+
+  @@unique([variantOptionId, locale])
+  @@unique([locale, slug])
+  @@index([locale, slug])
+  @@index([variantOptionId])
+}
+
+model VariantOption {
+  id                    String                     @id @default(cuid())
+  hexValue              String?
+  assetId               String?                    @unique
+  variantGroupId        String
+  createdAt             DateTime                   @default(now())
+  updatedAt             DateTime                   @updatedAt
+  productVariantOptions ProductVariantOption[]     @relation("ProductVariantOptions")
+  asset                 Asset?                     @relation(fields: [assetId], references: [id])
+  variantGroup          VariantGroup               @relation(fields: [variantGroupId], references: [id], onDelete: Cascade)
+  translations          VariantOptionTranslation[]
+
+  @@index([variantGroupId])
+  @@index([hexValue])
+}
+
+model ProductTranslation {
+  id              String   @id @default(cuid())
+  locale          Locale   @default(TR)
+  name            String
+  slug            String
+  description     String?
+  metaTitle       String?
+  metaDescription String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  productId       String?
+  Product         Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([locale, productId])
+  @@unique([locale, slug])
+  @@index([locale, slug, productId])
+}
+
+model ProductPrice {
+  id              String                     @id @default(cuid())
+  currency        Currency                   @default(TRY)
+  price           Float
+  buyedPrice      Float?
+  discountedPrice Float?
+  productId       String?
+  combinationId   String?
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+  combination     ProductVariantCombination? @relation(fields: [combinationId], references: [id], onDelete: Cascade)
+  product         Product?                   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, currency])
+  @@unique([combinationId, currency])
+  @@index([productId, currency])
+  @@index([combinationId, currency])
+}
+
+model ProductAsset {
+  id            String                     @id @default(cuid())
+  order         Int
+  assetId       String
+  productId     String?
+  combinationId String?
+  createdAt     DateTime                   @default(now())
+  updatedAt     DateTime                   @updatedAt
+  asset         Asset                      @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  combination   ProductVariantCombination? @relation(fields: [combinationId], references: [id], onDelete: Cascade)
+  product       Product?                   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, order])
+  @@unique([combinationId, order])
+  @@index([productId, order])
+  @@index([combinationId, order])
+}
+
+model Product {
+  id                     String                      @id @default(cuid())
+  type                   ProductType                 @default(PHYSICAL)
+  isVariant              Boolean                     @default(false)
+  active                 Boolean                     @default(true)
+  stock                  Int                         @default(0)
+  sku                    String?                     @unique
+  barcode                String?                     @unique
+  createdAt              DateTime                    @default(now())
+  updatedAt              DateTime                    @updatedAt
+  brandId                String?
+  taxonomyCategoryId     String?
+  visibleAllCombinations Boolean                     @default(false)
+  cartItems              CartItem[]
+  footerLinks            FooterLinks[]
+  orderItems             OrderItem[]
+  brand                  Brand?                      @relation(fields: [brandId], references: [id])
+  taxonomyCategory       TaxonomyCategory?           @relation(fields: [taxonomyCategoryId], references: [id])
+  assets                 ProductAsset[]
+  categories             ProductCategory[]
+  productListItems       ProductListCarouselItem[]
+  prices                 ProductPrice[]
+  translations           ProductTranslation[]
+  variantCombinations    ProductVariantCombination[]
+  variantGroups          ProductVariantGroup[]
+
+  @@index([brandId])
+  @@index([taxonomyCategoryId])
+  @@index([active])
+  @@index([sku])
+  @@index([barcode])
+}
+
+model ProductVariantGroup {
+  id             String                 @id @default(cuid())
+  productId      String
+  variantGroupId String
+  order          Int
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  product        Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantGroup   VariantGroup           @relation(fields: [variantGroupId], references: [id], onDelete: Cascade)
+  options        ProductVariantOption[]
+
+  @@unique([productId, variantGroupId])
+  @@index([productId])
+  @@index([variantGroupId])
+  @@index([productId, order])
+}
+
+model ProductVariantOption {
+  id                    String                            @id @default(cuid())
+  productVariantGroupId String
+  variantOptionId       String
+  order                 Int
+  createdAt             DateTime                          @default(now())
+  updatedAt             DateTime                          @updatedAt
+  combinations          ProductVariantCombinationOption[]
+  productVariantGroup   ProductVariantGroup               @relation(fields: [productVariantGroupId], references: [id], onDelete: Cascade)
+  variantOption         VariantOption                     @relation("ProductVariantOptions", fields: [variantOptionId], references: [id], onDelete: Cascade)
+
+  @@unique([productVariantGroupId, variantOptionId])
+  @@index([productVariantGroupId])
+  @@index([variantOptionId])
+  @@index([productVariantGroupId, order])
+}
+
+model ProductVariantCombination {
+  id               String                            @id @default(cuid())
+  productId        String
+  sku              String?
+  barcode          String?
+  stock            Int                               @default(0)
+  active           Boolean                           @default(true)
+  createdAt        DateTime                          @default(now())
+  updatedAt        DateTime                          @updatedAt
+  cartItems        CartItem[]
+  orderItems       OrderItem[]
+  assets           ProductAsset[]
+  productListItems ProductListCarouselItem[]
+  prices           ProductPrice[]
+  product          Product                           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  options          ProductVariantCombinationOption[]
+  translations     ProductVariantTranslation[]
+
+  @@unique([productId, sku])
+  @@unique([productId, barcode])
+  @@index([productId])
+  @@index([active])
+}
+
+model ProductVariantCombinationOption {
+  id                     String                    @id @default(cuid())
+  combinationId          String
+  productVariantOptionId String
+  createdAt              DateTime                  @default(now())
+  updatedAt              DateTime                  @updatedAt
+  combination            ProductVariantCombination @relation(fields: [combinationId], references: [id], onDelete: Cascade)
+  productVariantOption   ProductVariantOption      @relation(fields: [productVariantOptionId], references: [id], onDelete: Cascade)
+
+  @@unique([combinationId, productVariantOptionId])
+  @@index([combinationId])
+  @@index([productVariantOptionId])
+}
+
+model ProductVariantTranslation {
+  id              String                    @id @default(cuid())
+  combinationId   String
+  locale          Locale                    @default(TR)
+  description     String?
+  metaTitle       String?
+  metaDescription String?
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  combination     ProductVariantCombination @relation(fields: [combinationId], references: [id], onDelete: Cascade)
+
+  @@unique([combinationId, locale])
+  @@index([combinationId, locale])
+}
+
+model CountryTranslation {
+  id        String   @id @default(cuid())
+  locale    Locale   @default(TR)
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  countryId String
+  Country   Country  @relation(fields: [countryId], references: [id])
+
+  @@unique([locale, countryId])
+  @@index([countryId])
+  @@index([locale])
+  @@index([name])
+}
+
+model Country {
+  id                 String                  @id
+  name               String
+  iso2               String?
+  iso3               String?
+  phoneCode          String?
+  capital            String?
+  currency           String?
+  native             String?
+  region             String?
+  subregion          String?
+  emoji              String?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  type               CountryType             @default(STATE)
+  addressSchema      AddressSchema[]
+  cities             City[]
+  countryCurrencyMap CountryDefaultSettings?
+  translations       CountryTranslation[]
+  cargoLocation      Location[]
+  states             State[]
+
+  @@index([name])
+  @@index([iso2])
+  @@index([iso3])
+  @@index([region])
+  @@index([subregion])
+  @@index([currency])
+}
+
+model State {
+  id            String          @id
+  name          String
+  stateCode     String?
+  countryId     String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  addressSchema AddressSchema[]
+  Country       Country         @relation(fields: [countryId], references: [id])
+
+  @@index([countryId])
+  @@index([name])
+  @@index([stateCode])
+  @@index([countryId, name])
+}
+
+model City {
+  id            String          @id
+  name          String
+  latitude      String?
+  longitude     String?
+  countryId     String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  addressSchema AddressSchema[]
+  country       Country         @relation(fields: [countryId], references: [id])
+  districts     District[]
+
+  @@index([countryId])
+  @@index([name])
+  @@index([latitude, longitude])
+}
+
+model District {
+  id            String          @id
+  name          String
+  cityId        String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  addressSchema AddressSchema[]
+  city          City            @relation(fields: [cityId], references: [id])
+
+  @@index([cityId])
+}
+
+model CartItem {
+  id           String                     @id @default(cuid())
+  quantity     Int                        @default(1)
+  whereAdded   WhereAdded                 @default(PRODUCT_PAGE)
+  isVisible    Boolean                    @default(true)
+  visibleCause inVisibleCause?
+  productId    String?
+  variantId    String?
+  cartId       String
+  deletedAt    DateTime?
+  createdAt    DateTime                   @default(now())
+  updatedAt    DateTime                   @updatedAt
+  cart         Cart                       @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product      Product?                   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant      ProductVariantCombination? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId, variantId])
+  @@index([cartId, productId, variantId])
+}
+
+model Cart {
+  id                String                 @id @default(cuid())
+  status            CartStatus             @default(ACTIVE)
+  currency          Currency               @default(TRY)
+  locale            Locale                 @default(TR)
+  shippingAddressId String?
+  billingAddressId  String?
+  cargoRuleId       String?
+  userId            String?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  billingAddress    AddressSchema?         @relation("CartBillingAddress", fields: [billingAddressId], references: [id])
+  cargoRule         CargoRule?             @relation(fields: [cargoRuleId], references: [id])
+  shippingAddress   AddressSchema?         @relation("CartShippingAddress", fields: [shippingAddressId], references: [id])
+  user              User?                  @relation(fields: [userId], references: [id])
+  items             CartItem[]
+  order             Order?
+  paymentRequests   PaymentRequestSchema[]
+}
+
+model FooterLinks {
+  id                String           @id @default(cuid())
+  order             Int
+  title             String
+  options           Json?
+  customLink        String?
+  productId         String?
+  categoryId        String?
+  brandId           String?
+  footerLinkGroupId String
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  brand             Brand?           @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  category          Category?        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  footerLinkGroup   FooterLinkGroups @relation(fields: [footerLinkGroupId], references: [id], onDelete: Cascade)
+  product           Product?         @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model FooterLinkGroups {
+  id        String        @id @default(cuid())
+  order     Int
+  title     String
+  options   Json?
+  footerId  String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  footer    Footer        @relation(fields: [footerId], references: [id], onDelete: Cascade)
+  links     FooterLinks[]
+}
+
+model Footer {
+  id         String             @id @default(cuid())
+  options    Json?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  linkGroups FooterLinkGroups[]
+}
+
+model SliderItemSchema {
+  id               String         @id @default(cuid())
+  order            Int
+  isActive         Boolean        @default(true)
+  mobileAssetId    String?
+  desktopAssetId   String?
+  customLink       String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  sliderSettingsId String
+  desktopAsset     Asset?         @relation("DesktopAsset", fields: [desktopAssetId], references: [id])
+  mobileAsset      Asset?         @relation("MobileAsset", fields: [mobileAssetId], references: [id])
+  SliderSettings   SliderSettings @relation(fields: [sliderSettingsId], references: [id])
+
+  @@index([isActive])
+}
+
+model SliderSettings {
+  id               String             @id @default(cuid())
+  isAutoPlay       Boolean            @default(false)
+  autoPlayInterval Int?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  component        LayoutComponent[]
+  items            SliderItemSchema[]
+}
+
+model MarqueeSchema {
+  id         String            @id @default(cuid())
+  options    Json?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  components LayoutComponent[]
+}
+
+model ProductListCarouselTranslation {
+  id                    String              @id @default(cuid())
+  locale                Locale              @default(TR)
+  title                 String
+  productListCarouselId String
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  productListCarousel   ProductListCarousel @relation(fields: [productListCarouselId], references: [id], onDelete: Cascade)
+
+  @@unique([locale, productListCarouselId])
+  @@index([productListCarouselId])
+}
+
+model ProductListCarousel {
+  id           String                           @id @default(cuid())
+  createdAt    DateTime                         @default(now())
+  updatedAt    DateTime                         @updatedAt
+  components   LayoutComponent[]
+  items        ProductListCarouselItem[]
+  translations ProductListCarouselTranslation[]
+}
+
+model ProductListCarouselItem {
+  id                    String                     @id @default(cuid())
+  productListCarouselId String
+  productId             String
+  variantId             String?
+  order                 Int
+  createdAt             DateTime                   @default(now())
+  updatedAt             DateTime                   @updatedAt
+  product               Product                    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productListCarousel   ProductListCarousel        @relation(fields: [productListCarouselId], references: [id], onDelete: Cascade)
+  variant               ProductVariantCombination? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([productListCarouselId, productId, variantId])
+  @@unique([productListCarouselId, order])
+  @@index([productListCarouselId, order])
+}
+
+model CategoryGridComponent {
+  id         String            @id @default(cuid())
+  options    Json?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  categories Category[]
+  components LayoutComponent[]
+}
+
+model LayoutComponent {
+  id                      String                 @id @default(cuid())
+  type                    LayoutComponentType
+  order                   Int
+  layoutId                String
+  sliderId                String?
+  marqueeId               String?
+  productListCarouselId   String?
+  categoryGridComponentId String?
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+  categoryGrid            CategoryGridComponent? @relation(fields: [categoryGridComponentId], references: [id], onDelete: Cascade)
+  layout                  Layout                 @relation(fields: [layoutId], references: [id], onDelete: Cascade)
+  marquee                 MarqueeSchema?         @relation(fields: [marqueeId], references: [id], onDelete: Cascade)
+  productListCarousel     ProductListCarousel?   @relation(fields: [productListCarouselId], references: [id], onDelete: Cascade)
+  slider                  SliderSettings?        @relation(fields: [sliderId], references: [id])
+
+  @@unique([layoutId, order])
+}
+
+model Layout {
+  id            String            @id @default(cuid())
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  otherSettings Json?
+  components    LayoutComponent[]
+}
+
+model AddressSchema {
+  id                         String      @id @default(cuid())
+  email                      String?
+  addressTitle               String?
+  phone                      String
+  tcKimlikNo                 String?
+  name                       String
+  surname                    String
+  addressLine1               String
+  addressLine2               String?
+  zipCode                    String?
+  countryId                  String
+  stateId                    String?
+  cityId                     String?
+  userId                     String?
+  addressLocationType        CountryType
+  isBillingAddress           Boolean     @default(false)
+  isCorporateInvoice         Boolean     @default(false)
+  companyName                String?
+  taxNumber                  String?
+  companyRegistrationAddress String?
+  districtId                 String?
+  createdAt                  DateTime    @default(now())
+  updatedAt                  DateTime    @updatedAt
+  city                       City?       @relation(fields: [cityId], references: [id])
+  country                    Country     @relation(fields: [countryId], references: [id])
+  district                   District?   @relation(fields: [districtId], references: [id])
+  state                      State?      @relation(fields: [stateId], references: [id])
+  user                       User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  billingCarts               Cart[]      @relation("CartBillingAddress")
+  shippingCarts              Cart[]      @relation("CartShippingAddress")
+  defaultForUser             User?       @relation("UserDefaultAddress")
+
+  @@index([userId])
+  @@index([countryId])
+  @@index([stateId])
+  @@index([cityId])
+}
+
+model CountryDefaultSettings {
+  id           String   @id @default(cuid())
+  countryId    String   @unique
+  currency     Currency @default(TRY)
+  locale       Locale   @default(TR)
+  translations Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  country      Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+}
+
+model CargoZone {
+  id        String      @id @default(cuid())
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  rules     CargoRule[]
+  locations Location[]
+}
+
+model Location {
+  id          String    @id @default(cuid())
+  cargoZoneId String
+  countryId   String
+  stateIds    String[]  @default([])
+  cityIds     String[]  @default([])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  cargoZone   CargoZone @relation(fields: [cargoZoneId], references: [id], onDelete: Cascade)
+  country     Country   @relation(fields: [countryId], references: [id])
+
+  @@unique([cargoZoneId, countryId])
+}
+
+model CargoRule {
+  id              String                 @id @default(cuid())
+  name            String
+  ruleType        RuleType               @default(SalesPrice)
+  minValue        Float?
+  maxValue        Float?
+  price           Float?
+  currency        Currency               @default(TRY)
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  cargoZoneId     String?
+  CargoZone       CargoZone?             @relation(fields: [cargoZoneId], references: [id])
+  carts           Cart[]
+  paymentRequests PaymentRequestSchema[]
+
+  @@index([ruleType])
+}
+
+model OrderItem {
+  id              String                     @id @default(cuid())
+  buyedPrice      Float
+  originalPrice   Float?
+  quantity        Int                        @default(1)
+  totalPrice      Float
+  buyedVariants   Json?
+  productSnapshot Json?
+  transactionId   String?
+  productId       String
+  variantId       String?
+  orderId         String
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+  order           Order                      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product                    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant         ProductVariantCombination? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, productId, variantId])
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Order {
+  id              String                @id @default(cuid())
+  paymentId       String                @unique
+  conversationId  String?
+  orderNumber     String                @unique
+  orderStatus     OrderStatus           @default(PENDING)
+  paymentStatus   PaymentStatus         @default(PENDING)
+  paymentType     PaymentType           @default(THREE_D_SECURE)
+  currency        Currency              @default(TRY)
+  locale          Locale                @default(TR)
+  subtotal        Float
+  totalAmount     Float
+  taxAmount       Float?
+  shippingCost    Float?
+  discountAmount  Float?
+  customerNotes   String?
+  adminNotes      String?
+  confirmedAt     DateTime?
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  cancelledAt     DateTime?
+  cardType        String?
+  cardFamily      String?
+  cardAssociation String?
+  binNumber       String?
+  lastFourDigits  String?
+  shippingAddress Json?
+  billingAddress  Json?
+  userId          String?
+  cartId          String?               @unique
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  cart            Cart?                 @relation(fields: [cartId], references: [id])
+  user            User?                 @relation(fields: [userId], references: [id])
+  orderItems      OrderItem[]
+  paymentRequests PaymentRequestSchema?
+
+  @@index([paymentId, orderNumber, paymentStatus, orderStatus])
+}
+
+model PaymentRequestSchema {
+  id              String               @id @default(cuid())
+  userId          String?
+  paymentProvider PaymentProvider      @default(IYZICO)
+  paymentStatus   PaymentRequestStatus @default(WAITING_THREE_D_SECURE)
+  cargoRuleId     String?
+  billingAddress  Json?
+  shippingAddress Json?
+  transactionId   String?
+  paymentId       String?
+  conversationId  String?
+  amount          Decimal              @db.Decimal(10, 2)
+  currency        Currency             @default(TRY)
+  subtotal        Decimal?             @db.Decimal(10, 2)
+  shippingCost    Decimal?             @db.Decimal(10, 2)
+  discountAmount  Decimal?             @db.Decimal(10, 2)
+  taxAmount       Decimal?             @db.Decimal(10, 2)
+  cardType        String?
+  cardFamily      String?
+  cardAssociation String?
+  binNumber       String?
+  lastFourDigits  String?
+  installment     Int                  @default(1)
+  errorCode       String?
+  errorMessage    String?
+  errorGroup      String?
+  failureReason   String?
+  isReviewed      Boolean              @default(false)
+  reviewedAt      DateTime?
+  reviewedBy      String?
+  adminNotes      String?
+  cartId          String?
+  orderId         String?              @unique
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  completedAt     DateTime?
+  cargoRule       CargoRule?           @relation(fields: [cargoRuleId], references: [id])
+  cart            Cart?                @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  order           Order?               @relation(fields: [orderId], references: [id])
+  user            User?                @relation(fields: [userId], references: [id])
+
+  @@index([cartId])
+  @@index([orderId])
+  @@index([paymentStatus])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([paymentId])
+}
+
 enum CartStatus {
-  ACTIVE // Aktif sepet
-  ABANDONED // Terk edilmiş
-  CONVERTED // Siparişe dönüştürülmüş
-  MERGED // Başka sepete birleştirilmiş
+  ACTIVE
+  ABANDONED
+  CONVERTED
+  MERGED
 }
 
 enum LayoutComponentType {
@@ -59,563 +937,10 @@ enum ProductType {
   PHYSICAL
 }
 
-// İndirim sistemi için enum - BUY_X_GET_Y eklendi
-enum DiscountType {
-  PERCENTAGE
-  FIXED
-  FREE_SHIPPING
-  BUY_X_GET_Y
-}
-
-// Kupon oluşturma türü enum'ı
-enum CouponGenerationType {
-  MANUAL
-  AUTOMATIC
-}
-
-model Asset {
-  id   String    @id @default(cuid())
-  type AssetType @default(IMAGE)
-  url  String    @unique
-
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  variantOption     VariantOption?
-  productAsset      ProductAsset[]
-  brand             Brand?
-  category          Category?
-  mobileSliderItem  SliderItemSchema[] @relation("MobileAsset")
-  desktopSliderItem SliderItemSchema[] @relation("DesktopAsset")
-
-  @@index([url])
-}
-
-model User {
-  id       String   @id @default(cuid())
-  role     UserRole @default(USER)
-  name     String
-  surname  String
-  email    String?  @unique
-  phone    String?  @unique
-  password String?
-  imageUrl String?
-
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
-  discountIncluded DiscountIncludedUser[]
-  discountUsage    CouponUsage[]
-  carts            Cart[]
-  addresses        AddressSchema[] // addressSchema yerine addresses daha açıklayıcı
-  orders           Order[]
-  defaultAddressId String?                @unique
-  defaultAddress   AddressSchema?         @relation("UserDefaultAddress", fields: [defaultAddressId], references: [id], onDelete: SetNull)
-  refreshTokens    RefreshTokens[]
-  paymentRequests  PaymentRequestSchema[]
-
-  @@index([id, email, phone])
-}
-
-model RefreshTokens {
-  id                 String  @id @default(cuid())
-  hashedRefreshToken String  @unique
-  userAgent          String?
-  browser            String?
-  browserVersion     String?
-  os                 String?
-  osVersion          String?
-  deviceType         String? // mobile, tablet, desktop
-  deviceName         String?
-
-  ipAddress String?
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  expiresAt DateTime
-  revokedAt DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  @@index([id, hashedRefreshToken])
-}
-
-model CategoryTranslation {
-  id              String  @id @default(cuid())
-  locale          Locale  @default(TR)
-  name            String
-  slug            String
-  description     String? @db.Text
-  metaTitle       String?
-  metaDescription String?
-
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  categoryId String
-
-  @@unique([locale, categoryId])
-  @@unique([locale, slug])
-}
-
-model Category {
-  id               String                @id @default(cuid())
-  image            Asset?                @relation(fields: [imageId], references: [id], onDelete: SetNull)
-  imageId          String?               @unique
-  parentCategory   Category?             @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id], onDelete: SetNull)
-  parentCategoryId String?
-  childCategories  Category[]            @relation("CategoryHierarchy")
-  products         ProductCategory[]
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
-  translations     CategoryTranslation[]
-
-  // İndirim sistemi ilişkisi
-  discountIncluded        DiscountIncludedCategory[]
-  categoryGridComponent   CategoryGridComponent?     @relation(fields: [categoryGridComponentId], references: [id])
-  categoryGridComponentId String?
-  footerLinks             FooterLinks[]
-
-  @@index([parentCategoryId])
-}
-
-model TaxonomyCategory {
-  id       String @id @default(cuid())
-  googleId String @unique
-
-  parentId String?
-  parent   TaxonomyCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children TaxonomyCategory[] @relation("CategoryHierarchy")
-
-  path      String?
-  pathNames String?
-  depth     Int     @default(0)
-
-  originalName String
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  products           Product[]
-  productUnifiedView ProductUnifiedView[]
-
-  @@index([googleId])
-  @@index([parentId])
-  @@index([path])
-  @@index([depth])
-  @@index([isActive])
-}
-
-model ProductCategory {
-  id         String @id @default(cuid())
-  productId  String
-  categoryId String
-
-  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-
-  @@unique([productId, categoryId])
-  @@index([productId])
-  @@index([categoryId])
-}
-
-model BrandTranslation {
-  id              String  @id @default(cuid())
-  locale          Locale  @default(TR)
-  name            String
-  slug            String
-  description     String? @db.Text
-  metaTitle       String?
-  metaDescription String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  brandId   String
-  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
-
-  @@unique([locale, brandId])
-  @@unique([locale, slug])
-}
-
-model Brand {
-  id      String  @id @default(cuid())
-  image   Asset?  @relation(fields: [imageId], references: [id], onDelete: SetNull)
-  imageId String? @unique
-
-  parentBrandId String?
-  parentBrand   Brand?             @relation("BrandHierarchy", fields: [parentBrandId], references: [id], onDelete: SetNull)
-  childBrands   Brand[]            @relation("BrandHierarchy")
-  products      Product[]
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  translations  BrandTranslation[]
-
-  // İndirim sistemi ilişkisi
-  discountIncluded   DiscountIncludedBrand[]
-  footerLinks        FooterLinks[]
-  productUnifiedView ProductUnifiedView[]
-
-  @@index([parentBrandId])
-}
-
-model VariantGroupTranslation {
-  id     String @id @default(cuid())
-  locale Locale @default(TR)
-  name   String
-  slug   String
-
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  VariantGroup   VariantGroup @relation(fields: [variantGroupId], references: [id], onDelete: Cascade)
-  variantGroupId String
-
-  @@unique([locale, variantGroupId])
-  @@unique([locale, slug])
-  @@index([locale, slug])
-  @@index([variantGroupId])
-}
-
-model VariantGroup {
-  id                   String                    @id @default(cuid())
-  type                 VariantGroupType          @default(LIST)
-  translations         VariantGroupTranslation[]
-  options              VariantOption[]
-  productVariantGroups ProductVariantGroup[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([type])
-}
-
-model VariantOptionTranslation {
-  id     String @id @default(cuid())
-  locale Locale @default(TR)
-  name   String
-  slug   String
-
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  variantOption   VariantOption @relation(fields: [variantOptionId], references: [id], onDelete: Cascade)
-  variantOptionId String
-
-  @@unique([variantOptionId, locale])
-  @@unique([locale, slug])
-  @@index([locale, slug])
-  @@index([variantOptionId])
-}
-
-model VariantOption {
-  id                    String                     @id @default(cuid())
-  hexValue              String?
-  asset                 Asset?                     @relation(fields: [assetId], references: [id], onDelete: SetNull)
-  assetId               String?                    @unique
-  variantGroup          VariantGroup               @relation(fields: [variantGroupId], references: [id], onDelete: Cascade)
-  variantGroupId        String
-  translations          VariantOptionTranslation[]
-  productVariantOptions ProductVariantOption[]     @relation("ProductVariantOptions")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([variantGroupId])
-  @@index([hexValue])
-}
-
-model ProductTranslation {
-  id              String  @id @default(cuid())
-  locale          Locale  @default(TR)
-  name            String
-  slug            String
-  description     String? @db.Text
-  metaTitle       String?
-  metaDescription String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  Product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productId String?
-
-  @@unique([locale, productId])
-  @@unique([locale, slug])
-  @@index([locale, slug, productId])
-}
-
-model ProductPrice {
-  id              String   @id @default(cuid())
-  currency        Currency @default(TRY)
-  price           Float
-  buyedPrice      Float?
-  discountedPrice Float?
-
-  // Normal product için
-  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productId String?
-
-  // Variant combination için
-  combination   ProductVariantCombination? @relation(fields: [combinationId], references: [id], onDelete: Cascade)
-  combinationId String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([productId, currency])
-  @@unique([combinationId, currency])
-  @@index([productId, currency])
-  @@index([combinationId, currency])
-}
-
-model ProductAsset {
-  id      String @id @default(cuid())
-  order   Int
-  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  assetId String
-
-  // Normal product için
-  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productId String?
-
-  // Variant combination için
-  combination   ProductVariantCombination? @relation(fields: [combinationId], references: [id], onDelete: Cascade)
-  combinationId String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([productId, order])
-  @@unique([combinationId, order])
-  @@index([productId, order])
-  @@index([combinationId, order])
-}
-
-model Product {
-  id        String      @id @default(cuid())
-  type      ProductType @default(PHYSICAL)
-  isVariant Boolean     @default(false)
-  active    Boolean     @default(true)
-  stock     Int         @default(0)
-  sku       String?     @unique
-  barcode   String?     @unique
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-
-  // İndirim sistemi ilişkisi
-  discountIncluded       DiscountIncludedProduct[]
-  cartItems              CartItem[]
-  productListItems       ProductListCarouselItem[]
-  categories             ProductCategory[]
-  prices                 ProductPrice[]
-  translations           ProductTranslation[]
-  assets                 ProductAsset[]
-  variantGroups          ProductVariantGroup[]
-  variantCombinations    ProductVariantCombination[]
-  brand                  Brand?                      @relation(fields: [brandId], references: [id], onDelete: SetNull)
-  brandId                String?
-  taxonomyCategory       TaxonomyCategory?           @relation(fields: [taxonomyCategoryId], references: [id])
-  taxonomyCategoryId     String?
-  footerLinks            FooterLinks[]
-  orderItems             OrderItem[]
-  visibleAllCombinations Boolean                     @default(false) // Tüm varyant kombinasyonları görünür mü?
-
-  @@index([brandId])
-  @@index([taxonomyCategoryId])
-  @@index([active])
-  @@index([sku])
-  @@index([barcode])
-}
-
-model ProductVariantGroup {
-  id             String @id @default(cuid())
-  productId      String
-  variantGroupId String
-  order          Int
-
-  product      Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
-  variantGroup VariantGroup           @relation(fields: [variantGroupId], references: [id], onDelete: Cascade)
-  options      ProductVariantOption[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([productId, variantGroupId])
-  @@index([productId])
-  @@index([variantGroupId])
-  @@index([productId, order])
-}
-
-model ProductVariantOption {
-  id                    String @id @default(cuid())
-  productVariantGroupId String
-  variantOptionId       String
-  order                 Int
-
-  productVariantGroup ProductVariantGroup               @relation(fields: [productVariantGroupId], references: [id], onDelete: Cascade)
-  variantOption       VariantOption                     @relation("ProductVariantOptions", fields: [variantOptionId], references: [id], onDelete: Cascade)
-  combinations        ProductVariantCombinationOption[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([productVariantGroupId, variantOptionId])
-  @@index([productVariantGroupId])
-  @@index([variantOptionId])
-  @@index([productVariantGroupId, order])
-}
-
-model ProductVariantCombination {
-  id        String  @id @default(cuid())
-  productId String
-  sku       String?
-  barcode   String?
-  stock     Int     @default(0)
-  active    Boolean @default(true)
-
-  product          Product                           @relation(fields: [productId], references: [id], onDelete: Cascade)
-  options          ProductVariantCombinationOption[]
-  prices           ProductPrice[]
-  assets           ProductAsset[]
-  translations     ProductVariantTranslation[]
-  discountIncluded DiscountIncludedVariant[]
-  productListItems ProductListCarouselItem[]
-  createdAt        DateTime                          @default(now())
-  updatedAt        DateTime                          @updatedAt
-  cartItems        CartItem[]
-  orderItems       OrderItem[]
-
-  @@unique([productId, sku])
-  @@unique([productId, barcode])
-  @@index([productId])
-  @@index([active])
-}
-
-model ProductVariantCombinationOption {
-  id                     String @id @default(cuid())
-  combinationId          String
-  productVariantOptionId String
-
-  combination          ProductVariantCombination @relation(fields: [combinationId], references: [id], onDelete: Cascade)
-  productVariantOption ProductVariantOption      @relation(fields: [productVariantOptionId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([combinationId, productVariantOptionId])
-  @@index([combinationId])
-  @@index([productVariantOptionId])
-}
-
-model ProductVariantTranslation {
-  id              String  @id @default(cuid())
-  combinationId   String
-  locale          Locale  @default(TR)
-  description     String? @db.Text
-  metaTitle       String?
-  metaDescription String?
-
-  combination ProductVariantCombination @relation(fields: [combinationId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([combinationId, locale])
-  @@index([combinationId, locale])
-}
-
 enum CountryType {
   NONE
   STATE
   CITY
-}
-
-model CountryTranslation {
-  id        String   @id @default(cuid())
-  locale    Locale   @default(TR)
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  Country   Country  @relation(fields: [countryId], references: [id])
-  countryId String
-
-  @@unique([locale, countryId])
-  @@index([countryId])
-  @@index([locale])
-  @@index([name])
-}
-
-model Country {
-  id                 String                  @id
-  name               String
-  iso2               String?
-  iso3               String?
-  phoneCode          String?
-  capital            String?
-  currency           String?
-  native             String?
-  region             String?
-  subregion          String?
-  emoji              String?
-  translations       CountryTranslation[]
-  states             State[]
-  createdAt          DateTime                @default(now())
-  updatedAt          DateTime                @updatedAt
-  type               CountryType             @default(STATE)
-  addressSchema      AddressSchema[]
-  cities             City[]
-  countryCurrencyMap CountryDefaultSettings?
-  cargoLocation      Location[]
-
-  @@index([name])
-  @@index([iso2])
-  @@index([iso3])
-  @@index([region])
-  @@index([subregion])
-  @@index([currency])
-}
-
-model State {
-  id            String          @id
-  name          String
-  stateCode     String?
-  countryId     String
-  Country       Country         @relation(fields: [countryId], references: [id])
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  addressSchema AddressSchema[]
-
-  @@index([countryId])
-  @@index([name])
-  @@index([stateCode])
-  @@index([countryId, name])
-}
-
-model City {
-  id            String          @id
-  name          String
-  latitude      String?
-  longitude     String?
-  countryId     String
-  country       Country         @relation(fields: [countryId], references: [id])
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  addressSchema AddressSchema[]
-  districts     District[]
-
-  @@index([countryId])
-  @@index([name])
-  @@index([latitude, longitude])
-}
-
-model District {
-  id            String          @id
-  name          String
-  addressSchema AddressSchema[]
-
-  cityId String
-  city   City   @relation(fields: [cityId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([cityId])
 }
 
 enum WhereAdded {
@@ -634,648 +959,33 @@ enum inVisibleCause {
   LOCALE_MISMATCH
 }
 
-model CartItem {
-  id           String                     @id @default(cuid())
-  quantity     Int                        @default(1)
-  whereAdded   WhereAdded                 @default(PRODUCT_PAGE)
-  isVisible    Boolean                    @default(true)
-  visibleCause inVisibleCause?
-  product      Product?                   @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productId    String?
-  variantId    String?
-  variant      ProductVariantCombination? @relation(fields: [variantId], references: [id], onDelete: Cascade)
-  cartId       String
-  cart         Cart                       @relation(fields: [cartId], references: [id], onDelete: Cascade)
-
-  deletedAt DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  @@unique([cartId, productId, variantId])
-  @@index([cartId, productId, variantId])
-}
-
-model Cart {
-  id       String     @id @default(cuid())
-  status   CartStatus @default(ACTIVE)
-  currency Currency   @default(TRY)
-  locale   Locale     @default(TR)
-
-  shippingAddress   AddressSchema? @relation("CartShippingAddress", fields: [shippingAddressId], references: [id], onDelete: SetNull)
-  shippingAddressId String?
-
-  billingAddress   AddressSchema? @relation("CartBillingAddress", fields: [billingAddressId], references: [id], onDelete: SetNull)
-  billingAddressId String?
-
-  cargoRule   CargoRule? @relation(fields: [cargoRuleId], references: [id], onDelete: SetNull)
-  cargoRuleId String?
-
-  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userId    String?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  items     CartItem[]
-
-  order           Order?
-  paymentRequests PaymentRequestSchema[] // Değişti: array oldu
-}
-
-// İNDİRİM SİSTEMİ MODELLERİ
-
-model Discount {
-  id               String               @id @default(cuid())
-  type             DiscountType
-  isActive         Boolean              @default(true)
-  isDeleted        Boolean              @default(false)
-  // Kupon oluşturma türü
-  couponGeneration CouponGenerationType @default(MANUAL)
-
-  // Normal indirim detayları (tip bazında)
-  discountPercentage Decimal? // PERCENTAGE tipi için
-  discountAmount     Decimal? // FIXED tipi için
-  allowedCurrencies  Currency[]
-
-  // Buy X Get Y için basitleştirilmiş alanlar
-  buyQuantity  Int? // X - Alınması gereken adet
-  buyProductId String? // X için ürün ID
-  buyVariantId String? // X için varyant ID (combinationId)
-
-  getQuantity                Int? // Y - Kazanılacak adet
-  getProductId               String? // Y için ürün ID
-  getVariantId               String? // Y için varyant ID (combinationId)
-  buyXGetYDiscountPercentage Decimal? // Y ürünlerinde indirim yüzdesi
-
-  // İlişkiler
-  translations DiscountTranslation[]
-  coupons      DiscountCoupon[]
-  conditions   DiscountCondition?
-  usage        CouponUsage[]
-  // Audit alanları
-  createdAt    DateTime              @default(now())
-  updatedAt    DateTime              @updatedAt
-  createdBy    String? // User ID
-
-  @@index([type])
-  @@index([isActive])
-  @@index([couponGeneration])
-  @@index([buyProductId])
-  @@index([buyVariantId])
-  @@index([getProductId])
-  @@index([getVariantId])
-  @@index([createdAt])
-}
-
-// Çoklu Dil Desteği
-model DiscountTranslation {
-  id            String  @id @default(cuid())
-  locale        Locale
-  discountTitle String  @db.VarChar(255)
-  description   String? @db.Text
-
-  // İlişkiler
-  discount   Discount @relation(fields: [discountId], references: [id], onDelete: Cascade)
-  discountId String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([locale, discountId])
-  @@index([discountId])
-  @@index([locale])
-}
-
-// Kupon Modeli
-model DiscountCoupon {
-  id           String @id @default(cuid())
-  code         String @db.VarChar(128)
-  limit        Int? // Toplam kullanım limiti
-  perUserLimit Int? // Kullanıcı başı limit
-  usedCount    Int    @default(0) // Kaç kez kullanıldı
-
-  // İlişkiler
-  discount   Discount @relation(fields: [discountId], references: [id], onDelete: Cascade)
-  discountId String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([code])
-  @@index([discountId])
-  @@index([code])
-}
-
-// Kupon Kullanım Geçmişi
-model CouponUsage {
-  id      String   @id @default(cuid())
-  orderId String? // Sipariş ID
-  usedAt  DateTime @default(now())
-
-  // İlişkiler
-
-  userId     String? // Kullanıcı ID (anonim kullanıcılar için null)
-  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  discount   Discount @relation(fields: [discountId], references: [id])
-  discountId String
-
-  @@index([userId])
-  @@index([orderId])
-  @@index([usedAt])
-}
-
-model DiscountCondition {
-  id String @id @default(cuid())
-
-  // Ürün koşulları
-  allProducts Boolean @default(false)
-
-  // Kullanıcı koşulları
-  allUser             Boolean @default(false)
-  onlyRegisteredUsers Boolean @default(false)
-
-  // Sepet tutarı koşulları
-  hasAmountCondition Boolean  @default(false)
-  minimumAmount      Decimal?
-  maximumAmount      Decimal?
-
-  // Ürün adedi koşulları
-  hasQuantityCondition Boolean @default(false)
-  minimumQuantity      Int?
-  maximumQuantity      Int?
-
-  // Tarih koşulları
-  addStartDate Boolean   @default(false)
-  startDate    DateTime?
-  addEndDate   Boolean   @default(false)
-  endDate      DateTime?
-
-  // İlişkiler
-  discount           Discount                   @relation(fields: [discountId], references: [id], onDelete: Cascade)
-  discountId         String                     @unique
-  includedProducts   DiscountIncludedProduct[]
-  includedCategories DiscountIncludedCategory[]
-  includedBrands     DiscountIncludedBrand[]
-  includedUsers      DiscountIncludedUser[]
-  includedVariants   DiscountIncludedVariant[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([discountId])
-}
-
-model DiscountIncludedVariant {
-  id            String @id @default(cuid())
-  combinationId String // ProductVariantCombination ID
-
-  condition   DiscountCondition         @relation(fields: [conditionId], references: [id], onDelete: Cascade)
-  conditionId String
-  combination ProductVariantCombination @relation(fields: [combinationId], references: [id], onDelete: Cascade)
-
-  @@unique([combinationId, conditionId])
-  @@index([conditionId])
-  @@index([combinationId])
-}
-
-// Dahil Edilen Ürünler
-model DiscountIncludedProduct {
-  id        String @id @default(cuid())
-  productId String
-
-  condition   DiscountCondition @relation(fields: [conditionId], references: [id], onDelete: Cascade)
-  conditionId String
-  product     Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@unique([productId, conditionId])
-  @@index([conditionId])
-  @@index([productId])
-}
-
-// Dahil Edilen Kategoriler
-model DiscountIncludedCategory {
-  id         String @id @default(cuid())
-  categoryId String
-
-  condition   DiscountCondition @relation(fields: [conditionId], references: [id], onDelete: Cascade)
-  conditionId String
-  category    Category          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
-  @@unique([categoryId, conditionId])
-  @@index([conditionId])
-  @@index([categoryId])
-}
-
-// Dahil Edilen Markalar
-model DiscountIncludedBrand {
-  id      String @id @default(cuid())
-  brandId String
-
-  condition   DiscountCondition @relation(fields: [conditionId], references: [id], onDelete: Cascade)
-  conditionId String
-  brand       Brand             @relation(fields: [brandId], references: [id], onDelete: Cascade)
-
-  @@unique([brandId, conditionId])
-  @@index([conditionId])
-  @@index([brandId])
-}
-
-// Dahil Edilen Kullanıcılar
-model DiscountIncludedUser {
-  id     String @id @default(cuid())
-  userId String
-
-  condition   DiscountCondition @relation(fields: [conditionId], references: [id], onDelete: Cascade)
-  conditionId String
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, conditionId])
-  @@index([conditionId])
-  @@index([userId])
-}
-
-model FooterLinks {
-  id      String @id @default(cuid())
-  order   Int
-  title   String
-  options Json?
-
-  customLink        String?
-  product           Product?         @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productId         String?
-  category          Category?        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  categoryId        String?
-  brand             Brand?           @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  brandId           String?
-  footerLinkGroup   FooterLinkGroups @relation(fields: [footerLinkGroupId], references: [id], onDelete: Cascade)
-  footerLinkGroupId String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model FooterLinkGroups {
-  id      String @id @default(cuid())
-  order   Int
-  title   String
-  options Json?
-
-  footer   Footer        @relation(fields: [footerId], references: [id], onDelete: Cascade)
-  footerId String
-  links    FooterLinks[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Footer {
-  id         String             @id @default(cuid())
-  options    Json?
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
-  linkGroups FooterLinkGroups[]
-}
-
-model SliderItemSchema {
-  id       String  @id @default(cuid())
-  order    Int
-  isActive Boolean @default(true)
-
-  // Asset ilişkileri
-  mobileAsset    Asset?  @relation("MobileAsset", fields: [mobileAssetId], references: [id], onDelete: SetNull)
-  mobileAssetId  String?
-  desktopAsset   Asset?  @relation("DesktopAsset", fields: [desktopAssetId], references: [id], onDelete: SetNull)
-  desktopAssetId String?
-
-  // Link alanları - sadece bir tanesi dolu olabilir
-  customLink String? // URL string
-
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  SliderSettings   SliderSettings @relation(fields: [sliderSettingsId], references: [id])
-  sliderSettingsId String
-
-  @@index([isActive])
-}
-
-model SliderSettings {
-  id               String  @id @default(cuid())
-  isAutoPlay       Boolean @default(false)
-  autoPlayInterval Int? // Otomatik oynatma aralığı (saniye cinsinden)
-
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
-  items     SliderItemSchema[]
-  component LayoutComponent[]
-}
-
-model MarqueeSchema {
-  id         String            @id @default(cuid())
-  options    Json?
-  createdAt  DateTime          @default(now())
-  updatedAt  DateTime          @updatedAt
-  components LayoutComponent[]
-}
-
-model ProductListCarouselTranslation {
-  id                    String              @id @default(cuid())
-  locale                Locale              @default(TR)
-  title                 String
-  productListCarousel   ProductListCarousel @relation(fields: [productListCarouselId], references: [id], onDelete: Cascade)
-  productListCarouselId String
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
-
-  @@unique([locale, productListCarouselId])
-  @@index([productListCarouselId])
-}
-
-model ProductListCarousel {
-  id           String                           @id @default(cuid())
-  items        ProductListCarouselItem[]
-  translations ProductListCarouselTranslation[]
-
-  createdAt  DateTime          @default(now())
-  updatedAt  DateTime          @updatedAt
-  components LayoutComponent[]
-}
-
-model ProductListCarouselItem {
-  id                    String  @id @default(cuid())
-  productListCarouselId String
-  productId             String
-  variantId             String? // null ise main product, dolu ise variant
-  order                 Int
-
-  productListCarousel ProductListCarousel        @relation(fields: [productListCarouselId], references: [id], onDelete: Cascade)
-  product             Product                    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  variant             ProductVariantCombination? @relation(fields: [variantId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([productListCarouselId, productId, variantId])
-  @@unique([productListCarouselId, order])
-  @@index([productListCarouselId, order])
-}
-
-model CategoryGridComponent {
-  id         String     @id @default(cuid())
-  options    Json?
-  categories Category[]
-
-  createdAt  DateTime          @default(now())
-  updatedAt  DateTime          @updatedAt
-  components LayoutComponent[]
-}
-
-model LayoutComponent {
-  id    String              @id @default(cuid())
-  type  LayoutComponentType
-  order Int
-
-  layout                  Layout                 @relation(fields: [layoutId], references: [id], onDelete: Cascade)
-  layoutId                String
-  slider                  SliderSettings?        @relation(fields: [sliderId], references: [id], onDelete: SetNull)
-  sliderId                String?
-  marquee                 MarqueeSchema?         @relation(fields: [marqueeId], references: [id], onDelete: Cascade)
-  marqueeId               String?
-  productListCarousel     ProductListCarousel?   @relation(fields: [productListCarouselId], references: [id], onDelete: Cascade)
-  productListCarouselId   String?
-  categoryGrid            CategoryGridComponent? @relation(fields: [categoryGridComponentId], references: [id], onDelete: Cascade)
-  categoryGridComponentId String?
-  createdAt               DateTime               @default(now())
-  updatedAt               DateTime               @updatedAt
-
-  @@unique([layoutId, order])
-}
-
-model Layout {
-  id            String            @id @default(cuid())
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  otherSettings Json?
-  components    LayoutComponent[]
-}
-
-model AddressSchema {
-  id                         String      @id @default(cuid())
-  email                      String?
-  addressTitle               String?
-  phone                      String
-  tcKimlikNo                 String?
-  name                       String
-  surname                    String
-  addressLine1               String
-  addressLine2               String?
-  zipCode                    String?
-  country                    Country     @relation(fields: [countryId], references: [id])
-  countryId                  String
-  state                      State?      @relation(fields: [stateId], references: [id])
-  stateId                    String?
-  city                       City?       @relation(fields: [cityId], references: [id])
-  cityId                     String?
-  user                       User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId                     String?
-  addressLocationType        CountryType
-  isBillingAddress           Boolean     @default(false)
-  isCorporateInvoice         Boolean     @default(false)
-  companyName                String?
-  taxNumber                  String?
-  companyRegistrationAddress String?
-  district                   District?   @relation(fields: [districtId], references: [id])
-  districtId                 String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  shippingCarts  Cart[] @relation("CartShippingAddress")
-  billingCarts   Cart[] @relation("CartBillingAddress")
-  defaultForUser User?  @relation("UserDefaultAddress")
-
-  @@index([userId])
-  @@index([countryId])
-  @@index([stateId])
-  @@index([cityId])
-}
-
 enum RuleType {
   SalesPrice
   ProductWeight
 }
 
-model CountryDefaultSettings {
-  id           String   @id @default(cuid())
-  country      Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
-  countryId    String   @unique
-  currency     Currency @default(TRY)
-  locale       Locale   @default(TR)
-  translations Json?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-}
-
-model CargoZone {
-  id String @id @default(cuid())
-
-  locations Location[]
-  rules     CargoRule[]
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-}
-
-model Location {
-  id          String    @id @default(cuid())
-  cargoZone   CargoZone @relation(fields: [cargoZoneId], references: [id], onDelete: Cascade)
-  cargoZoneId String
-
-  // Lokasyon Detayları
-  countryId String
-  country   Country  @relation(fields: [countryId], references: [id])
-  stateIds  String[] @default([]) // Boş array = tüm ülke
-  cityIds   String[] @default([]) // Boş array = tüm ülke/state
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Aynı ülke için aynı tip location tekrar etmemeli
-  @@unique([cargoZoneId, countryId])
-}
-
-model CargoRule {
-  id   String @id @default(cuid())
-  name String
-
-  ruleType        RuleType               @default(SalesPrice)
-  minValue        Float?
-  maxValue        Float?
-  price           Float?
-  currency        Currency               @default(TRY)
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
-  CargoZone       CargoZone?             @relation(fields: [cargoZoneId], references: [id])
-  cargoZoneId     String?
-  carts           Cart[]
-  paymentRequests PaymentRequestSchema[]
-
-  @@index([ruleType])
-}
-
 enum OrderStatus {
-  PENDING // Beklemede
-  CONFIRMED // Onaylandı
-  PROCESSING // Hazırlanıyor 
-  SHIPPED // Kargoya verildi
-  DELIVERED // Teslim edildi
-  CANCELLED // İptal edildi
-  REFUNDED // İade edildi
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
 }
 
 enum PaymentStatus {
-  PENDING // Ödeme bekliyor
-  PAID // Ödendi
-  FAILED // Ödeme başarısız
-  REFUNDED // İade edildi
-  PARTIAL_REFUND // Kısmi iade
-}
-
-model OrderItem {
-  id String @id @default(cuid()) // Benzersiz sipariş kalemi ID'si
-
-  // Fiyat Bilgileri
-  buyedPrice    Float // Müşterinin ödediği birim fiyat (indirimli)
-  originalPrice Float? // İndirim öncesi orijinal birim fiyat
-  quantity      Int    @default(1) // Sipariş edilen adet
-  totalPrice    Float // quantity * buyedPrice (kalem toplam tutarı)
-
-  // Ürün Bilgileri (Sipariş anındaki snapshot)
-  buyedVariants   Json? // Satın alınan varyant bilgileri (renk, beden vs.)
-  productSnapshot Json? // Ürün bilgileri (isim, sku, vs.)
-  // Ödeme Takibi
-  transactionId   String? // Ödeme sağlayıcısından gelen işlem ID'si
-
-  // İlişkiler
-  product   Product                    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productId String // Ana ürün referansı
-  variant   ProductVariantCombination? @relation(fields: [variantId], references: [id], onDelete: Cascade)
-  variantId String? // Varyant referansı (null ise ana ürün)
-  order     Order                      @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId   String // Hangi siparişe ait olduğu
-
-  // Audit Alanları
-  createdAt DateTime @default(now()) // Kayıt oluşturma tarihi
-  updatedAt DateTime @updatedAt // Son güncelleme tarihi
-
-  @@unique([orderId, productId, variantId]) // Aynı ürün/varyantın sipariş içinde tekrar etmemesi için
-  @@index([orderId]) // Sipariş ID'sine göre hızlı arama
-  @@index([productId]) // Ürün ID'sine göre hızlı arama
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  PARTIAL_REFUND
 }
 
 enum PaymentType {
   THREE_D_SECURE
   NON_THREE_D_SECURE
   BANK_TRANSFER
-}
-
-model Order {
-  id String @id @default(cuid())
-
-  // Ödeme Bilgileri
-  paymentId      String  @unique
-  conversationId String?
-  orderNumber    String  @unique
-
-  // Durum Bilgileri
-  orderStatus   OrderStatus   @default(PENDING)
-  paymentStatus PaymentStatus @default(PENDING)
-  paymentType   PaymentType   @default(THREE_D_SECURE)
-
-  currency Currency @default(TRY)
-  locale   Locale   @default(TR)
-
-  // Fiyat Bilgileri
-  subtotal       Float
-  totalAmount    Float
-  taxAmount      Float?
-  shippingCost   Float?
-  discountAmount Float?
-
-  // Notlar
-  customerNotes String? @db.Text
-  adminNotes    String? @db.Text
-
-  // Tarih Takibi
-  confirmedAt DateTime?
-  shippedAt   DateTime?
-  deliveredAt DateTime?
-  cancelledAt DateTime?
-
-  // İlişkiler
-  orderItems OrderItem[]
-
-  //Cart Info
-  cardType        String?
-  cardFamily      String?
-  cardAssociation String?
-  binNumber       String?
-  lastFourDigits  String?
-
-  // Adres Bilgileri
-  shippingAddress Json?
-  billingAddress  Json?
-
-  // Kullanıcı İlişkisi
-  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userId String?
-
-  // Sepet İlişkisi
-  cartId          String?               @unique
-  cart            Cart?                 @relation(fields: [cartId], references: [id], onDelete: SetNull)
-  paymentRequests PaymentRequestSchema?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Hızlı arama için indeksler
-  @@index([paymentId, orderNumber, paymentStatus, orderStatus])
 }
 
 enum PaymentProvider {
@@ -1286,123 +996,32 @@ enum PaymentProvider {
 }
 
 enum PaymentRequestStatus {
-  PENDING // İşlem başlatıldı
-  WAITING_THREE_D_SECURE // 3D Secure bekleniyor
-  THREE_D_SECURE_FAILED // 3D Secure başarısız
-  THREE_D_SECURE_SUCCESS // 3D Secure başarılı
-  PROCESSING // İşleniyor
-  SUCCESS // Başarılı
-  FAILED // Başarısız
-  CANCELLED // İptal edildi
-  REFUNDED // İade edildi
-  TIMEOUT // Zaman aşımı
+  PENDING
+  WAITING_THREE_D_SECURE
+  THREE_D_SECURE_FAILED
+  THREE_D_SECURE_SUCCESS
+  PROCESSING
+  SUCCESS
+  FAILED
+  CANCELLED
+  REFUNDED
+  TIMEOUT
 }
 
-model PaymentRequestSchema {
-  id String @id @default(cuid())
-
-  // Mevcut alanlar
-  userId          String?
-  user            User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
-  paymentProvider PaymentProvider      @default(IYZICO)
-  paymentStatus   PaymentRequestStatus @default(WAITING_THREE_D_SECURE)
-
-  // Kargo ve Adres
-  cargoRuleId     String?
-  cargoRule       CargoRule? @relation(fields: [cargoRuleId], references: [id], onDelete: SetNull)
-  billingAddress  Json?
-  shippingAddress Json?
-
-  // Ödeme Detayları
-  transactionId  String? // Ödeme sağlayıcısından gelen işlem ID'si
-  paymentId      String? // iyzico paymentId
-  conversationId String? // iyzico conversationId
-
-  // Tutar Bilgileri - YENI!
-  amount         Decimal  @db.Decimal(10, 2) // Toplam tutar
-  currency       Currency @default(TRY)
-  subtotal       Decimal? @db.Decimal(10, 2) // Ara toplam
-  shippingCost   Decimal? @db.Decimal(10, 2) // Kargo ücreti
-  discountAmount Decimal? @db.Decimal(10, 2) // İndirim tutarı
-  taxAmount      Decimal? @db.Decimal(10, 2) // Vergi tutarı
-
-  // Kart Bilgileri (Güvenlik için sadece gerekli bilgiler) - YENI!
-  cardType        String? // Kredi/Banka kartı
-  cardFamily      String? // Bonus, Axess, vb.
-  cardAssociation String? // Visa, Mastercard
-  binNumber       String? // İlk 6 hane
-  lastFourDigits  String? // Son 4 hane
-  installment     Int     @default(1) // Taksit sayısı
-
-  // Hata Takibi - YENI!
-  errorCode     String? // Hata kodu
-  errorMessage  String? @db.Text // Hata mesajı
-  errorGroup    String? // Hata kategorisi (CARD_ERROR, NETWORK_ERROR, vb.)
-  failureReason String? @db.Text // Başarısızlık nedeni detayı
-
-  // Admin Bilgilendirme - YENI!
-  isReviewed Boolean   @default(false) // Admin tarafından incelendi mi?
-  reviewedAt DateTime? // İnceleme tarihi
-  reviewedBy String? // İnceleyen admin ID
-  adminNotes String?   @db.Text // Admin notları
-
-  // İlişkiler
-  cart    Cart?   @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  cartId  String?
-  order   Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
-  orderId String? @unique
-
-  // Timestamps
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  completedAt DateTime? // İşlem tamamlanma zamanı
-
-  @@index([cartId])
-  @@index([orderId])
-  @@index([paymentStatus])
-  @@index([userId])
-  @@index([createdAt])
-  @@index([paymentId])
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  FREE_SHIPPING
+  BUY_X_GET_Y
 }
 
-// Bu enum, view'daki entryType alanını temsil eder.
-// Eğer schema'da zaten varsa tekrar ekleme.
-enum EntryType {
-  PRODUCT
-  VARIANT
+enum DiscountEffectType {
+  AUTOMATIC
+  COUPON
 }
 
-// Bu modeli schema.prisma dosyanıza ekleyin.
-model ProductUnifiedView {
-  id                     String      @id @unique
-  productId              String
-  combinationId          String?
-  entryType              EntryType
-  sku                    String?
-  barcode                String?
-  type                   ProductType
-  stock                  Int
-  active                 Boolean
-  isProductActive        Boolean
-  brandId                String?
-  taxonomyCategoryId     String?
-  createdAt              DateTime
-  updatedAt              DateTime
-  visibleAllCombinations Boolean
-  // SQL'de jsonb olarak topladığımız alanlar
-  prices                 Json?
-  productTranslations    Json?
-  productAssets          Json?
-  categories             Json?
-  discountIncluded       Json? // <-- En son eklediğimiz alan
-  variantTranslation     Json?
-  variantAssets          Json?
-  variantOptions         Json?
-
-  // Opsiyonel ilişkiler
-  brand            Brand?            @relation(fields: [brandId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  taxonomyCategory TaxonomyCategory? @relation(fields: [taxonomyCategoryId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-
-  // Bu satır Prisma'ya bu modelin veritabanındaki VIEW'a karşılık geldiğini söyler.
-  @@map("ProductUnifiedView")
+enum DiscountWhereVisible {
+  PRODUCT_PAGE
+  CHECKOUT_PAGE
+  ALL
 }

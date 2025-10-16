@@ -39,38 +39,6 @@ async function cleanupDatabase() {
       { timeout: 10000 }
     );
 
-    // 4. Discount sistemini temizle (parçalara böl)
-    console.log("🗑️  Cleaning discount system - part 1...");
-    await prisma.$transaction(
-      async (tx) => {
-        await tx.couponUsage.deleteMany({});
-        await tx.discountCoupon.deleteMany({});
-      },
-      { timeout: 10000 }
-    );
-
-    console.log("🗑️  Cleaning discount system - part 2...");
-    await prisma.$transaction(
-      async (tx) => {
-        await tx.discountIncludedUser.deleteMany({});
-        await tx.discountIncludedVariant.deleteMany({});
-        await tx.discountIncludedProduct.deleteMany({});
-        await tx.discountIncludedCategory.deleteMany({});
-        await tx.discountIncludedBrand.deleteMany({});
-      },
-      { timeout: 10000 }
-    );
-
-    console.log("🗑️  Cleaning discount system - part 3...");
-    await prisma.$transaction(
-      async (tx) => {
-        await tx.discountCondition.deleteMany({});
-        await tx.discountTranslation.deleteMany({});
-        await tx.discount.deleteMany({});
-      },
-      { timeout: 10000 }
-    );
-
     // 5. Product variant sistemini temizle (parçalara böl)
     console.log("🗑️  Cleaning product variants - part 1...");
     await prisma.$transaction(
@@ -204,7 +172,6 @@ async function verifyCleanup() {
     brands: await prisma.brand.count(),
     variants: await prisma.variantGroup.count(),
     carts: await prisma.cart.count(),
-    discounts: await prisma.discount.count(),
     layouts: await prisma.layout.count(),
   };
 

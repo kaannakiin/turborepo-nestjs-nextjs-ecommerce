@@ -375,17 +375,14 @@ export class CategoriesService {
 
     const orderByClause = this.getOrderBySql(sortType, currency, locale);
 
-    // --- DEĞİŞİKLİK BURADA: ROW_NUMBER() içindeki ORDER BY güncellendi ---
     const baseQuery = Prisma.sql`
     WITH "RankedView" AS (
       SELECT
         *,
         ROW_NUMBER() OVER(
           PARTITION BY "productId"
-          -- Sıralamayı en ucuz fiyata göre yap, fiyatlar eşitse en yeni ekleneni önceliklendir
           ORDER BY (
             SELECT
-              -- Önce discountedPrice'ı kontrol et, null veya 0 ise price'ı al
               COALESCE(
                 NULLIF(CAST(p->>'discountedPrice' AS DECIMAL), 0),
                 CAST(p->>'price' AS DECIMAL)
@@ -393,8 +390,8 @@ export class CategoriesService {
             FROM jsonb_array_elements(prices) AS p
             WHERE p->>'currency' = ${currency}::text
             LIMIT 1
-          ) ASC NULLS LAST, -- En ucuz olan (ASC) başa gelsin. Fiyatı olmayanlar (NULLS LAST) sona gitsin.
-          "createdAt" DESC -- Fiyatlar aynıysa en yeni ürün öne çıksın diye ek bir sıralama
+          ) ASC NULLS LAST, 
+          "createdAt" DESC 
         ) as rn
       FROM "ProductUnifiedView"
       ${whereClause}
@@ -407,7 +404,6 @@ export class CategoriesService {
     FROM "RankedView"
     WHERE ("visibleAllCombinations" = true OR rn = 1)
   `;
-    // --- DEĞİŞİKLİK SONU ---
 
     const productsQuery = Prisma.sql`
       ${baseQuery}

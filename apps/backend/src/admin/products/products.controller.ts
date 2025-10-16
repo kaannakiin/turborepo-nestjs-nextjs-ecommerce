@@ -182,11 +182,6 @@ export class ProductsController {
     return this.productsService.getProducts(search, page);
   }
 
-  @Get('get-products-and-variants')
-  async getProductsAndVariants() {
-    return this.productsService.getProductsAndVariants();
-  }
-
   @Get('get-products-for-selection')
   async getProductsForSelection() {
     return this.productsService.getProductsForSelection();

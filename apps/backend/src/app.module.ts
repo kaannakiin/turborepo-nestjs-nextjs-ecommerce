@@ -7,7 +7,6 @@ import Redis from 'ioredis';
 import { NestMinioModule } from 'nestjs-minio';
 import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
-import { DiscountsModule } from './discounts/discounts.module';
 import { LocationsModule } from './locations/locations.module';
 import { MinioModule } from './minio/minio.module';
 import { PaymentModule } from './payment/payment.module';
@@ -39,7 +38,6 @@ import { CartV3Module } from './cart-v3/cart-v3.module';
     }),
     MinioModule,
     LocationsModule,
-    DiscountsModule,
     UserPageModule,
     ShippingModule,
     PaymentModule,

@@ -9,7 +9,7 @@ import {
   ThemeIcon,
   UnstyledButton,
 } from "@mantine/core";
-import { $Enums } from "@repo/database";
+import { $Enums } from "@repo/shared";
 import { IconCheck } from "@tabler/icons-react";
 interface ShippingCardProps {
   onEdit: () => void;
