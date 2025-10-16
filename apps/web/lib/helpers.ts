@@ -113,21 +113,6 @@ export function getCurrencySymbol(currency: $Enums.Currency) {
   }
 }
 
-export function getDiscountTypeLabel(type: $Enums.DiscountType) {
-  switch (type) {
-    case "BUY_X_GET_Y":
-      return "X Al Y Kazan";
-    case "PERCENTAGE":
-      return "Yüzdelik";
-    case "FIXED":
-      return "Sabit Tutar";
-    case "FREE_SHIPPING":
-      return "Ücretsiz Kargo";
-    default:
-      return type;
-  }
-}
-
 export function getCurrencyIntlFormat(currency: $Enums.Currency) {
   switch (currency) {
     case "TRY":
@@ -140,29 +125,6 @@ export function getCurrencyIntlFormat(currency: $Enums.Currency) {
       return "en-GB";
     default:
       return "tr-TR";
-  }
-}
-
-export function getCouponGenerationTypeLabel(
-  type: $Enums.CouponGenerationType
-) {
-  switch (type) {
-    case "MANUAL":
-      return "Manuel İndirim";
-    case "AUTOMATIC":
-      return "Otomatik İndirim";
-    default:
-      return type;
-  }
-}
-export function getCouponGenerationTypeTooltip(
-  type: $Enums.CouponGenerationType
-) {
-  switch (type) {
-    case "AUTOMATIC":
-      return "Koşul bazlı indirimlerdir. Belirli koşullar sağlandığında otomatik olarak uygulanır.";
-    case "MANUAL":
-      return "Kupon kodu gerektirir. Müşteriler kupon kodunu kullanarak indirimi alabilir.";
   }
 }
 
@@ -894,5 +856,18 @@ export function getPaymentStatusColor(
       return "blue.5";
     case "REFUNDED":
       return "gray.5";
+  }
+}
+
+export function getDiscountTypeLabel(type: $Enums.DiscountType): string {
+  switch (type) {
+    case "BUY_X_GET_Y":
+      return "X Al Y Kazan";
+    case "FIXED_AMOUNT":
+      return "Sabit Tutar";
+    case "FREE_SHIPPING":
+      return "Ücretsiz Kargo";
+    case "PERCENTAGE":
+      return "Yüzdelik";
   }
 }

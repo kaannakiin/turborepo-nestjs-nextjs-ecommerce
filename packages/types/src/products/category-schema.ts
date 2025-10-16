@@ -224,7 +224,8 @@ export interface ProductUnifiedViewData {
   id: string;
   productId: string;
   combinationId?: string;
-  entryType: $Enums.EntryType;
+  // entryType: $Enums.EntryType;
+  entryType: "product" | "variant";
   sku?: string;
   barcode?: string;
   type: $Enums.ProductType;

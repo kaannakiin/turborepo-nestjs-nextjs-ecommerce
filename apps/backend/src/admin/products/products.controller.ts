@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -83,8 +84,11 @@ export class ProductsController {
     return result;
   }
 
-  @Delete('delete-product-image/:imageUrl')
-  async deleteProductImage(@Param('imageUrl') imageUrl: string) {
+  @Delete('delete-product-image')
+  async deleteProductImage(@Query('imageUrl') imageUrl: string) {
+    if (!imageUrl) {
+      throw new BadRequestException('Image URL is required');
+    }
     return this.productsService.deleteProductImage(imageUrl);
   }
 
@@ -98,9 +102,13 @@ export class ProductsController {
       }),
     )
     files: Array<Express.Multer.File>,
-    @Body() body: { productId: string },
+    @Body() body: { productId: string; orders: number[] },
   ) {
-    return this.productsService.uploadProductsFile(files, body.productId);
+    return this.productsService.uploadProductsFile(
+      files,
+      body.productId,
+      body.orders,
+    );
   }
 
   @Post('create-or-update-variant-product')
@@ -180,11 +188,6 @@ export class ProductsController {
   ) {
     const page = pageParam ? parseInt(pageParam, 10) : 1;
     return this.productsService.getProducts(search, page);
-  }
-
-  @Get('get-products-and-variants')
-  async getProductsAndVariants() {
-    return this.productsService.getProductsAndVariants();
   }
 
   @Get('get-products-for-selection')

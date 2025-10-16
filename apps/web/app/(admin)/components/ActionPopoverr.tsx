@@ -1,6 +1,14 @@
 "use client";
 
-import { ActionIcon, Button, Group, Popover, Stack, Text } from "@mantine/core";
+import {
+  ActionIcon,
+  ActionIconProps,
+  Button,
+  Group,
+  Popover,
+  Stack,
+  Text,
+} from "@mantine/core";
 import { MantineSize } from "@repo/types";
 import { useState } from "react";
 
@@ -9,6 +17,8 @@ interface ActionPopoverrProps {
   text: string;
   onConfirm?: () => void | Promise<void>;
   size?: MantineSize;
+  className?: string;
+  variant?: ActionIconProps["variant"];
 }
 
 const ActionPopover = ({
@@ -16,14 +26,22 @@ const ActionPopover = ({
   text,
   onConfirm,
   size = "xs",
+  className,
+  variant = "transparent",
 }: ActionPopoverrProps) => {
   const [opened, setOpened] = useState(false);
-
+  const handleConfirm = async () => {
+    if (onConfirm) {
+      await onConfirm();
+    }
+    setOpened(false);
+  };
   return (
     <Popover opened={opened} onChange={setOpened}>
       <Popover.Target>
         <ActionIcon
-          variant="transparent"
+          className={className}
+          variant={variant}
           c={"red"}
           size={size}
           onClick={() => setOpened((o) => !o)}
@@ -42,7 +60,7 @@ const ActionPopover = ({
             >
               İptal
             </Button>
-            <Button size="xs" color={"red"} onClick={onConfirm}>
+            <Button size="xs" color={"red"} onClick={handleConfirm}>
               Onayla
             </Button>
           </Group>

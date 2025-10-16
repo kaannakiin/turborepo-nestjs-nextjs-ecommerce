@@ -349,12 +349,18 @@ export const BaseProductSchema = z
         z.object({
           url: z.url({ error: "Lütfen geçerli bir url giriniz" }),
           type: z.enum(AssetType),
+          order: z.number().min(0),
         })
       )
       .optional()
       .nullable(),
     images: z
-      .array(FileSchema({ type: ["IMAGE", "VIDEO"] }))
+      .array(
+        z.object({
+          file: FileSchema({ type: ["IMAGE", "VIDEO"] }),
+          order: z.number().min(0),
+        })
+      )
       .optional()
       .nullable(),
     brandId: z.cuid2({ error: "Geçersiz marka kimliği" }).optional().nullable(),
@@ -369,12 +375,61 @@ export const BaseProductSchema = z
   })
   .check(({ issues, value }) => {
     const assetLimit = 10;
-    const totalAsset =
-      value.existingImages?.length || 0 + value.images?.length || 0;
+    const existingCount = value.existingImages?.length || 0;
+    const newCount = value.images?.length || 0;
+    const totalAsset = existingCount + newCount;
     if (totalAsset > assetLimit) {
       issues.push({
         path: ["images"],
         message: `Toplam varlık sayısı ${assetLimit} ile sınırlıdır.`,
+        code: "custom",
+        input: ["images"],
+      });
+    }
+
+    // Sadece duplicate order kontrolü
+    if (value.existingImages && value.existingImages.length > 0) {
+      const existingOrders = value.existingImages.map((img) => img.order);
+      const hasDuplicateOrders =
+        new Set(existingOrders).size !== existingOrders.length;
+
+      if (hasDuplicateOrders) {
+        issues.push({
+          path: ["existingImages"],
+          message: "Mevcut görsellerin sıra numaraları benzersiz olmalıdır.",
+          code: "custom",
+          input: ["existingImages"],
+        });
+      }
+    }
+
+    if (value.images && value.images.length > 0) {
+      const newOrders = value.images.map((img) => img.order);
+      const hasDuplicateOrders = new Set(newOrders).size !== newOrders.length;
+
+      if (hasDuplicateOrders) {
+        issues.push({
+          path: ["images"],
+          message: "Yeni görsellerin sıra numaraları benzersiz olmalıdır.",
+          code: "custom",
+          input: ["images"],
+        });
+      }
+    }
+
+    // Tüm order'ların (existing + new) unique olduğunu kontrol et
+    const allOrders = [
+      ...(value.existingImages?.map((img) => img.order) || []),
+      ...(value.images?.map((img) => img.order) || []),
+    ];
+
+    const hasOverallDuplicates = new Set(allOrders).size !== allOrders.length;
+
+    if (hasOverallDuplicates) {
+      issues.push({
+        path: ["images"],
+        message:
+          "Mevcut ve yeni görsellerin sıra numaraları birbirleriyle çakışmamalıdır.",
         code: "custom",
         input: ["images"],
       });

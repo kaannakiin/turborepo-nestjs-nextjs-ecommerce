@@ -9,16 +9,14 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { PaymentType, type User } from '@repo/database';
+import { type User } from '@repo/database';
 import {
   AddCartReqBodyV3Schema,
-  DecraseOrIncreaseCartItemReqBodyV3Schema,
-  type NonAuthUserAddressZodType,
   type AddCartReqBodyV3Type,
+  DecraseOrIncreaseCartItemReqBodyV3Schema,
   type DecraseOrIncreaseCartItemReqBodyV3Type,
   NonAuthUserAddressSchema,
-  PaymentZodType,
-  PaymentZodSchema,
+  type NonAuthUserAddressZodType,
 } from '@repo/types';
 import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';

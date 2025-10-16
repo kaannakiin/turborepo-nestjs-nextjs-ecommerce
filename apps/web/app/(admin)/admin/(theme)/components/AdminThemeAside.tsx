@@ -28,7 +28,6 @@ import {
   Stack,
   Text,
 } from "@mantine/core";
-import { $Enums } from "@repo/database";
 import {
   Control,
   Controller,
@@ -39,6 +38,7 @@ import {
   UseFormSetValue,
 } from "@repo/shared";
 import {
+  $Enums,
   CategoryGridComponentType,
   FontFamily,
   MainPageComponentsType,
