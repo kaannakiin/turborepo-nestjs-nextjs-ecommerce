@@ -9,6 +9,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev --skip-generate",
     "db:deploy": "prisma migrate deploy",
+    "db:views": "node dist/seeds/applyViews.js",
+    "db:deploy:full": "npm run db:deploy && npm run db:views",
     "db:prisma": "prisma studio"
   },
   "exports": {
@@ -23,7 +25,10 @@
     "@types/eslint": "9.6.1",
     "@types/node": "22.8.2",
     "@types/node-fetch": "^2.6.13",
+    "@types/pg": "^8.15.5",
+    "dotenv": "^16.4.7",
     "eslint": "9.13.0",
+    "pg": "^8.16.3",
     "prisma": "^6.9.0",
     "typescript": "5.6.3"
   },
