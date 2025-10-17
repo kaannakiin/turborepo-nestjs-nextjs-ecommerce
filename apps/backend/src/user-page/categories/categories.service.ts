@@ -400,7 +400,7 @@ export class CategoriesService {
       id, "productId", "combinationId", "entryType", sku, barcode, type, stock, active,
       "isProductActive", "brandId", "taxonomyCategoryId", "createdAt", "updatedAt",
       "visibleAllCombinations", prices, "productTranslations", "productAssets",
-      categories, "discountIncluded", "variantTranslation", "variantAssets", "variantOptions"
+      categories, "variantTranslation", "variantAssets", "variantOptions"
     FROM "RankedView"
     WHERE ("visibleAllCombinations" = true OR rn = 1)
   `;
