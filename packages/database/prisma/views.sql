@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS "ProductUnifiedView" CASCADE;
+
 CREATE OR REPLACE VIEW "ProductUnifiedView" AS
 WITH base_products AS (
   SELECT
