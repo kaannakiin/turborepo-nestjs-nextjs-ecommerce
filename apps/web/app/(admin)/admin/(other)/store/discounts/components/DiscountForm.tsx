@@ -9,14 +9,38 @@ import {
   Stack,
   Text,
   TextInput,
+  ThemeIcon,
   Title,
 } from "@mantine/core";
-import { Controller, SubmitHandler, useForm, zodResolver } from "@repo/shared";
+import {
+  Controller,
+  Form,
+  SubmitHandler,
+  useForm,
+  zodResolver,
+} from "@repo/shared";
 import { $Enums, MainDiscount, MainDiscountSchema } from "@repo/types";
-
+import {
+  IconCurrencyLira,
+  IconGift,
+  IconPercentage,
+  IconTruckDelivery,
+} from "@tabler/icons-react";
 interface DiscountFormProps {
   defaultValues?: MainDiscount;
 }
+const getIcon = (type: $Enums.DiscountType) => {
+  switch (type) {
+    case "BUY_X_GET_Y":
+      return <IconGift />;
+    case "PERCENTAGE":
+      return <IconPercentage />;
+    case "FIXED_AMOUNT":
+      return <IconCurrencyLira />;
+    case "FREE_SHIPPING":
+      return <IconTruckDelivery />;
+  }
+};
 
 const FormCard = ({
   children,
@@ -38,10 +62,10 @@ const FormCard = ({
 };
 
 const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
-  const { control, handleSubmit } = useForm<MainDiscount>({
+  const { control, handleSubmit, watch } = useForm<MainDiscount>({
     resolver: zodResolver(MainDiscountSchema),
     defaultValues: defaultValues || {
-      type: "percentage",
+      type: "PERCENTAGE",
       title: "",
       isAllProducts: true,
       isGrowDiscount: false,
@@ -64,6 +88,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
       },
     },
   });
+  const discountType = watch("type") || "PERCENTAGE";
 
   const onSubmit: SubmitHandler<MainDiscount> = async (data) => {};
 
@@ -87,27 +112,80 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
         </Stack>
       </FormCard>
       <FormCard title="İndirim türü">
-        <SimpleGrid py={"md"}>
+        <SimpleGrid py={"md"} cols={1} spacing="sm">
           <Controller
             control={control}
             name="type"
             render={({ field, fieldState }) => (
               <Radio.Group {...field} error={fieldState.error?.message}>
-                {Object.keys($Enums.DiscountType).map((key, idx) => (
-                  <Radio.Card key={idx} value={key} withBorder p="md">
-                    <Group gap={"xs"}>
-                      <Radio.Indicator />
-                      <Text>
-                        {getDiscountTypeLabel(key as $Enums.DiscountType)}
-                      </Text>
-                    </Group>
-                  </Radio.Card>
-                ))}
+                <SimpleGrid
+                  cols={{
+                    base: 2,
+                    md: 4,
+                  }}
+                >
+                  {Object.values($Enums.DiscountType).map(
+                    (discountType, idx) => (
+                      <Radio.Card
+                        key={idx}
+                        value={discountType}
+                        className={`border border-gray-400 rounded-xl ${field.value.toUpperCase() === discountType ? "bg-[var(--mantine-primary-color-1)] " : ""}`}
+                        p="md"
+                      >
+                        <Group
+                          gap={"xs"}
+                          justify="space-between"
+                          align="center"
+                        >
+                          <Group gap={"xs"}>
+                            <ThemeIcon
+                              className="text-center"
+                              variant={
+                                field.value.toUpperCase() === discountType
+                                  ? "filled"
+                                  : "light"
+                              }
+                              radius={"lg"}
+                              size={"lg"}
+                            >
+                              {getIcon(discountType as $Enums.DiscountType)}
+                            </ThemeIcon>
+                            <Text>
+                              {getDiscountTypeLabel(
+                                discountType as $Enums.DiscountType
+                              )}
+                            </Text>
+                          </Group>
+                          <Radio.Indicator />
+                        </Group>
+                      </Radio.Card>
+                    )
+                  )}
+                </SimpleGrid>
               </Radio.Group>
             )}
           />
         </SimpleGrid>
       </FormCard>
+      {(discountType === "PERCENTAGE" || discountType === "FIXED_AMOUNT") && (
+        <FormCard title="İndirim Oranı">
+          <Controller
+            control={control}
+            name="isGrowDiscount"
+            render={({ field, fieldState }) => (
+              <Radio.Group
+                onChange={(e) => {
+                  field.onChange(e === "true" ? true : false);
+                }}
+                error={fieldState.error?.message}
+              >
+                <Radio.Card value="true">Evet</Radio.Card>
+                <Radio.Card value="false">Hayır</Radio.Card>
+              </Radio.Group>
+            )}
+          />
+        </FormCard>
+      )}
     </Stack>
   );
 };

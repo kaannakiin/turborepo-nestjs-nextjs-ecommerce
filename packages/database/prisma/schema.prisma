@@ -1023,3 +1023,11 @@ enum DiscountWhereVisible {
   CHECKOUT_PAGE
   ALL
 }
+
+model DiscountSchema {
+  id           String       @id @default(cuid())
+  discountType DiscountType @default(PERCENTAGE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

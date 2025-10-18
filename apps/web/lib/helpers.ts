@@ -1,5 +1,4 @@
 import { MantineColor, MantineColorsTuple } from "@mantine/core";
-import { $Enums, UserRole } from "@repo/database";
 import {
   CardAssociation,
   FontFamily,
@@ -12,8 +11,8 @@ import {
   TextAlign,
   VariantProductZodType,
 } from "@repo/types";
-
-export function getUserRoleLabels(role: UserRole) {
+import { $Enums } from "@repo/database";
+export function getUserRoleLabels(role: $Enums.UserRole) {
   switch (role) {
     case "ADMIN":
       return "Admin";

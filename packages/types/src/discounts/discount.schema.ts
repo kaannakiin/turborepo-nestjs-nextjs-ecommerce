@@ -376,7 +376,7 @@ const FixedTierSchema = z.object({
 
 export const MainDiscountSchema = z.discriminatedUnion("type", [
   z.object({
-    type: z.literal("percentage"),
+    type: z.literal<$Enums.DiscountType>("PERCENTAGE"),
     isGrowDiscount: z.literal(false),
     discountValue: z
       .number({ error: "Bu alan gereklidir." })
@@ -388,7 +388,7 @@ export const MainDiscountSchema = z.discriminatedUnion("type", [
   }),
 
   z.object({
-    type: z.literal("percentage"),
+    type: z.literal<$Enums.DiscountType>("PERCENTAGE"),
     isGrowDiscount: z.literal(true),
     tiers: z
       .array(PercentageTierSchema)
@@ -423,7 +423,7 @@ export const MainDiscountSchema = z.discriminatedUnion("type", [
 
   // Fixed - Simple
   z.object({
-    type: z.literal("fixed"),
+    type: z.literal<$Enums.DiscountType>("FIXED_AMOUNT"),
     isGrowDiscount: z.literal(false),
     discountAmount: z
       .number({ error: "Bu alan gereklidir." })
@@ -434,7 +434,7 @@ export const MainDiscountSchema = z.discriminatedUnion("type", [
 
   // Fixed - Tiered
   z.object({
-    type: z.literal("fixed"),
+    type: z.literal<$Enums.DiscountType>("FIXED_AMOUNT"),
     isGrowDiscount: z.literal(true),
     tiers: z
       .array(FixedTierSchema)
@@ -466,16 +466,16 @@ export const MainDiscountSchema = z.discriminatedUnion("type", [
   }),
 
   z.object({
-    type: z.literal("free_shipping"),
+    type: z.literal<$Enums.DiscountType>("FREE_SHIPPING"),
   }),
 
   z.object({
-    type: z.literal("buy_one_get_one"),
+    type: z.literal<$Enums.DiscountType>("BUY_X_GET_Y"),
   }),
 ]);
 
 export const MainDiscountSchemaDefaultValue: MainDiscount = {
-  type: "percentage",
+  type: "PERCENTAGE",
   title: "",
   isAllProducts: true,
   isGrowDiscount: false,
