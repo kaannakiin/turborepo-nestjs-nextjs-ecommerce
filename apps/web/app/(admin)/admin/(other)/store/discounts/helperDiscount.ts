@@ -7,7 +7,7 @@ export const safeTransformDiscountType = (
   // Ortak alanlar - her zaman korunur
   const commonFields = {
     title: currentValues.title || "",
-    isAllProducts: currentValues.isAllProducts ?? true,
+    isAllProducts: currentValues.conditions.isAllProducts ?? true,
     currencies: currentValues.currencies || ["TRY"],
     conditions: currentValues.conditions || null,
     allCustomers: currentValues?.allCustomers ?? true,
@@ -82,12 +82,6 @@ export const safeTransformDiscountType = (
       return {
         ...commonFields,
         type: "FREE_SHIPPING",
-      };
-
-    case "BUY_X_GET_Y":
-      return {
-        ...commonFields,
-        type: "BUY_X_GET_Y",
       };
 
     default:

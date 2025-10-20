@@ -33,7 +33,6 @@ import {
 } from "@repo/shared";
 import {
   $Enums,
-  AllowedDiscountedItemsBy,
   GrowPriceSchema,
   GrowQuantitySchema,
   MainDiscount,
@@ -705,7 +704,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                   if (checked) {
                     setValue(
                       "allowedDiscountedItemsBy",
-                      AllowedDiscountedItemsBy.price
+                      $Enums.AllowedDiscountedItemsBy.price
                     );
                   } else {
                     setValue("allowedDiscountedItemsBy", null);
@@ -731,11 +730,11 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                 >
                   <Group gap={"xl"} py={"xs"}>
                     <Radio
-                      value={AllowedDiscountedItemsBy.price}
+                      value={$Enums.AllowedDiscountedItemsBy.price}
                       label="Satış Fiyatı Üzerinden"
                     />
                     <Radio
-                      value={AllowedDiscountedItemsBy.discounted_price}
+                      value={$Enums.AllowedDiscountedItemsBy.discounted_price}
                       label="İndirimli Fiyat Üzerinden"
                     />
                   </Group>
