@@ -43,9 +43,7 @@ const RegisterForm = () => {
       const registerReq = await fetchWrapper.post<{
         success: boolean;
         message: string;
-      }>("/auth/register", {
-        data,
-      });
+      }>("/auth/register", data);
 
       if (!registerReq.success) {
         setError("root", {

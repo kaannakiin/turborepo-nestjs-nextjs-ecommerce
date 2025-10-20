@@ -112,16 +112,24 @@ export class CategoriesController {
       data: categories,
     };
   }
+
   @Get('get-all-categories-without-query')
   async getAllCategoriesWithoutQuery() {
     return this.categoriesService.getAllCategoriesWithoutQuery();
   }
+
   @Get('get-all-categories-only-id-and-name')
   async getAllCategoriesOnlyIdAndName() {
     return this.categoriesService.getAllCategoriesOnlyIdAndName();
   }
+
   @Get('get-all-categories-only-id-name-image')
   async getAllCategoriesOnlyIdNameImage() {
     return this.categoriesService.getAllCategoriesOnlyIdNameImage();
+  }
+
+  @Get('get-all-category-and-its-subs')
+  async getAllCategoryAndItsSubs() {
+    return this.categoriesService.getAllCategoryAndItsSubs();
   }
 }

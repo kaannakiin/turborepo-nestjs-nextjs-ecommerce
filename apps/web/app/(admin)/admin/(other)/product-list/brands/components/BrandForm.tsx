@@ -65,9 +65,7 @@ const BrandForm = ({ defaultValues }: BrandFormProps) => {
       // Brand oluştur
       const brandRes = await fetchWrapper.post(
         "/admin/products/brands/create-or-update-brand",
-        {
-          rest,
-        }
+        rest
       );
       if (!brandRes.success) {
         notifications.show({

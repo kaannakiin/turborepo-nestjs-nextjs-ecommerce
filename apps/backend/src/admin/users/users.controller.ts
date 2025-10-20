@@ -1,5 +1,6 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import {
+  AllUsersReturnType,
   type GetUsersQueries,
   getUsersQueries,
   GetUsersQueriesReturnType,
@@ -26,8 +27,14 @@ export class UsersController {
       sortBy: queries.sortBy, // Zod'da default var
     });
   }
+
   @Get('get-users-id-and-name')
   async getUsersIdAndName() {
     return this.usersService.getUsersIdAndName();
+  }
+
+  @Get('all-users')
+  async allUsers(): Promise<AllUsersReturnType[]> {
+    return this.usersService.getUserInfos();
   }
 }

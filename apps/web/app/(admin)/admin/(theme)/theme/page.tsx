@@ -13,7 +13,7 @@ const ThemePage = () => {
       const res = await fetchWrapper.get<{
         components: MainPageComponentsType["components"];
         footer: MainPageComponentsType["footer"] | null;
-      } | null>(`/admin/theme/get-layout`, {});
+      } | null>(`/admin/theme/get-layout?footer=true`, {});
       if (!res.success) {
         throw new Error("Layout verisi alınamadı");
       }
@@ -133,15 +133,8 @@ const ThemePage = () => {
         const otherCompRes = await fetchWrapper.post(
           `/admin/theme/update-layout`,
           {
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              components: otherComponents,
-              footer: data.footer || undefined,
-            }),
-            credentials: "include",
-            cache: "no-store",
+            components: otherComponents,
+            footer: data.footer || undefined,
           }
         );
 

@@ -145,9 +145,7 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
   ) => {
     const req = await fetchWrapper.post<{ success: boolean; message: string }>(
       `/shipping/create-or-update-cargo-zone`,
-      {
-        data,
-      }
+      data
     );
     if (!req.success) {
       notifications.show({
