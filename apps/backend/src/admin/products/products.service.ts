@@ -10,6 +10,7 @@ import {
   AdminProductTableData,
   BaseProductZodType,
   Cuid2ZodType,
+  DiscountItem,
   ModalProductCardForAdmin,
   VariantGroupZodType,
   VariantProductZodType,
@@ -2718,5 +2719,107 @@ export class ProductsService {
         p.translations[0]?.name,
       image: p.assets[0]?.asset || null,
     }));
+  }
+
+  async getAllProductsAndItsSubs(): Promise<DiscountItem[]> {
+    const products = await this.prisma.product.findMany({
+      select: {
+        id: true,
+        translations: true,
+        isVariant: true,
+        variantCombinations: {
+          select: {
+            id: true,
+            translations: true,
+            options: {
+              orderBy: [
+                {
+                  productVariantOption: { order: 'asc' },
+                },
+                {
+                  productVariantOption: {
+                    productVariantGroup: {
+                      order: 'asc',
+                    },
+                  },
+                },
+              ],
+              select: {
+                productVariantOption: {
+                  select: {
+                    variantOption: {
+                      select: {
+                        translations: true,
+                      },
+                    },
+                    productVariantGroup: {
+                      select: {
+                        variantGroup: {
+                          select: {
+                            translations: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!products) {
+      return [];
+    }
+
+    // Helper function: Locale'e göre translation al
+    const getTranslation = (translations: any[], locale = 'TR') => {
+      const translation = translations.find((tr) => tr.locale === locale);
+      return translation
+        ? translation.name
+        : translations[0]?.name || 'Unnamed';
+    };
+
+    return products.map((product) => {
+      // Ürünün ismini al
+      const productName = getTranslation(product.translations);
+
+      // Variant yoksa veya kombinasyon yoksa
+      if (
+        !product.isVariant ||
+        !product.variantCombinations ||
+        product.variantCombinations.length === 0
+      ) {
+        return {
+          id: product.id,
+          name: productName,
+          // sub yok, bu yüzden undefined bırak (component'te temizlenecek)
+        } as DiscountItem;
+      }
+
+      // Variant kombinasyonlarını sub olarak ekle
+      return {
+        id: product.id,
+        name: productName,
+        sub: product.variantCombinations.map((combination) => {
+          // Her kombinasyonun option'larını birleştir (Renk-Beden formatında)
+          const variantName = combination.options
+            .map((opt) => {
+              const optionName = getTranslation(
+                opt.productVariantOption.variantOption.translations,
+              );
+              return optionName;
+            })
+            .join(' - '); // "Kırmızı - XL" formatında
+
+          return {
+            id: combination.id,
+            name: variantName || 'Varyant',
+          } as DiscountItem;
+        }),
+      } as DiscountItem;
+    });
   }
 }

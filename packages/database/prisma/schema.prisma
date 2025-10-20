@@ -26,23 +26,25 @@ model Asset {
 }
 
 model User {
-  id               String                 @id @default(cuid())
-  role             UserRole               @default(USER)
-  name             String
-  surname          String
-  email            String?                @unique
-  phone            String?                @unique
-  password         String?
-  imageUrl         String?
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
-  defaultAddressId String?                @unique
-  addresses        AddressSchema[]
-  carts            Cart[]
-  orders           Order[]
-  paymentRequests  PaymentRequestSchema[]
-  refreshTokens    RefreshTokens[]
-  defaultAddress   AddressSchema?         @relation("UserDefaultAddress", fields: [defaultAddressId], references: [id])
+  id                String                 @id @default(cuid())
+  role              UserRole               @default(USER)
+  name              String
+  surname           String
+  email             String?                @unique
+  phone             String?                @unique
+  password          String?
+  imageUrl          String?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  defaultAddressId  String?                @unique
+  addresses         AddressSchema[]
+  carts             Cart[]
+  orders            Order[]
+  paymentRequests   PaymentRequestSchema[]
+  refreshTokens     RefreshTokens[]
+  defaultAddress    AddressSchema?         @relation("UserDefaultAddress", fields: [defaultAddressId], references: [id])
+  specificDiscounts DiscountCustomer[]
+  discountUsages    DiscountUsage[]
 
   @@index([id, email, phone])
 }
@@ -99,6 +101,7 @@ model Category {
   translations            CategoryTranslation[]
   footerLinks             FooterLinks[]
   products                ProductCategory[]
+  discountConditions      DiscountCategory[]
 
   @@index([parentCategoryId])
 }
@@ -156,17 +159,18 @@ model BrandTranslation {
 }
 
 model Brand {
-  id            String             @id @default(cuid())
-  imageId       String?            @unique
-  parentBrandId String?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  image         Asset?             @relation(fields: [imageId], references: [id])
-  parentBrand   Brand?             @relation("BrandHierarchy", fields: [parentBrandId], references: [id])
-  childBrands   Brand[]            @relation("BrandHierarchy")
-  translations  BrandTranslation[]
-  footerLinks   FooterLinks[]
-  products      Product[]
+  id                 String             @id @default(cuid())
+  imageId            String?            @unique
+  parentBrandId      String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  image              Asset?             @relation(fields: [imageId], references: [id])
+  parentBrand        Brand?             @relation("BrandHierarchy", fields: [parentBrandId], references: [id])
+  childBrands        Brand[]            @relation("BrandHierarchy")
+  translations       BrandTranslation[]
+  footerLinks        FooterLinks[]
+  products           Product[]
+  discountConditions DiscountBrand[]
 
   @@index([parentBrandId])
 }
@@ -309,6 +313,7 @@ model Product {
   translations           ProductTranslation[]
   variantCombinations    ProductVariantCombination[]
   variantGroups          ProductVariantGroup[]
+  discountConditions     DiscountProduct[]
 
   @@index([brandId])
   @@index([taxonomyCategoryId])
@@ -352,22 +357,23 @@ model ProductVariantOption {
 }
 
 model ProductVariantCombination {
-  id               String                            @id @default(cuid())
-  productId        String
-  sku              String?
-  barcode          String?
-  stock            Int                               @default(0)
-  active           Boolean                           @default(true)
-  createdAt        DateTime                          @default(now())
-  updatedAt        DateTime                          @updatedAt
-  cartItems        CartItem[]
-  orderItems       OrderItem[]
-  assets           ProductAsset[]
-  productListItems ProductListCarouselItem[]
-  prices           ProductPrice[]
-  product          Product                           @relation(fields: [productId], references: [id], onDelete: Cascade)
-  options          ProductVariantCombinationOption[]
-  translations     ProductVariantTranslation[]
+  id                 String                            @id @default(cuid())
+  productId          String
+  sku                String?
+  barcode            String?
+  stock              Int                               @default(0)
+  active             Boolean                           @default(true)
+  createdAt          DateTime                          @default(now())
+  updatedAt          DateTime                          @updatedAt
+  cartItems          CartItem[]
+  orderItems         OrderItem[]
+  assets             ProductAsset[]
+  productListItems   ProductListCarouselItem[]
+  prices             ProductPrice[]
+  product            Product                           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  options            ProductVariantCombinationOption[]
+  translations       ProductVariantTranslation[]
+  discountConditions DiscountProductVariant[]
 
   @@unique([productId, sku])
   @@unique([productId, barcode])
@@ -832,6 +838,7 @@ model Order {
   user            User?                 @relation(fields: [userId], references: [id])
   orderItems      OrderItem[]
   paymentRequests PaymentRequestSchema?
+  discountUsage   DiscountUsage?
 
   @@index([paymentId, orderNumber, paymentStatus, orderStatus])
 }
@@ -1007,10 +1014,31 @@ enum PaymentRequestStatus {
 }
 
 enum DiscountType {
-  PERCENTAGE
-  FIXED_AMOUNT
-  FREE_SHIPPING
-  BUY_X_GET_Y
+  PERCENTAGE // Basit yüzde
+  PERCENTAGE_GROW_QUANTITY // Katlı yüzde (adet)
+  PERCENTAGE_GROW_PRICE // Katlı yüzde (tutar)
+
+  FIXED_AMOUNT // Basit sabit tutar
+  FIXED_AMOUNT_GROW_QUANTITY // Katlı sabit tutar (adet)
+  FIXED_AMOUNT_GROW_PRICE // Katlı sabit tutar (tutar)
+
+  FREE_SHIPPING // Ücretsiz kargo
+}
+
+enum AllowedDiscountedItemsBy {
+  price
+  discounted_price
+}
+
+enum FilterOperator {
+  AND
+  OR
+}
+
+enum DiscountConditionType {
+  PRODUCT
+  CATEGORY
+  BRAND
 }
 
 enum DiscountEffectType {
@@ -1024,10 +1052,181 @@ enum DiscountWhereVisible {
   ALL
 }
 
-model DiscountSchema {
-  id           String       @id @default(cuid())
-  discountType DiscountType @default(PERCENTAGE)
+model Discount {
+  id       String       @id @default(cuid())
+  title    String
+  type     DiscountType
+  isActive Boolean      @default(true)
+
+  // Para Birimleri
+  currencies Currency[]
+
+  // Tarih Ayarları
+  startDate DateTime?
+  endDate   DateTime?
+
+  // Kullanım Koşulları (DiscountConditionSchema)
+  isLimitPurchase          Boolean                   @default(false)
+  minPurchaseAmount        Float?
+  maxPurchaseAmount        Float?
+  isLimitItemQuantity      Boolean                   @default(false)
+  minItemQuantity          Int?
+  maxItemQuantity          Int?
+  allowDiscountedItems     Boolean                   @default(false)
+  allowedDiscountedItemsBy AllowedDiscountedItemsBy?
+
+  // Uygulama Ayarları (DiscountSettingsSchema)
+  mergeOtherCampaigns          Boolean @default(false)
+  isLimitTotalUsage            Boolean @default(false)
+  totalUsageLimit              Int?
+  isLimitTotalUsagePerCustomer Boolean @default(false)
+  totalUsageLimitPerCustomer   Int?
+
+  // Basit İndirim Değerleri
+  discountValue  Float? // Yüzde indirim için (%20 ise 20)
+  discountAmount Float? // Sabit tutar indirim için
+
+  // Müşteri Kapsamı
+  isAllCustomers Boolean @default(true)
+
+  // Ürün Kapsamı
+  isAllProducts Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // İlişkiler
+  coupons         Coupon[]
+  tiers           DiscountTier[]
+  conditionGroups DiscountConditionGroup[]
+  customers       DiscountCustomer[] // many-to-many
+  usages          DiscountUsage[]
+
+  @@index([isActive, startDate, endDate])
+}
+
+model Coupon {
+  id         String @id @default(cuid())
+  code       String @unique // Kupon kodu
+  discountId String
+
+  // Bu kupon kodunun kullanım sayısını takip etmek için.
+  // Ana indirimde genel bir limit olsa bile, her kodun ayrı ayrı sayısını tutmak faydalıdır.
+  usageCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  discount Discount        @relation(fields: [discountId], references: [id], onDelete: Cascade)
+  usages   DiscountUsage[]
+
+  @@index([code])
+  @@index([discountId])
+}
+
+model DiscountTier {
+  id         String @id @default(cuid())
+  discountId String
+
+  // Adet bazlı kademe
+  minQuantity Int?
+  maxQuantity Int?
+
+  // Tutar bazlı kademe
+  minAmount Float?
+  maxAmount Float?
+
+  // Kademenin indirim değeri
+  discountPercentage Float?
+  discountAmount     Float?
+
+  discount Discount @relation(fields: [discountId], references: [id], onDelete: Cascade)
+
+  @@index([discountId])
+}
+
+model DiscountCustomer {
+  discountId String
+  userId     String
+
+  discount Discount @relation(fields: [discountId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([discountId, userId])
+}
+
+model DiscountConditionGroup {
+  id         String         @id @default(cuid())
+  discountId String
+  operator   FilterOperator
+
+  discount Discount @relation(fields: [discountId], references: [id], onDelete: Cascade)
+
+  // Many-to-many ilişkileri için bağlantılar
+  products   DiscountProduct[]
+  categories DiscountCategory[]
+  brands     DiscountBrand[]
+  variants   DiscountProductVariant[] // ProductVariantCombination için de ekleyelim
+
+  @@index([discountId])
+}
+
+model DiscountProduct {
+  groupId   String
+  productId String
+
+  group   DiscountConditionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  product Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, productId])
+}
+
+model DiscountCategory {
+  groupId    String
+  categoryId String
+
+  group    DiscountConditionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  category Category               @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, categoryId])
+}
+
+model DiscountBrand {
+  groupId String
+  brandId String
+
+  group DiscountConditionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  brand Brand                  @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, brandId])
+}
+
+model DiscountProductVariant {
+  groupId   String
+  variantId String
+
+  group   DiscountConditionGroup    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  variant ProductVariantCombination @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, variantId])
+}
+
+model DiscountUsage {
+  id         String @id @default(cuid())
+  discountId String
+  couponId   String // Hangi kupon kodu kullanıldı
+  userId     String
+  orderId    String @unique // Bir siparişte sadece bir indirim kullanımı olabilir
+
+  amount Float // Bu kullanımda ne kadar indirim yapıldığı
+  usedAt DateTime @default(now())
+
+  discount Discount @relation(fields: [discountId], references: [id], onDelete: Restrict)
+  coupon   Coupon   @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@index([discountId])
+  @@index([couponId])
+  @@index([userId])
 }

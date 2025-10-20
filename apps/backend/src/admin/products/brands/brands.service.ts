@@ -6,7 +6,13 @@ import {
 } from '@nestjs/common';
 import { $Enums, Prisma } from '@repo/database';
 import { slugify } from '@repo/shared';
-import { Brand, BrandIdAndName, Cuid2ZodType } from '@repo/types';
+import {
+  Brand,
+  BrandIdAndName,
+  Cuid2ZodType,
+  DiscountItem,
+  FlatItem,
+} from '@repo/types';
 import { MinioService } from 'src/minio/minio.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -512,5 +518,82 @@ export class BrandsService {
         ? { url: brand.image.url, type: brand.image.type }
         : null,
     }));
+  }
+
+  async getAllBrandsAndItsSubs(): Promise<DiscountItem[]> {
+    // 1. Adım: Veritabanından tüm markaları istenen çeviri mantığıyla çek
+    const flatBrands = await this.prisma.$queryRaw<FlatItem[]>`
+      WITH RECURSIVE BrandHierarchy AS (
+        -- Anchor
+        SELECT id, "parentBrandId" FROM "Brand" WHERE "parentBrandId" IS NULL
+        UNION ALL
+        -- Recursive
+        SELECT b.id, b."parentBrandId" FROM "Brand" AS b
+        JOIN BrandHierarchy AS bh ON b."parentBrandId" = bh.id
+      ),
+      RankedTranslations AS (
+        -- Rank translations for each brand, prioritizing 'TR'
+        SELECT
+          "brandId",
+          name,
+          ROW_NUMBER() OVER (
+            PARTITION BY "brandId" 
+            ORDER BY CASE WHEN "locale" = 'TR' THEN 0 ELSE 1 END
+          ) as rn
+        FROM "BrandTranslation"
+        WHERE "brandId" IN (SELECT id FROM BrandHierarchy)
+      )
+      -- Final selection
+      SELECT
+        bh.id,
+        bh."parentBrandId",
+        rt.name
+      FROM
+        BrandHierarchy AS bh
+      LEFT JOIN
+        RankedTranslations AS rt ON bh.id = rt."brandId"
+      WHERE
+        rt.rn = 1 OR rt.rn IS NULL; -- Join'den sonuç gelmese bile markayı listele (çevirisi olmayanlar için)
+    `;
+
+    // 2. Adım: Düz listeyi ağaç (iç içe) yapısına dönüştür (bu kısım öncekiyle aynı)
+    const nodeMap = new Map<string, DiscountItem>();
+    const result: DiscountItem[] = [];
+
+    // Her bir öğeyi bir DiscountItem'a dönüştürüp map'e ata
+    flatBrands.forEach((item) => {
+      // Çevirisi olmayan markalar için name null gelebilir, bunu kontrol et
+      nodeMap.set(item.id, {
+        id: item.id,
+        name: item.name || 'No Name',
+        sub: [],
+      });
+    });
+
+    // Her bir öğeyi doğru parent'ın altına yerleştir
+    flatBrands.forEach((item) => {
+      const currentNode = nodeMap.get(item.id);
+      if (!currentNode) return;
+
+      if (item.parentId) {
+        const parentNode = nodeMap.get(item.parentId);
+        if (parentNode) {
+          parentNode.sub = parentNode.sub || [];
+          parentNode.sub.push(currentNode);
+        }
+      } else {
+        // parentBrandId yoksa bu bir kök (root) markadır
+        result.push(currentNode);
+      }
+    });
+
+    // Boş `sub` dizilerini temizle
+    nodeMap.forEach((node) => {
+      if (node.sub && node.sub.length === 0) {
+        delete node.sub;
+      }
+    });
+
+    return result;
   }
 }

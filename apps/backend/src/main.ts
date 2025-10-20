@@ -16,7 +16,6 @@ async function bootstrap() {
     const nodeEnv = configService.get<string>('NODE_ENV', 'development');
     const isProduction = nodeEnv === 'production';
 
-    // ✅ 1. HELMET - Güvenlik header'ları
     app.use(
       helmet({
         contentSecurityPolicy: isProduction ? undefined : false,

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@repo/database';
 import {
+  AllUsersReturnType,
   GetUsersQueriesReturnType,
   SortAdminUserTable,
   UserIdAndName,
@@ -129,5 +130,23 @@ export class UsersService {
       id: user.id,
       name: `${user.name} ${user.surname}`,
     }));
+  }
+
+  async getUserInfos(): Promise<AllUsersReturnType[]> {
+    const user = await this.prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        name: true,
+        surname: true,
+      },
+    });
+
+    if (!user) {
+      return [];
+    }
+
+    return user;
   }
 }

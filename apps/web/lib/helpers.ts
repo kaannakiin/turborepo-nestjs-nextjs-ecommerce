@@ -860,8 +860,6 @@ export function getPaymentStatusColor(
 
 export function getDiscountTypeLabel(type: $Enums.DiscountType): string {
   switch (type) {
-    case "BUY_X_GET_Y":
-      return "X Al Y Kazan";
     case "FIXED_AMOUNT":
       return "Sabit Tutar";
     case "FREE_SHIPPING":

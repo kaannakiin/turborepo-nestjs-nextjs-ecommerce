@@ -211,4 +211,9 @@ export class ProductsController {
   async getAllProductsIdNameImage() {
     return this.productsService.getAllProductsIdNameImage();
   }
+
+  @Get('get-all-products-and-its-subs')
+  async getAllProductAndItsSubs() {
+    return this.productsService.getAllProductsAndItsSubs();
+  }
 }

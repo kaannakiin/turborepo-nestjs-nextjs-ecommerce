@@ -2,6 +2,7 @@
 
 import { queryClient } from "@lib/serverQueryClient";
 import {
+  Combobox,
   createTheme,
   MantineColorsTuple,
   MantineProvider,
@@ -44,6 +45,7 @@ const LayoutProviderWrapper = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
   const theme = createTheme({
     colors: { primary: primaryColor, admin: adminPrimaryColor },
+    cursorType: "pointer",
     primaryColor: pathname.startsWith("/admin") ? "admin" : "primary",
     components: {
       Modal: Modal.extend({
@@ -53,6 +55,12 @@ const LayoutProviderWrapper = ({ children }: { children: ReactNode }) => {
         defaultProps: {
           centered: true,
           transitionProps: { transition: "scale", duration: 300 },
+        },
+      }),
+
+      Combobox: Combobox.extend({
+        defaultProps: {
+          transitionProps: { transition: "pop-bottom-right", duration: 200 },
         },
       }),
     },

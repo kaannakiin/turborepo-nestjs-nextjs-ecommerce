@@ -5,7 +5,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { $Enums, Prisma } from '@repo/database';
-import { Category, CategoryIdAndName, Cuid2ZodType } from '@repo/types';
+import {
+  Category,
+  CategoryIdAndName,
+  Cuid2ZodType,
+  DiscountItem,
+  FlatItem,
+} from '@repo/types';
 import { MinioService } from 'src/minio/minio.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -457,5 +463,79 @@ export class CategoriesService {
         ? { url: category.image.url, type: category.image.type }
         : null,
     }));
+  }
+
+  async getAllCategoryAndItsSubs(): Promise<DiscountItem[]> {
+    const flatCategories = await this.prisma.$queryRaw<FlatItem[]>`
+    WITH RECURSIVE CategoryHierarchy AS (
+      -- Root kategorileri getir
+      SELECT c.id, c."parentCategoryId"
+      FROM "Category" AS c
+      WHERE c."parentCategoryId" IS NULL
+      
+      UNION ALL
+      
+      -- Alt kategorileri recursive olarak getir
+      SELECT c.id, c."parentCategoryId"
+      FROM "Category" AS c
+      JOIN CategoryHierarchy AS ch ON c."parentCategoryId" = ch.id
+    ),
+    CategoryWithTranslations AS (
+      SELECT 
+        ch.id,
+        ch."parentCategoryId",
+        ct.name,
+        ct.locale,
+        ROW_NUMBER() OVER (
+          PARTITION BY ch.id 
+          ORDER BY 
+            CASE WHEN ct.locale = 'TR' THEN 0 ELSE 1 END,
+            ct.locale
+        ) as rn
+      FROM CategoryHierarchy ch
+      LEFT JOIN "CategoryTranslation" ct ON ch.id = ct."categoryId"
+    )
+    SELECT 
+      id,
+      "parentCategoryId",
+      name
+    FROM CategoryWithTranslations
+    WHERE rn = 1;
+  `;
+
+    const nodeMap = new Map<string, DiscountItem>();
+    const result: DiscountItem[] = [];
+
+    // Tüm node'ları oluştur
+    flatCategories.forEach((item) => {
+      nodeMap.set(item.id, {
+        id: item.id,
+        name: item.name || 'Unnamed',
+        sub: [],
+      });
+    });
+
+    flatCategories.forEach((item) => {
+      const currentNode = nodeMap.get(item.id);
+      if (!currentNode) return;
+
+      if (item.parentId) {
+        const parentNode = nodeMap.get(item.parentId);
+        if (parentNode) {
+          parentNode.sub!.push(currentNode);
+        }
+      } else {
+        result.push(currentNode);
+      }
+    });
+
+    // Boş sub array'leri temizle
+    nodeMap.forEach((node) => {
+      if (node.sub && node.sub.length === 0) {
+        delete node.sub;
+      }
+    });
+
+    return result;
   }
 }

@@ -13,7 +13,7 @@ const ThemePage = () => {
       const res = await fetchWrapper.get<{
         components: MainPageComponentsType["components"];
         footer: MainPageComponentsType["footer"] | null;
-      } | null>(`/admin/theme/get-layout`, {});
+      } | null>(`/admin/theme/get-layout?footer=true`, {});
       if (!res.success) {
         throw new Error("Layout verisi alınamadı");
       }

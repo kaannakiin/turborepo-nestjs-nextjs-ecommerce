@@ -99,9 +99,7 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
     try {
       const categoryRes = await fetchWrapper.post<void>(
         "/admin/products/categories/create-or-update-category",
-        {
-          rest,
-        }
+        rest
       );
 
       if (!categoryRes.success) {
