@@ -133,15 +133,8 @@ const ThemePage = () => {
         const otherCompRes = await fetchWrapper.post(
           `/admin/theme/update-layout`,
           {
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              components: otherComponents,
-              footer: data.footer || undefined,
-            }),
-            credentials: "include",
-            cache: "no-store",
+            components: otherComponents,
+            footer: data.footer || undefined,
           }
         );
 
