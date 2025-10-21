@@ -1,8 +1,8 @@
 "use client";
 
+import { getCurrencyIntlFormat } from "@lib/helpers";
 import { Text, TextProps } from "@mantine/core";
-import { getCurrencyIntlFormat } from "../../../lib/helpers";
-import { $Enums } from "@repo/types";
+import { $Enums } from "@repo/database";
 
 interface ProductPriceFormatterProps extends TextProps {
   price: number;

@@ -2,8 +2,9 @@
 
 import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import { Breadcrumbs, Grid, Stack, Text } from "@mantine/core";
-import { $Enums, CategoryPagePreparePageReturnData } from "@repo/types";
+import { CategoryPagePreparePageReturnData } from "@repo/types";
 import { IconChevronRight } from "@tabler/icons-react";
+import { $Enums } from "@repo/database";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import CategoryPageDekstopFilter from "./CategoryPageDekstopFilter";

@@ -24,6 +24,11 @@ interface DiscountModalProps {
   modalProps?: Omit<ModalProps, "onClose" | "opened">;
   selectedItems?: string[];
   onSave: (selectedIds: string[]) => void;
+  /**
+   * Bu 'true' ise, 'sub' dizisini akordeon yerine
+   * ana öğenin altında bir varyant listesi olarak render eder.
+   */
+  subAsVariantsMode?: boolean;
 }
 
 const DiscountModal = ({
@@ -35,6 +40,7 @@ const DiscountModal = ({
   selectedItems = [],
   onSave,
   dataTitle,
+  subAsVariantsMode = false, // Yeni prop ve varsayılan değeri
 }: DiscountModalProps) => {
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -90,6 +96,45 @@ const DiscountModal = ({
       const isChecked = isAllChildrenSelected(item);
       const isIndeterminate = isSomeChildrenSelected(item);
 
+      // --- YENİ KONTROL (VARYANT MODU) ---
+      // Eğer 'subAsVariantsMode' true ise ve alt öğeler varsa (yani bu bir Ürün ve varyantları var)
+      // Akordeon yerine düz bir liste olarak render et.
+      if (hasSub && subAsVariantsMode) {
+        return (
+          <Box key={item.id} style={{ paddingLeft: level > 0 ? 4 : 0 }} my="sm">
+            {/* 1. Ana Ürün Checkbox'ı */}
+            <Checkbox
+              checked={isChecked}
+              indeterminate={isIndeterminate}
+              onChange={(e) => {
+                handleSelect(item, e.currentTarget.checked);
+              }}
+              label={item.name}
+              fw={500} // Ana ürünü kalın yap
+              mb="xs"
+            />
+            {/* 2. Varyantların Listesi (girintili) */}
+            <Stack gap="xs" style={{ paddingLeft: 20 }}>
+              {item.sub!.map((variant) => (
+                <Checkbox
+                  key={variant.id}
+                  checked={selected.has(variant.id)}
+                  // Varyant seçimini de 'handleSelect' ile yapıyoruz ki
+                  // ana ürünün 'indeterminate' state'i doğru çalışsın.
+                  onChange={(e) =>
+                    handleSelect(variant, e.currentTarget.checked)
+                  }
+                  label={variant.name}
+                />
+              ))}
+            </Stack>
+          </Box>
+        );
+      }
+
+      // --- ESKİ (DEFAULT) DAVRANIŞ ---
+
+      // 1. Alt öğesi olmayan (leaf node)
       if (!hasSub) {
         return (
           <Box
@@ -107,6 +152,7 @@ const DiscountModal = ({
         );
       }
 
+      // 2. Alt öğesi olan (kategori/marka gibi) - Akordeonlu yapı
       return (
         <Box
           key={item.id}

@@ -1,10 +1,9 @@
-import { $Enums, MainDiscount } from "@repo/types";
-
+import { $Enums } from "@repo/database";
+import { MainDiscount } from "@repo/types";
 export const safeTransformDiscountType = (
   currentValues: Partial<MainDiscount>,
   newType: $Enums.DiscountType
 ): Partial<MainDiscount> => {
-  // Ortak alanlar - her zaman korunur
   const commonFields = {
     title: currentValues.title || "",
     isAllProducts: currentValues.conditions.isAllProducts ?? true,

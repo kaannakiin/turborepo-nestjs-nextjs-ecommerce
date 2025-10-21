@@ -19,10 +19,11 @@ import {
   useForm,
   zodResolver,
 } from "@repo/shared";
-import { $Enums, SliderSchema, SliderType } from "@repo/types";
+import { SliderSchema, SliderType } from "@repo/types";
 import { IconX } from "@tabler/icons-react";
 import GlobalDropzone from "../../../components/GlobalDropzone";
 import fetchWrapper from "@lib/fetchWrapper";
+import { $Enums } from "@repo/database";
 
 interface SliderFormProps {
   defaultValues?: SliderType;

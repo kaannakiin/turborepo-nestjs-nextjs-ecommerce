@@ -26,11 +26,11 @@ import {
   useForm,
   zodResolver,
 } from "@repo/shared";
-import { $Enums, ShippingRuleSchema, ShippingRuleType } from "@repo/types";
+import { ShippingRuleSchema, ShippingRuleType } from "@repo/types";
 import { IconPackage } from "@tabler/icons-react";
 import { useEffect } from "react";
 import ProductPriceNumberInput from "../../../product-list/create-variant/components/ProductPriceNumberInput";
-
+import { $Enums } from "@repo/database";
 interface ShippingRuleDrawerProps {
   openedRuleModal: boolean;
   closeRuleModal: () => void;

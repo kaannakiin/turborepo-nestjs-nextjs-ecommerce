@@ -2,7 +2,8 @@
 
 import ProductsCarousels from "@/(user)/components/ProductsCarousels";
 import { Stack } from "@mantine/core";
-import { $Enums, GetProductPageReturnType } from "@repo/types";
+import { GetProductPageReturnType } from "@repo/types";
+import { $Enums } from "@repo/database";
 import ProductAssetViewer from "./ProductAssetViewer";
 import BasicProductRightSection from "./BasicProductRightSection";
 

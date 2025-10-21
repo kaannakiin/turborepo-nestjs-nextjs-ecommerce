@@ -8,6 +8,7 @@ import {
   InputBaseProps,
   useCombobox,
 } from "@mantine/core";
+import { $Enums } from "@repo/database";
 import {
   createId,
   slugify,
@@ -15,7 +16,7 @@ import {
   UseFormSetValue,
   useQuery,
 } from "@repo/shared";
-import { $Enums, VariantGroupZodType } from "@repo/types";
+import { VariantGroupZodType } from "@repo/types";
 import { useMemo, useState } from "react";
 
 interface CreatableSelectProps extends Omit<InputBaseProps, "rightSection"> {

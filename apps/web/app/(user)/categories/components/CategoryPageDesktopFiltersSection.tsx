@@ -9,7 +9,8 @@ import {
   Text,
   UnstyledButton,
 } from "@mantine/core";
-import { $Enums, CategoryPagePreparePageReturnData } from "@repo/types";
+import { CategoryPagePreparePageReturnData } from "@repo/types";
+import { $Enums } from "@repo/database";
 import { IconX } from "@tabler/icons-react";
 import { ReadonlyURLSearchParams, useRouter } from "next/navigation";
 

@@ -17,7 +17,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@repo/shared";
-import { $Enums, AdminBrandTableData, BrandsResponse } from "@repo/types";
+import { AdminBrandTableData, BrandsResponse } from "@repo/types";
 import { IconEdit, IconTrash } from "@tabler/icons-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -28,7 +28,7 @@ import { useState } from "react";
 import { notifications } from "@mantine/notifications";
 import TableAsset from "@/(admin)/components/TableAsset";
 import fetchWrapper from "@lib/fetchWrapper";
-
+import { $Enums } from "@repo/database";
 const BrandsTable = () => {
   const searchParams = useSearchParams();
   const { push } = useRouter();

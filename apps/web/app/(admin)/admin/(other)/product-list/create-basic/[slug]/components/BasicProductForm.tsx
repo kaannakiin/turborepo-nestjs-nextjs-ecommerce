@@ -25,12 +25,12 @@ import {
   zodResolver,
 } from "@repo/shared";
 import {
-  $Enums,
   BaseProductSchema,
   BaseProductZodType,
   BrandSelectType,
   CategorySelectType,
 } from "@repo/types";
+
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 
@@ -43,6 +43,7 @@ import ProductDropzone from "../../../components/ProductDropzone";
 import GoogleTaxonomySelectV2 from "../../../create-variant/components/GoogleTaxonomySelectV2";
 import ProductDetailCard from "../../../create-variant/components/ProductDetailCard";
 import ProductPriceNumberInput from "../../../create-variant/components/ProductPriceNumberInput";
+import { $Enums } from "@repo/database";
 
 const GlobalTextEditor = dynamic(
   () => import("../../../../../../../components/GlobalTextEditor"),
