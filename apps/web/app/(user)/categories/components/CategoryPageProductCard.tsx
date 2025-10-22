@@ -2,7 +2,8 @@
 import CustomImage from "@/components/CustomImage";
 import { AspectRatio, Badge, Card, Stack, Text } from "@mantine/core";
 import { useHover } from "@mantine/hooks";
-import { $Enums, GetCategoryProductsResponse } from "@repo/types";
+import { $Enums } from "@repo/database";
+import { GetCategoryProductsResponse } from "@repo/types";
 import { useRouter } from "next/navigation";
 
 interface CategoryPageProductCardProps {

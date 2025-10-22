@@ -38,7 +38,6 @@ import {
   UseFormSetValue,
 } from "@repo/shared";
 import {
-  $Enums,
   CategoryGridComponentType,
   FontFamily,
   MainPageComponentsType,
@@ -57,6 +56,7 @@ import { getFontFamilyLabel } from "../../../../../lib/helpers";
 import MarqueeForm from "../../../components/AdminThemeAsideForms/MarqueeForm";
 import ProductListForm from "../../../components/AdminThemeAsideForms/ProductListForm";
 import SliderForm from "../../../components/AdminThemeAsideForms/SliderForm";
+import { $Enums } from "@repo/database";
 
 type ComponentState =
   | "slider"

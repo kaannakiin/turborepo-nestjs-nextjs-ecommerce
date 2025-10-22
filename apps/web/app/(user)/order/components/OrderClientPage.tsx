@@ -27,7 +27,6 @@ import {
 import { ProductTranslation } from "@repo/database";
 import { DateFormatter, useQuery } from "@repo/shared";
 import {
-  $Enums,
   BuyedVariant,
   CardAssociation,
   OrderPageReturnType,
@@ -44,7 +43,7 @@ import {
   IconTruck,
 } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
-
+import { $Enums } from "@repo/database";
 const OrderClientPage = ({
   slug,
   session,
