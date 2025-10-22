@@ -866,5 +866,13 @@ export function getDiscountTypeLabel(type: $Enums.DiscountType): string {
       return "Ücretsiz Kargo";
     case "PERCENTAGE":
       return "Yüzdelik";
+    case "FIXED_AMOUNT_GROW_PRICE":
+      return "Sabit Tutar - Fiyat Bazlı Artan";
+    case "FIXED_AMOUNT_GROW_QUANTITY":
+      return "Sabit Tutar - Miktar Bazlı Artan";
+    case "PERCENTAGE_GROW_PRICE":
+      return "Yüzdelik - Fiyat Bazlı Artan";
+    case "PERCENTAGE_GROW_QUANTITY":
+      return "Yüzdelik - Miktar Bazlı Artan";
   }
 }

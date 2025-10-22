@@ -24,6 +24,8 @@ interface DiscountModalProps {
   modalProps?: Omit<ModalProps, "onClose" | "opened">;
   selectedItems?: string[];
   onSave: (selectedIds: string[]) => void;
+
+  subAsVariantsMode?: boolean;
 }
 
 const DiscountModal = ({
@@ -35,6 +37,7 @@ const DiscountModal = ({
   selectedItems = [],
   onSave,
   dataTitle,
+  subAsVariantsMode = false,
 }: DiscountModalProps) => {
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -89,6 +92,35 @@ const DiscountModal = ({
       const hasSub = item.sub && item.sub.length > 0;
       const isChecked = isAllChildrenSelected(item);
       const isIndeterminate = isSomeChildrenSelected(item);
+
+      if (hasSub && subAsVariantsMode) {
+        return (
+          <Box key={item.id} style={{ paddingLeft: level > 0 ? 4 : 0 }} my="sm">
+            <Checkbox
+              checked={isChecked}
+              indeterminate={isIndeterminate}
+              onChange={(e) => {
+                handleSelect(item, e.currentTarget.checked);
+              }}
+              label={item.name}
+              fw={500}
+              mb="xs"
+            />
+            <Stack gap="xs" style={{ paddingLeft: 20 }}>
+              {item.sub!.map((variant) => (
+                <Checkbox
+                  key={variant.id}
+                  checked={selected.has(variant.id)}
+                  onChange={(e) =>
+                    handleSelect(variant, e.currentTarget.checked)
+                  }
+                  label={variant.name}
+                />
+              ))}
+            </Stack>
+          </Box>
+        );
+      }
 
       if (!hasSub) {
         return (

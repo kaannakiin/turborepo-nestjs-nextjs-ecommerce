@@ -1,41 +1,26 @@
-import { $Enums } from "@repo/database";
+import { $Enums, Discount, Prisma } from "@repo/database";
 import { isAfter, isValid, parseISO } from "date-fns";
 import * as z from "zod";
-
-export const SelectDataType = {
-  product: "product",
-  brand: "brand",
-  category: "category",
-};
-export type SelectDataType =
-  (typeof SelectDataType)[keyof typeof SelectDataType];
-
-export const FilterOperators = {
-  AND: "AND",
-  OR: "OR",
-};
-
-export type FilterOperator =
-  (typeof FilterOperators)[keyof typeof FilterOperators];
 
 const idArraySchema = z
   .array(
     z.cuid2({
-      error: "Geçerli bir ID formatı olmalıdır.",
+      message: "Geçerli bir ID formatı olmalıdır.",
     })
   )
-  .min(1, { error: "En az bir öğe seçmelisiniz." });
+  .min(1, { message: "En az bir öğe seçmelisiniz." });
 
 const FilterConditionSchema = z.object({
-  operator: z.enum(FilterOperators, {
+  operator: z.enum($Enums.FilterOperator, {
     error: "Bu alan gereklidir.",
   }),
   type: z
-    .enum(SelectDataType, {
+    .enum($Enums.DiscountConditionType, {
       error: "Bu alan gereklidir.",
     })
     .nullish(),
   ids: idArraySchema.nullish(),
+  subIds: idArraySchema.nullish(),
 });
 
 const DiscountConditionSchema = z
@@ -314,60 +299,97 @@ const DiscountDatesSchema = z
     }
   });
 
-const BaseDiscountSchema = z.object({
-  uniqueId: z.cuid2().nullish(),
-  title: z
-    .string({ error: "Bu alan gereklidir." })
-    .min(3, { error: "Başlık en az 3 karakter olmalıdır." })
-    .max(100, { error: "Başlık en fazla 100 karakter olabilir." }),
-  currencies: z
-    .array(
-      z.enum($Enums.Currency, {
-        error: "Geçerli bir para birimi olmalıdır.",
+const BaseDiscountSchema = z
+  .object({
+    uniqueId: z.cuid2().nullish(),
+    title: z
+      .string({ error: "Bu alan gereklidir." })
+      .min(3, { error: "Başlık en az 3 karakter olmalıdır." })
+      .max(100, { error: "Başlık en fazla 100 karakter olabilir." }),
+    currencies: z
+      .array(
+        z.enum($Enums.Currency, {
+          error: "Geçerli bir para birimi olmalıdır.",
+        })
+      )
+      .min(1, { error: "En az bir para birimi seçmelisiniz." })
+      .refine(
+        (val) => {
+          const uniqueValues = new Set(val);
+          return uniqueValues.size === val.length;
+        },
+        {
+          error: "Para birimleri benzersiz olmalıdır.",
+        }
+      ),
+    ...DiscountCustomerSchema.shape,
+    ...DiscountDatesSchema.shape,
+    ...DiscountConditionSchema.shape,
+    ...DiscountSettingsSchema.shape,
+    conditions: z
+      .object({
+        isAllProducts: z.boolean(),
+        conditions: z.array(FilterConditionSchema).nullish(),
       })
-    )
-    .min(1, { error: "En az bir para birimi seçmelisiniz." })
-    .refine(
-      (val) => {
-        const uniqueValues = new Set(val);
-        return uniqueValues.size === val.length;
-      },
-      {
-        error: "Para birimleri benzersiz olmalıdır.",
+      .refine(
+        (data) => {
+          if (data.isAllProducts) return true;
+          return data.conditions != null && data.conditions.length > 0;
+        },
+        {
+          error: "Ürünler için geçerli koşullar belirtmelisiniz.",
+        }
+      ),
+    coupons: z
+      .array(CouponSchema, { error: "Bu alan gereklidir." })
+      .min(1, { error: "En az bir kupon eklemelisiniz." })
+      .refine(
+        (coupons) => {
+          const couponNames = coupons.map((c) => c.couponName.toLowerCase());
+          const uniqueCouponNames = new Set(couponNames);
+          return uniqueCouponNames.size === couponNames.length;
+        },
+        {
+          error: "Kupon adları benzersiz olmalıdır.",
+        }
+      ),
+  })
+  .check(({ issues, value, aborted }) => {
+    if (!value.conditions || value.conditions.conditions.length === 0) return;
+
+    value.conditions.conditions.forEach((condition, index) => {
+      if (!condition.type) return;
+
+      const hasIds = condition.ids && condition.ids.length > 0;
+      const hasVariantIds = condition.subIds && condition.subIds.length > 0;
+
+      switch (condition.type) {
+        case "PRODUCT":
+          if (!hasIds && !hasVariantIds) {
+            issues.push({
+              code: "custom",
+              message:
+                "Ürün seçimi için en az bir ürün veya varyant seçmelisiniz.",
+              path: ["conditions", "conditions", index, "ids"],
+              input: condition.ids,
+            });
+          }
+          break;
+
+        case "CATEGORY":
+        case "BRAND":
+          if (!hasIds) {
+            issues.push({
+              code: "custom",
+              message: `${condition.type} seçimi için en az bir öğe seçmelisiniz.`,
+              path: ["conditions", "conditions", index, "ids"],
+              input: condition.ids,
+            });
+          }
+          break;
       }
-    ),
-  ...DiscountCustomerSchema.shape,
-  ...DiscountDatesSchema.shape,
-  ...DiscountConditionSchema.shape,
-  ...DiscountSettingsSchema.shape,
-  conditions: z
-    .object({
-      isAllProducts: z.boolean(),
-      conditions: z.array(FilterConditionSchema).nullish(),
-    })
-    .refine(
-      (data) => {
-        if (data.isAllProducts) return true;
-        return data.conditions != null && data.conditions.length > 0;
-      },
-      {
-        error: "Ürünler için geçerli koşullar belirtmelisiniz.",
-      }
-    ),
-  coupons: z
-    .array(CouponSchema, { error: "Bu alan gereklidir." })
-    .min(1, { error: "En az bir kupon eklemelisiniz." })
-    .refine(
-      (coupons) => {
-        const couponNames = coupons.map((c) => c.couponName.toLowerCase());
-        const uniqueCouponNames = new Set(couponNames);
-        return uniqueCouponNames.size === couponNames.length;
-      },
-      {
-        error: "Kupon adları benzersiz olmalıdır.",
-      }
-    ),
-});
+    });
+  });
 
 // Tier şemaları
 const PercentageTierByQuantitySchema = z
@@ -680,90 +702,99 @@ function validatePriceTiers<
   }
 }
 
+export const PercentageDiscountSchema = z.object({
+  type: z.literal<$Enums.DiscountType>("PERCENTAGE", {
+    error: "İndirim türü yüzde olmalıdır.",
+  }),
+  discountValue: z
+    .number({ error: "Bu alan gereklidir." })
+    .min(0.01, { error: "İndirim yüzdesi 0'dan büyük olmalıdır." })
+    .max(100, { error: "İndirim yüzdesi 100'den büyük olamaz." }),
+  ...BaseDiscountSchema.shape,
+});
+
+export const PercentageGrowQuantityDiscountSchema = z
+  .object({
+    type: z.literal<$Enums.DiscountType>("PERCENTAGE_GROW_QUANTITY", {
+      error: "İndirim türü kademeli yüzde (adet) olmalıdır.",
+    }),
+    tiers: z
+      .array(PercentageTierByQuantitySchema)
+      .min(2, { error: "Kademeli indirim için en az 2 kademe gereklidir." }),
+    ...BaseDiscountSchema.shape,
+  })
+  .check(({ issues, value }) => {
+    validateQuantityTiers(value.tiers, "discountPercentage", issues);
+  });
+
+export const PercentageGrowPriceDiscountSchema = z
+  .object({
+    type: z.literal<$Enums.DiscountType>("PERCENTAGE_GROW_PRICE", {
+      error: "İndirim türü kademeli yüzde (tutar) olmalıdır.",
+    }),
+    tiers: z
+      .array(PercentageTierByPriceSchema)
+      .min(2, { error: "Kademeli indirim için en az 2 kademe gereklidir." }),
+    ...BaseDiscountSchema.shape,
+  })
+  .check(({ issues, value }) => {
+    validatePriceTiers(value.tiers, "discountPercentage", issues);
+  });
+
+export const FixedAmountDiscountSchema = z.object({
+  type: z.literal<$Enums.DiscountType>("FIXED_AMOUNT", {
+    error: "İndirim türü sabit tutar olmalıdır.",
+  }),
+  discountAmount: z
+    .number({ error: "Bu alan gereklidir." })
+    .min(0.01, { error: "İndirim tutarı 0'dan büyük olmalıdır." }),
+  ...BaseDiscountSchema.shape,
+});
+
+export const FixedAmountGrowQuantityDiscountSchema = z
+  .object({
+    type: z.literal<$Enums.DiscountType>("FIXED_AMOUNT_GROW_QUANTITY", {
+      error: "İndirim türü kademeli sabit tutar (adet) olmalıdır.",
+    }),
+    tiers: z
+      .array(FixedTierByQuantitySchema)
+      .min(2, { error: "Kademeli indirim için en az 2 kademe gereklidir." }),
+    ...BaseDiscountSchema.shape,
+  })
+  .check(({ issues, value }) => {
+    validateQuantityTiers(value.tiers, "discountAmount", issues);
+  });
+
+export const FixedAmountGrowPriceDiscountSchema = z
+  .object({
+    type: z.literal<$Enums.DiscountType>("FIXED_AMOUNT_GROW_PRICE", {
+      error: "İndirim türü kademeli sabit tutar (tutar) olmalıdır.",
+    }),
+    tiers: z
+      .array(FixedTierByPriceSchema)
+      .min(2, { error: "Kademeli indirim için en az 2 kademe gereklidir." }),
+    ...BaseDiscountSchema.shape,
+  })
+  .check(({ issues, value }) => {
+    validatePriceTiers(value.tiers, "discountAmount", issues);
+  });
+
+export const FreeShippingDiscountSchema = z.object({
+  type: z.literal<$Enums.DiscountType>("FREE_SHIPPING", {
+    error: "İndirim türü ücretsiz kargo olmalıdır.",
+  }),
+  ...BaseDiscountSchema.shape,
+});
+
+// 2. Ana şemayı bu değişkenleri kullanarak oluşturun
 export const MainDiscountSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal<$Enums.DiscountType>("PERCENTAGE", {
-      error: "İndirim türü yüzde olmalıdır.",
-    }),
-    discountValue: z
-      .number({ error: "Bu alan gereklidir." })
-      .min(0.01, { error: "İndirim yüzdesi 0'dan büyük olmalıdır." })
-      .max(100, { error: "İndirim yüzdesi 100'den büyük olamaz." }),
-    ...BaseDiscountSchema.shape,
-  }),
-  z
-    .object({
-      type: z.literal<$Enums.DiscountType>("PERCENTAGE_GROW_QUANTITY", {
-        error: "İndirim türü kademeli yüzde (adet) olmalıdır.",
-      }),
-      tiers: z
-        .array(PercentageTierByQuantitySchema)
-        .min(2, { error: "Kademeli indirim için en az 2 kademe gereklidir." }),
-      ...BaseDiscountSchema.shape,
-    })
-    .check(({ issues, value }) => {
-      validateQuantityTiers(value.tiers, "discountPercentage", issues);
-    }),
-  z
-    .object({
-      type: z.literal<$Enums.DiscountType>("PERCENTAGE_GROW_PRICE", {
-        error: "İndirim türü kademeli yüzde (tutar) olmalıdır.",
-      }),
-      tiers: z
-        .array(PercentageTierByPriceSchema)
-        .min(2, { error: "Kademeli indirim için en az 2 kademe gereklidir." }),
-      ...BaseDiscountSchema.shape,
-    })
-    .check(({ issues, value }) => {
-      validatePriceTiers(value.tiers, "discountPercentage", issues);
-    }),
-  z.object({
-    type: z.literal<$Enums.DiscountType>("FIXED_AMOUNT", {
-      error: "İndirim türü sabit tutar olmalıdır.",
-    }),
-    discountAmount: z
-      .number({ error: "Bu alan gereklidir." })
-      .min(0.01, { error: "İndirim tutarı 0'dan büyük olmalıdır." }),
-    ...BaseDiscountSchema.shape,
-  }),
-
-  // ✅ FIXED_AMOUNT_GROW_QUANTITY - Kademeli sabit tutar (adet)
-  z
-    .object({
-      type: z.literal<$Enums.DiscountType>("FIXED_AMOUNT_GROW_QUANTITY", {
-        error: "İndirim türü kademeli sabit tutar (adet) olmalıdır.",
-      }),
-      tiers: z
-        .array(FixedTierByQuantitySchema)
-        .min(2, { error: "Kademeli indirim için en az 2 kademe gereklidir." }),
-      ...BaseDiscountSchema.shape,
-    })
-    .check(({ issues, value }) => {
-      validateQuantityTiers(value.tiers, "discountAmount", issues);
-    }),
-
-  // ✅ FIXED_AMOUNT_GROW_PRICE - Kademeli sabit tutar (tutar)
-  z
-    .object({
-      type: z.literal<$Enums.DiscountType>("FIXED_AMOUNT_GROW_PRICE", {
-        error: "İndirim türü kademeli sabit tutar (tutar) olmalıdır.",
-      }),
-      tiers: z
-        .array(FixedTierByPriceSchema)
-        .min(2, { error: "Kademeli indirim için en az 2 kademe gereklidir." }),
-      ...BaseDiscountSchema.shape,
-    })
-    .check(({ issues, value }) => {
-      validatePriceTiers(value.tiers, "discountAmount", issues);
-    }),
-
-  // ✅ FREE_SHIPPING - Ücretsiz kargo
-  z.object({
-    type: z.literal<$Enums.DiscountType>("FREE_SHIPPING", {
-      error: "İndirim türü ücretsiz kargo olmalıdır.",
-    }),
-    ...BaseDiscountSchema.shape,
-  }),
+  PercentageDiscountSchema,
+  PercentageGrowQuantityDiscountSchema,
+  PercentageGrowPriceDiscountSchema,
+  FixedAmountDiscountSchema,
+  FixedAmountGrowQuantityDiscountSchema,
+  FixedAmountGrowPriceDiscountSchema,
+  FreeShippingDiscountSchema,
 ]);
 
 export const MainDiscountSchemaDefaultValue: MainDiscount = {
@@ -799,26 +830,39 @@ export const MainDiscountSchemaDefaultValue: MainDiscount = {
   totalUsageLimitPerCustomer: null,
 };
 
-// Type exports
 export type MainDiscount = z.infer<typeof MainDiscountSchema>;
+
+export type PercentageDiscountZodType = z.infer<
+  typeof PercentageDiscountSchema
+>;
+export type PercentageGrowQuantityDiscountZodType = z.infer<
+  typeof PercentageGrowQuantityDiscountSchema
+>;
+export type PercentageGrowPriceDiscountZodType = z.infer<
+  typeof PercentageGrowPriceDiscountSchema
+>;
+export type FixedAmountDiscountZodType = z.infer<
+  typeof FixedAmountDiscountSchema
+>;
+export type FixedAmountGrowQuantityDiscountZodType = z.infer<
+  typeof FixedAmountGrowQuantityDiscountSchema
+>;
+export type FixedAmountGrowPriceDiscountZodType = z.infer<
+  typeof FixedAmountGrowPriceDiscountSchema
+>;
+export type FreeShippingDiscountZodType = z.infer<
+  typeof FreeShippingDiscountSchema
+>;
+
 export type FilterCondition = z.infer<typeof FilterConditionSchema>;
 
-export type BasicPercentageDiscount = z.infer<typeof MainDiscountSchema> & {
-  type: "PERCENTAGE";
-};
-export type BasicFixedAmountDiscount = z.infer<typeof MainDiscountSchema> & {
-  type: "FIXED_AMOUNT";
-};
+export type GrowQuantitySchema =
+  | PercentageGrowQuantityDiscountZodType
+  | FixedAmountGrowQuantityDiscountZodType;
 
-export type GrowQuantitySchema = z.infer<typeof MainDiscountSchema> & {
-  type: "PERCENTAGE_GROW_QUANTITY" | "FIXED_AMOUNT_GROW_QUANTITY";
-  tiers: Array<PercentageTierByQuantity | FixedTierByQuantity>;
-};
-
-export type GrowPriceSchema = z.infer<typeof MainDiscountSchema> & {
-  type: "PERCENTAGE_GROW_PRICE" | "FIXED_AMOUNT_GROW_PRICE";
-  tiers: Array<PercentageTierByPrice | FixedTierByPrice>;
-};
+export type GrowPriceSchema =
+  | PercentageGrowPriceDiscountZodType
+  | FixedAmountGrowPriceDiscountZodType;
 
 export type PercentageTierByQuantity = z.infer<
   typeof PercentageTierByQuantitySchema
@@ -865,4 +909,51 @@ export type AllUsersReturnType = {
   surname: string;
   email?: string;
   phone?: string;
+};
+
+export type CommonDiscountPrismaData = {
+  title: string;
+  startDate: Date | null;
+  endDate: Date | null;
+  isLimitPurchase: boolean;
+  minPurchaseAmount: number | null;
+  maxPurchaseAmount: number | null;
+  isLimitItemQuantity: boolean;
+  minItemQuantity: number | null;
+  maxItemQuantity: number | null;
+  allowDiscountedItems: boolean;
+  allowedDiscountedItemsBy: $Enums.AllowedDiscountedItemsBy | null;
+  mergeOtherCampaigns: boolean;
+  isLimitTotalUsage: boolean;
+  totalUsageLimit: number | null;
+  isLimitTotalUsagePerCustomer: boolean;
+  totalUsageLimitPerCustomer: number | null;
+  isAllCustomers: boolean;
+  isAllProducts: boolean;
+};
+
+export type DiscountUpsertResponse = {
+  success: boolean;
+  message: string;
+  discountId: string;
+};
+
+export type GetAllDiscountReturnType = {
+  success: boolean;
+  message: string;
+  data: Prisma.DiscountGetPayload<{
+    include: {
+      _count: {
+        select: {
+          usages: true;
+        };
+      };
+    };
+  }>[];
+  pagination: {
+    totalCount: number;
+    totalPages: number;
+    currentPage: number;
+    pageSize: number;
+  };
 };

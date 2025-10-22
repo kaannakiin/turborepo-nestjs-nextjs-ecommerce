@@ -31,7 +31,9 @@ import {
   Text,
 } from "@mantine/core";
 import { Dropzone, DropzoneProps, FileRejection } from "@mantine/dropzone";
-import { $Enums, MIME_TYPES } from "@repo/types";
+import { $Enums } from "@repo/database";
+import { MIME_TYPES } from "@repo/types";
+
 import {
   IconAlertCircle,
   IconGripVertical,

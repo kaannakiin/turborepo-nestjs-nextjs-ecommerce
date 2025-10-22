@@ -45,21 +45,16 @@ const generateReadableCouponCode = (prefix: string = ""): string => {
   const vowels = "AEIOU";
   const numbers = "23456789";
 
-  // Prefix varsa kullan, yoksa varsayılan
   const finalPrefix = prefix.trim() || "DISC";
 
-  // 2 harf + 2 rakam + 2 harf formatı (örn: DISC-BA23KE)
   let code = finalPrefix + "-";
 
-  // İlk 2 karakter: 1 sessiz + 1 sesli (okunabilir hece)
   code += consonants[Math.floor(Math.random() * consonants.length)];
   code += vowels[Math.floor(Math.random() * vowels.length)];
 
-  // 2 rakam
   code += numbers[Math.floor(Math.random() * numbers.length)];
   code += numbers[Math.floor(Math.random() * numbers.length)];
 
-  // Son 2 karakter: 1 sessiz + 1 sesli (okunabilir hece)
   code += consonants[Math.floor(Math.random() * consonants.length)];
   code += vowels[Math.floor(Math.random() * vowels.length)];
 
@@ -74,7 +69,7 @@ const CouponForm = ({ control, error }: CouponFormProps) => {
     control: formControl,
     handleSubmit,
     reset: resetAutomatic,
-    clearErrors: clearAutomaticErrors, // ✅ Error temizleme
+    clearErrors: clearAutomaticErrors,
   } = useForm<AutomaticCoupon>({
     resolver: zodResolver(AutomaticCouponSchema),
     defaultValues: {
@@ -87,7 +82,7 @@ const CouponForm = ({ control, error }: CouponFormProps) => {
     control: customCouponControl,
     handleSubmit: customCouponHandleSubmit,
     reset: resetCustom,
-    clearErrors: clearCustomErrors, // ✅ Error temizleme
+    clearErrors: clearCustomErrors,
   } = useForm<Coupon>({
     resolver: zodResolver(CouponSchema),
     defaultValues: {
@@ -109,7 +104,6 @@ const CouponForm = ({ control, error }: CouponFormProps) => {
   }, [type, clearAutomaticErrors, clearCustomErrors]);
 
   const onSubmit: SubmitHandler<AutomaticCoupon> = (data) => {
-    // Otomatik kupon kodları üret
     const generatedCoupons: Coupon[] = [];
 
     for (let i = 0; i < data.numberOfCoupons; i++) {
@@ -117,6 +111,7 @@ const CouponForm = ({ control, error }: CouponFormProps) => {
         couponName: generateReadableCouponCode(data.prefix), // ✅ Okunabilir kod
       });
     }
+
     generatedCoupons.forEach((coupon) => {
       append(coupon);
     });
@@ -153,7 +148,14 @@ const CouponForm = ({ control, error }: CouponFormProps) => {
             </Stack>
             {fields.length > 0 && (
               <Group gap={"lg"}>
-                <Button variant="light">Kupon Ekle</Button>
+                <Button
+                  variant="light"
+                  onClick={() => {
+                    open();
+                  }}
+                >
+                  Kupon Ekle
+                </Button>
                 <Button variant="outline" color="red" onClick={() => remove()}>
                   Tümünü Sil
                 </Button>

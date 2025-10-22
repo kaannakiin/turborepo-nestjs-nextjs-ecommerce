@@ -29,7 +29,7 @@ import {
   useForm,
   zodResolver,
 } from "@repo/shared";
-import { $Enums, VariantGroupSchema, VariantGroupZodType } from "@repo/types";
+import { VariantGroupSchema, VariantGroupZodType } from "@repo/types";
 import {
   IconArrowBarToLeft,
   IconDotsVertical,
@@ -59,6 +59,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import CreatableSelect from "./CreatableSelect";
 import fetchWrapper from "@lib/fetchWrapper";
+import { $Enums } from "@repo/database";
 
 interface VariantGroupDrawerProps
   extends Pick<DrawerProps, "opened" | "onClose"> {
@@ -66,11 +67,9 @@ interface VariantGroupDrawerProps
   defaultValues?: VariantGroupZodType;
 }
 
-// ✅ Doğru type tanımı
 type VariantOption = VariantGroupZodType["options"][number];
 type DeletedVariant = Omit<VariantOption, "id">;
 
-// Sortable Item Component
 interface SortableVariantItemProps {
   id: string;
   index: number;

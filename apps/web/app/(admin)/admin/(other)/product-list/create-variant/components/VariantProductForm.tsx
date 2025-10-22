@@ -25,7 +25,6 @@ import {
   zodResolver,
 } from "@repo/shared";
 import {
-  $Enums,
   BrandSelectType,
   CategorySelectType,
   VariantProductSchema,
@@ -40,6 +39,7 @@ import ProductDropzone from "../../components/ProductDropzone";
 import ExistingVariantCard from "./ExistingVariantCard";
 import GoogleTaxonomySelectV2 from "./GoogleTaxonomySelectV2";
 import ProductDetailCard from "./ProductDetailCard";
+import { $Enums } from "@repo/database";
 
 const GlobalTextEditor = dynamic(
   () => import("../../../../../../components/GlobalTextEditor"),

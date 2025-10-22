@@ -1,5 +1,3 @@
-//packages/types/src/index.ts
-export { $Enums } from "@repo/database";
 export * from "zod";
 export * from "./address/address-schema";
 export * from "./admin-ui/admin-theme-creator-schema";

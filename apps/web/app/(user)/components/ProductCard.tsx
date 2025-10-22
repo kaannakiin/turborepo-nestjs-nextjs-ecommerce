@@ -2,11 +2,13 @@
 
 import { AspectRatio, Card, Stack, Text, Title } from "@mantine/core";
 import { useHover } from "@mantine/hooks";
-import { $Enums, ProductPageDataType } from "@repo/types";
+import { ProductPageDataType } from "@repo/types";
 import { useRouter } from "next/navigation";
 import { buildVariantOrProductUrl } from "../../../lib/helpers";
 import CustomImage from "../../components/CustomImage";
 import ProductPriceFormatter from "./ProductPriceFormatter";
+import { $Enums } from "@repo/database";
+
 const ProductCard = ({ product }: { product: ProductPageDataType }) => {
   const { hovered, ref } = useHover();
   const locale: $Enums.Locale = "TR";

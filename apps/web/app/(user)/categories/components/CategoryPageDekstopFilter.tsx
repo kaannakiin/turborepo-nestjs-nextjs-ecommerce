@@ -4,7 +4,8 @@ import {
   getSortProductPageLabel,
   ProductPageSortOption,
 } from "@repo/shared";
-import { $Enums, CategoryPagePreparePageReturnData } from "@repo/types";
+import { $Enums } from "@repo/database";
+import { CategoryPagePreparePageReturnData } from "@repo/types";
 import { IconSortDescending, IconX } from "@tabler/icons-react";
 import { ReadonlyURLSearchParams, useRouter } from "next/navigation";
 

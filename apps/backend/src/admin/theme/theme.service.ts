@@ -3,9 +3,8 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { Prisma } from '@repo/database';
+import { Prisma, $Enums } from '@repo/database';
 import {
-  $Enums,
   CategoryGridComponentType,
   LayoutComponentType,
   MainPageComponentsType,

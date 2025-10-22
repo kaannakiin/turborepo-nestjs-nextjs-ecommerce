@@ -7,7 +7,8 @@ import {
   Stack,
   Text,
 } from "@mantine/core";
-import { $Enums, CategoryHeaderData } from "@repo/types";
+import { CategoryHeaderData } from "@repo/types";
+import { $Enums } from "@repo/database";
 import Link from "next/link";
 import CustomImage from "./CustomImage";
 

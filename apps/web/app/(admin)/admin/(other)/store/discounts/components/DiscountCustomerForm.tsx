@@ -74,7 +74,7 @@ const DiscountCustomerForm = ({
                 const isAll = val === "all";
                 onChange(isAll);
                 if (isAll) {
-                  setValue("otherCustomers", []);
+                  setValue("otherCustomers", null);
                 }
               }}
               error={fieldState.error?.message}

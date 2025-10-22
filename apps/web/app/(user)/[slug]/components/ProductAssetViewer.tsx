@@ -2,7 +2,7 @@
 import { Carousel } from "@mantine/carousel";
 import { AspectRatio, Modal, SimpleGrid, Stack } from "@mantine/core";
 import { useDisclosure, useMediaQuery } from "@mantine/hooks";
-import { $Enums } from "@repo/types";
+import { $Enums } from "@repo/database";
 import Fade from "embla-carousel-fade";
 import { useState } from "react";
 import CustomImage from "../../../components/CustomImage";

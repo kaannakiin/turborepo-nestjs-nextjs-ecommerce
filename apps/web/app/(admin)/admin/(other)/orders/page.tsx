@@ -22,6 +22,7 @@ import {
   Text,
   Title,
 } from "@mantine/core";
+import { $Enums } from "@repo/database";
 import {
   DateFormatter,
   getOrderStatusFromInt,
@@ -29,7 +30,8 @@ import {
   getPaymentStatusInt,
   useQuery,
 } from "@repo/shared";
-import { $Enums, GetOrdersReturnType } from "@repo/types";
+import { GetOrdersReturnType } from "@repo/types";
+
 import { IconFileDescriptionFilled } from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
 

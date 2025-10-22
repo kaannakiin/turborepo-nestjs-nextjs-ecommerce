@@ -1,13 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import {
-  $Enums,
   GetProductPageReturnType,
   ProductListComponentType,
   ProductPageDataType,
 } from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ProductsService as AdminProductService } from '../../admin/products/products.service';
-
+import { $Enums } from '@repo/database';
 @Injectable()
 export class ProductsService {
   constructor(

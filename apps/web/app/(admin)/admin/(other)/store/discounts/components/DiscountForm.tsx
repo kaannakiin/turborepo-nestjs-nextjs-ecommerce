@@ -1,6 +1,8 @@
 "use client";
 
 import { safeTransformDiscountType } from "@/(admin)/admin/(other)/store/discounts/helperDiscount";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import fetchWrapper from "@lib/fetchWrapper";
 import { getCurrencyLabel, getDiscountTypeLabel } from "@lib/helpers";
 import {
   ActionIcon,
@@ -23,6 +25,8 @@ import {
   Title,
 } from "@mantine/core";
 import { DateTimePicker } from "@mantine/dates";
+import { notifications } from "@mantine/notifications";
+import { $Enums } from "@repo/database";
 import {
   Controller,
   FieldErrors,
@@ -32,7 +36,7 @@ import {
   zodResolver,
 } from "@repo/shared";
 import {
-  $Enums,
+  DiscountUpsertResponse,
   GrowPriceSchema,
   GrowQuantitySchema,
   MainDiscount,
@@ -51,6 +55,7 @@ import {
   IconTruckDelivery,
 } from "@tabler/icons-react";
 import { format } from "date-fns";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import CouponForm from "./CouponForm";
 import DiscountConditionForm from "./DiscountConditionForm";
@@ -216,24 +221,20 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
       newType
     );
 
-    // ✅ Formu yeni değerlerle resetle
     reset(transformedValues as MainDiscount);
   };
-
   const handleTieredByChange = (value: string) => {
     const newTieredBy = value as TieredBy;
     setTieredBy(newTieredBy);
 
     const newType = getDiscountType(baseType, discountMode, newTieredBy);
 
-    // ✅ Mevcut form değerlerini al ve safe bir şekilde dönüştür
     const currentFormValues = getValues();
     const transformedValues = safeTransformDiscountType(
       currentFormValues,
       newType
     );
 
-    // ✅ Formu yeni değerlerle resetle
     reset(transformedValues as MainDiscount);
   };
 
@@ -278,13 +279,42 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
       } as GrowPriceSchema["tiers"][number]);
     }
   };
-
+  const { push } = useRouter();
   const onSubmit: SubmitHandler<MainDiscount> = async (data) => {
-    console.log("Form Data:", data);
+    const res = await fetchWrapper.post<DiscountUpsertResponse>(
+      "/admin/discounts/upgrade-or-create",
+      data
+    );
+
+    if (!res.success) {
+      notifications.show({
+        title: "Hata",
+        message: "Bilinmeyen bir hata oluştu. Lütfen tekrar deneyiniz.",
+        color: "red",
+      });
+      return;
+    }
+
+    if (!res.data.success) {
+      notifications.show({
+        title: "Hata",
+        message: res.data.message,
+        color: "red",
+      });
+    }
+
+    push("/admin/store/discounts");
+
+    notifications.show({
+      title: "Başarılı",
+      message: res.data.message,
+      color: "green",
+    });
   };
 
   return (
     <>
+      {isSubmitting && <GlobalLoadingOverlay />}
       <Stack gap={"md"} className="max-w-5xl lg:mx-auto">
         <Group justify="space-between">
           <Title order={4}>
@@ -1050,6 +1080,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                   }}
                   error={fieldState.error?.message}
                   mt={"xs"}
+                  checked={value}
                 />
               )}
             />
@@ -1099,6 +1130,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
               render={({ field: { value, ...field }, fieldState }) => (
                 <Switch
                   {...field}
+                  checked={value}
                   error={fieldState.error?.message}
                   onChange={(e) => {
                     if (!e.currentTarget.checked) {

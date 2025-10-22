@@ -2,12 +2,12 @@
 
 import ProductsCarousels from "@/(user)/components/ProductsCarousels";
 import { Stack } from "@mantine/core";
-import { $Enums, GetProductPageReturnType } from "@repo/types";
+import { GetProductPageReturnType } from "@repo/types";
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import ProductAssetViewer from "./ProductAssetViewer";
 import ProductRightSection from "./ProductRightSection";
-
+import { $Enums } from "@repo/database";
 type VariantCombination =
   GetProductPageReturnType["data"]["variantCombinations"][0];
 

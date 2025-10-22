@@ -12,47 +12,43 @@ import {
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Control, Controller, useFieldArray, useQuery } from "@repo/shared";
-import {
-  DiscountItem,
-  FilterOperators,
-  MainDiscount,
-  SelectDataType,
-} from "@repo/types";
+import { DiscountItem, MainDiscount } from "@repo/types";
 import { IconEdit, IconTrash } from "@tabler/icons-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import DiscountModal from "./DiscountModal";
+import { $Enums } from "@repo/database";
 
 const getSelectDataLabel = (
-  value: SelectDataType,
+  value: $Enums.DiscountConditionType,
   type: "select" | "button"
 ) => {
   if (type === "button") {
     switch (value) {
-      case "product":
+      case "PRODUCT":
         return "Ürün Ekle";
-      case "brand":
+      case "BRAND":
         return "Marka Ekle";
-      case "category":
+      case "CATEGORY":
         return "Kategori Ekle";
     }
   }
   switch (value) {
-    case "product":
+    case "PRODUCT":
       return "Ürünler";
-    case "brand":
+    case "BRAND":
       return "Markalar";
-    case "category":
+    case "CATEGORY":
       return "Kategoriler";
   }
 };
 
 const fetchDiscountData = async (
-  type: SelectDataType
+  type: $Enums.DiscountConditionType
 ): Promise<DiscountItem[]> => {
-  const endpoints = {
-    category: "/admin/products/categories/get-all-category-and-its-subs",
-    brand: "/admin/products/brands/get-all-brands-and-its-subs",
-    product: "/admin/products/get-all-products-and-its-subs",
+  const endpoints: Record<"CATEGORY" | "BRAND" | "PRODUCT", string> = {
+    CATEGORY: "/admin/products/categories/get-all-category-and-its-subs",
+    BRAND: "/admin/products/brands/get-all-brands-and-its-subs",
+    PRODUCT: "/admin/products/get-all-products-and-its-subs",
   };
 
   const response = await fetchWrapper.get<DiscountItem[]>(endpoints[type]);
@@ -67,57 +63,68 @@ interface DiscountConditionFormProps {
 }
 
 const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
-  const [selectData, setSelectData] = useState<SelectDataType>("product");
+  const [selectData, setSelectData] =
+    useState<$Enums.DiscountConditionType>("PRODUCT");
   const [opened, { open, close }] = useDisclosure(false);
-  const [activeType, setActiveType] = useState<SelectDataType | null>(null);
+  const [activeType, setActiveType] =
+    useState<$Enums.DiscountConditionType | null>(null);
 
   const { fields, append, update, remove } = useFieldArray({
     control,
     name: "conditions.conditions",
   });
 
-  // Her veri türü için ayrı useQuery hook'ları
-  const useDiscountData = (type: SelectDataType) => {
+  const useDiscountData = (type: $Enums.DiscountConditionType) => {
     return useQuery({
       queryKey: ["discount-data", type],
       queryFn: () => fetchDiscountData(type),
       enabled: !!fields.find((f) => f.type === type) || activeType === type,
-      staleTime: Infinity, // Veriyi bir kere çektikten sonra tekrar çekme
+      staleTime: Infinity,
     });
   };
 
   const { data: productData, isLoading: isProductLoading } =
-    useDiscountData("product");
+    useDiscountData("PRODUCT");
   const { data: brandData, isLoading: isBrandLoading } =
-    useDiscountData("brand");
+    useDiscountData("BRAND");
   const { data: categoryData, isLoading: isCategoryLoading } =
-    useDiscountData("category");
+    useDiscountData("CATEGORY");
 
-  // Helper function to get data for a specific type
+  const productLookups = useMemo(() => {
+    if (!productData) return { productIds: new Set(), variantIds: new Set() };
+    const productIds = new Set(productData.map((p) => p.id));
+    const variantIds = new Set(
+      productData.flatMap((p) => (p.sub || []).map((v) => v.id))
+    );
+    return { productIds, variantIds };
+  }, [productData]);
+
   const getDataForType = (
-    type: SelectDataType | null
+    type: $Enums.DiscountConditionType | null
   ): DiscountItem[] | undefined => {
     if (!type) return undefined;
     switch (type) {
-      case "product":
+      case "PRODUCT":
         return productData;
-      case "brand":
+      case "BRAND":
         return brandData;
-      case "category":
+      case "CATEGORY":
         return categoryData;
       default:
         return undefined;
     }
   };
 
-  const getIsLoadingForType = (type: SelectDataType | null): boolean => {
+  const getIsLoadingForType = (
+    type: $Enums.DiscountConditionType | null
+  ): boolean => {
     if (!type) return false;
     switch (type) {
-      case "product":
+      case "PRODUCT":
         return isProductLoading;
-      case "brand":
+      case "BRAND":
         return isBrandLoading;
-      case "category":
+      case "CATEGORY":
         return isCategoryLoading;
       default:
         return false;
@@ -134,7 +141,6 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
     return ids;
   };
 
-  // ID'lerden breadcrumb path'ini bul
   const findBreadcrumbPath = (
     items: DiscountItem[],
     targetId: string,
@@ -155,7 +161,6 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
     return null;
   };
 
-  // Item'ı ID'ye göre bul
   const findItemById = (
     items: DiscountItem[],
     targetId: string
@@ -172,7 +177,6 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
     return null;
   };
 
-  // Optimize edilmiş seçimleri filtrele (parent seçiliyse child'ları gösterme)
   const getOptimizedSelections = (
     selectedIds: string[],
     allData: DiscountItem[]
@@ -180,13 +184,12 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
     if (!selectedIds || selectedIds.length === 0) return [];
     const optimized = new Set<string>();
 
-    // Bir item'ın başka seçili item'ların child'ı olup olmadığını kontrol et
     const isChildOfAnySelected = (itemId: string): boolean => {
       for (const selectedId of selectedIds) {
         if (selectedId === itemId) continue;
         const selectedItem = findItemById(allData, selectedId);
         if (selectedItem) {
-          const childIds = getAllChildIds(selectedItem).slice(1); // Kendisi hariç
+          const childIds = getAllChildIds(selectedItem).slice(1);
           if (childIds.includes(itemId)) {
             return true;
           }
@@ -204,7 +207,9 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
     return Array.from(optimized);
   };
 
-  const findConditionIndexByType = (type: SelectDataType): number => {
+  const findConditionIndexByType = (
+    type: $Enums.DiscountConditionType
+  ): number => {
     return fields.findIndex((field) => field.type === type);
   };
 
@@ -218,44 +223,109 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
 
     const existingIndex = findConditionIndexByType(activeType);
 
-    if (existingIndex !== -1) {
-      // Eğer hiç ID kalmadıysa koşulu kaldır
-      if (selectedIds.length === 0) {
-        remove(existingIndex);
-      } else {
-        const currentCondition = fields[existingIndex];
-        update(existingIndex, {
-          ...currentCondition,
+    if (activeType === "CATEGORY" || activeType === "BRAND") {
+      if (existingIndex !== -1) {
+        if (selectedIds.length === 0) {
+          remove(existingIndex);
+        } else {
+          update(existingIndex, {
+            ...fields[existingIndex],
+            ids: selectedIds,
+            subIds: null,
+          });
+        }
+      } else if (selectedIds.length > 0) {
+        append({
+          operator: "AND",
+          type: activeType,
           ids: selectedIds,
+          subIds: null,
         });
       }
-    } else if (selectedIds.length > 0) {
-      append({
-        operator: "AND",
-        type: activeType,
-        ids: selectedIds,
-      });
+      return;
+    }
+
+    if (activeType === "PRODUCT") {
+      const mainIds = selectedIds.filter((id) =>
+        productLookups.productIds.has(id)
+      );
+      const subIds = selectedIds.filter((id) =>
+        productLookups.variantIds.has(id)
+      );
+
+      const totalSelected = mainIds.length + subIds.length;
+
+      if (existingIndex !== -1) {
+        if (totalSelected === 0) {
+          remove(existingIndex);
+        } else {
+          update(existingIndex, {
+            ...fields[existingIndex],
+            ids: mainIds.length > 0 ? mainIds : null,
+            subIds: subIds.length > 0 ? subIds : null,
+          });
+        }
+      } else if (totalSelected > 0) {
+        append({
+          operator: "AND",
+          type: "PRODUCT",
+          ids: mainIds.length > 0 ? mainIds : null,
+          subIds: subIds.length > 0 ? subIds : null,
+        });
+      }
     }
   };
 
-  const renderBreadcrumbs = (ids: string[] | null, type: SelectDataType) => {
+  const renderBreadcrumbs = (
+    field: (typeof fields)[number],
+    type: $Enums.DiscountConditionType
+  ) => {
     const dataForType = getDataForType(type);
-    if (!dataForType || !ids || ids.length === 0) {
-      // Veri henüz yüklenmediyse veya ID yoksa bir yüklenme göstergesi veya mesaj gösterilebilir
+
+    let allIds: string[] = [];
+    if (type === "PRODUCT") {
+      allIds = [...(field.ids || []), ...(field.subIds || [])];
+    } else {
+      allIds = field.ids || [];
+    }
+
+    if (!dataForType || allIds.length === 0) {
+      if (getIsLoadingForType(type)) {
+        return (
+          <Text size="sm" c="dimmed">
+            Veri yükleniyor...
+          </Text>
+        );
+      }
       return (
         <Text size="sm" c="dimmed">
-          Seçimler yükleniyor...
+          Seçim yapılmadı veya bulunamadı.
         </Text>
       );
     }
 
-    const optimizedIds = getOptimizedSelections(ids, dataForType);
+    const optimizedIds = getOptimizedSelections(allIds, dataForType);
+    if (optimizedIds.length === 0 && allIds.length > 0) {
+      // Bu durum, sadece child'lar seçildiğinde ve parent optimize edildiğinde oluşabilir.
+      return (
+        <Text size="sm" c="dimmed">
+          Alt öğeler seçili ({allIds.length} adet).
+        </Text>
+      );
+    }
 
     return (
       <Stack gap="xs" mt="xs">
         {optimizedIds.slice(0, 5).map((id) => {
           const path = findBreadcrumbPath(dataForType, id);
-          if (!path) return null;
+          if (!path) {
+            console.warn(`Breadcrumb path bulunamadı: ID=${id}, Type=${type}`);
+            return (
+              <Text key={id} size="xs" c="red">
+                ID: {id} (Path bulunamadı)
+              </Text>
+            );
+          }
 
           return (
             <Group key={id} gap={4} bg="gray.1" p={"sm"} className="rounded-md">
@@ -280,15 +350,35 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
   const getSelectedIdsForModal = (): string[] => {
     if (!activeType) return [];
     const condition = fields.find((field) => field.type === activeType);
-    return condition?.ids || [];
+    if (!condition) return [];
+
+    if (activeType === "PRODUCT") {
+      return [...(condition.ids || []), ...(condition.subIds || [])];
+    }
+    return condition.ids || [];
   };
 
   const existingTypes = fields.map((f) => f.type);
-  const availableSelectData = [
-    { value: "product", label: getSelectDataLabel("product", "select") },
-    { value: "category", label: getSelectDataLabel("category", "select") },
-    { value: "brand", label: getSelectDataLabel("brand", "select") },
-  ].filter((item) => !existingTypes.includes(item.value as SelectDataType));
+  const availableSelectData: Array<{
+    value: $Enums.DiscountConditionType;
+    label: string;
+  }> = [
+    {
+      value: "PRODUCT" as $Enums.DiscountConditionType,
+      label: getSelectDataLabel("PRODUCT", "select"),
+    },
+    {
+      value: "CATEGORY" as $Enums.DiscountConditionType,
+      label: getSelectDataLabel("CATEGORY", "select"),
+    },
+    {
+      value: "BRAND" as $Enums.DiscountConditionType,
+      label: getSelectDataLabel("BRAND", "select"),
+    },
+  ].filter(
+    (item) =>
+      !existingTypes.includes(item.value as $Enums.DiscountConditionType)
+  );
 
   return (
     <>
@@ -300,7 +390,9 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
               <Select
                 data={availableSelectData}
                 value={selectData}
-                onChange={(value) => setSelectData(value as SelectDataType)}
+                onChange={(value) =>
+                  setSelectData(value as $Enums.DiscountConditionType)
+                }
                 placeholder="Koşul türü seçin"
                 style={{ flex: 1 }}
               />
@@ -327,8 +419,14 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
                         <Select
                           {...controllerField}
                           data={[
-                            { value: FilterOperators.AND, label: "VE (AND)" },
-                            { value: FilterOperators.OR, label: "VEYA (OR)" },
+                            {
+                              value: $Enums.FilterOperator.AND,
+                              label: "VE (AND)",
+                            },
+                            {
+                              value: $Enums.FilterOperator.OR,
+                              label: "VEYA (OR)",
+                            },
                           ]}
                           allowDeselect={false}
                         />
@@ -345,7 +443,9 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
                       <ActionIcon
                         variant="subtle"
                         onClick={() => {
-                          setActiveType(field.type as SelectDataType);
+                          setActiveType(
+                            field.type as $Enums.DiscountConditionType
+                          );
                           open();
                         }}
                       >
@@ -360,7 +460,7 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
                       </ActionIcon>
                     </Group>
                   </Group>
-                  {renderBreadcrumbs(field.ids, field.type)}
+                  {renderBreadcrumbs(field, field.type)}
                 </Paper>
               </div>
             );
@@ -384,6 +484,7 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
         isLoading={getIsLoadingForType(activeType)}
         selectedItems={getSelectedIdsForModal()}
         onSave={handleSelectionChange}
+        subAsVariantsMode={activeType === "PRODUCT"}
         modalProps={{
           title: `${getSelectDataLabel(activeType || selectData, "select")} Seçin`,
         }}

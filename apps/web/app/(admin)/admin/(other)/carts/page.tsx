@@ -8,10 +8,11 @@ import { useQuery } from "@repo/shared";
 import { useRouter, useSearchParams } from "next/navigation";
 import CartsTable from "./components/CartsTable";
 import StatusIndicators from "./components/StatusIndicators";
-import { $Enums, AdminCartTableData } from "@repo/types";
+import { AdminCartTableData } from "@repo/types";
 import CustomPagination from "@/components/CustomPagination";
 import { IconShoppingBag } from "@tabler/icons-react";
 import fetchWrapper from "@lib/fetchWrapper";
+import { $Enums } from "@repo/database";
 
 const AdminCartsPage = () => {
   const searchParams = useSearchParams();
