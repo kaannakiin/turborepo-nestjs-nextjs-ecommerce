@@ -216,4 +216,9 @@ export class ProductsController {
   async getAllProductAndItsSubs() {
     return this.productsService.getAllProductsAndItsSubs();
   }
+
+  @Get('get-admin-searchable-product-modal-data')
+  async getAdminSearchableProductModalData(@Query('search') search?: string) {
+    return this.productsService.getAdminSearchableProductModalData(search);
+  }
 }

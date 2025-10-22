@@ -236,7 +236,7 @@ const DiscountCustomerSchema = z
     }
   });
 
-const DiscountDatesSchema = z
+export const DiscountDatesSchema = z
   .object({
     addStartDate: z.boolean(),
     startDate: z

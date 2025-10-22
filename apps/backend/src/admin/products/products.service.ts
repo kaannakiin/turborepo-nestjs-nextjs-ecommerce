@@ -12,6 +12,8 @@ import {
   Cuid2ZodType,
   DiscountItem,
   ModalProductCardForAdmin,
+  ProductModalData,
+  SearchableProductModalData,
   VariantGroupZodType,
   VariantProductZodType,
 } from '@repo/types';
@@ -2822,4 +2824,193 @@ export class ProductsService {
       } as DiscountItem;
     });
   }
+
+  async getAdminSearchableProductModalData(
+    search?: string,
+  ): Promise<{ data: Array<ProductModalData>; total: number }> {
+    const clenaedSearch =
+      search !== undefined && search !== null && search !== ''
+        ? search.trim()
+        : null;
+
+    const productWhere: Prisma.ProductWhereInput = {
+      ...(clenaedSearch
+        ? {
+            OR: [
+              { sku: { contains: clenaedSearch, mode: 'insensitive' } },
+              { barcode: { contains: clenaedSearch, mode: 'insensitive' } },
+              {
+                translations: {
+                  some: {
+                    OR: [
+                      {
+                        name: {
+                          contains: clenaedSearch,
+                          mode: 'insensitive',
+                        },
+                      },
+                      {
+                        slug: {
+                          contains: clenaedSearch,
+                          mode: 'insensitive',
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+              {
+                variantCombinations: {
+                  some: {
+                    OR: [
+                      { sku: { contains: clenaedSearch, mode: 'insensitive' } },
+                      {
+                        barcode: {
+                          contains: clenaedSearch,
+                          mode: 'insensitive',
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+              {
+                variantGroups: {
+                  some: {
+                    options: {
+                      some: {
+                        variantOption: {
+                          translations: {
+                            some: {
+                              OR: [
+                                {
+                                  name: {
+                                    contains: clenaedSearch,
+                                    mode: 'insensitive',
+                                  },
+                                },
+                                {
+                                  slug: {
+                                    contains: clenaedSearch,
+                                    mode: 'insensitive',
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            ],
+          }
+        : {}),
+    };
+
+    const [products, totalCount] = await Promise.all([
+      this.prisma.product.findMany({
+        where: productWhere,
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        include: {
+          translations: true,
+          assets: {
+            where: { asset: { type: 'IMAGE' } },
+            orderBy: { order: 'asc' },
+            take: 1,
+            select: {
+              asset: {
+                select: {
+                  url: true,
+                },
+              },
+            },
+          },
+          variantCombinations: {
+            select: {
+              id: true,
+              options: {
+                orderBy: [
+                  {
+                    productVariantOption: {
+                      productVariantGroup: {
+                        order: 'asc',
+                      },
+                    },
+                  },
+                  {
+                    productVariantOption: {
+                      order: 'asc',
+                    },
+                  },
+                ],
+                select: {
+                  productVariantOption: {
+                    select: {
+                      variantOption: {
+                        select: {
+                          translations: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+      this.prisma.product.count({ where: productWhere }),
+    ]);
+
+    const mappedData: ProductModalData[] = products.map((product) => {
+      const subData: ProductModalData[] = product.variantCombinations.map(
+        (combination) => {
+          const optionNames = combination.options.map((option) =>
+            this.getTranslation(
+              option.productVariantOption.variantOption.translations,
+              'TR',
+            ),
+          );
+
+          const variantName = optionNames.join(' / ');
+
+          return {
+            id: combination.id,
+            name: variantName,
+            image: undefined,
+            sub: undefined,
+          };
+        },
+      );
+
+      return {
+        id: product.id,
+        name: this.getTranslation(product.translations, 'TR'),
+        image: product.assets[0]?.asset.url,
+        sub: subData.length > 0 ? subData : undefined,
+      };
+    });
+
+    return {
+      data: mappedData,
+      total: totalCount,
+    };
+  }
+
+  private getTranslation = <T extends { locale: string; name: string }>(
+    translations: T[] | undefined,
+    preferredLocale: string = 'TR',
+  ): string => {
+    if (!translations || translations.length === 0) {
+      return 'Çeviri Yok';
+    }
+    const pref = translations.find((t) => t.locale === preferredLocale);
+    if (pref) {
+      return pref.name;
+    }
+    return translations[0].name;
+  };
 }

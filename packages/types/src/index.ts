@@ -18,3 +18,4 @@ export * from "./admin-ui/order-types";
 export * from "./user-ui/helperPrismaQueries";
 export * from "./admin/orders/orders-schema";
 export * from "./discounts/discount.schema";
+export * from "./campaign/campaign.schema";
