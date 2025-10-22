@@ -937,6 +937,7 @@ model Coupon {
   updatedAt  DateTime        @updatedAt
   discount   Discount        @relation(fields: [discountId], references: [id], onDelete: Cascade)
   usages     DiscountUsage[]
+  isDelete   Boolean         @default(false)
 
   @@index([code])
   @@index([discountId])

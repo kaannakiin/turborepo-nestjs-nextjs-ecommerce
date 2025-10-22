@@ -1,5 +1,6 @@
 "use client";
 
+import CustomPagination from "@/components/CustomPagination";
 import CustomSearchInput from "@/components/CustomSearchInput";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper from "@lib/fetchWrapper";
@@ -140,6 +141,7 @@ const AdminDiscountsPage = () => {
             </Table.Tbody>
           </Table>
         </Table.ScrollContainer>
+        {pagination && <CustomPagination total={pagination.totalPages} />}
       </Stack>
     </>
   );

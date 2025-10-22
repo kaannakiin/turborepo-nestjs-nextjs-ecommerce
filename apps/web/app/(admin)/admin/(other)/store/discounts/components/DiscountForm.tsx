@@ -221,7 +221,6 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
       newType
     );
 
-    // ✅ Formu yeni değerlerle resetle
     reset(transformedValues as MainDiscount);
   };
   const handleTieredByChange = (value: string) => {
@@ -230,14 +229,12 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
 
     const newType = getDiscountType(baseType, discountMode, newTieredBy);
 
-    // ✅ Mevcut form değerlerini al ve safe bir şekilde dönüştür
     const currentFormValues = getValues();
     const transformedValues = safeTransformDiscountType(
       currentFormValues,
       newType
     );
 
-    // ✅ Formu yeni değerlerle resetle
     reset(transformedValues as MainDiscount);
   };
 
@@ -292,7 +289,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
     if (!res.success) {
       notifications.show({
         title: "Hata",
-        message: "Bilinmeyen bir hata oluştu. Lütfen tekrar deneyiniz.", // veya "Bilinmeyen bir hata oluştu..."
+        message: "Bilinmeyen bir hata oluştu. Lütfen tekrar deneyiniz.",
         color: "red",
       });
       return;

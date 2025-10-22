@@ -141,7 +141,6 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
     return ids;
   };
 
-  // ID'lerden breadcrumb path'ini bul
   const findBreadcrumbPath = (
     items: DiscountItem[],
     targetId: string,
@@ -162,7 +161,6 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
     return null;
   };
 
-  // Item'ı ID'ye göre bul
   const findItemById = (
     items: DiscountItem[],
     targetId: string
@@ -179,7 +177,6 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
     return null;
   };
 
-  // Optimize edilmiş seçimleri filtrele (parent seçiliyse child'ları gösterme)
   const getOptimizedSelections = (
     selectedIds: string[],
     allData: DiscountItem[]
@@ -187,13 +184,12 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
     if (!selectedIds || selectedIds.length === 0) return [];
     const optimized = new Set<string>();
 
-    // Bir item'ın başka seçili item'ların child'ı olup olmadığını kontrol et
     const isChildOfAnySelected = (itemId: string): boolean => {
       for (const selectedId of selectedIds) {
         if (selectedId === itemId) continue;
         const selectedItem = findItemById(allData, selectedId);
         if (selectedItem) {
-          const childIds = getAllChildIds(selectedItem).slice(1); // Kendisi hariç
+          const childIds = getAllChildIds(selectedItem).slice(1);
           if (childIds.includes(itemId)) {
             return true;
           }
@@ -227,7 +223,6 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
 
     const existingIndex = findConditionIndexByType(activeType);
 
-    // Kategori veya Marka ise
     if (activeType === "CATEGORY" || activeType === "BRAND") {
       if (existingIndex !== -1) {
         if (selectedIds.length === 0) {
@@ -236,7 +231,7 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
           update(existingIndex, {
             ...fields[existingIndex],
             ids: selectedIds,
-            subIds: null, // subIds'yi temizle
+            subIds: null,
           });
         }
       } else if (selectedIds.length > 0) {
@@ -250,9 +245,7 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
       return;
     }
 
-    // Ürün ise
     if (activeType === "PRODUCT") {
-      // Gelen ID'leri ürün (ids) ve varyant (subIds) olarak ayır
       const mainIds = selectedIds.filter((id) =>
         productLookups.productIds.has(id)
       );
@@ -268,8 +261,8 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
         } else {
           update(existingIndex, {
             ...fields[existingIndex],
-            ids: mainIds.length > 0 ? mainIds : null, // Boşsa null yap
-            subIds: subIds.length > 0 ? subIds : null, // Boşsa null yap
+            ids: mainIds.length > 0 ? mainIds : null,
+            subIds: subIds.length > 0 ? subIds : null,
           });
         }
       } else if (totalSelected > 0) {
@@ -284,18 +277,16 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
   };
 
   const renderBreadcrumbs = (
-    field: (typeof fields)[number], // Tüm field objesini al
+    field: (typeof fields)[number],
     type: $Enums.DiscountConditionType
   ) => {
     const dataForType = getDataForType(type);
 
-    // Hangi ID listesini okuyacağını belirle
     let allIds: string[] = [];
     if (type === "PRODUCT") {
-      // Ürün ise, hem 'ids' hem de 'subIds'yi birleştir
       allIds = [...(field.ids || []), ...(field.subIds || [])];
     } else {
-      allIds = field.ids || []; // Kategori/Marka için sadece 'ids'
+      allIds = field.ids || [];
     }
 
     if (!dataForType || allIds.length === 0) {
@@ -328,7 +319,6 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
         {optimizedIds.slice(0, 5).map((id) => {
           const path = findBreadcrumbPath(dataForType, id);
           if (!path) {
-            // ID bulundu ama path bulunamadı (veri tutarsızlığı olabilir)
             console.warn(`Breadcrumb path bulunamadı: ID=${id}, Type=${type}`);
             return (
               <Text key={id} size="xs" c="red">

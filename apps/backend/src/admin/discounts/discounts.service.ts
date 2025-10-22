@@ -34,11 +34,26 @@ export class DiscountsService {
         if (uniqueId) {
           const existing = await tx.discount.findUnique({
             where: { id: uniqueId },
+            include: {
+              coupons: {
+                where: { isDelete: false },
+                select: {
+                  code: true,
+                  id: true,
+                  usageCount: true,
+                },
+              },
+            },
           });
           if (!existing) {
             throw new NotFoundException('Güncellenecek indirim bulunamadı.');
           }
-          return await this._updateDiscountInTransaction(tx, uniqueId, body);
+          return await this._updateDiscountInTransaction(
+            tx,
+            uniqueId,
+            body,
+            existing.coupons,
+          );
         } else {
           return await this._createDiscountInTransaction(tx, body);
         }
@@ -182,21 +197,46 @@ export class DiscountsService {
     tx: TxClient,
     discountId: string,
     body: MainDiscount,
+    existingCoupons: Array<{ code: string; id: string; usageCount: number }>,
   ) {
     const commonData = this._getCommonAndTypeSpecificData(body);
 
+    const newCouponCodes = body.coupons.map((c) => c.couponName.trim());
+    const existingCouponCodes = existingCoupons.map((c) => c.code);
+    const couponsToDelete = existingCoupons.filter(
+      (existing) => !newCouponCodes.includes(existing.code),
+    );
+    const couponsToCreate = newCouponCodes.filter(
+      (newCode) => !existingCouponCodes.includes(newCode),
+    );
+    for (const coupon of couponsToDelete) {
+      if (coupon.usageCount > 0) {
+        await tx.coupon.update({
+          where: { id: coupon.id },
+          data: {
+            isDelete: true,
+          },
+        });
+      } else {
+        await tx.coupon.delete({
+          where: { id: coupon.id },
+        });
+      }
+    }
     const couponsData: Prisma.CouponUpdateManyWithoutDiscountNestedInput = {
-      deleteMany: {},
-      createMany: {
-        data: body.coupons.map((c: Coupon) => ({
-          code: c.couponName.trim(),
-        })),
-        skipDuplicates: false,
-      },
+      createMany:
+        couponsToCreate.length > 0
+          ? {
+              data: couponsToCreate.map((code) => ({ code })),
+              skipDuplicates: true,
+            }
+          : undefined,
     };
+
     let tiersData: Prisma.DiscountTierUpdateManyWithoutDiscountNestedInput = {
       deleteMany: {},
     };
+
     const isGrowType = [
       'PERCENTAGE_GROW_QUANTITY',
       'PERCENTAGE_GROW_PRICE',
@@ -242,16 +282,19 @@ export class DiscountsService {
         .filter((c) => c.type === $Enums.DiscountConditionType.PRODUCT && c.ids)
         .flatMap((c) => c.ids!)
         .map((productId) => ({ productId }));
+
       const categoryIds = oldConditions
         .filter(
           (c) => c.type === $Enums.DiscountConditionType.CATEGORY && c.ids,
         )
         .flatMap((c) => c.ids!)
         .map((categoryId) => ({ categoryId }));
+
       const brandIds = oldConditions
         .filter((c) => c.type === $Enums.DiscountConditionType.BRAND && c.ids)
         .flatMap((c) => c.ids!)
         .map((brandId) => ({ brandId }));
+
       conditionGroupsData.create = [
         {
           operator: operator,
@@ -358,7 +401,10 @@ export class DiscountsService {
               { title: { contains: search, mode: 'insensitive' } },
               {
                 coupons: {
-                  some: { code: { contains: search, mode: 'insensitive' } },
+                  some: {
+                    code: { contains: search, mode: 'insensitive' },
+                    isDelete: false,
+                  },
                 },
               },
             ],
@@ -378,11 +424,14 @@ export class DiscountsService {
               usages: true,
             },
           },
+          coupons: {
+            where: { isDelete: false },
+            select: { code: true, usageCount: true },
+          },
         },
       }),
       this.prisma.discount.count({ where: whereClause }),
     ]);
-
     return {
       success: true,
       message: 'Discounts retrieved successfully',
@@ -395,19 +444,21 @@ export class DiscountsService {
       },
     };
   }
+
   async getDiscountBySlug(slug: string): Promise<MainDiscount> {
     const discount = await this.prisma.discount.findUnique({
       where: { id: slug },
       include: {
-        tiers: true, // Kademeli indirimler için
+        tiers: true,
         customers: {
           select: {
             userId: true,
           },
         },
         coupons: {
+          where: { isDelete: false },
           select: {
-            code: true, // couponName'e dönüşecek
+            code: true,
           },
         },
         conditionGroups: {
@@ -456,17 +507,14 @@ export class DiscountsService {
       }
     }
 
-    // 2. Kuponları Zod formatına dönüştür
     const formattedCoupons = discount.coupons.map((c) => ({
       couponName: c.code,
     }));
 
-    // 3. Müşterileri Zod formatına dönüştür
     const formattedCustomers = discount.isAllCustomers
       ? null
       : discount.customers.map((c) => c.userId);
 
-    // 4. Tarihleri Zod formatına (string) dönüştür
     const formattedStartDate = discount.startDate
       ? discount.startDate.toISOString()
       : null;

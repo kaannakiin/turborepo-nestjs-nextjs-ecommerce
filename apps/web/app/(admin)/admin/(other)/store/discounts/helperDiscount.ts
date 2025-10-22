@@ -33,7 +33,6 @@ export const safeTransformDiscountType = (
       currentValues?.totalUsageLimitPerCustomer || null,
   };
 
-  // Type'a göre sadece gerekli alanları ekle
   switch (newType) {
     case "PERCENTAGE":
       return {
