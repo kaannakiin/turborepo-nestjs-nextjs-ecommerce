@@ -86,6 +86,16 @@ const data: NavbarButtonType[] = [
         icon: null,
         label: "Yeni İndirim",
       },
+      {
+        href: "/store/campaigns",
+        icon: null,
+        label: "Kampanyalar",
+      },
+      {
+        href: "/store/campaigns/new",
+        icon: null,
+        label: "Yeni Kampanya",
+      },
     ],
   },
   {
