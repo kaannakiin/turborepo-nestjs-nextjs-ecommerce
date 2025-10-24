@@ -37,6 +37,8 @@ interface CampaignOfferFormProps {
   setValue: UseFormSetValue<CampaignZodType>;
   index: number;
   remove: UseFieldArrayRemove;
+  excludeProductIds?: string[];
+  excludeVariantIds?: string[];
 }
 
 const CampaignOfferForm = ({
@@ -45,6 +47,8 @@ const CampaignOfferForm = ({
   watch,
   setValue,
   remove,
+  excludeProductIds,
+  excludeVariantIds,
 }: CampaignOfferFormProps) => {
   const [opened, { open, close }] = useDisclosure();
   const [selectedProductModalData, setSelectedProductModalData] =
@@ -263,9 +267,8 @@ const CampaignOfferForm = ({
           if (variantIds.length > 0) {
             const selectedId = variantIds[0];
             let selectedVariantData: ProductModalData | null = null;
-            let parentProductData: ProductModalData | null = null; // <- Parent'ı bulmak için
+            let parentProductData: ProductModalData | null = null;
 
-            // "products" dizisindeki her ürünün "sub" dizisini ara
             for (const product of products) {
               if (product.sub) {
                 const found = product.sub.find((sub) => sub.id === selectedId);
@@ -294,6 +297,8 @@ const CampaignOfferForm = ({
           setSelectedParentData(null); // Parent'ı da temizle
           close();
         }}
+        excludeProductIds={excludeProductIds}
+        excludeVariantIds={excludeVariantIds}
       />
     </>
   );

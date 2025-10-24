@@ -6,10 +6,11 @@ import { ProductsModule } from './products/products.module';
 import { ThemeModule } from './theme/theme.module';
 import { OrdersModule } from './orders/orders.module';
 import { DiscountsModule } from './discounts/discounts.module';
+import { CampaignsModule } from './campaigns/campaigns.module';
 
 @Module({
   controllers: [AdminController],
   providers: [AdminService],
-  imports: [UsersModule, ProductsModule, ThemeModule, OrdersModule, DiscountsModule],
+  imports: [UsersModule, ProductsModule, ThemeModule, OrdersModule, DiscountsModule, CampaignsModule],
 })
 export class AdminModule {}

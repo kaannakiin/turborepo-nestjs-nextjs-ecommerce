@@ -169,7 +169,7 @@ export async function middleware(req: NextRequest) {
     // Admin route kontrolü
     if (isAdminRoute(pathname)) {
       if (!tokenPayload?.role || !isAdminOrOwner(tokenPayload.role)) {
-        return createRedirectResponse("/dashboard", req, newCookies);
+        return createRedirectResponse("/", req, newCookies);
       }
     }
   }
