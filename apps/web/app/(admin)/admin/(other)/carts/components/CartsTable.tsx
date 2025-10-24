@@ -19,7 +19,6 @@ import {
   Center,
 } from "@mantine/core";
 import { DateFormatter } from "@repo/shared";
-import { AdminCartTableData } from "@repo/types";
 import { IconTrash } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -28,7 +27,8 @@ const CartsTable = ({
   data,
   activeFilters,
 }: {
-  data: AdminCartTableData[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any[];
   activeFilters: boolean;
 }) => {
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
