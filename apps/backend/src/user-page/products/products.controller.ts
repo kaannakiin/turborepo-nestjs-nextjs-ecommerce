@@ -10,6 +10,11 @@ import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
+  @Get('get-site-map')
+  getAllProductsSitemap() {
+    return this.productsService.getAllProductsSitemap();
+  }
+
   @Get('get-product/:slug')
   getProduct(@Param('slug') slug: string) {
     return this.productsService.getProductBySlug(slug, 'TR');
@@ -29,7 +34,7 @@ export class ProductsController {
     ),
   )
   getProductsByIdsForProductListCarousel(
-    @Body() body: { items: ProductListComponentType['items'] }, // ✅ Tam object tipini belirtin
+    @Body() body: { items: ProductListComponentType['items'] },
   ) {
     return this.productsService.getProductsByIdsForProductListCarousel(
       body.items,

@@ -18,22 +18,56 @@ export const CampaignOfferTargetPage = {
 export type CampaignOfferTargetPage =
   (typeof CampaignOfferTargetPage)[keyof typeof CampaignOfferTargetPage];
 
-export const BaseCampaignSchema = z.object({
-  translations: z.array(
-    z.object({
-      locale: z.enum($Enums.Locale, {
-        error: "Bu alan geçerli bir dil kodu olmalıdır.",
+export const RequirementsSchema = z
+  .object({
+    addMinCartAmount: z.boolean({
+      error: "Geçersiz minimum sepet tutarı ekleme değeri.",
+    }),
+    minCartAmount: z
+      .number({
+        error: "Geçersiz minimum sepet tutarı.",
+      })
+      .min(0, {
+        error: "Minimum sepet tutarı negatif olamaz.",
+      })
+      .nonnegative({
+        error: "Minimum sepet tutarı negatif olamaz.",
       }),
-      title: z
-        .string({ error: "Başlık zorunludur" })
-        .min(1, {
-          error: "Başlık zorunludur",
-        })
-        .max(256, {
-          error: "Başlık en fazla 256 karakter olabilir",
-        }),
+    addMaxCartAmount: z.boolean({
+      error: "Geçersiz maksimum sepet tutarı ekleme değeri.",
+    }),
+    maxCartAmount: z
+      .number({
+        error: "Geçersiz maksimum sepet tutarı.",
+      })
+      .min(0, {
+        error: "Maksimum sepet tutarı negatif olamaz.",
+      })
+      .nonnegative({
+        error: "Maksimum sepet tutarı negatif olamaz.",
+      }),
+  })
+  .refine(
+    (data) => {
+      if (data.addMinCartAmount && data.addMaxCartAmount) {
+        return data.minCartAmount <= data.maxCartAmount;
+      }
+      return true;
+    },
+    {
+      error: "Minimum sepet tutarı, maksimum sepet tutarından büyük olamaz.",
+    }
+  );
+
+export const BaseCampaignSchema = z.object({
+  title: z
+    .string({ error: "Başlık zorunludur" })
+    .min(1, {
+      error: "Başlık zorunludur",
     })
-  ),
+    .max(256, {
+      error: "Başlık en fazla 256 karakter olabilir",
+    }),
   currencies: z
     .array(
       z.enum($Enums.Currency, {
@@ -53,6 +87,7 @@ export const BaseCampaignSchema = z.object({
       }
     ),
   dates: DiscountDatesSchema,
+  requirements: RequirementsSchema,
 });
 
 export const MustBuyableProductsSchema = z
@@ -86,6 +121,78 @@ export const MustBuyableProductsSchema = z
     }
   );
 
+export const UpSellOfferSchema = z.object({
+  order: z
+    .number({ error: "Geçersiz sıra değeri." })
+    .min(1, { error: "Sıra değeri en az 1 olmalıdır." }),
+  variantId: z.cuid2({ error: "Geçersiz varyant kimliği." }).nullish(),
+  productId: z.cuid2({ error: "Geçersiz ürün kimliği." }).nullish(),
+  title: z
+    .string({ error: "Başlık zorunludur" })
+    .min(1, {
+      error: "Başlık zorunludur",
+    })
+    .max(256, {
+      error: "Başlık en fazla 256 karakter olabilir",
+    }),
+  description: z
+    .string({ error: "Açıklama zorunludur" })
+    .min(1, { error: "Açıklama zorunludur" })
+    .max(1024, { error: "Açıklama en fazla 1024 karakter olabilir" }),
+  offer: z
+    .object({
+      discountType: z.enum(
+        [$Enums.DiscountType.FIXED_AMOUNT, $Enums.DiscountType.PERCENTAGE],
+        {
+          error: "Geçersiz indirim türü.",
+        }
+      ),
+      discountValue: z
+        .number({ error: "Geçersiz indirim değeri." })
+        .min(0, { error: "İndirim değeri negatif olamaz." })
+        .nonnegative({
+          error: "İndirim değeri negatif olamaz.",
+        }),
+      discountValueAppliedByPrice: z.enum(
+        [
+          $Enums.AllowedDiscountedItemsBy.discounted_price,
+          $Enums.AllowedDiscountedItemsBy.price,
+        ],
+        {
+          error: " Geçersiz indirim uygulama türü.",
+        }
+      ),
+      addCountDown: z.boolean({ error: "Geçersiz geri sayım değeri." }),
+      countDownMinute: z
+        .number({ error: "Geçersiz geri sayım dakikası." })
+        .min(0, { error: "Geri sayım dakikası negatif olamaz." }),
+      showPrroductIfInCart: z.boolean({
+        error: "Geçersiz ürün gösterme değeri.",
+      }),
+    })
+    .refine(
+      (offer) => {
+        return offer.discountType === $Enums.DiscountType.FIXED_AMOUNT
+          ? offer.discountValue > 0
+          : offer.discountValue > 0 && offer.discountValue <= 100;
+      },
+      {
+        error:
+          "İndirim değeri, sabit tutar için 0'dan büyük, yüzde için 0 ile 100 arasında olmalıdır.",
+      }
+    )
+    .refine(
+      (offer) => {
+        if (offer.addCountDown) {
+          return offer.countDownMinute > 0;
+        }
+      },
+      {
+        error: "Geri sayım dakikası 0'dan büyük olmalıdır.",
+      }
+    ),
+});
+
 export const CrossSellingCampaignSchema = z.object({
   type: z.literal<CampaignOfferType>(CampaignOfferType.CROSS_SELLING),
   ...BaseCampaignSchema.shape,
@@ -95,6 +202,21 @@ export const UpSellingCampaignSchema = z.object({
   type: z.literal<CampaignOfferType>(CampaignOfferType.UP_SELLING),
   ...BaseCampaignSchema.shape,
   buyableProducts: MustBuyableProductsSchema,
+  offers: z
+    .array(UpSellOfferSchema)
+    .min(1, {
+      error: "En az bir teklif eklemelisiniz.",
+    })
+    .refine(
+      (offers) => {
+        const orders = offers.map((offer) => offer.order);
+        const uniqueOrders = new Set(orders);
+        return uniqueOrders.size === orders.length;
+      },
+      {
+        error: "Teklif sıraları benzersiz olmalıdır.",
+      }
+    ),
 });
 
 export const CampaignZodSchema = z.discriminatedUnion("type", [
@@ -107,6 +229,7 @@ export type CrossSellingCampaignType = z.infer<
   typeof CrossSellingCampaignSchema
 >;
 export type UpSellingCampaignType = z.infer<typeof UpSellingCampaignSchema>;
+export type UppSellOfferZodType = z.infer<typeof UpSellOfferSchema>;
 
 export type ProductModalData = {
   id: string;
@@ -116,6 +239,84 @@ export type ProductModalData = {
 };
 
 export type SearchableProductModalData = {
-  data: ProductModalData;
+  data: ProductModalData[];
   total: number;
+};
+
+export type UpSellProductReturnType = {
+  success: boolean;
+  message: string;
+  product?: {
+    productId: string;
+    productName: string;
+    productSlug: string;
+    price: number;
+    discountedPrice?: number;
+    variantId?: string;
+    asset?: { url: string; type: $Enums.AssetType };
+    variantOptions?: Array<{
+      variantGroupId: string;
+      variantGroupName: string;
+      variantGroupSlug: string;
+      variantOptionId: string;
+      variantOptionName: string;
+      variantOptionSlug: string;
+      variantOptionHexValue?: string;
+      variantOptionAsset?: { url: string; type: $Enums.AssetType };
+    }>;
+  };
+};
+
+export const UpSellCampaignDefaultValues: UpSellingCampaignType = {
+  type: CampaignOfferType.UP_SELLING,
+  title: "",
+  currencies: ["TRY"],
+  requirements: {
+    addMaxCartAmount: false,
+    addMinCartAmount: false,
+    maxCartAmount: null,
+    minCartAmount: null,
+  },
+  dates: {
+    addEndDate: false,
+    addStartDate: false,
+    endDate: null,
+    startDate: null,
+  },
+  buyableProducts: null,
+  offers: [
+    {
+      order: 1,
+      title: "",
+      description: "",
+      offer: {
+        addCountDown: false,
+        countDownMinute: null,
+        discountType: "PERCENTAGE",
+        discountValue: 0,
+        discountValueAppliedByPrice: "price",
+        showPrroductIfInCart: false,
+      },
+      productId: null,
+      variantId: null,
+    },
+  ],
+};
+
+export const CrossSellingCampaignDefaultValues: CrossSellingCampaignType = {
+  type: CampaignOfferType.CROSS_SELLING,
+  currencies: ["TRY"],
+  requirements: {
+    addMaxCartAmount: false,
+    addMinCartAmount: false,
+    maxCartAmount: null,
+    minCartAmount: null,
+  },
+  title: "",
+  dates: {
+    addEndDate: false,
+    addStartDate: false,
+    endDate: null,
+    startDate: null,
+  },
 };

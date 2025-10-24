@@ -6,6 +6,7 @@ import {
   Get,
   NotFoundException,
   Param,
+  ParseBoolPipe,
   Post,
   Query,
   UploadedFile,
@@ -217,8 +218,30 @@ export class ProductsController {
     return this.productsService.getAllProductsAndItsSubs();
   }
 
-  @Get('get-admin-searchable-product-modal-data')
-  async getAdminSearchableProductModalData(@Query('search') search?: string) {
-    return this.productsService.getAdminSearchableProductModalData(search);
+  @Post('get-admin-searchable-product-modal-data')
+  async getAdminSearchableProductModalData(
+    @Body()
+    body: {
+      search?: string;
+      alreadySelectedIds?: { variantIds: string[]; productIds: string[] };
+      page: number;
+    },
+  ) {
+    return this.productsService.getAdminSearchableProductModalData(
+      body.search,
+      body.alreadySelectedIds,
+      body.page,
+    );
+  }
+
+  @Get('get-product-variant-admin-overview-upsell-card-data')
+  async getProductVariantAdminOverviewUppSellCardData(
+    @Query('id') id: string,
+    @Query('iv', new ParseBoolPipe()) iv: boolean,
+  ) {
+    return this.productsService.getProductVariantAdminOverviewUppSellCardData(
+      id,
+      iv,
+    );
   }
 }

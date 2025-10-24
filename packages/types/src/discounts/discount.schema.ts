@@ -1,7 +1,7 @@
-import { $Enums, Discount, Prisma } from "@repo/database";
-import { isAfter, isValid, parseISO } from "date-fns";
+import { $Enums, Prisma } from "@repo/database";
+import { dateFns } from "@repo/shared";
 import * as z from "zod";
-
+const { isValid, parseISO, isAfter } = dateFns;
 const idArraySchema = z
   .array(
     z.cuid2({
