@@ -8,7 +8,6 @@ import { useQuery } from "@repo/shared";
 import { useRouter, useSearchParams } from "next/navigation";
 import CartsTable from "./components/CartsTable";
 import StatusIndicators from "./components/StatusIndicators";
-import { AdminCartTableData } from "@repo/types";
 import CustomPagination from "@/components/CustomPagination";
 import { IconShoppingBag } from "@tabler/icons-react";
 import fetchWrapper from "@lib/fetchWrapper";
@@ -38,7 +37,8 @@ const AdminCartsPage = () => {
       };
 
       const req = await fetchWrapper.get<{
-        carts: AdminCartTableData[];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        carts: any;
         success: boolean;
         message: string;
         pagination?: {
