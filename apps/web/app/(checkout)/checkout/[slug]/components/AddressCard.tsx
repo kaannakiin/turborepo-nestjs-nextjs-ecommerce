@@ -7,11 +7,11 @@ import {
   ThemeIcon,
   UnstyledButton,
 } from "@mantine/core";
-import { GetUserCartInfoForCheckoutReturn } from "@repo/types";
+import { GetCartClientCheckoutReturnType } from "@repo/types";
 import { IconCheck } from "@tabler/icons-react";
 
 interface AddressCardProps {
-  data: GetUserCartInfoForCheckoutReturn["shippingAddress"];
+  data: GetCartClientCheckoutReturnType["cart"]["shippingAddress"];
   onEdit?: () => void;
 }
 
