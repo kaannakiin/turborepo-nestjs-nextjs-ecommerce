@@ -3277,6 +3277,7 @@ export class ProductsService {
     }
     return translations[0].name;
   };
+
   async getProductVariantAdminOverviewUppSellCardData(
     id: string,
     isVariant: boolean,
@@ -3371,6 +3372,11 @@ export class ProductsService {
           success: false,
         };
       }
+
+      const productTranslationName = this.getTranslation(
+        variant.product.translations,
+        'TR',
+      );
       const productTranslation =
         variant.product.translations.find((tr) => tr.locale === 'TR') ||
         variant.product.translations[0];
@@ -3385,13 +3391,23 @@ export class ProductsService {
           discountedPrice:
             variant.prices.find((p) => p.currency === 'TRY')?.discountedPrice ||
             null,
-          productName: productTranslation.name,
+          productName: productTranslationName,
           productSlug: productTranslation.slug,
           asset:
             variant.assets[0]?.asset ||
             variant.product.assets[0]?.asset ||
             null,
           variantOptions: variant.options.map((option) => {
+            const optionTranslationName = this.getTranslation(
+              option.productVariantOption.variantOption.translations,
+              'TR',
+            );
+            const groupTranslationName = this.getTranslation(
+              option.productVariantOption.variantOption.variantGroup
+                .translations,
+              'TR',
+            );
+
             const optionTranslation =
               option.productVariantOption.variantOption.translations.find(
                 (tr) => tr.locale === 'TR',
@@ -3407,10 +3423,10 @@ export class ProductsService {
             return {
               variantGroupId:
                 option.productVariantOption.variantOption.variantGroup.id,
-              variantGroupName: groupTranslation.name,
+              variantGroupName: groupTranslationName,
               variantGroupSlug: groupTranslation.slug,
               variantOptionId: option.productVariantOption.variantOption.id,
-              variantOptionName: optionTranslation.name,
+              variantOptionName: optionTranslationName,
               variantOptionSlug: optionTranslation.slug,
               variantOptionAsset:
                 option.productVariantOption.variantOption.asset || null,
@@ -3426,7 +3442,6 @@ export class ProductsService {
       where: {
         id,
         active: true,
-        stock: { gt: 0 },
       },
       include: {
         assets: {
@@ -3445,6 +3460,20 @@ export class ProductsService {
         },
         prices: true,
         translations: true,
+
+        variantCombinations: {
+          where: {
+            active: true,
+            stock: { gt: 0 },
+          },
+          select: {
+            id: true,
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+          take: 1,
+        },
       },
     });
 
@@ -3454,6 +3483,24 @@ export class ProductsService {
         success: false,
       };
     }
+
+    if (product.variantCombinations && product.variantCombinations.length > 0) {
+      const firstVariantId = product.variantCombinations[0].id;
+
+      return this.getProductVariantAdminOverviewUppSellCardData(
+        firstVariantId,
+        true,
+      );
+    }
+
+    const productTranslationName = this.getTranslation(
+      product.translations,
+      'TR',
+    );
+    const productTranslation =
+      product.translations.find((tr) => tr.locale === 'TR') ||
+      product.translations[0];
+
     return {
       success: true,
       message: 'Ürün bulundu',
@@ -3463,14 +3510,8 @@ export class ProductsService {
         discountedPrice:
           product.prices.find((p) => p.currency === 'TRY')?.discountedPrice ||
           null,
-        productName:
-          product.translations.find((tr) => tr.locale === 'TR')?.name ||
-          product.translations[0]?.name ||
-          null,
-        productSlug:
-          product.translations.find((tr) => tr.locale === 'TR')?.slug ||
-          product.translations[0]?.slug ||
-          null,
+        productName: productTranslationName,
+        productSlug: productTranslation?.slug || null, // null check eklendi
         asset: product.assets[0]?.asset || null,
       },
     };

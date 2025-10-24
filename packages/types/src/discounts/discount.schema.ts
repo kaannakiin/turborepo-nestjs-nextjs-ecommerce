@@ -9,7 +9,7 @@ const idArraySchema = z
   )
   .min(1, { message: "En az bir öğe seçmelisiniz." });
 
-const FilterConditionSchema = z.object({
+export const FilterConditionSchema = z.object({
   operator: z.enum($Enums.FilterOperator, {
     error: "Bu alan gereklidir.",
   }),
@@ -795,6 +795,7 @@ export const MainDiscountSchema = z.discriminatedUnion("type", [
   FixedAmountGrowPriceDiscountSchema,
   FreeShippingDiscountSchema,
 ]);
+export type BaseDiscountZodType = z.infer<typeof BaseDiscountSchema>;
 
 export const MainDiscountSchemaDefaultValue: MainDiscount = {
   type: "PERCENTAGE",

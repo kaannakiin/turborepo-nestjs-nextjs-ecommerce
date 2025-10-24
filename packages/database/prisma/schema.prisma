@@ -315,6 +315,10 @@ model Product {
   variantCombinations    ProductVariantCombination[]
   variantGroups          ProductVariantGroup[]
 
+  buyableInCampaigns   CampaignBuyableProduct[]
+  conditionInCampaigns CampaignConditionProduct[]
+  offerInCampaigns     CampaignOffer[]
+
   @@index([brandId])
   @@index([taxonomyCategoryId])
   @@index([active])
@@ -374,6 +378,10 @@ model ProductVariantCombination {
   product            Product                           @relation(fields: [productId], references: [id], onDelete: Cascade)
   options            ProductVariantCombinationOption[]
   translations       ProductVariantTranslation[]
+
+  buyableInCampaigns   CampaignBuyableVariant[]
+  conditionInCampaigns CampaignConditionVariant[]
+  offerInCampaigns     CampaignOffer[]
 
   @@unique([productId, sku])
   @@unique([productId, barcode])
@@ -1032,6 +1040,115 @@ model DiscountUsage {
   @@index([discountId])
   @@index([couponId])
   @@index([userId])
+}
+
+enum CampaignType {
+  CROSS_SELLING
+  UP_SELLING
+}
+
+enum CampaignOfferTargetPage {
+  CHECKOUT_PAGE
+  POST_CHECKOUT
+  PRODUCT
+}
+
+model Campaign {
+  id              String       @id @default(cuid())
+  title           String
+  campaignType    CampaignType
+  validCurrencies Currency[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  dates        Json
+  requirements Json
+
+  offers CampaignOffer[]
+
+  // --- UP-SELL İLİŞKİLERİ ---
+  // Zod: buyableProducts.productIds
+  buyableProducts CampaignBuyableProduct[]
+  // Zod: buyableProducts.variantIds
+  buyableVariants CampaignBuyableVariant[]
+
+  // --- CROSS-SELL İLİŞKİLERİ ---
+  // Zod: conditions.isAllProducts
+  conditionsIsAllProducts Boolean? // Sadece Cross-Sell için
+
+  // Zod: conditions.productIds
+  conditionProducts CampaignConditionProduct[]
+  // Zod: conditions.variantIds
+  conditionVariants CampaignConditionVariant[]
+
+  // Zod: conditions.campaignOfferTargetType
+  campaignOfferType CampaignOfferTargetPage?
+}
+
+model CampaignBuyableProduct {
+  campaignId String
+  productId  String
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([campaignId, productId])
+}
+
+model CampaignBuyableVariant {
+  campaignId String
+  variantId  String
+
+  campaign Campaign                  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  variant  ProductVariantCombination @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@id([campaignId, variantId])
+}
+
+model CampaignConditionProduct {
+  campaignId String
+  productId  String
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([campaignId, productId])
+}
+
+model CampaignConditionVariant {
+  campaignId String
+  variantId  String
+
+  campaign Campaign                  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  variant  ProductVariantCombination @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@id([campaignId, variantId])
+}
+
+model CampaignOffer {
+  id          String  @id @default(cuid())
+  order       Int
+  title       String
+  description String
+  productId   String?
+  variantId   String?
+
+  discountType                DiscountType
+  discountValue               Float
+  discountValueAppliedByPrice AllowedDiscountedItemsBy
+  addCountDown                Boolean
+  countDownMinute             Int?
+  showPrroductIfInCart        Boolean                  @default(false)
+
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  product Product?                   @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variant ProductVariantCombination? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@index([campaignId])
+  @@index([productId])
+  @@index([variantId])
 }
 
 view ProductUnifiedView {
