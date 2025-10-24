@@ -30,7 +30,12 @@ import {
   StyleProp,
   Text,
 } from "@mantine/core";
-import { Dropzone, DropzoneProps, FileRejection } from "@mantine/dropzone";
+import {
+  Dropzone,
+  DropzoneProps,
+  FileRejection,
+  FileWithPath,
+} from "@mantine/dropzone";
 import { $Enums } from "@repo/database";
 import { MIME_TYPES } from "@repo/types";
 
@@ -55,7 +60,7 @@ interface ProductDropzoneProps {
       url: string;
       order: number;
       file?: File;
-      isNew: boolean; // Bu flag'i ekle
+      isNew: boolean;
     }>
   ) => void;
   props?: Partial<DropzoneProps>;
@@ -192,7 +197,6 @@ const ProductDropzone = ({
     return Array.from(errorCodes);
   };
 
-  // Stable ID mapping - ID'ler order değişse de sabit kalır
   const sortedMedia = useMemo(() => {
     const allMedia: Array<{
       id: string;
@@ -205,7 +209,6 @@ const ProductDropzone = ({
 
     if (existingImages) {
       existingImages.forEach((img) => {
-        // URL'i ID olarak kullan, order'ı dahil etme
         allMedia.push({
           id: `existing-${img.url}`,
           url: img.url,
@@ -219,7 +222,6 @@ const ProductDropzone = ({
     if (images) {
       images.forEach((img) => {
         const isVideo = img.file.type.startsWith("video/");
-        // File'ın name ve size'ını ID olarak kullan (daha stable)
         allMedia.push({
           id: `new-${img.file.name}-${img.file.size}`,
           url: URL.createObjectURL(img.file),
@@ -234,7 +236,6 @@ const ProductDropzone = ({
     return allMedia.sort((a, b) => a.order - b.order);
   }, [existingImages, images]);
 
-  // Blob URL cleanup
   useEffect(() => {
     const blobUrls = sortedMedia
       .filter((media) => media.isNew && media.url.startsWith("blob:"))
@@ -260,7 +261,6 @@ const ProductDropzone = ({
     }
   };
 
-  // ProductDropzone.tsx içinde handleDragEnd fonksiyonu
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -303,7 +303,13 @@ const ProductDropzone = ({
       )}
       <Dropzone
         onDrop={(acceptedFiles) => {
-          onAddImages(acceptedFiles);
+          const images: FileWithPath[] = acceptedFiles.map((file) => {
+            return new File([file], `${new Date().getTime()}-${file.name}`, {
+              type: file.type,
+              lastModified: file.lastModified,
+            }) as FileWithPath;
+          });
+          onAddImages(images);
         }}
         onReject={(files) => {
           setRejectedFiles((current) => [...current, ...files]);
@@ -359,7 +365,7 @@ const ProductDropzone = ({
             items={sortedMedia.map((media) => media.id)}
             strategy={rectSortingStrategy}
           >
-            <SimpleGrid cols={cols} className="w-full">
+            <Group gap={"lg"} className="w-full">
               {sortedMedia.map((media, index) => (
                 <SortableItem
                   key={media.id}
@@ -369,7 +375,7 @@ const ProductDropzone = ({
                   onRemove={() => handleRemove(media)}
                 />
               ))}
-            </SimpleGrid>
+            </Group>
           </SortableContext>
         </DndContext>
       )}

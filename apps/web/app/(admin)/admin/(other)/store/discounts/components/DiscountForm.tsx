@@ -34,6 +34,7 @@ import {
   useFieldArray,
   useForm,
   zodResolver,
+  dateFns,
 } from "@repo/shared";
 import {
   DiscountUpsertResponse,
@@ -54,7 +55,6 @@ import {
   IconTrash,
   IconTruckDelivery,
 } from "@tabler/icons-react";
-import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import CouponForm from "./CouponForm";
@@ -1101,7 +1101,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                         value={field.value ? new Date(field.value) : null}
                         onChange={(date) => {
                           if (date) {
-                            const formattedDate = format(
+                            const formattedDate = dateFns.format(
                               date,
                               "yyyy-MM-dd HH:mm:ss"
                             );
@@ -1165,7 +1165,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                           value={field.value ? new Date(field.value) : null}
                           onChange={(date) => {
                             if (date) {
-                              const formattedDate = format(
+                              const formattedDate = dateFns.format(
                                 date,
                                 "yyyy-MM-dd HH:mm:ss"
                               );

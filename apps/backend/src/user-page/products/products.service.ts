@@ -1,17 +1,22 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { $Enums, Prisma } from '@repo/database';
 import {
   GetProductPageReturnType,
+  Languages,
   ProductListComponentType,
   ProductPageDataType,
+  Sitemap,
+  Videos,
 } from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ProductsService as AdminProductService } from '../../admin/products/products.service';
-import { $Enums } from '@repo/database';
+import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class ProductsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly adminProductService: AdminProductService,
+    private readonly configService: ConfigService,
   ) {}
 
   async getProductBySlug(
@@ -1318,5 +1323,400 @@ export class ProductsService {
       },
     });
     return this.adminProductService.convertToModalProductCard(products);
+  }
+
+  getTranslation = (
+    translations: { locale: string; [key: string]: any }[] | undefined,
+    locale: string,
+    field: string = 'slug',
+  ): string | null => {
+    if (!translations) return null;
+    const translation = translations.find(
+      (t) => t.locale.toLowerCase() === locale.toLowerCase(),
+    );
+    return translation ? translation[field] : null;
+  };
+
+  async getAllProductsSitemap() {
+    let baseUrl =
+      this.configService.get<string>('WEB_UI_REDIRECT') ||
+      'http://localhost:3000';
+
+    if (baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.slice(0, -1);
+    }
+    console.log('Base URL for sitemap:', baseUrl);
+    const allLocales = ['tr', 'en', 'de'];
+    const defaultLocale = 'tr';
+    const visibleProductWhere: Prisma.ProductWhereInput = {
+      active: true,
+      OR: [
+        { isVariant: false, stock: { gt: 0 } },
+        {
+          isVariant: true,
+          variantCombinations: {
+            some: { active: true, stock: { gt: 0 } },
+          },
+        },
+      ],
+    };
+
+    const products = await this.prisma.product.findMany({
+      where: visibleProductWhere,
+      select: {
+        id: true,
+        translations: true,
+        assets: {
+          orderBy: { order: 'asc' },
+          take: 1,
+          select: { asset: { select: { url: true, type: true } } },
+        },
+        prices: true,
+        updatedAt: true,
+        active: true,
+        isVariant: true,
+        createdAt: true,
+        variantCombinations: {
+          where: {
+            active: true,
+            stock: { gt: 0 },
+          },
+          select: {
+            id: true,
+            updatedAt: true,
+            prices: true,
+            assets: {
+              orderBy: { order: 'asc' },
+              take: 1,
+              select: { asset: { select: { url: true, type: true } } },
+            },
+            options: {
+              orderBy: [
+                {
+                  productVariantOption: {
+                    productVariantGroup: { order: 'asc' },
+                  },
+                },
+                { productVariantOption: { order: 'asc' } },
+              ],
+              select: {
+                productVariantOption: {
+                  select: {
+                    variantOption: {
+                      select: {
+                        translations: true,
+                        variantGroup: {
+                          select: {
+                            translations: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const leafCategories = await this.prisma.category.findMany({
+      where: {
+        products: {
+          some: {
+            product: visibleProductWhere,
+          },
+        },
+      },
+      select: { id: true },
+    });
+    const leafCategoryIds = leafCategories.map((c) => c.id);
+    let allVisibleCategoryIds: string[] = [];
+    if (leafCategoryIds.length > 0) {
+      const ancestorCategories = await this.prisma.$queryRaw<[{ id: string }]>`
+        WITH RECURSIVE Ancestors AS (
+          SELECT id, "parentCategoryId"
+          FROM "Category"
+          WHERE id IN (${Prisma.join(leafCategoryIds)})
+
+          UNION ALL
+
+          SELECT c.id, c."parentCategoryId"
+          FROM "Category" c
+          INNER JOIN Ancestors a ON c.id = a."parentCategoryId"
+        )
+        SELECT DISTINCT id FROM Ancestors;
+      `;
+      allVisibleCategoryIds = ancestorCategories.map((c) => c.id);
+    }
+
+    const categories = await this.prisma.category.findMany({
+      where: {
+        id: { in: allVisibleCategoryIds },
+      },
+      select: {
+        id: true,
+        updatedAt: true,
+        translations: {
+          select: { locale: true, slug: true },
+        },
+      },
+    });
+
+    const leafBrands = await this.prisma.brand.findMany({
+      where: {
+        products: {
+          some: visibleProductWhere,
+        },
+      },
+      select: { id: true },
+    });
+    const leafBrandIds = leafBrands.map((b) => b.id);
+
+    let allVisibleBrandIds: string[] = [];
+    if (leafBrandIds.length > 0) {
+      const ancestorBrands = await this.prisma.$queryRaw<[{ id: string }]>`
+        WITH RECURSIVE Ancestors AS (
+          SELECT id, "parentBrandId"
+          FROM "Brand"
+          WHERE id IN (${Prisma.join(leafBrandIds)})
+
+          UNION ALL
+
+          SELECT b.id, b."parentBrandId"
+          FROM "Brand" b
+          INNER JOIN Ancestors a ON b.id = a."parentBrandId"
+        )
+        SELECT DISTINCT id FROM Ancestors;
+      `;
+      allVisibleBrandIds = ancestorBrands.map((b) => b.id);
+    }
+
+    const brands = await this.prisma.brand.findMany({
+      where: {
+        id: { in: allVisibleBrandIds },
+      },
+      select: {
+        id: true,
+        updatedAt: true,
+        translations: {
+          select: { locale: true, slug: true },
+        },
+      },
+    });
+
+    const sitemapEntryMap = new Map<string, Sitemap[number]>();
+
+    //product
+    for (const locale of allLocales) {
+      for (const product of products) {
+        if (product.isVariant) {
+          for (const combo of product.variantCombinations) {
+            const productSlug = this.getTranslation(
+              product.translations,
+              locale,
+              'slug',
+            );
+            if (!productSlug) continue;
+
+            const queryParams = new URLSearchParams();
+            let allOptionsTranslated = true;
+
+            for (const option of combo.options) {
+              const groupSlug = this.getTranslation(
+                option.productVariantOption.variantOption.variantGroup
+                  .translations,
+                locale,
+                'slug',
+              );
+              const optionSlug = this.getTranslation(
+                option.productVariantOption.variantOption.translations,
+                locale,
+                'slug',
+              );
+
+              if (groupSlug && optionSlug) {
+                queryParams.append(groupSlug, optionSlug);
+              } else {
+                allOptionsTranslated = false;
+                break;
+              }
+            }
+
+            if (!allOptionsTranslated) continue;
+
+            const url = new URL(baseUrl);
+            if (locale === defaultLocale) {
+              url.pathname = `/${productSlug}`;
+            } else {
+              url.pathname = `/${locale}/${productSlug}`;
+            }
+            url.search = queryParams.toString();
+
+            const fullUrl = url.href;
+            const comboKey = `combo-${combo.id}`;
+            const comboLastMod = combo.updatedAt || product.updatedAt;
+
+            if (!sitemapEntryMap.has(comboKey)) {
+              sitemapEntryMap.set(comboKey, {
+                url: fullUrl,
+                lastModified: comboLastMod,
+                alternates: {
+                  languages: {},
+                },
+              });
+            } else {
+              const entry = sitemapEntryMap.get(comboKey)!;
+              entry.alternates!.languages![locale] = fullUrl;
+              if (comboLastMod > entry.lastModified!) {
+                entry.lastModified = comboLastMod;
+              }
+            }
+          }
+        } else {
+          const productSlug = this.getTranslation(
+            product.translations,
+            locale,
+            'slug',
+          );
+          if (!productSlug) continue;
+
+          const url = new URL(baseUrl);
+          if (locale === defaultLocale) {
+            url.pathname = `/${productSlug}`;
+          } else {
+            url.pathname = `/${locale}/${productSlug}`;
+          }
+
+          const fullUrl = url.href;
+          const productKey = `product-${product.id}`;
+
+          if (!sitemapEntryMap.has(productKey)) {
+            sitemapEntryMap.set(productKey, {
+              url: fullUrl,
+              lastModified: product.updatedAt,
+              alternates: {
+                languages: {},
+              },
+            });
+          } else {
+            const entry = sitemapEntryMap.get(productKey)!;
+            entry.alternates!.languages![locale] = fullUrl;
+            if (product.updatedAt > entry.lastModified!) {
+              entry.lastModified = product.updatedAt;
+            }
+          }
+        }
+      }
+    }
+
+    //category
+    for (const locale of allLocales) {
+      for (const category of categories) {
+        const categorySlug = this.getTranslation(
+          category.translations,
+          locale,
+          'slug',
+        );
+        if (!categorySlug) continue;
+
+        const url = new URL(baseUrl);
+        if (locale === defaultLocale) {
+          url.pathname = `/categories/${categorySlug}`;
+        } else {
+          url.pathname = `/${locale}/categories/${categorySlug}`;
+        }
+
+        const fullUrl = url.href;
+        const categoryKey = `category-${category.id}`; // Benzersiz key
+
+        if (!sitemapEntryMap.has(categoryKey)) {
+          sitemapEntryMap.set(categoryKey, {
+            url: fullUrl,
+            lastModified: category.updatedAt,
+            alternates: {
+              languages: {},
+            },
+          });
+        } else {
+          const entry = sitemapEntryMap.get(categoryKey)!;
+          entry.alternates!.languages![locale] = fullUrl;
+          if (category.updatedAt > entry.lastModified!) {
+            entry.lastModified = category.updatedAt;
+          }
+        }
+      }
+    }
+
+    //brand
+    for (const locale of allLocales) {
+      for (const brand of brands) {
+        const brandSlug = this.getTranslation(
+          brand.translations,
+          locale,
+          'slug',
+        );
+        if (!brandSlug) continue;
+
+        const url = new URL(baseUrl);
+        if (locale === defaultLocale) {
+          url.pathname = `/brands/${brandSlug}`;
+        } else {
+          url.pathname = `/${locale}/brands/${brandSlug}`;
+        }
+
+        const fullUrl = url.href;
+        const brandKey = `brand-${brand.id}`;
+
+        if (!sitemapEntryMap.has(brandKey)) {
+          sitemapEntryMap.set(brandKey, {
+            url: fullUrl,
+            lastModified: brand.updatedAt,
+            alternates: {
+              languages: {},
+            },
+          });
+        } else {
+          const entry = sitemapEntryMap.get(brandKey)!;
+          entry.alternates!.languages![locale] = fullUrl;
+          if (brand.updatedAt > entry.lastModified!) {
+            entry.lastModified = brand.updatedAt;
+          }
+        }
+      }
+    }
+
+    let finalSitemap = Array.from(sitemapEntryMap.values());
+
+    for (const entry of finalSitemap) {
+      const entryUrl = new URL(entry.url);
+      const firstSegment = entryUrl.pathname.split('/')[1];
+      const entryLocale = allLocales.includes(firstSegment)
+        ? firstSegment
+        : defaultLocale;
+
+      if (
+        entry.alternates?.languages &&
+        entry.alternates.languages[entryLocale]
+      ) {
+        delete entry.alternates.languages[entryLocale];
+      }
+    }
+
+    finalSitemap = finalSitemap.map((entry) => {
+      entry.url = entry.url.replace(/&/g, '&amp;');
+
+      if (entry.alternates?.languages) {
+        for (const lang in entry.alternates.languages) {
+          entry.alternates.languages[lang] = entry.alternates.languages[
+            lang
+          ].replace(/&/g, '&amp;');
+        }
+      }
+      return entry;
+    });
+
+    return finalSitemap;
   }
 }

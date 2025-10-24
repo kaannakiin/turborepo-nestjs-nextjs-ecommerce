@@ -7,10 +7,13 @@ import {
   MantineColorsTuple,
   MantineProvider,
   Modal,
+  MultiSelect,
+  Select,
 } from "@mantine/core";
 import { DatesProvider } from "@mantine/dates";
 import { Notifications } from "@mantine/notifications";
 import { QueryClientProvider } from "@repo/shared";
+import { IconChevronDown } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import "dayjs/locale/tr";
 import customParseFormat from "dayjs/plugin/customParseFormat";
@@ -57,10 +60,19 @@ const LayoutProviderWrapper = ({ children }: { children: ReactNode }) => {
           transitionProps: { transition: "scale", duration: 300 },
         },
       }),
-
       Combobox: Combobox.extend({
         defaultProps: {
           transitionProps: { transition: "pop-bottom-right", duration: 200 },
+        },
+      }),
+      Select: Select.extend({
+        defaultProps: {
+          rightSection: <IconChevronDown />,
+        },
+      }),
+      MultiSelect: MultiSelect.extend({
+        defaultProps: {
+          rightSection: <IconChevronDown />,
         },
       }),
     },
