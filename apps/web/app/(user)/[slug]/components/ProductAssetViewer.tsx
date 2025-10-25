@@ -1,12 +1,20 @@
 "use client";
 import { Carousel } from "@mantine/carousel";
-import { AspectRatio, Modal, SimpleGrid, Stack } from "@mantine/core";
+import {
+  AspectRatio,
+  Box,
+  Image,
+  Modal,
+  SimpleGrid,
+  Stack,
+} from "@mantine/core";
 import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { $Enums } from "@repo/database";
 import Fade from "embla-carousel-fade";
 import { useState } from "react";
 import CustomImage from "../../../components/CustomImage";
 import styles from "./Carousel.module.css";
+import { IconX } from "@tabler/icons-react";
 interface ProductAssetViewerProps {
   assets: { url: string; type: $Enums.AssetType }[];
 }
@@ -91,42 +99,94 @@ const ProductAssetViewer = ({ assets }: ProductAssetViewerProps) => {
       </div>
 
       {!isMobile && (
-        <Modal.Root opened={opened} onClose={close} fullScreen radius={0}>
-          <Modal.Overlay />
-
-          <Modal.Content>
-            <Modal.Body className="max-h-screen p-0 flex items-center justify-center relative">
-              <Carousel
-                withIndicators={false}
-                withControls={true}
-                className="w-full h-full"
-                slideSize="100%"
-                plugins={[Fade()]}
-                emblaOptions={{
-                  loop: true,
-                  startIndex: selectedAssetIndex,
-                }}
-                classNames={{
-                  control: styles.modalControl,
-                  controls: styles.modalControls,
-                }}
-              >
-                {assets.map((asset, index) => (
-                  <Carousel.Slide key={index}>
-                    <div className="w-full h-full flex items-center justify-center">
-                      <AspectRatio miw="100vh" ratio={1} pos="relative">
-                        <CustomImage
-                          src={asset.url}
-                          alt={`Product image ${index + 1}`}
-                        />
-                      </AspectRatio>
-                    </div>
-                  </Carousel.Slide>
-                ))}
-              </Carousel>
-            </Modal.Body>
-          </Modal.Content>
-        </Modal.Root>
+        <Modal
+          opened={opened}
+          onClose={close}
+          fullScreen
+          transitionProps={{ transition: "fade", duration: 200 }}
+          padding={0}
+          withCloseButton={false}
+          styles={{
+            content: { height: "100%" },
+            body: { height: "100%", padding: 0 },
+            header: { display: "none" },
+            inner: { padding: 0 },
+          }}
+        >
+          <div className="relative h-full">
+            <button
+              type="button"
+              onClick={() => {
+                close();
+                setSelectedAssetIndex(null);
+              }}
+              className="absolute top-4 right-4 z-10 bg-white rounded-full w-10 h-10 flex items-center justify-center"
+              aria-label="Close"
+            >
+              <IconX />
+            </button>
+            <Carousel
+              withIndicators={false}
+              withControls={true}
+              height={"100%"}
+              slideSize="100%"
+              plugins={[Fade()]}
+              initialSlide={selectedAssetIndex}
+              classNames={{
+                control: styles.modalControl,
+                controls: styles.modalControls,
+              }}
+              styles={{
+                root: {
+                  height: "100%",
+                },
+                slide: {
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "100%",
+                },
+              }}
+            >
+              {assets.map((item, index) => (
+                <Carousel.Slide
+                  key={index}
+                  className="flex items-center justify-center "
+                >
+                  {item.type === "IMAGE" ? (
+                    <Image
+                      src={item.url}
+                      alt={`Product ${index + 1}`}
+                      className="max-w-full max-h-full"
+                      style={{
+                        objectFit: "contain",
+                        aspectRatio: "1/1",
+                        width: "auto",
+                        height: "auto",
+                      }}
+                    />
+                  ) : (
+                    <video
+                      src={item.url}
+                      controls={false}
+                      muted
+                      loop
+                      playsInline
+                      autoPlay
+                      className="max-w-full max-h-full"
+                      style={{
+                        objectFit: "contain",
+                        aspectRatio: "1/1",
+                        width: "auto",
+                        height: "auto",
+                      }}
+                    />
+                  )}
+                </Carousel.Slide>
+              ))}
+            </Carousel>
+          </div>
+        </Modal>
       )}
     </>
   );
