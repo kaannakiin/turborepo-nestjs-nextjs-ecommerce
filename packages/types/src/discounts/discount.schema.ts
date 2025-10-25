@@ -301,6 +301,9 @@ export const DiscountDatesSchema = z
 const BaseDiscountSchema = z
   .object({
     uniqueId: z.cuid2().nullish(),
+    status: z.enum($Enums.CampaignStatus, {
+      error: "Bu alan gereklidir.",
+    }),
     title: z
       .string({ error: "Bu alan gereklidir." })
       .min(3, { error: "Başlık en az 3 karakter olmalıdır." })
@@ -799,6 +802,7 @@ export type BaseDiscountZodType = z.infer<typeof BaseDiscountSchema>;
 
 export const MainDiscountSchemaDefaultValue: MainDiscount = {
   type: "PERCENTAGE",
+  status: "ACTIVE",
   title: "",
   conditions: {
     isAllProducts: true,

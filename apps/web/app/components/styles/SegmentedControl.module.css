@@ -1,0 +1,24 @@
+.root {
+  background-color: var(--mantine-color-white);
+  box-shadow: var(--mantine-shadow-md);
+  border: 1px solid var(--mantine-color-gray-1);
+}
+
+.indicator {
+  background-color: var(--mantine-primary-color-filled);
+}
+
+.control {
+  &::before {
+    display: none;
+  }
+}
+
+.label {
+  &,
+  &:hover {
+    &[data-active] {
+      color: var(--mantine-color-white);
+    }
+  }
+}

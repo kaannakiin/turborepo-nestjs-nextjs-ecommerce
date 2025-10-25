@@ -2,7 +2,8 @@
 import ActionPopover from "@/(admin)/components/ActionPopoverr";
 import FormCard from "@/(admin)/components/FormCard";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import { getCurrencyLabel } from "@lib/helpers";
+import fetchWrapper, { ApiError } from "@lib/fetchWrapper";
+import { getCampaignStatusLabel, getCurrencyLabel } from "@lib/helpers";
 import {
   Alert,
   Button,
@@ -14,6 +15,7 @@ import {
   Paper,
   Radio,
   ScrollArea,
+  SegmentedControl,
   SimpleGrid,
   Stack,
   Switch,
@@ -24,6 +26,7 @@ import {
 } from "@mantine/core";
 import { DateTimePicker } from "@mantine/dates";
 import { useDisclosure } from "@mantine/hooks";
+import { notifications } from "@mantine/notifications";
 import { $Enums } from "@repo/database";
 import {
   Controller,
@@ -35,7 +38,6 @@ import {
   zodResolver,
 } from "@repo/shared";
 import {
-  CampaignOfferType,
   CampaignZodSchema,
   CampaignZodType,
   CrossSellingCampaignDefaultValues,
@@ -53,6 +55,7 @@ import {
   IconRouteX,
   IconTrash,
 } from "@tabler/icons-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import CampaignOfferForm from "./CampaignOfferForm";
 import SearchableProductModal from "./SearchableProductModal";
@@ -182,10 +185,40 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
     name: "offers",
   });
 
+  const { push } = useRouter();
+
   const onSubmit: SubmitHandler<CampaignZodType> = async (data) => {
-    console.log("Submitted data:", data);
+    const response = await fetchWrapper.post<{
+      success: boolean;
+      message: string;
+    }>(`/admin/campaigns/create-or-update-campaign`, data);
+
+    if (!response.success) {
+      const errorResponse = response as ApiError;
+      notifications.show({
+        title: "Hata",
+        message: errorResponse.error,
+        color: "red",
+      });
+      return;
+    }
+    const { success, message } = response.data;
+    if (success) {
+      notifications.show({
+        title: "Başarılı",
+        message,
+        color: "green",
+      });
+      return;
+    }
+    notifications.show({
+      title: "Hata",
+      message,
+      color: "red",
+    });
+    push("/admin/store/campaigns");
   };
-  console.log("errors", errors);
+
   return (
     <>
       {isSubmitting && <GlobalLoadingOverlay />}
@@ -194,9 +227,31 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
           <Title order={3}>
             Kampanya {defaultValues ? "Düzenle" : "Oluştur"}
           </Title>
-          <Button variant="outline" onClick={handleSubmit(onSubmit)}>
-            {defaultValues ? "Güncelle" : "Oluştur"}
-          </Button>
+          <Group align="end" gap={"md"}>
+            <Controller
+              control={control}
+              name="status"
+              render={({ field, fieldState }) => (
+                <div className="flex flex-col gap-[2px]">
+                  <SegmentedControl
+                    {...field}
+                    radius="xl"
+                    size="sm"
+                    data={Object.values($Enums.CampaignStatus).map((value) => ({
+                      value,
+                      label: getCampaignStatusLabel(value),
+                    }))}
+                  />
+                  {fieldState.error?.message && (
+                    <InputError>{fieldState.error?.message}</InputError>
+                  )}
+                </div>
+              )}
+            />
+            <Button variant="outline" onClick={handleSubmit(onSubmit)}>
+              {defaultValues ? "Güncelle" : "Oluştur"}
+            </Button>
+          </Group>
         </Group>
         <FormCard title="Başlık">
           <Controller
@@ -231,17 +286,19 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                         offers: currentValues.offers,
                       };
 
-                      if (newType === CampaignOfferType.UP_SELLING) {
+                      if (newType === $Enums.CampaignType.UP_SELLING) {
                         reset({
                           ...UpSellCampaignDefaultValues,
                           ...commonData,
-                          type: CampaignOfferType.UP_SELLING,
+                          type: $Enums.CampaignType.UP_SELLING,
                         });
-                      } else if (newType === CampaignOfferType.CROSS_SELLING) {
+                      } else if (
+                        newType === $Enums.CampaignType.CROSS_SELLING
+                      ) {
                         reset({
                           ...CrossSellingCampaignDefaultValues,
                           ...commonData,
-                          type: CampaignOfferType.CROSS_SELLING,
+                          type: $Enums.CampaignType.CROSS_SELLING,
                         });
                       }
                     }}
@@ -249,9 +306,9 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                   >
                     <SimpleGrid cols={2}>
                       <Radio.Card
-                        value={CampaignOfferType.UP_SELLING}
+                        value={$Enums.CampaignType.UP_SELLING}
                         className={`border p-4 rounded-xl ${
-                          field.value === CampaignOfferType.UP_SELLING
+                          field.value === $Enums.CampaignType.UP_SELLING
                             ? "border-2 border-[var(--mantine-primary-color-5)] bg-[var(--mantine-primary-color-light)]"
                             : "border border-gray-400 bg-white"
                         }`}
@@ -260,7 +317,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                           <Group gap={"md"}>
                             <ThemeIcon
                               variant={
-                                field.value === CampaignOfferType.UP_SELLING
+                                field.value === $Enums.CampaignType.UP_SELLING
                                   ? "filled"
                                   : "light"
                               }
@@ -275,9 +332,9 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                       </Radio.Card>
 
                       <Radio.Card
-                        value={CampaignOfferType.CROSS_SELLING}
+                        value={$Enums.CampaignType.CROSS_SELLING}
                         className={`border p-4 rounded-xl ${
-                          field.value === CampaignOfferType.CROSS_SELLING
+                          field.value === $Enums.CampaignType.CROSS_SELLING
                             ? "border-2 border-[var(--mantine-primary-color-5)] bg-[var(--mantine-primary-color-light)]"
                             : "border border-gray-400 bg-white"
                         }`}
@@ -286,7 +343,8 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                           <Group gap={"md"}>
                             <ThemeIcon
                               variant={
-                                field.value === CampaignOfferType.CROSS_SELLING
+                                field.value ===
+                                $Enums.CampaignType.CROSS_SELLING
                                   ? "filled"
                                   : "light"
                               }
@@ -302,7 +360,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                     </SimpleGrid>
                   </Radio.Group>
 
-                  {field.value === CampaignOfferType.UP_SELLING && (
+                  {field.value === $Enums.CampaignType.UP_SELLING && (
                     <Alert
                       icon={<IconInfoCircle size={16} />}
                       title="Up Sell Kampanyası"
@@ -313,7 +371,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                     </Alert>
                   )}
 
-                  {field.value === CampaignOfferType.CROSS_SELLING && (
+                  {field.value === $Enums.CampaignType.CROSS_SELLING && (
                     <Alert
                       icon={<IconInfoCircle size={16} />}
                       title="Cross Sell Kampanyası"
@@ -328,7 +386,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
             />
           </Stack>
         </FormCard>
-        {type === CampaignOfferType.UP_SELLING ? (
+        {type === $Enums.CampaignType.UP_SELLING ? (
           <>
             <FormCard
               title={

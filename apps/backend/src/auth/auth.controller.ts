@@ -26,10 +26,14 @@ import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
+import { CsrfService } from './csrf.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly csrfService: CsrfService,
+  ) {}
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
@@ -113,16 +117,14 @@ export class AuthController {
   }
 
   @Get('csrf')
+  @HttpCode(200)
   getCsrfToken(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const generateCsrfToken = req['csrfToken'] as (
-      req: Request,
-      res: Response,
-    ) => string;
-    return res.status(200).json({
+    const token = this.csrfService.generateCsrfToken(req, res);
+    return {
       success: true,
-      csrfToken: generateCsrfToken(req, res),
-      message: 'CSRF token cookie olarak set edildi',
-    });
+      csrfToken: token,
+      message: 'CSRF token başarıyla oluşturuldu.',
+    };
   }
   // FORGOT PASSWORD - 'auth-strict' throttler (3 istek/5dk)
   // @Post('forgot-password')

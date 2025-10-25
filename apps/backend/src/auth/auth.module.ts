@@ -7,6 +7,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { FacebookStrategy } from './strategies/facebook.strategy';
+import { CsrfService } from './csrf.service';
 
 @Module({
   controllers: [AuthController],
@@ -17,7 +18,9 @@ import { FacebookStrategy } from './strategies/facebook.strategy';
     JwtRefreshStrategy,
     GoogleStrategy,
     FacebookStrategy,
+    CsrfService,
   ],
   imports: [JwtModule],
+  exports: [CsrfService],
 })
 export class AuthModule {}

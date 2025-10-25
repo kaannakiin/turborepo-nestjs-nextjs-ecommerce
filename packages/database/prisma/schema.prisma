@@ -900,11 +900,18 @@ model PaymentRequestSchema {
   @@index([paymentId])
 }
 
+enum CampaignStatus {
+  DRAFT // Taslak, henüz yayınlanmamış
+  ACTIVE // Şu an aktif olan
+  SCHEDULED // Gelecekte aktif olacak
+  ARCHIVED // Pasif, "silinmiş" gibi düşünülebilir
+}
+
 model Discount {
   id                           String                    @id @default(cuid())
   title                        String
   type                         DiscountType
-  isActive                     Boolean                   @default(true)
+  status                       CampaignStatus            @default(DRAFT)
   currencies                   Currency[]
   startDate                    DateTime?
   endDate                      DateTime?
@@ -925,15 +932,17 @@ model Discount {
   discountAmount               Float?
   isAllCustomers               Boolean                   @default(true)
   isAllProducts                Boolean                   @default(true)
-  createdAt                    DateTime                  @default(now())
-  updatedAt                    DateTime                  @updatedAt
-  coupons                      Coupon[]
-  conditionGroups              DiscountConditionGroup[]
-  customers                    DiscountCustomer[]
-  tiers                        DiscountTier[]
-  usages                       DiscountUsage[]
 
-  @@index([isActive, startDate, endDate])
+  coupons         Coupon[]
+  conditionGroups DiscountConditionGroup[]
+  customers       DiscountCustomer[]
+  tiers           DiscountTier[]
+  usages          DiscountUsage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([startDate, endDate])
 }
 
 model Coupon {
@@ -1054,17 +1063,14 @@ enum CampaignOfferTargetPage {
 }
 
 model Campaign {
-  id              String       @id @default(cuid())
+  id              String          @id @default(cuid())
   title           String
   campaignType    CampaignType
   validCurrencies Currency[]
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-
-  dates        Json
-  requirements Json
-
-  offers CampaignOffer[]
+  dates           Json
+  requirements    Json
+  status          CampaignStatus  @default(DRAFT)
+  offers          CampaignOffer[]
 
   // --- UP-SELL İLİŞKİLERİ ---
   // Zod: buyableProducts.productIds
@@ -1083,6 +1089,9 @@ model Campaign {
 
   // Zod: conditions.campaignOfferTargetType
   campaignOfferType CampaignOfferTargetPage?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model CampaignBuyableProduct {
