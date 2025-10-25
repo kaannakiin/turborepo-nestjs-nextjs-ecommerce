@@ -348,7 +348,7 @@ export class DiscountsService {
     return {
       title: body.title,
       type: body.type,
-      isActive: true,
+      status: 'ACTIVE',
       currencies: body.currencies,
       startDate: body.addStartDate ? new Date(body.startDate!) : null,
       endDate: body.addEndDate ? new Date(body.endDate!) : null,
@@ -527,6 +527,7 @@ export class DiscountsService {
       uniqueId: discount.id,
       title: discount.title,
       type: discount.type,
+      status: discount.status,
       currencies: discount.currencies,
       isLimitPurchase: discount.isLimitPurchase,
       minPurchaseAmount: discount.minPurchaseAmount,

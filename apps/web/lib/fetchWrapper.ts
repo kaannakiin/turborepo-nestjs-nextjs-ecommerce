@@ -1,8 +1,8 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from "axios";
 
-// Bu tipleri değiştirmeden kullanmaya devam ediyoruz
+// Tipler aynı kalır
 type ApiSuccess<T> = { success: true; data: T; status: number };
-type ApiError = { success: false; error: string; status: number };
+export type ApiError = { success: false; error: string; status: number };
 type ApiResponse<T> = ApiSuccess<T> | ApiError;
 
 class AxiosWrapper {
@@ -12,6 +12,9 @@ class AxiosWrapper {
     resolve: (value: unknown) => void;
     reject: (reason?: unknown) => void;
   }[] = [];
+
+  // 1. Token'ı cookie yerine burada, hafızada (in-memory) sakla
+  private csrfToken: string | null = null;
 
   constructor() {
     this.api = axios.create({
@@ -23,16 +26,30 @@ class AxiosWrapper {
     });
 
     this.initializeInterceptors();
+
+    // 2. Wrapper oluşturulur oluşturulmaz CSRF token'ı al
+    this.initializeCsrf();
   }
 
-  private getCsrfTokenFromCookie(): string | null {
-    if (typeof document === "undefined") return null;
-    let match = document.cookie.match(/__Host-csrf-token=([^;]+)/);
-    if (!match) {
-      match = document.cookie.match(/csrf-token=([^;]+)/);
+  // 3. YENİ METOD: CSRF token'ı backend'den alır ve değişkene atar
+  private async initializeCsrf() {
+    try {
+      // Not: 'this.api.get' yerine 'axios.get' kullanıyoruz ki
+      // bu ilk istek interceptor'a takılıp CSRF token aramasın.
+      const response = await axios.get<{ csrfToken: string }>(
+        `${this.api.defaults.baseURL}/auth/csrf`,
+        { withCredentials: true }
+      );
+
+      this.csrfToken = response.data.csrfToken;
+      console.log("CSRF token initialized.");
+    } catch (error) {
+      console.error("Failed to initialize CSRF token:", error);
     }
-    return match ? match[1].trim() : null;
   }
+
+  // 4. BU FONKSİYONU SİLİYORUZ. ARTIK GEREKLİ DEĞİL.
+  // private getCsrfTokenFromCookie(): string | null { ... }
 
   private hasRefreshToken(): boolean {
     if (typeof document === "undefined") return false;
@@ -58,20 +75,24 @@ class AxiosWrapper {
           method.toLowerCase()
         );
 
-        if (needsCsrf) {
-          const csrfToken = this.getCsrfTokenFromCookie();
-          if (csrfToken) {
-            config.headers["X-CSRF-Token"] = csrfToken;
-          }
+        // 5. Token'ı cookie'den değil, 'this.csrfToken' değişkeninden oku
+        if (needsCsrf && this.csrfToken) {
+          config.headers["X-CSRF-Token"] = this.csrfToken;
+        } else if (needsCsrf && !this.csrfToken) {
+          // Token henüz alınamadıysa (initializeCsrf bitmediyse) uyarı ver
+          console.warn(
+            "CSRF token is not yet available for request:",
+            config.url
+          );
+          // İsteği yine de göndermeyi deneyebilir veya hata fırlatabilirsiniz
         }
         return config;
       },
       (error) => Promise.reject(error)
     );
 
-    // 2. Cevap (Response) Interceptor'ı: Gelen hataları yönetir (401, 403 vb.)
     this.api.interceptors.response.use(
-      (response) => response, // Başarılı cevapları doğrudan geçir
+      (response) => response,
       async (error: AxiosError) => {
         const originalRequest = error.config as AxiosRequestConfig & {
           _retry?: boolean;
@@ -81,16 +102,28 @@ class AxiosWrapper {
           return Promise.reject(error);
         }
 
-        // 403 Forbidden - CSRF token hatası olabilir. Bir kez tekrar dene.
+        // 403 Forbidden - CSRF token hatası. Token'ı yenile ve tekrar dene.
         if (error.response.status === 403 && !originalRequest._retry) {
           originalRequest._retry = true;
-          return this.api(originalRequest);
+
+          try {
+            console.log("CSRF token invalid, refreshing...");
+            // CSRF token'ı arka planda yenile
+            await this.initializeCsrf();
+
+            // 'this.api(originalRequest)' çağırmak yeterli,
+            // request interceptor bu sefer YENİ token'ı otomatik ekleyecektir.
+            return this.api(originalRequest);
+          } catch (csrfError) {
+            console.error("CSRF token refresh failed:", csrfError);
+            return Promise.reject(error); // Orijinal 403 hatasını döndür
+          }
         }
 
         // 401 Unauthorized - Access token süresi dolmuş
+        // (Bu kodun mükemmel çalışıyor, dokunmaya gerek yok)
         if (error.response.status === 401 && !originalRequest._retry) {
           if (this.isRefreshing) {
-            // Zaten bir token yenileme işlemi var, isteği kuyruğa al
             return new Promise((resolve, reject) => {
               this.failedQueue.push({ resolve, reject });
             })
@@ -103,13 +136,10 @@ class AxiosWrapper {
 
           if (!this.hasRefreshToken()) {
             this.isRefreshing = false;
-            // Logout logic can be triggered here
             return Promise.reject(new Error("Refresh token bulunamadı."));
           }
 
           return new Promise((resolve, reject) => {
-            // Refresh token endpoint'ine istek at.
-            // Burada 'axios' yerine 'this.api' kullanıyoruz ki baseURL'i alsın.
             this.api
               .post("/auth/refresh", {})
               .then(() => {
@@ -118,7 +148,6 @@ class AxiosWrapper {
               })
               .catch((refreshError) => {
                 this.processQueue(refreshError, null);
-                // Logout logic can be triggered here
                 reject(refreshError);
               })
               .finally(() => {

@@ -3,7 +3,11 @@
 import { safeTransformDiscountType } from "@/(admin)/admin/(other)/store/discounts/helperDiscount";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper from "@lib/fetchWrapper";
-import { getCurrencyLabel, getDiscountTypeLabel } from "@lib/helpers";
+import {
+  getCampaignStatusLabel,
+  getCurrencyLabel,
+  getDiscountTypeLabel,
+} from "@lib/helpers";
 import {
   ActionIcon,
   Button,
@@ -15,6 +19,7 @@ import {
   MultiSelect,
   NumberInput,
   Radio,
+  SegmentedControl,
   SimpleGrid,
   Stack,
   Switch,
@@ -320,13 +325,35 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
           <Title order={4}>
             İndirim {defaultValues ? "Düzenle" : "Oluştur"}{" "}
           </Title>
-          <Button
-            variant="filled"
-            onClick={handleSubmit(onSubmit)}
-            type="button"
-          >
-            {defaultValues ? "Güncelle" : "Oluştur"}
-          </Button>
+          <Group align="center">
+            <Controller
+              control={control}
+              name="status"
+              render={({ field, fieldState }) => (
+                <div className="flex flex-col gap-[2px]">
+                  <SegmentedControl
+                    {...field}
+                    radius="xl"
+                    size="sm"
+                    data={Object.values($Enums.CampaignStatus).map((value) => ({
+                      value,
+                      label: getCampaignStatusLabel(value),
+                    }))}
+                  />
+                  {fieldState.error?.message && (
+                    <InputError>{fieldState.error?.message}</InputError>
+                  )}
+                </div>
+              )}
+            />
+            <Button
+              variant="filled"
+              onClick={handleSubmit(onSubmit)}
+              type="button"
+            >
+              {defaultValues ? "Güncelle" : "Oluştur"}
+            </Button>
+          </Group>
         </Group>
         <FormCard title="Başlık">
           <Controller

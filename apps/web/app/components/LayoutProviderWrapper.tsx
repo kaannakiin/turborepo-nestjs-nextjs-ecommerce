@@ -8,6 +8,7 @@ import {
   MantineProvider,
   Modal,
   MultiSelect,
+  SegmentedControl,
   Select,
 } from "@mantine/core";
 import { DatesProvider } from "@mantine/dates";
@@ -19,6 +20,7 @@ import "dayjs/locale/tr";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
+import segmentedClasses from "./styles/SegmentedControl.module.css";
 const primaryColor: MantineColorsTuple = [
   "#fff0e4",
   "#ffe0cf",
@@ -74,6 +76,9 @@ const LayoutProviderWrapper = ({ children }: { children: ReactNode }) => {
         defaultProps: {
           rightSection: <IconChevronDown />,
         },
+      }),
+      SegmentedControl: SegmentedControl.extend({
+        classNames: segmentedClasses,
       }),
     },
   });

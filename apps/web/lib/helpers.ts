@@ -1,4 +1,5 @@
 import { MantineColor, MantineColorsTuple } from "@mantine/core";
+import { $Enums } from "@repo/database";
 import {
   CardAssociation,
   FontFamily,
@@ -11,7 +12,6 @@ import {
   TextAlign,
   VariantProductZodType,
 } from "@repo/types";
-import { $Enums } from "@repo/database";
 export function getUserRoleLabels(role: $Enums.UserRole) {
   switch (role) {
     case "ADMIN":
@@ -874,5 +874,18 @@ export function getDiscountTypeLabel(type: $Enums.DiscountType): string {
       return "Yüzdelik - Fiyat Bazlı Artan";
     case "PERCENTAGE_GROW_QUANTITY":
       return "Yüzdelik - Miktar Bazlı Artan";
+  }
+}
+
+export function getCampaignStatusLabel(status: $Enums.CampaignStatus): string {
+  switch (status) {
+    case "ACTIVE":
+      return "Aktif";
+    case "DRAFT":
+      return "Taslak";
+    case "ARCHIVED":
+      return "Arşivlenmiş";
+    case "SCHEDULED":
+      return "Planlanmış";
   }
 }
