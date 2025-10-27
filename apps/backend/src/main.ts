@@ -51,6 +51,8 @@ async function bootstrap() {
         'Authorization',
         'X-Requested-With',
         'X-CSRF-Token',
+        'User-Agent',
+        'x-goog-api-key',
       ],
 
       credentials: true,
@@ -89,7 +91,6 @@ async function bootstrap() {
           '/auth/refresh',
           '/payment/iyzico/webhook',
           paymentCallbackUrl.pathname,
-          '/user-categories/get-category-products',
         ];
 
         if (excludedPaths.includes(req.path)) {

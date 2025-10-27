@@ -3,7 +3,7 @@ import ThemeProvider from "./(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import LayoutProviderWrapper from "./components/LayoutProviderWrapper";
 import "./globals.css";
 import Head from "next/head";
-
+import "@blocknote/mantine/blocknoteStyles.css";
 export default function RootLayout({
   children,
 }: Readonly<{

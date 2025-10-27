@@ -6,6 +6,7 @@ import {
   Button,
   Grid,
   Group,
+  InputError,
   InputLabel,
   MultiSelect,
   Select,
@@ -15,6 +16,7 @@ import {
   Title,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
+import { $Enums } from "@repo/database";
 import {
   Controller,
   createId,
@@ -38,8 +40,6 @@ import GlobalSeoCard from "../../../../../../components/GlobalSeoCard";
 import ProductDropzone from "../../components/ProductDropzone";
 import ExistingVariantCard from "./ExistingVariantCard";
 import GoogleTaxonomySelectV2 from "./GoogleTaxonomySelectV2";
-import ProductDetailCard from "./ProductDetailCard";
-import { $Enums } from "@repo/database";
 
 const GlobalTextEditor = dynamic(
   () => import("../../../../../../components/GlobalTextEditor"),
@@ -502,17 +502,19 @@ const VariantProductForm = ({
           <GlobalTextEditor
             label="Ürün Açıklaması"
             {...field}
+            placeholder="Ürün Açıklaması girebilirsiniz. Ai'dan yardım almak için /ai yazın"
             value={field.value ?? undefined}
             error={fieldState.error?.message}
           />
         )}
       />
-      <Stack gap={"xs"}>
-        <InputLabel>Ürün Görselleri</InputLabel>
-        <Controller
-          control={control}
-          name="images"
-          render={({ fieldState }) => (
+
+      <Controller
+        control={control}
+        name="images"
+        render={({ fieldState }) => (
+          <Stack gap={"xs"}>
+            <InputLabel>Ürün Görselleri</InputLabel>
             <ProductDropzone
               existingImages={existingImages}
               images={images}
@@ -521,72 +523,73 @@ const VariantProductForm = ({
               onRemoveExistingImage={handleRemoveExistingImage}
               onReorder={handleReorder}
             />
+            {fieldState.error && (
+              <InputError>{fieldState.error.message}</InputError>
+            )}
+          </Stack>
+        )}
+      />
+      <SimpleGrid cols={{ xs: 1, sm: 3 }}>
+        <Controller
+          control={control}
+          name="brandId"
+          render={({ field }) => (
+            <Select
+              {...field}
+              label="Marka"
+              clearable
+              nothingFoundMessage="Marka bulunamadı"
+              searchable
+              data={
+                brands &&
+                brands.length > 0 &&
+                brands.map((brand) => ({
+                  value: brand.id,
+                  label:
+                    brand.translations.find((t) => t.locale === "TR")?.name ||
+                    brand.translations[0]?.name ||
+                    "İsimsiz Marka",
+                }))
+              }
+            />
           )}
         />
-      </Stack>
-      <ProductDetailCard>
-        <SimpleGrid cols={{ xs: 1, sm: 3 }}>
-          <Controller
-            control={control}
-            name="brandId"
-            render={({ field }) => (
-              <Select
-                {...field}
-                label="Marka"
-                clearable
-                nothingFoundMessage="Marka bulunamadı"
-                searchable
-                data={
-                  brands &&
-                  brands.length > 0 &&
-                  brands.map((brand) => ({
-                    value: brand.id,
-                    label:
-                      brand.translations.find((t) => t.locale === "TR")?.name ||
-                      brand.translations[0]?.name ||
-                      "İsimsiz Marka",
-                  }))
-                }
-              />
-            )}
-          />
-          <Controller
-            control={control}
-            name="categories"
-            render={({ field }) => (
-              <MultiSelect
-                {...field}
-                label="Kategori"
-                clearable
-                searchable
-                nothingFoundMessage="Kategori bulunamadı"
-                data={
-                  categories &&
-                  categories.length > 0 &&
-                  categories.map((cat) => ({
-                    value: cat.id,
-                    label:
-                      cat.translations.find((t) => t.locale === "TR")?.name ||
-                      cat.translations[0]?.name ||
-                      "İsimsiz Kategori",
-                  }))
-                }
-              />
-            )}
-          />
+        <Controller
+          control={control}
+          name="categories"
+          render={({ field }) => (
+            <MultiSelect
+              {...field}
+              label="Kategori"
+              clearable
+              searchable
+              nothingFoundMessage="Kategori bulunamadı"
+              data={
+                categories &&
+                categories.length > 0 &&
+                categories.map((cat) => ({
+                  value: cat.id,
+                  label:
+                    cat.translations.find((t) => t.locale === "TR")?.name ||
+                    cat.translations[0]?.name ||
+                    "İsimsiz Kategori",
+                }))
+              }
+            />
+          )}
+        />
 
-          <Controller
-            control={control}
-            name="googleTaxonomyId"
-            render={({ field, fieldState }) => (
-              <GoogleTaxonomySelectV2
-                {...field}
-                error={fieldState.error?.message}
-              />
-            )}
-          />
-        </SimpleGrid>
-      </ProductDetailCard>
+        <Controller
+          control={control}
+          name="googleTaxonomyId"
+          render={({ field, fieldState }) => (
+            <GoogleTaxonomySelectV2
+              {...field}
+              error={fieldState.error?.message}
+            />
+          )}
+        />
+      </SimpleGrid>
       <ExistingVariantCard
         control={control}
         errors={errors.existingVariants?.message}

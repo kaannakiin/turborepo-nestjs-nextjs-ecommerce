@@ -4,8 +4,6 @@
 @layer mantine {
   @import "@mantine/core/styles.layer.css";
   @import "@mantine/dropzone/styles.css";
-  @import "@blocknote/mantine/style.css";
-  @import "@blocknote/core/fonts/inter.css";
   @import "@mantine/notifications/styles.css";
   @import "@mantine/dates/styles.css";
   @import "@mantine/carousel/styles.css";

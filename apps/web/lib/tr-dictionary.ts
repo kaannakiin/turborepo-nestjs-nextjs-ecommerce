@@ -1,172 +1,206 @@
-export const tr = {
+import { Dictionary } from "@blocknote/core";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const tr: Dictionary & Record<string, any> = {
   slash_menu: {
+    // --- BAŞLIKLAR GRUBU ---
     heading: {
-      title: "Başlık",
-      subtext: "Büyük bölüm başlığı",
-      aliases: ["başlık", "h1", "h"],
+      title: "Başlık 1",
+      subtext: "En üst seviye başlık",
+      aliases: ["h", "baslik1", "h1"],
       group: "Başlıklar",
     },
     heading_2: {
       title: "Başlık 2",
-      subtext: "Orta bölüm başlığı",
-      aliases: ["başlık2", "h2"],
+      subtext: "Ana bölüm başlığı",
+      aliases: ["h2", "baslik2", "altbaslik"],
       group: "Başlıklar",
     },
     heading_3: {
       title: "Başlık 3",
-      subtext: "Küçük bölüm başlığı",
-      aliases: ["başlık3", "h3"],
+      subtext: "Alt bölüm ve grup başlığı",
+      aliases: ["h3", "baslik3", "altbaslik"],
       group: "Başlıklar",
     },
+
+    // --- ALT BAŞLIKLAR GRUBU ---
     heading_4: {
       title: "Başlık 4",
-      subtext: "Alt başlık",
-      aliases: ["başlık4", "h4"],
-      group: "Başlıklar",
+      subtext: "Küçük alt bölüm başlığı",
+      aliases: ["h4", "baslik4", "altbaslik4"],
+      group: "Alt Başlıklar",
     },
     heading_5: {
       title: "Başlık 5",
-      subtext: "Alt başlık",
-      aliases: ["başlık5", "h5"],
-      group: "Başlıklar",
+      subtext: "Daha küçük alt bölüm başlığı",
+      aliases: ["h5", "baslik5", "altbaslik5"],
+      group: "Alt Başlıklar",
     },
     heading_6: {
       title: "Başlık 6",
-      subtext: "En küçük başlık",
-      aliases: ["başlık6", "h6"],
-      group: "Başlıklar",
+      subtext: "En düşük seviye başlık",
+      aliases: ["h6", "baslik6", "altbaslik6"],
+      group: "Alt Başlıklar",
     },
     toggle_heading: {
-      title: "Açılır Başlık",
-      subtext: "İçeriği açıp kapanabilen büyük başlık",
-      aliases: ["açılır", "toggle"],
-      group: "Başlıklar",
+      title: "Açılır Başlık 1",
+      subtext: "Açılır-kapanır en üst seviye başlık",
+      aliases: ["h", "baslik1", "h1", "acilir"],
+      group: "Alt Başlıklar",
     },
     toggle_heading_2: {
       title: "Açılır Başlık 2",
-      subtext: "İçeriği açıp kapanabilen orta başlık",
-      aliases: ["açılır2"],
-      group: "Başlıklar",
+      subtext: "Açılır-kapanır ana bölüm başlığı",
+      aliases: ["h2", "baslik2", "altbaslik", "acilir"],
+      group: "Alt Başlıklar",
     },
     toggle_heading_3: {
       title: "Açılır Başlık 3",
-      subtext: "İçeriği açıp kapanabilen küçük başlık",
-      aliases: ["açılır3"],
-      group: "Başlıklar",
+      subtext: "Açılır-kapanır alt bölüm başlığı",
+      aliases: ["h3", "baslik3", "altbaslik", "acilir"],
+      group: "Alt Başlıklar",
     },
+
+    // --- TEMEL BLOKLAR GRUBU ---
     quote: {
       title: "Alıntı",
-      subtext: "Alıntı bloğu oluşturun",
-      aliases: ["alıntı", "quote", "tırnak"],
+      subtext: "Alıntı veya özlü söz",
+      aliases: ["alinti", "blokalinti", "bq"],
       group: "Temel Bloklar",
     },
     toggle_list: {
       title: "Açılır Liste",
-      subtext: "Açıp kapanabilen liste öğesi",
-      aliases: ["açılırliste", "details"],
-      group: "Listeler",
+      subtext: "Gizlenebilir alt öğelere sahip liste",
+      aliases: ["li", "liste", "acilirliste", "acilir liste"],
+      group: "Temel Bloklar",
     },
     numbered_list: {
       title: "Numaralı Liste",
-      subtext: "Numaralı liste öğesi",
-      aliases: ["numaralıliste", "ol", "1."],
-      group: "Listeler",
+      subtext: "Sıralı öğelere sahip liste",
+      aliases: ["ol", "li", "liste", "numaraliliste", "numarali liste"],
+      group: "Temel Bloklar",
     },
     bullet_list: {
-      title: "Madde İşaretli Liste",
-      subtext: "Madde işaretli liste öğesi",
-      aliases: ["maddeli", "ul", "liste", "-"],
-      group: "Listeler",
+      title: "Maddeli Liste",
+      subtext: "Sırasız öğelere sahip liste",
+      aliases: ["ul", "li", "liste", "maddeliliste", "maddeli liste"],
+      group: "Temel Bloklar",
     },
     check_list: {
       title: "Kontrol Listesi",
-      subtext: "İşaretlenebilir liste öğesi",
-      aliases: ["checklist", "todo", "görev", "[]"],
-      group: "Listeler",
+      subtext: "Onay kutularına sahip liste",
+      aliases: [
+        "ul",
+        "li",
+        "liste",
+        "checklist",
+        "kontrol listesi",
+        "onay listesi",
+        "onaykutusu",
+      ],
+      group: "Temel Bloklar",
     },
     paragraph: {
-      title: "Paragraf",
-      subtext: "Metin paragrafı",
-      aliases: ["p", "paragraf"],
+      title: "Metin", // "Paragraf" yerine "Metin" daha kullanıcı dostu
+      subtext: "Belgenizin ana gövdesi",
+      aliases: ["p", "paragraf", "metin"],
       group: "Temel Bloklar",
     },
     code_block: {
       title: "Kod Bloğu",
-      subtext: "Kod parçacığı ekleyin",
-      aliases: ["kod", "code", "```"],
-      group: "Gelişmiş",
+      subtext: "Sözdizimi vurgulamalı kod bloğu",
+      aliases: ["kod", "pre"],
+      group: "Temel Bloklar",
     },
     page_break: {
       title: "Sayfa Sonu",
-      subtext: "Sayfa sonu ekleyin",
-      aliases: ["sayfa", "break", "---"],
-      group: "Gelişmiş",
+      subtext: "Sayfa ayırıcı",
+      aliases: ["sayfa", "son", "ayirici"],
+      group: "Temel Bloklar",
     },
+    divider: {
+      title: "Ayırıcı",
+      subtext: "Blokları görsel olarak ayırın",
+      aliases: ["ayirici", "hr", "cizgi", "yatay cizgi"],
+      group: "Temel Bloklar",
+    },
+
+    // --- GELİŞMİŞ GRUBU ---
     table: {
       title: "Tablo",
-      subtext: "Tablo ekleyin",
-      aliases: ["tablo", "table"],
+      subtext: "Düzenlenebilir hücrelere sahip tablo",
+      aliases: ["tablo"],
       group: "Gelişmiş",
     },
+
+    // --- MEDYA GRUBU ---
     image: {
       title: "Resim",
-      subtext: "Resim ekleyin",
-      aliases: ["resim", "image", "görsel", "foto"],
+      subtext: "Alt yazılı, yeniden boyutlandırılabilir resim",
+      aliases: [
+        "resim",
+        "resimyukle",
+        "yukle",
+        "img",
+        "gorsel",
+        "medya",
+        "url",
+      ],
       group: "Medya",
     },
     video: {
       title: "Video",
-      subtext: "Video ekleyin",
-      aliases: ["video", "film"],
+      subtext: "Alt yazılı, yeniden boyutlandırılabilir video",
+      aliases: ["video", "videoyukle", "yukle", "mp4", "film", "medya", "url"],
       group: "Medya",
     },
     audio: {
       title: "Ses",
-      subtext: "Ses dosyası ekleyin",
-      aliases: ["ses", "audio", "müzik"],
+      subtext: "Alt yazılı, gömülü ses dosyası",
+      aliases: ["ses", "sesyukle", "yukle", "mp3", "sound", "medya", "url"],
       group: "Medya",
     },
     file: {
       title: "Dosya",
-      subtext: "Dosya ekleyin",
-      aliases: ["dosya", "file"],
+      subtext: "Gömülü dosya",
+      aliases: ["dosya", "yukle", "gom", "medya", "url"],
       group: "Medya",
     },
+
+    // --- DİĞER GRUBU ---
     emoji: {
       title: "Emoji",
-      subtext: "Emoji ekleyin",
-      aliases: ["emoji", "😀"],
+      subtext: "Emoji arayın ve ekleyin",
+      aliases: ["emoji", "ifade", "yuz"],
       group: "Diğer",
     },
   },
   placeholders: {
-    default: "Yazmaya başlayın...",
-    emptyDocument: "Boş sayfa",
+    default: "Metin girin veya komutlar için '/' yazın",
     heading: "Başlık",
-    bulletListItem: "Liste öğesi",
-    numberedListItem: "Liste öğesi",
-    checkListItem: "Liste öğesi",
-  },
+    toggleListItem: "Açılır öğe",
+    bulletListItem: "Liste",
+    numberedListItem: "Liste",
+    checkListItem: "Liste",
+    emptyDocument: undefined,
+    new_comment: "Yorum yazın...",
+    edit_comment: "Yorumu düzenle...",
+    comment_reply: "Yorum ekle...",
+  } as Record<string | "default" | "emptyDocument", string | undefined>,
   file_blocks: {
-    image: {
-      add_button_text: "Resim Ekle",
-    },
-    video: {
-      add_button_text: "Video Ekle",
-    },
-    audio: {
-      add_button_text: "Ses Ekle",
-    },
-    file: {
-      add_button_text: "Dosya Ekle",
-    },
+    add_button_text: {
+      image: "Resim Ekle",
+      video: "Video Ekle",
+      audio: "Ses Ekle",
+      file: "Dosya Ekle",
+    } as Record<string, string>,
   },
   toggle_blocks: {
-    add_block_button: "Blok Ekle",
+    add_block_button: "Boş açılır blok. Blok eklemek için tıklayın.",
   },
   side_menu: {
     add_block_label: "Blok ekle",
-    drag_handle_label: "Sürükle",
+    drag_handle_label: "Blok menüsünü aç",
   },
   drag_handle: {
     delete_menuitem: "Sil",
@@ -177,20 +211,20 @@ export const tr = {
   table_handle: {
     delete_column_menuitem: "Sütunu Sil",
     delete_row_menuitem: "Satırı Sil",
-    add_left_menuitem: "Sol Tarafa Ekle",
-    add_right_menuitem: "Sağ Tarafa Ekle",
-    add_above_menuitem: "Yukarı Ekle",
-    add_below_menuitem: "Aşağı Ekle",
+    add_left_menuitem: "Sola Sütun Ekle",
+    add_right_menuitem: "Sağa Sütun Ekle",
+    add_above_menuitem: "Yukarıya Satır Ekle",
+    add_below_menuitem: "Aşağıya Satır Ekle",
     split_cell_menuitem: "Hücreyi Böl",
     merge_cells_menuitem: "Hücreleri Birleştir",
     background_color_menuitem: "Arkaplan Rengi",
   },
   suggestion_menu: {
-    no_items_title: "Öğe bulunamadı",
+    no_items_title: "Hiçbir öğe bulunamadı",
   },
   color_picker: {
-    text_title: "Metin Rengi",
-    background_title: "Arkaplan Rengi",
+    text_title: "Metin",
+    background_title: "Arkaplan",
     colors: {
       default: "Varsayılan",
       gray: "Gri",
@@ -204,142 +238,143 @@ export const tr = {
       pink: "Pembe",
     },
   },
+
   formatting_toolbar: {
     bold: {
       tooltip: "Kalın",
-      secondary_tooltip: "Ctrl+B",
+      secondary_tooltip: "Mod+B",
     },
     italic: {
       tooltip: "İtalik",
-      secondary_tooltip: "Ctrl+I",
+      secondary_tooltip: "Mod+I",
     },
     underline: {
       tooltip: "Altı Çizili",
-      secondary_tooltip: "Ctrl+U",
+      secondary_tooltip: "Mod+U",
     },
     strike: {
       tooltip: "Üstü Çizili",
-      secondary_tooltip: "Ctrl+Shift+S",
+      secondary_tooltip: "Mod+Shift+S",
     },
     code: {
       tooltip: "Kod",
-      secondary_tooltip: "Ctrl+E",
+      secondary_tooltip: "",
     },
     colors: {
       tooltip: "Renkler",
     },
     link: {
-      tooltip: "Bağlantı Oluştur",
-      secondary_tooltip: "Ctrl+K",
+      tooltip: "Bağlantı oluştur",
+      secondary_tooltip: "Mod+K",
     },
     file_caption: {
-      tooltip: "Alt Yazı Düzenle",
-      input_placeholder: "Alt yazı...",
+      tooltip: "Alt yazıyı düzenle",
+      input_placeholder: "Alt yazıyı düzenle",
     },
     file_replace: {
       tooltip: {
-        image: "Resmi Değiştir",
-        video: "Videoyu Değiştir",
-        audio: "Sesi Değiştir",
-        file: "Dosyayı Değiştir",
-      },
+        image: "Resmi değiştir",
+        video: "Videoyu değiştir",
+        audio: "Sesi değiştir",
+        file: "Dosyayı değiştir",
+      } as Record<string, string>,
     },
     file_rename: {
       tooltip: {
-        image: "Resmi Yeniden Adlandır",
-        video: "Videoyu Yeniden Adlandır",
-        audio: "Sesi Yeniden Adlandır",
-        file: "Dosyayı Yeniden Adlandır",
-      },
+        image: "Resmi yeniden adlandır",
+        video: "Videoyu yeniden adlandır",
+        audio: "Sesi yeniden adlandır",
+        file: "Dosyayı yeniden adlandır",
+      } as Record<string, string>,
       input_placeholder: {
-        image: "Resim adı...",
-        video: "Video adı...",
-        audio: "Ses adı...",
-        file: "Dosya adı...",
-      },
+        image: "Resmi yeniden adlandır",
+        video: "Videoyu yeniden adlandır",
+        audio: "Sesi yeniden adlandır",
+        file: "Dosyayı yeniden adlandır",
+      } as Record<string, string>,
     },
     file_download: {
       tooltip: {
-        image: "Resmi İndir",
-        video: "Videoyu İndir",
-        audio: "Sesi İndir",
-        file: "Dosyayı İndir",
-      },
+        image: "Resmi indir",
+        video: "Videoyu indir",
+        audio: "Sesi indir",
+        file: "Dosyayı indir",
+      } as Record<string, string>,
     },
     file_delete: {
       tooltip: {
-        image: "Resmi Sil",
-        video: "Videoyu Sil",
-        audio: "Sesi Sil",
-        file: "Dosyayı Sil",
-      },
+        image: "Resmi sil",
+        video: "Videoyu sil",
+        audio: "Sesi sil",
+        file: "Dosyayı sil",
+      } as Record<string, string>,
     },
     file_preview_toggle: {
-      tooltip: "Önizlemeyi Aç/Kapat",
+      tooltip: "Önizlemeyi aç/kapat",
     },
     nest: {
-      tooltip: "İçe Alma",
+      tooltip: "Girintiyi artır",
       secondary_tooltip: "Tab",
     },
     unnest: {
-      tooltip: "Dışa Alma",
+      tooltip: "Girintiyi azalt",
       secondary_tooltip: "Shift+Tab",
     },
     align_left: {
-      tooltip: "Sola Hizala",
+      tooltip: "Sola hizala",
     },
     align_center: {
       tooltip: "Ortala",
     },
     align_right: {
-      tooltip: "Sağa Hizala",
+      tooltip: "Sağa hizala",
     },
     align_justify: {
-      tooltip: "İki Yana Yasla",
+      tooltip: "İki yana yasla",
     },
     table_cell_merge: {
-      tooltip: "Hücreleri Birleştir",
+      tooltip: "Hücreleri birleştir",
     },
     comment: {
-      tooltip: "Yorum Ekle",
+      tooltip: "Yorum ekle",
     },
   },
   file_panel: {
     upload: {
-      title: "Karşıya Yükle",
+      title: "Yükle",
       file_placeholder: {
-        image: "Resim seçin veya sürükleyin",
-        video: "Video seçin veya sürükleyin",
-        audio: "Ses dosyası seçin veya sürükleyin",
-        file: "Dosya seçin veya sürükleyin",
-      },
-      upload_error: "Hata: Dosya yüklenemedi",
+        image: "Resim yükle",
+        video: "Video yükle",
+        audio: "Ses yükle",
+        file: "Dosya yükle",
+      } as Record<string, string>,
+      upload_error: "Hata: Yükleme başarısız oldu",
     },
     embed: {
-      title: "Gömme",
+      title: "Göm",
       embed_button: {
-        image: "Resim Göm",
-        video: "Video Göm",
-        audio: "Ses Göm",
-        file: "Dosya Göm",
-      },
+        image: "Resmi göm",
+        video: "Videoyu göm",
+        audio: "Sesi göm",
+        file: "Dosyayı göm",
+      } as Record<string, string>,
       url_placeholder: "URL girin",
     },
   },
   link_toolbar: {
     delete: {
-      tooltip: "Bağlantıyı Kaldır",
+      tooltip: "Bağlantıyı kaldır",
     },
     edit: {
-      text: "Düzenle",
-      tooltip: "Bağlantıyı Düzenle",
+      text: "Bağlantıyı düzenle",
+      tooltip: "Düzenle",
     },
     open: {
       tooltip: "Yeni sekmede aç",
     },
     form: {
-      title_placeholder: "Başlık",
-      url_placeholder: "URL girin veya yapıştırın",
+      title_placeholder: "Başlığı düzenle",
+      url_placeholder: "URL'yi düzenle",
     },
   },
   comments: {
@@ -354,7 +389,7 @@ export const tr = {
       more_actions: "Daha fazla işlem",
     },
     reactions: {
-      reacted_by: "tepki veren:",
+      reacted_by: "Tepki veren:",
     },
     sidebar: {
       marked_as_resolved: "Çözüldü olarak işaretlendi",
@@ -363,5 +398,83 @@ export const tr = {
   },
   generic: {
     ctrl_shortcut: "Ctrl",
+  },
+
+  ai: {
+    formatting_toolbar: {
+      ai: {
+        tooltip: "Yapay Zekaya Sor",
+      },
+    },
+    slash_menu: {
+      ai: {
+        title: "Yapay Zekaya Sor",
+        subtext: "Yapay zeka komutlarını kullan",
+        aliases: ["yz", "ai", "yapayzeka", "asistan"],
+        group: "Yapay Zeka",
+      },
+    },
+    ai_default_commands: {
+      continue_writing: {
+        title: "Yazmaya Devam Et",
+        aliases: undefined,
+      },
+      summarize: {
+        title: "Özetle",
+        aliases: undefined,
+      },
+      add_action_items: {
+        title: "Eylem Öğeleri Ekle",
+        aliases: undefined,
+      },
+      write_anything: {
+        title: "Herhangi Bir Şey Yaz",
+        aliases: undefined,
+        prompt_placeholder: "Ne hakkında yazmak istersin?",
+      },
+      simplify: {
+        title: "Sadeleştir",
+        aliases: undefined,
+      },
+      translate: {
+        title: "Çevir",
+        aliases: undefined,
+        prompt_placeholder: "Hangi dile?",
+      },
+      fix_spelling: {
+        title: "Yazım ve Dilbilgisini Düzelt",
+        aliases: undefined,
+      },
+      improve_writing: {
+        title: "Yazıyı Geliştir",
+        aliases: undefined,
+      },
+    },
+    ai_menu: {
+      input_placeholder: "Yapay zekaya sor...",
+      status: {
+        thinking: "Düşünülüyor...",
+        editing: "Düzenleniyor...",
+        error: "Hata",
+      },
+      actions: {
+        accept: {
+          title: "Kabul Et",
+          aliases: undefined,
+        },
+        retry: {
+          title: "Yeniden Dene",
+          aliases: undefined,
+        },
+        cancel: {
+          title: "İptal",
+          aliases: undefined,
+        },
+        revert: {
+          title: "Geri Al",
+          aliases: undefined,
+        },
+      },
+    },
   },
 };

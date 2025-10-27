@@ -39,11 +39,10 @@ import fetchWrapper from "@lib/fetchWrapper";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import GlobalSeoCard from "@/components/GlobalSeoCard";
 import { getProductTypeLabel } from "@lib/helpers";
+import { $Enums } from "@repo/database";
 import ProductDropzone from "../../../components/ProductDropzone";
 import GoogleTaxonomySelectV2 from "../../../create-variant/components/GoogleTaxonomySelectV2";
-import ProductDetailCard from "../../../create-variant/components/ProductDetailCard";
 import ProductPriceNumberInput from "../../../create-variant/components/ProductPriceNumberInput";
-import { $Enums } from "@repo/database";
 
 const GlobalTextEditor = dynamic(
   () => import("../../../../../../../components/GlobalTextEditor"),
@@ -563,68 +562,66 @@ const BasicProductForm = ({
           )}
         />
       </SimpleGrid>
-      <ProductDetailCard>
-        <SimpleGrid cols={{ xs: 1, sm: 3 }}>
-          <Controller
-            control={control}
-            name="brandId"
-            render={({ field }) => (
-              <Select
-                {...field}
-                label="Marka"
-                clearable
-                nothingFoundMessage="Marka bulunamadı"
-                searchable
-                data={
-                  brands &&
-                  brands.length > 0 &&
-                  brands.map((brand) => ({
-                    value: brand.id,
-                    label:
-                      brand.translations.find((t) => t.locale === "TR")?.name ||
-                      brand.translations[0]?.name ||
-                      "İsimsiz Marka",
-                  }))
-                }
-              />
-            )}
-          />
-          <Controller
-            control={control}
-            name="categories"
-            render={({ field }) => (
-              <MultiSelect
-                {...field}
-                label="Kategori"
-                clearable
-                searchable
-                nothingFoundMessage="Kategori bulunamadı"
-                data={
-                  categories &&
-                  categories.length > 0 &&
-                  categories.map((cat) => ({
-                    value: cat.id,
-                    label:
-                      cat.translations.find((t) => t.locale === "TR")?.name ||
-                      cat.translations[0]?.name ||
-                      "İsimsiz Kategori",
-                  }))
-                }
-              />
-            )}
-          />
-          <Controller
-            control={control}
-            name="googleTaxonomyId"
-            render={({ field, fieldState }) => (
-              <GoogleTaxonomySelectV2
-                {...field}
-                error={fieldState.error?.message}
-              />
-            )}
-          />
-        </SimpleGrid>
-      </ProductDetailCard>
+      <SimpleGrid cols={{ xs: 1, sm: 3 }}>
+        <Controller
+          control={control}
+          name="brandId"
+          render={({ field }) => (
+            <Select
+              {...field}
+              label="Marka"
+              clearable
+              nothingFoundMessage="Marka bulunamadı"
+              searchable
+              data={
+                brands &&
+                brands.length > 0 &&
+                brands.map((brand) => ({
+                  value: brand.id,
+                  label:
+                    brand.translations.find((t) => t.locale === "TR")?.name ||
+                    brand.translations[0]?.name ||
+                    "İsimsiz Marka",
+                }))
+              }
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="categories"
+          render={({ field }) => (
+            <MultiSelect
+              {...field}
+              label="Kategori"
+              clearable
+              searchable
+              nothingFoundMessage="Kategori bulunamadı"
+              data={
+                categories &&
+                categories.length > 0 &&
+                categories.map((cat) => ({
+                  value: cat.id,
+                  label:
+                    cat.translations.find((t) => t.locale === "TR")?.name ||
+                    cat.translations[0]?.name ||
+                    "İsimsiz Kategori",
+                }))
+              }
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="googleTaxonomyId"
+          render={({ field, fieldState }) => (
+            <GoogleTaxonomySelectV2
+              {...field}
+              error={fieldState.error?.message}
+            />
+          )}
+        />
+      </SimpleGrid>
       <Controller
         control={control}
         name="translations.0.description"
