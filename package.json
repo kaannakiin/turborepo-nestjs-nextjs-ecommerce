@@ -31,9 +31,5 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ],
-  "resolutions": {
-    "react": "19.0.0",
-    "react-native-renderer": "19.0.0"
-  }
+  ]
 }

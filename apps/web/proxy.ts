@@ -52,7 +52,7 @@ const isProtectedRoute = (path: string) =>
 
 const isAdminOrOwner = (role: string) => role === "ADMIN" || role === "OWNER";
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (!isProtectedRoute(pathname) && !isAuthRoute(pathname)) {
