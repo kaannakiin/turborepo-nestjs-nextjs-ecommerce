@@ -102,11 +102,11 @@ import { ChatModule } from './ai/chat/chat.module';
     }),
   ],
   controllers: [],
-  providers: [
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
-    },
-  ],
+  // providers: [
+  //   {
+  //     provide: APP_GUARD,
+  //     useClass: ThrottlerGuard,
+  //   },
+  // ],
 })
 export class AppModule {}
