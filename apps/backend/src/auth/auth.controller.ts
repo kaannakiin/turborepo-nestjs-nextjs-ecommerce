@@ -2,15 +2,15 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Post,
   Req,
   Res,
   UseGuards,
   UsePipes,
-  HttpCode,
-  HttpStatus,
 } from '@nestjs/common';
-import { Throttle, SkipThrottle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { type User } from '@repo/database';
 import {
   RegisterSchema,
@@ -21,12 +21,12 @@ import { type Request, type Response } from 'express';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import { AuthService } from './auth.service';
+import { CsrfService } from './csrf.service';
 import { FacebookAuthGuard } from './guards/facebook-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
-import { CsrfService } from './csrf.service';
 
 @Controller('auth')
 export class AuthController {
@@ -104,6 +104,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
+  @SkipThrottle()
   me(@CurrentUser() user: User & { jti: string }) {
     return {
       id: user.id,
@@ -118,6 +119,7 @@ export class AuthController {
 
   @Get('csrf')
   @HttpCode(200)
+  @SkipThrottle()
   getCsrfToken(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const token = this.csrfService.generateCsrfToken(req, res);
     return {
