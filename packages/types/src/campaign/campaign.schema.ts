@@ -1,4 +1,4 @@
-import { $Enums } from "@repo/database";
+import { $Enums, Prisma } from "@repo/database";
 import z from "zod";
 import { DiscountDatesSchema } from "../discounts/discount.schema";
 
@@ -359,4 +359,18 @@ export const CrossSellingCampaignDefaultValues: CrossSellingCampaignType = {
       variantId: null,
     },
   ],
+};
+
+export type GetCampaignsReturnType = {
+  success: boolean;
+  message: string;
+  data?: Prisma.CampaignGetPayload<{
+    include: { _count: { select: { offers: true } } };
+  }>[];
+  pagination?: {
+    totalItems: number;
+    totalPages: number;
+    currentPage: number;
+    itemsPerPage: number;
+  };
 };

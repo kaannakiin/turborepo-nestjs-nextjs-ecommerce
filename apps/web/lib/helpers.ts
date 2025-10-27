@@ -889,3 +889,25 @@ export function getCampaignStatusLabel(status: $Enums.CampaignStatus): string {
       return "Planlanmış";
   }
 }
+
+export function getCampaignTypeLabel(type: $Enums.CampaignType): string {
+  switch (type) {
+    case "CROSS_SELLING":
+      return "(Cross Sell) Çapraz Satış";
+    case "UP_SELLING":
+      return "(Up Sell) Yukarı Satış";
+  }
+}
+
+export function getCampaignOfferPageLabel(
+  type: $Enums.CampaignOfferTargetPage
+): string {
+  switch (type) {
+    case "CHECKOUT_PAGE":
+      return "Ödeme Sayfası";
+    case "POST_CHECKOUT":
+      return "Ödeme Sonrası";
+    case "PRODUCT":
+      return "Ürün Sayfası";
+  }
+}

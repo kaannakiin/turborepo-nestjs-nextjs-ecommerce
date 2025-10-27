@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@repo/database'; // Prisma tiplerini import etmek önemli
+import { $Enums, Prisma } from '@repo/database'; // Prisma tiplerini import etmek önemli
 import {
   CampaignZodType,
   CrossSellingCampaignType,
+  GetCampaignsReturnType,
   UpSellingCampaignType,
   UppSellOfferZodType, // Zod şemandan bunu import ettiğini varsayıyorum
 } from '@repo/types';
@@ -373,6 +374,65 @@ export class CampaignsService {
             variantIds: buyableVariants.map((v) => v.variantId),
           },
         } as UpSellingCampaignType,
+      };
+    } catch (error) {
+      console.error(error);
+      return {
+        success: false,
+        message: 'Kampanya getirilirken bir hata oluştu.',
+      };
+    }
+  }
+
+  async getCampaigns(
+    page: number,
+    search?: string,
+    type?: $Enums.CampaignStatus,
+  ): Promise<GetCampaignsReturnType> {
+    const take = 10;
+    const skip = (page - 1) * take;
+
+    const where: Prisma.CampaignWhereInput = {
+      ...(search && search.trim() !== ''
+        ? {
+            title: { contains: search.trim(), mode: 'insensitive' },
+          }
+        : {}),
+      ...(type ? { status: type } : {}),
+    };
+
+    try {
+      const [campaigns, totalCount] = await Promise.all([
+        await this.prisma.campaign.findMany({
+          where,
+          take,
+          skip,
+          orderBy: {
+            createdAt: 'desc',
+          },
+          include: {
+            _count: {
+              select: {
+                offers: true,
+              },
+            },
+          },
+        }),
+
+        await this.prisma.campaign.count({
+          where,
+        }),
+      ]);
+      return {
+        success: true,
+        data: campaigns,
+        message: 'Kampanyalar başarıyla getirildi.',
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / take),
+          totalItems: totalCount,
+          itemsPerPage: take,
+        },
       };
     } catch (error) {
       console.error(error);

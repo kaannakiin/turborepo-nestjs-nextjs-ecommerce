@@ -3,11 +3,13 @@ import {
   Controller,
   Get,
   Param,
+  ParseEnumPipe,
   ParseIntPipe,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { $Enums } from '@repo/database';
 import type { CampaignZodType } from '@repo/types';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
@@ -34,5 +36,9 @@ export class CampaignsController {
   async getCampaigns(
     @Query('page', new ParseIntPipe()) page: number,
     @Query('search') search?: string,
-  ) {}
+    @Query('type', new ParseEnumPipe($Enums.CampaignStatus, { optional: true }))
+    type?: $Enums.CampaignStatus,
+  ) {
+    return this.campaignsService.getCampaigns(page, search, type);
+  }
 }
