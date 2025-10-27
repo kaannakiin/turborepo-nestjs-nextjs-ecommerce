@@ -46,7 +46,9 @@
         "NODE_ENV",
         "CSRF_ENABLED",
         "REDIS_URL",
-        "DATABASE_URL"
+        "DATABASE_URL",
+        "GOOGLE_API_KEY",
+        "GROQ_API_KEY"
       ],
       "outputs": ["dist/**"]
     },
@@ -84,7 +86,9 @@
         "NODE_ENV",
         "CSRF_ENABLED",
         "REDIS_URL",
-        "DATABASE_URL"
+        "DATABASE_URL",
+        "GOOGLE_API_KEY",
+        "GROQ_API_KEY"
       ]
     },
     "web#start": {
