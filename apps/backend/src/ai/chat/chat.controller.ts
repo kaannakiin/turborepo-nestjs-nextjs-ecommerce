@@ -1,63 +1,23 @@
 import {
   Controller,
-  InternalServerErrorException,
+  HttpException,
   Logger,
   Post,
   Query,
   Req,
   Res,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { Readable } from 'stream';
+import { ChatService } from './chat.service'; // Servisi import et
 
 @Controller('/ai/chat')
 export class ChatController {
   private readonly logger = new Logger(ChatController.name);
 
-  // 1. Tüm API anahtarlarını constructor'da yükle
-  private googleApiKey: string;
-  private groqApiKey: string;
+  // 1. ConfigService yerine ChatService'i enjekte et
+  constructor(private readonly chatService: ChatService) {}
 
-  // İzin verilen host'ları tek bir yerde yönet
-  private allowedHosts = [
-    'https://generativelanguage.googleapis.com',
-    'https://api.groq.com',
-    // Gelecekte eklerseniz: 'https://api.anthropic.com'
-  ];
-
-  // chat.controller.ts
-
-  constructor(private readonly configService: ConfigService) {
-    this.googleApiKey = this.configService.get<string>('GOOGLE_API_KEY');
-    this.groqApiKey = this.configService.get<string>('GROQ_API_KEY');
-
-    // Her anahtarı ayrı ayrı logla
-    if (this.googleApiKey) {
-      this.logger.log('Google API Anahtarı yüklendi.');
-    } else {
-      // Sadece uyarı ver (belki Google kullanılmayacak)
-      this.logger.warn('GOOGLE_API_KEY bulunamadı.');
-    }
-
-    if (this.groqApiKey) {
-      this.logger.log('Groq API Anahtarı yüklendi.');
-    } else {
-      // Sadece uyarı ver (belki Groq kullanılmayacak)
-      this.logger.warn('GROQ_API_KEY bulunamadı.');
-    }
-
-    // Ama eğer ikisi de yoksa, bu bir problem
-    if (!this.googleApiKey && !this.groqApiKey) {
-      this.logger.error(
-        'Hiçbir AI API anahtarı (GOOGLE veya GROQ) bulunamadı!',
-      );
-      // Uygulamanın başlamasını engelle
-      throw new Error(
-        'Gerekli AI API anahtarları eksik. Uygulama başlatılamıyor.',
-      );
-    }
-  }
   @Post()
   async chatProxy(
     @Req() clientRequest: Request,
@@ -70,74 +30,16 @@ export class ChatController {
         .json({ error: 'url query param required' });
     }
 
-    // 2. Güvenlik Kontrolünü Dinamik Hale Getir
-    if (!this.allowedHosts.some((host) => targetUrl.startsWith(host))) {
-      this.logger.warn(`İzin verilmeyen host'a proxy denemesi: ${targetUrl}`);
-      return clientResponse
-        .status(403)
-        .json({ error: 'Forbidden target host' });
-    }
-
     try {
-      this.logger.log(`AI proxy isteği alındı. Hedef URL: ${targetUrl}`);
+      // 2. Tüm proxy mantığı için servisi çağır
+      const providerResponse = await this.chatService.proxyRequest(
+        targetUrl,
+        clientRequest,
+      );
 
-      // 3. Giden İstek Başlıklarını Hazırla
-      const headers = new Headers();
-      Object.entries(clientRequest.headers).forEach(([key, value]) => {
-        const lowerKey = key.toLowerCase();
-
-        // Hono'nun 'proxyFetch' örneğindeki gibi 'origin' ve 'accept-encoding'i de filtrele
-        if (
-          lowerKey === 'host' ||
-          lowerKey === 'cookie' ||
-          lowerKey === 'x-csrf-token' ||
-          lowerKey === 'content-length' ||
-          lowerKey === 'origin' ||
-          lowerKey === 'accept-encoding'
-        ) {
-          return;
-        }
-
-        if (Array.isArray(value)) {
-          value.forEach((v) => headers.append(key, v));
-        } else if (value) {
-          headers.set(key, value as string);
-        }
-      });
-
-      // 4. API Anahtarını Dinamik Olarak Ayarla (En Önemli Değişiklik)
-      if (targetUrl.startsWith('https://generativelanguage.googleapis.com')) {
-        if (!this.googleApiKey) {
-          throw new InternalServerErrorException(
-            'Google API anahtarı ayarlanmamış.',
-          );
-        }
-        headers.set('x-goog-api-key', this.googleApiKey);
-      } else if (targetUrl.startsWith('https://api.groq.com')) {
-        if (!this.groqApiKey) {
-          throw new InternalServerErrorException(
-            'Groq API anahtarı ayarlanmamış.',
-          );
-        }
-        // Hono'daki 'getProviderInfo' mantığı: Groq 'Authorization: Bearer' kullanır
-        headers.set('Authorization', `Bearer ${this.groqApiKey}`);
-      } else {
-        // Bu durum 'allowedHosts' kontrolü sayesinde olmamalı, ama
-        // güvenlik için bir kontrol daha
-        this.logger.error(`Bu URL için API anahtarı bulunamadı: ${targetUrl}`);
-        throw new InternalServerErrorException(
-          'Provider için API anahtarı bulunamadı.',
-        );
-      }
-
-      // 5. Hedef API'ye fetch at
-      const providerResponse = await fetch(targetUrl, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(clientRequest.body),
-      });
-
-      // 6. Gelen Yanıtı Kontrol Et (Hata Yakalama)
+      // 3. Sağlayıcıdan gelen HATA yanıtını işle
+      // Servis, fetch'in 'ok' olup olmadığını kontrol etmez,
+      // böylece controller, sağlayıcının hata mesajını stream edebilir.
       if (!providerResponse.ok) {
         const errorBody = await providerResponse.text();
         this.logger.error(
@@ -152,7 +54,7 @@ export class ChatController {
         return;
       }
 
-      // 7. Başarılı Yanıt Başlıklarını Kopyala
+      // 4. Sağlayıcıdan gelen BAŞARILI yanıtı işle (stream)
       const ignoreHeaders = [
         'content-encoding',
         'content-length',
@@ -167,20 +69,26 @@ export class ChatController {
 
       clientResponse.status(providerResponse.status);
 
-      // 8. Stream'i Başlat
+      // 5. Stream'i istemciye pipe et
       if (providerResponse.body) {
         // @ts-ignore
         const nodeStream = Readable.fromWeb(providerResponse.body);
-        nodeStream.on('data', (chunk: Buffer) => {
-          this.logger.log(`STREAM VERİSİ ALINDI: ${chunk.toString()}`);
-        });
         nodeStream.pipe(clientResponse);
       } else {
         clientResponse.end();
       }
     } catch (error) {
+      // 6. Servisten fırlatılan (örn: 403 Forbidden) veya beklenmedik hataları yakala
       this.logger.error(`AI proxy hatası: ${error.message}`, error.stack);
-      if (!clientResponse.headersSent) {
+
+      if (clientResponse.headersSent) {
+        return; // Yanıt zaten gönderildiyse bir şey yapma
+      }
+
+      // Servisten gelen NestJS hatalarını (ForbiddenException vb.) düzgün işle
+      if (error instanceof HttpException) {
+        clientResponse.status(error.getStatus()).json(error.getResponse());
+      } else {
         clientResponse.status(500).json({
           message: 'AI proxy hatası',
           error: error.message || 'Bilinmeyen proxy hatası',
