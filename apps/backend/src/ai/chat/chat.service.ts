@@ -37,15 +37,6 @@ export class ChatService {
     } else {
       this.logger.warn('GROQ_API_KEY bulunamadı.');
     }
-
-    if (!this.googleApiKey && !this.groqApiKey) {
-      this.logger.error(
-        'Hiçbir AI API anahtarı (GOOGLE veya GROQ) bulunamadı!',
-      );
-      throw new Error(
-        'Gerekli AI API anahtarları eksik. Uygulama başlatılamıyor.',
-      );
-    }
   }
 
   /**
