@@ -26,21 +26,38 @@ export class ChatController {
     // Gelecekte eklerseniz: 'https://api.anthropic.com'
   ];
 
+  // chat.controller.ts
+
   constructor(private readonly configService: ConfigService) {
     this.googleApiKey = this.configService.get<string>('GOOGLE_API_KEY');
     this.groqApiKey = this.configService.get<string>('GROQ_API_KEY');
 
-    // Hangi anahtarların yüklendiğini logla (opsiyonel ama faydalı)
-    if (this.googleApiKey) this.logger.log('Google API Anahtarı yüklendi.');
-    if (this.groqApiKey) this.logger.log('Groq API Anahtarı yüklendi.');
+    // Her anahtarı ayrı ayrı logla
+    if (this.googleApiKey) {
+      this.logger.log('Google API Anahtarı yüklendi.');
+    } else {
+      // Sadece uyarı ver (belki Google kullanılmayacak)
+      this.logger.warn('GOOGLE_API_KEY bulunamadı.');
+    }
 
+    if (this.groqApiKey) {
+      this.logger.log('Groq API Anahtarı yüklendi.');
+    } else {
+      // Sadece uyarı ver (belki Groq kullanılmayacak)
+      this.logger.warn('GROQ_API_KEY bulunamadı.');
+    }
+
+    // Ama eğer ikisi de yoksa, bu bir problem
     if (!this.googleApiKey && !this.groqApiKey) {
       this.logger.error(
         'Hiçbir AI API anahtarı (GOOGLE veya GROQ) bulunamadı!',
       );
+      // Uygulamanın başlamasını engelle
+      throw new Error(
+        'Gerekli AI API anahtarları eksik. Uygulama başlatılamıyor.',
+      );
     }
   }
-
   @Post()
   async chatProxy(
     @Req() clientRequest: Request,
