@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Prisma, User } from '@repo/database';
 import { createId } from '@repo/shared';
 import {
@@ -13,6 +14,7 @@ import {
   InstallmentRequest,
   InstallmentResponse,
   InstallmentSuccessResponse,
+  IyzicoPaymentMethodType,
   NonThreeDSRequest,
   NonThreeDSResponse,
   PaymentZodType,
@@ -26,7 +28,6 @@ import { Request, Response } from 'express';
 import { CartV3Service } from 'src/cart-v3/cart-v3.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ShippingService } from 'src/shipping/shipping.service';
-import { ConfigService } from '@nestjs/config';
 
 type ValidateSignature =
   | '3ds-initialize'
@@ -46,6 +47,12 @@ export class PaymentService {
   private baseUrl: string = '';
   private secretKey: string = '';
   private readonly separator = ':';
+  private iyzicoKeysCache: {
+    apiKey: string;
+    secretKey: string;
+  } | null = null;
+  private cacheTimestamp: number = 0;
+  private readonly CACHE_TTL = 5 * 60 * 1000;
   private webUrl = this.configService.get<string>(
     'WEB_UI_REDIRECT',
     'http://localhost:3000',
@@ -57,20 +64,54 @@ export class PaymentService {
     private readonly cartService: CartV3Service,
   ) {
     this.baseUrl = this.configService.get<string>('IYZICO_BASE_URL');
-    this.secretKey = this.configService.get<string>('IYZICO_SECRET_KEY') || '';
   }
 
-  private createIyzicoHeaders(
+  private async getIyzicoKeys(): Promise<{
+    apiKey: string;
+    secretKey: string;
+  }> {
+    const now = Date.now();
+
+    if (this.iyzicoKeysCache && now - this.cacheTimestamp < this.CACHE_TTL) {
+      return this.iyzicoKeysCache;
+    }
+
+    try {
+      const iyzicoProvider = await this.prisma.storePaymentProvider.findUnique({
+        where: { provider: 'IYZICO', active: true },
+        select: { options: true },
+      });
+
+      if (!iyzicoProvider) {
+        throw new BadRequestException(
+          'Aktif Iyzico ödeme sağlayıcısı bulunamadı.',
+        );
+      }
+
+      const options = iyzicoProvider.options as IyzicoPaymentMethodType;
+      const keys = {
+        apiKey: options.iyzicoApiKey,
+        secretKey: options.iyzicoSecretKey,
+      };
+
+      this.iyzicoKeysCache = keys;
+      this.cacheTimestamp = now;
+
+      return keys;
+    } catch (error) {
+      console.error('Iyzico anahtarları alınırken hata oluştu:', error);
+      throw new BadRequestException('Ödeme sağlayıcı bilgileri alınamadı.');
+    }
+  }
+
+  private async createIyzicoHeaders(
     data: string,
     uri_path: string,
-  ): Record<string, string> {
-    const apiKey = this.configService.get<string>('IYZICO_API_KEY');
-    const secretKey = this.configService.get<string>('IYZICO_SECRET_KEY');
-
+  ): Promise<Record<string, string>> {
+    const { apiKey, secretKey } = await this.getIyzicoKeys();
     if (!apiKey || !secretKey) {
       throw new BadRequestException('Bilinmeyen hata oluştu');
     }
-
     const randomKey =
       Date.now().toString() + Math.random().toString(36).substring(2, 15);
     const payload = data ? randomKey + uri_path + data : randomKey + uri_path;
@@ -95,7 +136,7 @@ export class PaymentService {
     requestData: TRequest,
   ): Promise<TResponse> {
     const jsonData = JSON.stringify(requestData);
-    const headers = this.createIyzicoHeaders(jsonData, endpoint);
+    const headers = await this.createIyzicoHeaders(jsonData, endpoint);
 
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -116,10 +157,10 @@ export class PaymentService {
       throw new BadRequestException('İyzico API ile iletişim hatası');
     }
   }
-
-  private iyzicoGenerateSignature(dataArray: string[]): string {
+  private async iyzicoGenerateSignature(dataArray: string[]): Promise<string> {
+    const { secretKey } = await this.getIyzicoKeys();
     const dataToEncrypt = dataArray.join(this.separator);
-    const encryptedData = createHmac('sha256', this.secretKey)
+    const encryptedData = createHmac('sha256', secretKey)
       .update(dataToEncrypt)
       .digest('hex');
     return encryptedData;
@@ -130,10 +171,10 @@ export class PaymentService {
     return numPrice.toString();
   }
 
-  private iyzicoValidateSignature(
+  private async iyzicoValidateSignature(
     type: ValidateSignature,
     data: SignatureValidationData,
-  ): boolean {
+  ): Promise<boolean> {
     let parametersArray: string[] = [];
 
     switch (type) {
@@ -232,7 +273,6 @@ export class PaymentService {
         break;
 
       case 'refund':
-        // Parametre sırası: paymentId, price, currency, conversationId
         parametersArray = [
           data.paymentId!,
           this.formatPrice(data.price!),
@@ -255,7 +295,8 @@ export class PaymentService {
         throw new Error(`Unsupported signature type: ${type}`);
     }
 
-    const generatedSignature = this.iyzicoGenerateSignature(parametersArray);
+    const generatedSignature =
+      await this.iyzicoGenerateSignature(parametersArray);
 
     return generatedSignature === data.signature;
   }
@@ -1488,6 +1529,7 @@ export class PaymentService {
   private toFixedPrice(price: number): number {
     return parseFloat(price.toFixed(2));
   }
+
   private generateUniqueOrderNumber(): string {
     const now = new Date();
     const year = now.getFullYear().toString().slice(-2);
@@ -1496,4 +1538,69 @@ export class PaymentService {
     );
     return `ORD-${year}${String(daySeconds).padStart(5, '0')}-${createId().slice(0, 4).toUpperCase()}`;
   }
+
+  async paymentPayTR({
+    cartId,
+    data,
+    req,
+    user,
+  }: {
+    data: PaymentZodType;
+    cartId: string;
+    user: User | null;
+    req: Request;
+  }) {
+    await this.cartService.getCartForPayment(cartId);
+    // const cart = await this.cartService.getCartForClientCheckout(cartId);
+    // if (!cart || !cart.success || !cart.cart) {
+    //   return {
+    //     success: false,
+    //     message: 'Sepet bulunamadı. Lütfen tekrar deneyiniz.',
+    //   };
+    // }
+
+    // const { cart: checkoutCart } = cart;
+    // if (checkoutCart.items.length === 0) {
+    //   return {
+    //     success: false,
+    //     message: 'Sepetinizde ürün bulunmamaktadır.',
+    //   };
+    // }
+
+    // const availableShipping =
+    //   await this.shippingService.getAvailableShippingMethods(cartId);
+
+    // if (
+    //   !availableShipping ||
+    //   !availableShipping.success ||
+    //   !availableShipping.shippingMethods ||
+    //   availableShipping.shippingMethods.rules.length === 0
+    // ) {
+    //   return {
+    //     success: false,
+    //     message:
+    //       'Geçerli bir teslimat yöntemi bulunamadı. Lütfen teslimat adresinizi kontrol ediniz.',
+    //   };
+    // }
+
+    // const shippingMethod = availableShipping.shippingMethods.rules.find(
+    //   (shipping) => shipping.id === checkoutCart.cargoRule?.id,
+    // );
+    // if (!shippingMethod) {
+    //   return {
+    //     success: false,
+    //     message:
+    //       'Geçerli bir teslimat yöntemi bulunamadı. Lütfen teslimat adresinizi kontrol ediniz.',
+    //   };
+    // }
+    // const basketItemsFillQuantity = this.basketItems(checkoutCart.items);
+    // console.log('PayTR payment is not implemented yet.');
+    // console.log(basketItemsFillQuantity);
+    return {
+      success: false,
+      message: 'PayTR ödeme sistemi henüz uygulanmadı.',
+    };
+  }
+
+  async paymentStart({ cartId }) {}
 }

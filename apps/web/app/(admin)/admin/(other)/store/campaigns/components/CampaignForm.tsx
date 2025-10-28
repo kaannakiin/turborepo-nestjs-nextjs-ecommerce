@@ -1,6 +1,6 @@
 "use client";
 import ActionPopover from "@/(admin)/components/ActionPopoverr";
-import FormCard from "@/(admin)/components/FormCard";
+
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper, { ApiError } from "@lib/fetchWrapper";
 import { getCampaignStatusLabel, getCurrencyLabel } from "@lib/helpers";
@@ -59,6 +59,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import CampaignOfferForm from "./CampaignOfferForm";
 import SearchableProductModal from "./SearchableProductModal";
+import FormCard from "../../discounts/components/FormCard";
 
 interface CampaignFormProps {
   defaultValues?: CampaignZodType;

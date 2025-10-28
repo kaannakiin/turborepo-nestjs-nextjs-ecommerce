@@ -152,6 +152,7 @@ const data: NavbarButtonType[] = [
         label: "Ayarlar",
       },
       { href: "/settings/emails", label: "E-Posta Şablonları", icon: null },
+      { href: "/settings/payments", label: "Ödeme Ayarları", icon: null },
     ],
   },
 ];

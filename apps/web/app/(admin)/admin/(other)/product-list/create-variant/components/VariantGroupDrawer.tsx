@@ -32,6 +32,7 @@ import {
 import { VariantGroupSchema, VariantGroupZodType } from "@repo/types";
 import {
   IconArrowBarToLeft,
+  IconChevronDown,
   IconDotsVertical,
   IconEdit,
   IconTrash,
@@ -39,7 +40,6 @@ import {
 import { useEffect, useRef, useState } from "react";
 import classes from "./RadioCard.module.css";
 
-// @dnd-kit imports
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import {
   closestCenter,
@@ -276,16 +276,16 @@ const VariantGroupDrawer = ({
   >(null);
   const [allDeleteVariantPopover, setAllDeleteVariantPopover] = useState(false);
 
-  // ✅ Silinen varyantları sakla (ID'siz)
   const [deletedVariants, setDeletedVariants] = useState<DeletedVariant[]>([]);
 
   const initialValues: VariantGroupZodType = {
-    type: "LIST" as $Enums.VariantGroupType,
+    type: "LIST",
     uniqueId: createId(),
     options: [],
+    renderVisibleType: "DROPDOWN",
     translations: [
       {
-        locale: "TR" as $Enums.Locale,
+        locale: "TR",
         name: "",
         slug: "",
       },
@@ -311,7 +311,6 @@ const VariantGroupDrawer = ({
       } else {
         reset(initialValues);
       }
-      // Drawer açıldığında silinen varyantları temizle
       setDeletedVariants([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -391,30 +390,24 @@ const VariantGroupDrawer = ({
     }
   };
 
-  // ✅ Tek bir varyant silme işlemi
   const handleDeleteSingleVariant = (index: number) => {
     const variantData = fields[index];
     const { id, ...variantWithoutId } = variantData as VariantOption & {
       id: string;
     };
 
-    // Mevcut silinen varyantlara ekle
     setDeletedVariants((prev) => [...prev, variantWithoutId]);
     remove(index);
   };
 
-  // ✅ Tüm varyantları silme işlemi
   const handleDeleteAllVariants = () => {
-    // Mevcut field'ları al (ID'siz)
     const allVariants = fields.map((field) => {
       const { id, ...rest } = field as VariantOption & { id: string };
       return rest;
     });
 
-    // Mevcut silinen varyantlarla birleştir
     setDeletedVariants((prev) => [...prev, ...allVariants]);
 
-    // Geriye doğru sil (index shift problemini önlemek için)
     for (let i = fields.length - 1; i >= 0; i--) {
       remove(i);
     }
@@ -422,14 +415,11 @@ const VariantGroupDrawer = ({
     setAllDeleteVariantPopover(false);
   };
 
-  // ✅ Silinen varyantları geri getir
   const handleRestoreDeletedVariants = () => {
-    // Tüm silinen varyantları sırayla ekle
     deletedVariants.forEach((variant) => {
       append(variant);
     });
 
-    // Silinen varyantlar listesini temizle
     setDeletedVariants([]);
   };
 
@@ -490,7 +480,7 @@ const VariantGroupDrawer = ({
                     setValue={setValue}
                     error={fieldState.error?.message}
                     label="Varyant Türü Adı"
-                    data-autofocus={defaultValues ? false : true}
+                    data-autofocus={!defaultValues}
                   />
                 )}
               />
@@ -510,7 +500,7 @@ const VariantGroupDrawer = ({
                         label="Seçim Stili"
                         withAsterisk
                       >
-                        <SimpleGrid cols={{ xs: 1, sm: 2 }}>
+                        <SimpleGrid cols={{ xs: 1, sm: 2 }} pt={"2px"}>
                           <Radio.Card
                             value={$Enums.VariantGroupType.LIST}
                             className={classes.root}
@@ -573,6 +563,104 @@ const VariantGroupDrawer = ({
                       </Radio.Group>
                     );
                   }}
+                />
+
+                <Controller
+                  control={control}
+                  name="renderVisibleType"
+                  render={({ field, fieldState }) => (
+                    <Radio.Group
+                      {...field}
+                      onChange={(value) => {
+                        field.onChange(value as $Enums.VariantGroupRenderType);
+                      }}
+                      error={fieldState.error?.message}
+                      label="Gösterim Şekli"
+                      withAsterisk
+                      mt="md"
+                    >
+                      <SimpleGrid cols={{ xs: 1, sm: 2 }} pt={"2px"}>
+                        <Radio.Card
+                          value={$Enums.VariantGroupRenderType.BADGE}
+                          className={classes.root}
+                          radius="md"
+                        >
+                          <Group wrap="nowrap" gap={"xs"} align="flex-start">
+                            <Radio.Indicator c={"admin"} color="admin" />
+                            <Stack gap={"xs"}>
+                              <Text className={classes.label}>
+                                Buton/Etiket (Badge)
+                              </Text>
+                              <Group gap={"xs"}>
+                                <Badge
+                                  variant="light"
+                                  size="md"
+                                  radius="sm"
+                                  color="gray"
+                                >
+                                  Küçük
+                                </Badge>
+                                <Badge
+                                  variant="light"
+                                  size="md"
+                                  radius="sm"
+                                  color="gray"
+                                >
+                                  Orta
+                                </Badge>
+                                <Badge
+                                  variant="light"
+                                  size="md"
+                                  radius="sm"
+                                  color="gray"
+                                >
+                                  Büyük
+                                </Badge>
+                              </Group>
+                              <Text size="xs" c="gray.6">
+                                Az sayıda seçenek için uygundur.
+                              </Text>
+                            </Stack>
+                          </Group>
+                        </Radio.Card>
+                        <Radio.Card
+                          value={$Enums.VariantGroupRenderType.DROPDOWN}
+                          className={classes.root}
+                          radius="md"
+                        >
+                          <Group wrap="nowrap" gap={"xs"} align="flex-start">
+                            <Radio.Indicator c={"admin"} color="admin" />
+                            <Stack gap={"xs"}>
+                              <Text className={classes.label}>
+                                Açılır Liste (Dropdown)
+                              </Text>
+                              <Group
+                                gap={"xs"}
+                                style={{
+                                  border:
+                                    "1px solid var(--mantine-color-gray-3)",
+                                  borderRadius: "4px",
+                                  padding: "4px 8px",
+                                }}
+                              >
+                                <Text size="sm" color="gray.6">
+                                  Seçenek 1
+                                </Text>
+                                <IconChevronDown
+                                  size={16}
+                                  color="var(--mantine-color-gray-6)"
+                                  style={{ marginLeft: "auto" }}
+                                />
+                              </Group>
+                              <Text size="xs" c="gray.6">
+                                Daha fazla seçenek için idealdir.
+                              </Text>
+                            </Stack>
+                          </Group>
+                        </Radio.Card>
+                      </SimpleGrid>
+                    </Radio.Group>
+                  )}
                 />
               </Stack>
 

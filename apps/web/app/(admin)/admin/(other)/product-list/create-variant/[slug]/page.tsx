@@ -62,7 +62,6 @@ const CreateVariantProductPage = async ({ params }: { params: Params }) => {
       }
     );
 
-    // 404 durumunda özel handling
     if (response.status === 404) {
       return (
         <ProductNotFound message="Aradığınız ürün varyantı sistemde mevcut değil veya silinmiş olabilir." />
@@ -90,7 +89,6 @@ const CreateVariantProductPage = async ({ params }: { params: Params }) => {
     try {
       data = JSON.parse(responseText);
     } catch (parseError) {
-      console.error("JSON Parse Error:", parseError);
       return <ProductErrorComponent message="Veri formatı hatası" />;
     }
 
@@ -99,6 +97,7 @@ const CreateVariantProductPage = async ({ params }: { params: Params }) => {
         <ProductNotFound message="Aradığınız ürün varyantı sistemde mevcut değil veya silinmiş olabilir." />
       );
     }
+
     return (
       <VariantProductForm
         defaultValues={data}
@@ -107,7 +106,6 @@ const CreateVariantProductPage = async ({ params }: { params: Params }) => {
       />
     );
   } catch (error) {
-    console.error("Fetch Error:", error);
     return <ProductErrorComponent message="Bağlantı hatası oluştu" />;
   }
 };

@@ -273,20 +273,19 @@ export class ProductsService {
       const {
         existingVariants,
         combinatedVariants,
-        brandId, // Bu alanları ekledik
-        categories, // Bu alanları ekledik
-        googleTaxonomyId, // Bu alanları ekledik
+        brandId,
+        categories,
+        googleTaxonomyId,
         ...productData
       } = data;
       return this.prisma.$transaction(
         async (prisma) => {
-          // 1. Product oluştur veya güncelle
           let product = await this.prisma.product.findUnique({
             where: {
               id: productData.uniqueId,
             },
             include: {
-              categories: true, // Mevcut kategorileri de getir
+              categories: true,
             },
           });
 
@@ -295,7 +294,6 @@ export class ProductsService {
               data: {
                 type: productData.type,
                 isVariant: true,
-                // Brand ve taxonomy ilişkilerini kur
                 ...(brandId && { brand: { connect: { id: brandId } } }),
                 ...(googleTaxonomyId && {
                   taxonomyCategory: { connect: { id: googleTaxonomyId } },
@@ -335,7 +333,6 @@ export class ProductsService {
               data: {
                 type: productData.type,
                 isVariant: true,
-                // Brand ve taxonomy güncellemesi
                 ...(brandId
                   ? { brand: { connect: { id: brandId } } }
                   : { brand: { disconnect: true } }),
@@ -344,7 +341,6 @@ export class ProductsService {
                   : { taxonomyCategory: { disconnect: true } }),
               },
             });
-            // Product translations güncelle
             for (const translation of productData.translations) {
               await prisma.productTranslation.upsert({
                 where: {
@@ -396,7 +392,6 @@ export class ProductsService {
                 (newId) => !existingCategoryIds.includes(newId),
               );
 
-              // Silinmesi gereken kategorileri sil
               if (categoriesToDelete.length > 0) {
                 await prisma.productCategory.deleteMany({
                   where: {
@@ -405,8 +400,6 @@ export class ProductsService {
                   },
                 });
               }
-
-              // Yeni kategorileri ekle
               if (categoriesToAdd.length > 0) {
                 await prisma.productCategory.createMany({
                   data: categoriesToAdd.map((categoryId) => ({
@@ -416,7 +409,6 @@ export class ProductsService {
                 });
               }
             } else {
-              // Kategoriler boşsa, tüm kategorileri sil
               await prisma.productCategory.deleteMany({
                 where: { productId: product.id },
               });
@@ -449,7 +441,6 @@ export class ProductsService {
             }
           }
 
-          // 2. Mevcut kombinasyonları ve resimlerini al (SİLMEDEN ÖNCE)
           const existingCombinationsWithAssets =
             await prisma.productVariantCombination.findMany({
               where: { productId: product.id },
@@ -471,7 +462,6 @@ export class ProductsService {
               },
             });
 
-          // 3. AKILLI ProductVariantGroup güncellemesi
           const currentProductVariantGroups =
             await prisma.productVariantGroup.findMany({
               where: { productId: product.id },
@@ -484,37 +474,30 @@ export class ProductsService {
               },
             });
 
-          // Gelen variant group ID'lerini topla
           const incomingVariantGroupIds = existingVariants.map(
             (v) => v.uniqueId,
           );
 
-          // Silinmesi gereken ProductVariantGroup'ları bul
           const groupsToDelete = currentProductVariantGroups.filter(
             (pvg) => !incomingVariantGroupIds.includes(pvg.variantGroupId),
           );
 
-          // Silinecek grupları ve ilişkili verileri temizle
           for (const groupToDelete of groupsToDelete) {
-            // İlişkili combination option'ları sil
             for (const option of groupToDelete.options) {
               await prisma.productVariantCombinationOption.deleteMany({
                 where: { productVariantOptionId: option.id },
               });
             }
 
-            // ProductVariantOption'ları sil
             await prisma.productVariantOption.deleteMany({
               where: { productVariantGroupId: groupToDelete.id },
             });
 
-            // ProductVariantGroup'u sil
             await prisma.productVariantGroup.delete({
               where: { id: groupToDelete.id },
             });
           }
 
-          // 4. Variant Group'ları işle
           for (
             let groupIndex = 0;
             groupIndex < existingVariants.length;
@@ -522,7 +505,6 @@ export class ProductsService {
           ) {
             const variantGroup = existingVariants[groupIndex];
 
-            // Global Variant Group var mı kontrol et
             let dbVariantGroup = await prisma.variantGroup.findUnique({
               where: { id: variantGroup.uniqueId },
               include: {
@@ -535,7 +517,6 @@ export class ProductsService {
             });
 
             if (!dbVariantGroup) {
-              // Yeni global variant group oluştur
               dbVariantGroup = await prisma.variantGroup.create({
                 data: {
                   id: variantGroup.uniqueId,
@@ -550,7 +531,6 @@ export class ProductsService {
                 },
               });
 
-              // Variant Group translations oluştur
               for (const translation of variantGroup.translations) {
                 await prisma.variantGroupTranslation.create({
                   data: {
@@ -564,7 +544,6 @@ export class ProductsService {
                 });
               }
 
-              // Variant Options oluştur
               for (const option of variantGroup.options) {
                 await prisma.variantOption.create({
                   data: {
@@ -574,7 +553,6 @@ export class ProductsService {
                   },
                 });
 
-                // Option translations oluştur
                 for (const translation of option.translations) {
                   await prisma.variantOptionTranslation.create({
                     data: {
@@ -589,13 +567,11 @@ export class ProductsService {
                 }
               }
             } else {
-              // Mevcut global variant group'u güncelle
               await prisma.variantGroup.update({
                 where: { id: variantGroup.uniqueId },
                 data: { type: variantGroup.type },
               });
 
-              // Variant Group translations güncelle
               for (const translation of variantGroup.translations) {
                 await prisma.variantGroupTranslation.upsert({
                   where: {
@@ -621,13 +597,10 @@ export class ProductsService {
                 });
               }
 
-              // Mevcut option ID'lerini topla
               const existingOptionIds = dbVariantGroup.options.map((o) => o.id);
 
-              // Sadece YENİ option'ları ekle
               for (const option of variantGroup.options) {
                 if (!existingOptionIds.includes(option.uniqueId)) {
-                  // Yeni option oluştur
                   await prisma.variantOption.create({
                     data: {
                       id: option.uniqueId,
@@ -636,7 +609,6 @@ export class ProductsService {
                     },
                   });
 
-                  // Option translations oluştur
                   for (const translation of option.translations) {
                     await prisma.variantOptionTranslation.create({
                       data: {
@@ -650,13 +622,11 @@ export class ProductsService {
                     });
                   }
                 } else {
-                  // Mevcut option'ı güncelle
                   await prisma.variantOption.update({
                     where: { id: option.uniqueId },
                     data: { hexValue: option.hexValue },
                   });
 
-                  // Option translations güncelle
                   for (const translation of option.translations) {
                     await prisma.variantOptionTranslation.upsert({
                       where: {
@@ -685,7 +655,6 @@ export class ProductsService {
               }
             }
 
-            // ProductVariantGroup oluştur/güncelle
             let productVariantGroup =
               await prisma.productVariantGroup.findUnique({
                 where: {
@@ -702,17 +671,19 @@ export class ProductsService {
                   productId: product.id,
                   variantGroupId: variantGroup.uniqueId,
                   order: groupIndex,
+                  renderVisibleType: variantGroup.renderVisibleType,
                 },
               });
             } else {
-              // Order'ı güncelle
               await prisma.productVariantGroup.update({
                 where: { id: productVariantGroup.id },
-                data: { order: groupIndex },
+                data: {
+                  order: groupIndex,
+                  renderVisibleType: variantGroup.renderVisibleType,
+                },
               });
             }
 
-            // ProductVariantOption'ları güncelle
             const currentOptions = await prisma.productVariantOption.findMany({
               where: { productVariantGroupId: productVariantGroup.id },
             });
@@ -721,24 +692,20 @@ export class ProductsService {
               (o) => o.uniqueId,
             );
 
-            // Silinmesi gereken option'ları bul ve sil
             const optionsToDelete = currentOptions.filter(
               (o) => !incomingOptionIds.includes(o.variantOptionId),
             );
 
             for (const optionToDelete of optionsToDelete) {
-              // İlişkili combination option'ları sil
               await prisma.productVariantCombinationOption.deleteMany({
                 where: { productVariantOptionId: optionToDelete.id },
               });
 
-              // ProductVariantOption'ı sil
               await prisma.productVariantOption.delete({
                 where: { id: optionToDelete.id },
               });
             }
 
-            // Yeni option'ları ekle ve mevcut olanları güncelle
             for (
               let optionIndex = 0;
               optionIndex < variantGroup.options.length;
@@ -751,7 +718,6 @@ export class ProductsService {
               );
 
               if (!existingProductOption) {
-                // Yeni option ekle
                 await prisma.productVariantOption.create({
                   data: {
                     productVariantGroupId: productVariantGroup.id,
@@ -768,26 +734,21 @@ export class ProductsService {
             }
           }
 
-          // 5. AKILLI Kombinasyon güncellemesi - RESİMLERİ KORU
           const finalCombinations: { id: string; sku: string | null }[] = [];
 
           for (const combination of combinatedVariants) {
-            // Kombinasyonu variantIds'e göre eşleştir
             const existingCombination = existingCombinationsWithAssets.find(
               (ec) => {
-                // Önce SKU eşleşmesi kontrol et
                 if (ec.sku === combination.sku && combination.sku) {
                   return true;
                 }
 
-                // VariantIds eşleşmesi kontrolü
                 const existingVariantIds = ec.options.map((o) => ({
                   variantGroupId:
                     o.productVariantOption.productVariantGroup.variantGroupId,
                   variantOptionId: o.productVariantOption.variantOptionId,
                 }));
 
-                // Aynı variant kombinasyonu mu kontrol et
                 if (
                   existingVariantIds.length === combination.variantIds.length
                 ) {
@@ -807,7 +768,6 @@ export class ProductsService {
             let productCombination;
 
             if (existingCombination) {
-              // Mevcut kombinasyonu güncelle - RESİMLER KORUNUR
               productCombination =
                 await prisma.productVariantCombination.update({
                   where: { id: existingCombination.id },
@@ -819,7 +779,6 @@ export class ProductsService {
                   },
                 });
             } else {
-              // Yeni kombinasyon oluştur
               productCombination =
                 await prisma.productVariantCombination.create({
                   data: {
@@ -832,7 +791,6 @@ export class ProductsService {
                 });
             }
 
-            // Prices güncelle
             for (const price of combination.prices) {
               await prisma.productPrice.upsert({
                 where: {
@@ -856,7 +814,6 @@ export class ProductsService {
               });
             }
 
-            // Translations güncelle
             for (const translation of combination.translations) {
               await prisma.productVariantTranslation.upsert({
                 where: {
@@ -880,7 +837,6 @@ export class ProductsService {
               });
             }
 
-            // Combination option'ları güncelle
             await prisma.productVariantCombinationOption.deleteMany({
               where: { combinationId: productCombination.id },
             });
@@ -932,14 +888,12 @@ export class ProductsService {
             });
           }
 
-          // 6. Kullanılmayan kombinasyonları temizle
           const usedCombinationIds = finalCombinations.map((fc) => fc.id);
           const orphanedCombinations = existingCombinationsWithAssets.filter(
             (ec) => !usedCombinationIds.includes(ec.id),
           );
 
           for (const orphanedCombo of orphanedCombinations) {
-            // Önce ilişkili verileri sil
             await prisma.productVariantCombinationOption.deleteMany({
               where: { combinationId: orphanedCombo.id },
             });
@@ -1007,6 +961,7 @@ export class ProductsService {
             order: 'asc',
           },
           select: {
+            renderVisibleType: true,
             order: true,
             variantGroup: {
               select: {
@@ -1137,6 +1092,7 @@ export class ProductsService {
       })),
       existingVariants: product.variantGroups.map((vg) => {
         return {
+          renderVisibleType: vg.renderVisibleType || 'BADGE',
           options: vg.variantGroup.options.map((option) => ({
             translations: option.translations.map((t) => ({
               locale: t.locale,

@@ -2,8 +2,8 @@ import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
 import ThemeProvider from "./(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import LayoutProviderWrapper from "./components/LayoutProviderWrapper";
 import "./globals.css";
-import Head from "next/head";
 import "@blocknote/mantine/blocknoteStyles.css";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -11,9 +11,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr" {...mantineHtmlProps}>
-      <Head>
+      <head>
         <ColorSchemeScript />
-      </Head>
+      </head>
       <body className="relative" suppressHydrationWarning={true}>
         <LayoutProviderWrapper>
           <ThemeProvider>{children}</ThemeProvider>

@@ -68,4 +68,20 @@ export class PaymentController {
   ) {
     console.log('Iyzico Webhook received:', body, headers);
   }
+
+  @Post('payment/:cartId')
+  @UseGuards(OptionalJwtAuthGuard)
+  async paymentPayTR(
+    @Param('cartId') cartId: string,
+    @Body(new ZodValidationPipe(PaymentZodSchema)) data: PaymentZodType,
+    @CurrentUser() user: User | null,
+    @Req() req: Request,
+  ) {
+    return this.paymentService.paymentPayTR({
+      data,
+      cartId,
+      user,
+      req,
+    });
+  }
 }

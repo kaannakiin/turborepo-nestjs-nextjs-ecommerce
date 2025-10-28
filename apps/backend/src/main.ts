@@ -91,9 +91,13 @@ async function bootstrap() {
           '/auth/refresh',
           '/payment/iyzico/webhook',
           paymentCallbackUrl.pathname,
+          '/payment/payment',
         ];
 
-        if (excludedPaths.includes(req.path)) {
+        if (
+          excludedPaths.includes(req.path) ||
+          excludedPaths.some((path) => req.path.startsWith(path))
+        ) {
           return next();
         }
 

@@ -136,7 +136,7 @@ const AuthUserShippingList = ({ cart }: AuthUserShippingListProps) => {
             ))
           ) : (
             <Text>
-              Maalesef adresinize bir gönderi tanımlanmamıştır. Satıcıyla
+              Maalesef adresinize bir kargo tanımlanmamıştır. Satıcıyla
               görüşebilirsiniz. Ya da başka bir adres belirtebilirsiniz.
             </Text>
           )}

@@ -8,25 +8,17 @@ import {
 import { parseDocument } from "htmlparser2";
 import * as z from "zod";
 export const MIME_TYPES = {
-  IMAGE: [
-    "image/jpeg", // .jpg, .jpeg - En yaygın
-    "image/png", // .png - Şeffaflık için
-    "image/webp", // .webp - Modern, küçük boyut
-    "image/gif", // .gif - Animasyonlu ürün görselleri için
-  ] as string[],
+  IMAGE: ["image/jpeg", "image/png", "image/webp", "image/gif"] as string[],
 
   VIDEO: ["video/webm"] as string[],
 
-  AUDIO: [
-    "audio/mpeg", // .mp3 - En yaygın ses formatı
-    "audio/mp4", // .m4a - iPhone/iPad için
-  ] as string[],
+  AUDIO: ["audio/mpeg", "audio/mp4"] as string[],
 
   DOCUMENT: [
-    "application/pdf", // .pdf - Kataloglar, kılavuzlar
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
-    "text/plain", // .txt - Basit dökümanlar
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "text/plain",
   ] as string[],
 } as Record<AssetType, string[]>;
 
@@ -64,20 +56,20 @@ export const FileSchema = ({ type }: { type: AssetType[] | AssetType }) => {
       error: "Geçerli bir dosya yükleyiniz.",
     })
     .refine((file) => file.size > 0, {
-      message: "Dosya boş olamaz.",
+      error: "Dosya boş olamaz.",
     })
     .refine((file) => file.size <= 10 * 1024 * 1024, {
-      message: `Dosya boyutu 10MB'dan küçük olmalıdır.`,
+      error: `Dosya boyutu 10MB'dan küçük olmalıdır.`,
     })
     .refine((file) => allowedMimeTypes.includes(file.type), {
-      message: `Sadece ${getAssetTypeMessage(allowedTypes)} yükleyebilirsiniz.`,
+      error: `Sadece ${getAssetTypeMessage(allowedTypes)} yükleyebilirsiniz.`,
     });
 };
 
 export const htmlDescriptionSchema = z
   .string()
-  .min(1, { message: "Açıklama zorunludur." })
-  .max(10000, { message: "Açıklama en fazla 10.000 karakter olabilir." })
+  .min(1, { error: "Açıklama zorunludur." })
+  .max(10000, { error: "Açıklama en fazla 10.000 karakter olabilir." })
   .refine(
     (value) => {
       const dangerousTags =
@@ -85,19 +77,19 @@ export const htmlDescriptionSchema = z
       return !dangerousTags.test(value);
     },
     {
-      message: "Güvenlik nedeniyle bazı HTML etiketlerine izin verilmez.",
+      error: "Güvenlik nedeniyle bazı HTML etiketlerine izin verilmez.",
     }
   )
   .refine(
     (value) => {
       try {
         parseDocument(value);
-        return true; // parse başarılıysa HTML geçerli
+        return true;
       } catch {
         return false;
       }
     },
-    { message: "HTML etiketleri düzgün kapatılmalıdır." }
+    { error: "HTML etiketleri düzgün kapatılmalıdır." }
   )
   .optional()
   .nullable();
@@ -110,7 +102,7 @@ export const VariantOptionTranslationSchema = z.object({
     })
     .min(1, "İsim zorunludur.")
     .max(256, {
-      message: "İsim 256 karakterden uzun olamaz.",
+      error: "İsim 256 karakterden uzun olamaz.",
     }),
   slug: z
     .string({
@@ -118,7 +110,7 @@ export const VariantOptionTranslationSchema = z.object({
     })
     .min(1, "Slug zorunludur.")
     .max(256, {
-      message: "Slug 256 karakterden uzun olamaz.",
+      error: "Slug 256 karakterden uzun olamaz.",
     }),
 });
 
@@ -147,7 +139,7 @@ export const VariantOptionSchema = z.object({
   hexValue: z
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/, {
-      message: "Geçerli bir hex renk kodu giriniz (örn: #FF0000)",
+      error: "Geçerli bir hex renk kodu giriniz (örn: #FF0000)",
     })
     .nullable()
     .optional(),
@@ -164,20 +156,23 @@ export const VariantGroupTranslationSchema = z.object({
     .string({ error: "Variant Grup adı zorunludur." })
     .min(1, "Variant Grup adı zorunludur.")
     .max(256, {
-      message: "Variant Grup adı 256 karakterden uzun olamaz.",
+      error: "Variant Grup adı 256 karakterden uzun olamaz.",
     }),
   slug: z
     .string({ error: "Slug zorunludur." })
     .min(1, "Slug zorunludur.")
     .max(256, {
-      message: "Slug 256 karakterden uzun olamaz.",
+      error: "Slug 256 karakterden uzun olamaz.",
     }),
 });
 
 export const VariantGroupSchema = z.object({
-  uniqueId: z.cuid2(),
+  uniqueId: z.cuid2({ error: "Geçersiz varyant grup kimliği." }),
+  renderVisibleType: z.enum($Enums.VariantGroupRenderType),
   translations: z
-    .array(VariantGroupTranslationSchema)
+    .array(VariantGroupTranslationSchema, {
+      error: "Variant Grup çevirileri zorunludur.",
+    })
     .refine(
       (val) => {
         const isTrLocale = val.some((item) => item.locale === Locale.TR);
@@ -193,12 +188,12 @@ export const VariantGroupSchema = z.object({
         return locales.length === new Set(locales).size;
       },
       {
-        message: "Her dil için yalnızca bir çeviri sağlanmalıdır.",
+        error: "Her dil için yalnızca bir çeviri sağlanmalıdır.",
       }
     ),
   type: z.enum(VariantGroupType),
   options: z.array(VariantOptionSchema).min(1, {
-    message: "En az bir varyant seçeneği olmalıdır.",
+    error: "En az bir varyant seçeneği olmalıdır.",
   }),
 });
 
@@ -207,23 +202,23 @@ export const ProductPriceSchema = z
     currency: z.enum($Enums.Currency),
     price: z
       .number()
-      .positive({ message: "Fiyat 0'dan büyük olmalıdır." })
+      .positive({ error: "Fiyat 0'dan büyük olmalıdır." })
       .max(Number.MAX_SAFE_INTEGER, {
-        message: "Fiyat çok büyük.",
+        error: "Fiyat çok büyük.",
       }),
     discountPrice: z
       .number()
-      .min(0, { message: "İndirimli fiyat 0'dan küçük olamaz." })
+      .min(0, { error: "İndirimli fiyat 0'dan küçük olamaz." })
       .max(Number.MAX_SAFE_INTEGER, {
-        message: "Fiyat çok büyük.",
+        error: "Fiyat çok büyük.",
       })
       .optional()
       .nullable(),
     buyedPrice: z
       .number()
-      .positive({ message: "Satın alınan fiyat 0'dan büyük olmalıdır." })
+      .positive({ error: "Satın alınan fiyat 0'dan büyük olmalıdır." })
       .max(Number.MAX_SAFE_INTEGER, {
-        message: "Fiyat çok büyük.",
+        error: "Fiyat çok büyük.",
       })
       .nullable()
       .optional(),
@@ -237,7 +232,7 @@ export const ProductPriceSchema = z
       return true;
     },
     {
-      message: "İndirimli fiyat normal fiyattan büyük olamaz.",
+      error: "İndirimli fiyat normal fiyattan büyük olamaz.",
       path: ["discountPrice"],
     }
   );
@@ -381,7 +376,7 @@ export const BaseProductSchema = z
     if (totalAsset > assetLimit) {
       issues.push({
         path: ["images"],
-        message: `Toplam varlık sayısı ${assetLimit} ile sınırlıdır.`,
+        error: `Toplam varlık sayısı ${assetLimit} ile sınırlıdır.`,
         code: "custom",
         input: ["images"],
       });
@@ -396,7 +391,7 @@ export const BaseProductSchema = z
       if (hasDuplicateOrders) {
         issues.push({
           path: ["existingImages"],
-          message: "Mevcut görsellerin sıra numaraları benzersiz olmalıdır.",
+          error: "Mevcut görsellerin sıra numaraları benzersiz olmalıdır.",
           code: "custom",
           input: ["existingImages"],
         });
@@ -410,7 +405,7 @@ export const BaseProductSchema = z
       if (hasDuplicateOrders) {
         issues.push({
           path: ["images"],
-          message: "Yeni görsellerin sıra numaraları benzersiz olmalıdır.",
+          error: "Yeni görsellerin sıra numaraları benzersiz olmalıdır.",
           code: "custom",
           input: ["images"],
         });
@@ -428,7 +423,7 @@ export const BaseProductSchema = z
     if (hasOverallDuplicates) {
       issues.push({
         path: ["images"],
-        message:
+        error:
           "Mevcut ve yeni görsellerin sıra numaraları birbirleriyle çakışmamalıdır.",
         code: "custom",
         input: ["images"],
@@ -444,7 +439,7 @@ export const CombinatedVariantsSchema = z.object({
         variantOptionId: z.cuid2(),
       })
     )
-    .min(1, { message: "En az bir varyant seçmelisiniz." }),
+    .min(1, { error: "En az bir varyant seçmelisiniz." }),
   sku: z
     .string({
       error: "SKU zorunludur.",

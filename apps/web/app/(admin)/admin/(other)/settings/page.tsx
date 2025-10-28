@@ -2,7 +2,7 @@ import AdminHoverCard, {
   AdminHoverCardProps,
 } from "@/(admin)/components/AdminHoverCard";
 import { Stack } from "@mantine/core";
-import { IconMail, IconTruck } from "@tabler/icons-react";
+import { IconCreditCard, IconMail, IconTruck } from "@tabler/icons-react";
 
 const AdminSettingsPage = () => {
   const data: AdminHoverCardProps[] = [
@@ -17,6 +17,12 @@ const AdminSettingsPage = () => {
       title: "Mail Ayarları",
       description: " Mail ayarlarınızı yönetmek için tıklayın.",
       icon: <IconMail size={32} stroke={1.5} />,
+    },
+    {
+      href: "/admin/settings/payments",
+      title: "Ödeme Ayarları",
+      description: "Ödeme ayarlarınızı yönetmek için tıklayın.",
+      icon: <IconCreditCard size={32} stroke={1.5} />,
     },
   ];
   return (

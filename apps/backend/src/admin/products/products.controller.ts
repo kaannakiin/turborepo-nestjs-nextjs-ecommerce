@@ -65,6 +65,7 @@ export class ProductsController {
       })) as VariantGroupZodType['translations'],
       type: variant.type,
       uniqueId: variant.id,
+      renderVisibleType: 'BADGE',
     }));
   }
 

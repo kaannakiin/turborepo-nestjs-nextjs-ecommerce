@@ -32,7 +32,6 @@ export class ProductsService {
       },
     });
     if (!productTranslation) {
-      console.log('Ürün çevirisi bulunamadı:', { slug, locale });
       return {
         success: false,
         message: 'Ürün bulunamadı.',
