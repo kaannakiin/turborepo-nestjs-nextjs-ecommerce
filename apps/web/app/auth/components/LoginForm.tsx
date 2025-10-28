@@ -15,6 +15,7 @@ import { IconMail, IconPhone } from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import CustomPhoneInput from "../../(user)/components/CustomPhoneInput";
 import GlobalLoadingOverlay from "../../components/GlobalLoadingOverlay";
+import { Route } from "next";
 
 const LoginForm = () => {
   const {
@@ -63,11 +64,10 @@ const LoginForm = () => {
       //   console.warn("⚠️ Sepet birleştirme başarısız:", mergeResult.message);
       // }
 
-      // ✅ Küçük bir delay - localStorage'ın kesin yazılmasını garanti et
       await new Promise((resolve) => setTimeout(resolve, 150));
 
       const redirectUrl = (searchParams.get("redirectUri") as string) || "/";
-      push(redirectUrl);
+      push(redirectUrl as Route);
     } catch (error) {
       setError("root", {
         message: "Bir hata oluştu. Lütfen tekrar deneyin.",

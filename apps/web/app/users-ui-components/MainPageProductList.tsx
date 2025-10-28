@@ -14,6 +14,7 @@ import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import styles from "./styles/ProductListCarousel.module.css";
 import fetchWrapper from "@lib/fetchWrapper";
+import { Route } from "next";
 
 interface MainPageProductListProps {
   data: ProductListComponentType;
@@ -95,7 +96,7 @@ const MainPageProductList = ({ data }: MainPageProductListProps) => {
               const url = createUrl(products);
               return (
                 <Carousel.Slide
-                  onClick={() => push(url)}
+                  onClick={() => push(url as Route)}
                   style={{ cursor: "pointer" }}
                   key={`${products.productId}-${products.variantId || "main"}`}
                 >

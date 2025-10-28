@@ -1,5 +1,6 @@
 "use client";
 import {
+  Box,
   Card,
   Group,
   SimpleGrid,
@@ -7,11 +8,11 @@ import {
   Text,
   ThemeIcon,
   Title,
-  Box,
   Transition,
 } from "@mantine/core";
 import { useHover } from "@mantine/hooks";
 import { IconChevronRight } from "@tabler/icons-react";
+import { Route } from "next";
 import { useRouter } from "next/navigation";
 
 export interface AdminHoverCardProps {
@@ -42,7 +43,7 @@ const AdminCard = ({ item }: { item: AdminHoverCardProps }) => {
           : "var(--mantine-color-gray-3)",
         transform: hovered ? "translateY(-4px)" : "translateY(0px)",
       }}
-      onClick={() => push(item.href)}
+      onClick={() => push(item.href as Route)}
     >
       <Stack gap="md" h="100%">
         <Group justify="space-between" align="flex-start" wrap="nowrap">

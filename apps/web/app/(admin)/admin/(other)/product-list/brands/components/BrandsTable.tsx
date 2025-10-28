@@ -29,6 +29,7 @@ import { notifications } from "@mantine/notifications";
 import TableAsset from "@/(admin)/components/TableAsset";
 import fetchWrapper from "@lib/fetchWrapper";
 import { $Enums } from "@repo/database";
+import { Route } from "next";
 const BrandsTable = () => {
   const searchParams = useSearchParams();
   const { push } = useRouter();
@@ -153,9 +154,13 @@ const BrandsTable = () => {
         <Group justify="space-between">
           <Title order={4}>Markalar</Title>
           <Group gap="lg">
-            <Button component={Link} href="/admin/product-list/brands/new">
+            <Button
+              component={Link}
+              href={"/admin/product-list/brands/new" as Route}
+            >
               Yeni Marka Ekle
             </Button>
+            s
             <CustomSearchInput />
           </Group>
         </Group>

@@ -1,5 +1,6 @@
 "use client";
 import { ActionIcon, Group, Text } from "@mantine/core";
+import { Route } from "next";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -38,7 +39,7 @@ const SocialsButtons = () => {
             <ActionIcon
               variant="outline"
               onClick={() => {
-                push(`${baseUrl}/auth/google`);
+                push(`${baseUrl}/auth/google` as Route);
               }}
               size={48}
               radius="md"
@@ -62,7 +63,7 @@ const SocialsButtons = () => {
               size={48}
               radius="md"
               onClick={() => {
-                push(`${baseUrl}/auth/facebook`);
+                push(`${baseUrl}/auth/facebook` as Route);
               }}
               className="border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-colors"
               style={{
