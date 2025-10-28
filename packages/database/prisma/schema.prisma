@@ -1291,6 +1291,7 @@ enum PaymentProvider {
   PAYTR
   STRIPE
   PAYPAL
+  BANK_TRANSFER
 }
 
 enum PaymentRequestStatus {
@@ -1342,4 +1343,15 @@ enum DiscountWhereVisible {
   PRODUCT_PAGE
   CHECKOUT_PAGE
   ALL
+}
+
+model StorePaymentProvider {
+  id         String          @id @default(cuid())
+  active     Boolean         @default(true)
+  isTestMode Boolean         @default(true)
+  provider   PaymentProvider @unique
+  options    Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

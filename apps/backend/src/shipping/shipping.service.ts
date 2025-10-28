@@ -179,7 +179,7 @@ export class ShippingService {
     };
   }
 
-  private calculateCartTotal(
+  calculateCartTotal(
     cartItems: CartItemWithPrices[],
     currency: $Enums.Currency = 'TRY',
   ): number {
@@ -213,7 +213,7 @@ export class ShippingService {
     return total;
   }
 
-  private async findMatchingCargoZone(
+  async findMatchingCargoZone(
     countryId: string,
     stateId: string | null,
     cityId: string | null,
@@ -309,6 +309,7 @@ export class ShippingService {
 
     return true;
   }
+
   async getAvailableShippingMethods(
     cartId: string,
   ): Promise<ShippingMethodsResponse> {
@@ -324,6 +325,11 @@ export class ShippingService {
           },
         },
         items: {
+          where: {
+            isVisible: true,
+            deletedAt: null,
+            quantity: { gt: 0 },
+          },
           select: {
             variant: { select: { prices: true } },
             product: { select: { prices: true } },

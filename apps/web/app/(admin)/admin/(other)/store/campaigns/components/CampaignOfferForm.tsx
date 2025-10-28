@@ -1,5 +1,4 @@
 "use client";
-import FormCard from "@/(admin)/components/FormCard";
 import {
   Button,
   Card,
@@ -30,6 +29,7 @@ import { CampaignZodType, ProductModalData } from "@repo/types";
 import { useState } from "react";
 import OverviewUppSellCard from "./OverviewUppSellCard";
 import SearchableProductModal from "./SearchableProductModal";
+import FormCard from "../../discounts/components/FormCard";
 
 interface CampaignOfferFormProps {
   control: Control<CampaignZodType>;

@@ -1488,6 +1488,7 @@ export class PaymentService {
   private toFixedPrice(price: number): number {
     return parseFloat(price.toFixed(2));
   }
+
   private generateUniqueOrderNumber(): string {
     const now = new Date();
     const year = now.getFullYear().toString().slice(-2);
@@ -1496,4 +1497,69 @@ export class PaymentService {
     );
     return `ORD-${year}${String(daySeconds).padStart(5, '0')}-${createId().slice(0, 4).toUpperCase()}`;
   }
+
+  async paymentPayTR({
+    cartId,
+    data,
+    req,
+    user,
+  }: {
+    data: PaymentZodType;
+    cartId: string;
+    user: User | null;
+    req: Request;
+  }) {
+    await this.cartService.getCartForPayment(cartId);
+    // const cart = await this.cartService.getCartForClientCheckout(cartId);
+    // if (!cart || !cart.success || !cart.cart) {
+    //   return {
+    //     success: false,
+    //     message: 'Sepet bulunamadı. Lütfen tekrar deneyiniz.',
+    //   };
+    // }
+
+    // const { cart: checkoutCart } = cart;
+    // if (checkoutCart.items.length === 0) {
+    //   return {
+    //     success: false,
+    //     message: 'Sepetinizde ürün bulunmamaktadır.',
+    //   };
+    // }
+
+    // const availableShipping =
+    //   await this.shippingService.getAvailableShippingMethods(cartId);
+
+    // if (
+    //   !availableShipping ||
+    //   !availableShipping.success ||
+    //   !availableShipping.shippingMethods ||
+    //   availableShipping.shippingMethods.rules.length === 0
+    // ) {
+    //   return {
+    //     success: false,
+    //     message:
+    //       'Geçerli bir teslimat yöntemi bulunamadı. Lütfen teslimat adresinizi kontrol ediniz.',
+    //   };
+    // }
+
+    // const shippingMethod = availableShipping.shippingMethods.rules.find(
+    //   (shipping) => shipping.id === checkoutCart.cargoRule?.id,
+    // );
+    // if (!shippingMethod) {
+    //   return {
+    //     success: false,
+    //     message:
+    //       'Geçerli bir teslimat yöntemi bulunamadı. Lütfen teslimat adresinizi kontrol ediniz.',
+    //   };
+    // }
+    // const basketItemsFillQuantity = this.basketItems(checkoutCart.items);
+    // console.log('PayTR payment is not implemented yet.');
+    // console.log(basketItemsFillQuantity);
+    return {
+      success: false,
+      message: 'PayTR ödeme sistemi henüz uygulanmadı.',
+    };
+  }
+
+  async paymentStart({ cartId }) {}
 }

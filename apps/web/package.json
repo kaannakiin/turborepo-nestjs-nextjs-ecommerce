@@ -55,6 +55,7 @@
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
     "@types/set-cookie-parser": "^2.4.10",
+    "babel-plugin-react-compiler": "^1.0.0",
     "eslint": "^9.33.0",
     "postcss": "^8.4.31",
     "postcss-preset-mantine": "^1.18.0",
