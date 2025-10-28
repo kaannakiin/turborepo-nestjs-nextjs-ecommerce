@@ -60,11 +60,11 @@ const AdminPaymentsPage = () => {
           title={
             <Group p={"md"} justify="space-between" align="center">
               <Title order={4}>
-                {allProvidersAdded
+                {!allProvidersAdded
                   ? "Ödeme Yöntemleri"
                   : "Eklenmiş Ödeme Yöntemleri"}
               </Title>
-              {!allProvidersAdded && (
+              {hasPaymentMethods && !allProvidersAdded && (
                 <Group gap={"md"}>
                   <Button
                     onClick={() => {
