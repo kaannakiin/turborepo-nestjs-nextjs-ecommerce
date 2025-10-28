@@ -1,5 +1,10 @@
 "use client";
 
+import GlobalDropzone from "@/components/GlobalDropzone";
+import GlobalSeoCard from "@/components/GlobalSeoCard";
+
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import fetchWrapper from "@lib/fetchWrapper";
 import {
   Button,
   Drawer,
@@ -14,10 +19,12 @@ import {
 import { notifications } from "@mantine/notifications";
 import { Control, Controller, UseFormSetValue } from "@repo/shared";
 import { VariantProductZodType } from "@repo/types";
-import GlobalDropzone from "@/components/GlobalDropzone";
-import GlobalSeoCard from "@/components/GlobalSeoCard";
+import dynamic from "next/dynamic";
 import ProductPriceNumberInput from "./ProductPriceNumberInput";
-import fetchWrapper from "@lib/fetchWrapper";
+const GlobalTextEditor = dynamic(
+  () => import("../../../../../../components/GlobalTextEditor"),
+  { ssr: false, loading: () => <GlobalLoadingOverlay /> }
+);
 
 interface CombinatedVariantsFormDrawerProps
   extends Pick<DrawerProps, "opened" | "onClose"> {
@@ -94,8 +101,24 @@ const CombinatedVariantsFormDrawer = ({
             />
           </SimpleGrid>
         </div>
-
-        {/* Fiyat Bilgileri */}
+        <div>
+          <Title order={4} mb={"md"}>
+            Açıklama
+          </Title>
+          <Controller
+            control={control}
+            name={`combinatedVariants.${selectedIndex}.translations.0.description`}
+            render={({ field, fieldState }) => (
+              <GlobalTextEditor
+                renderLabel={false}
+                {...field}
+                value={field.value ?? undefined}
+                error={fieldState.error?.message}
+                placeholder="Varyant kombinasyonlarını düzenleyebilirsiniz. Yapay zekadan yardım almak için /ai yazabilirsiniz."
+              />
+            )}
+          />
+        </div>
         <div>
           <Title order={4} mb="md">
             Fiyat Bilgileri

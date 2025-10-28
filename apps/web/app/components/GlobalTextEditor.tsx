@@ -19,28 +19,25 @@ import {
 } from "@blocknote/xl-ai";
 import { createAIProxyFetch } from "@lib/aiFetchWrapper";
 import { InputError, InputLabel, Stack } from "@mantine/core";
+import { useEffect, useRef } from "react";
 import { tr } from "../../lib/tr-dictionary";
 
 const aiProxyUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL}/ai/chat`;
 
-// const google = createGoogleGenerativeAI({
-//   fetch: createAIProxyFetch(aiProxyUrl), // YENİSİ
-//   apiKey: "fake-key", // Burası 'fake-key' olarak kalmalı
-// });
-
-// const model = google("gemini-2.5-pro-exp-03-25");
 const model = createGroq({
   fetch: createAIProxyFetch(aiProxyUrl),
   apiKey: "fake-api-key",
-})("llama-3.3-70b-versatile");
+})("qwen/qwen3-32b");
 interface GlobalTextEditorProps {
   label?: string;
   value?: string;
   onChange?: (value: string) => void;
   error?: string;
   placeholder?: string;
+  renderLabel?: boolean;
 }
 
+// ... FormattingToolbarWithAI ve SuggestionMenuWithAI (değişiklik yok) ...
 function FormattingToolbarWithAI() {
   return (
     <FormattingToolbarController
@@ -73,6 +70,7 @@ function SuggestionMenuWithAI(props: {
     />
   );
 }
+// ...
 
 const GlobalTextEditor = ({
   label,
@@ -80,7 +78,10 @@ const GlobalTextEditor = ({
   onChange,
   error,
   placeholder,
+  renderLabel = true,
 }: GlobalTextEditorProps) => {
+  const onChangeRef = useRef(onChange);
+
   const editor = useCreateBlockNote({
     dictionary: {
       ...tr,
@@ -110,17 +111,41 @@ const GlobalTextEditor = ({
     ],
   });
 
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  });
+
+  useEffect(() => {
+    if (value !== undefined) {
+      const currentHTML = editor.blocksToHTMLLossy(editor.document);
+
+      if (value !== currentHTML) {
+        const blocks = editor.tryParseHTMLToBlocks(value);
+
+        editor.replaceBlocks(editor.document, blocks);
+      }
+    }
+  }, [value, editor]);
+
+  const onBlockNoteChange = () => {
+    const html = editor.blocksToHTMLLossy(editor.document);
+    onChangeRef.current?.(html);
+  };
+
   return (
     <Stack gap={"xs"}>
-      <InputLabel fz={"sm"} fw={500}>
-        {label || "Açıklama"}
-      </InputLabel>
+      {renderLabel && (
+        <InputLabel fz={"sm"} fw={500}>
+          {label || "Açıklama"}
+        </InputLabel>
+      )}
       {error && <InputError>{error}</InputError>}
       <BlockNoteView
         editor={editor}
         theme={"light"}
         formattingToolbar={false}
         slashMenu={false}
+        onChange={onBlockNoteChange}
       >
         <AIMenuController />
         <FormattingToolbarWithAI />

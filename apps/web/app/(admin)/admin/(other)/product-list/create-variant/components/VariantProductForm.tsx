@@ -502,8 +502,8 @@ const VariantProductForm = ({
           <GlobalTextEditor
             label="Ürün Açıklaması"
             {...field}
-            placeholder="Ürün Açıklaması girebilirsiniz. Ai'dan yardım almak için /ai yazın"
             value={field.value ?? undefined}
+            placeholder="Ürün Açıklaması girebilirsiniz. Ai'dan yardım almak için /ai yazın"
             error={fieldState.error?.message}
           />
         )}

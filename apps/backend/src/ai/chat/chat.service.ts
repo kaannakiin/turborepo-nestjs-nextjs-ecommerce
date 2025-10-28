@@ -11,7 +11,6 @@ import type { Request } from 'express';
 export class ChatService {
   private readonly logger = new Logger(ChatService.name);
 
-  // 1. API anahtarları ve ayarlar servis katmanına taşındı
   private googleApiKey: string;
   private groqApiKey: string;
 
@@ -21,11 +20,9 @@ export class ChatService {
   ];
 
   constructor(private readonly configService: ConfigService) {
-    // 2. Constructor, servis başlatıldığında ayarları yükler
     this.googleApiKey = this.configService.get<string>('GOOGLE_API_KEY');
     this.groqApiKey = this.configService.get<string>('GROQ_API_KEY');
 
-    // Başlangıç kontrolleri
     if (this.googleApiKey) {
       this.logger.log('Google API Anahtarı yüklendi.');
     } else {
@@ -49,22 +46,17 @@ export class ChatService {
     targetUrl: string,
     clientRequest: Request,
   ): Promise<Response> {
-    // 3. Güvenlik kontrolü serviste yapılır
     if (!this.allowedHosts.some((host) => targetUrl.startsWith(host))) {
       this.logger.warn(`İzin verilmeyen host'a proxy denemesi: ${targetUrl}`);
-      // Controller'ın yakalaması için NestJS hatası fırlat
       throw new ForbiddenException('Forbidden target host');
     }
 
     this.logger.log(`AI proxy isteği alındı. Hedef URL: ${targetUrl}`);
 
-    // 4. Header hazırlama mantığı serviste
     const headers = this.prepareHeaders(clientRequest.headers);
 
-    // 5. API anahtarı ekleme mantığı serviste
     this.addApiKeyToHeaders(headers, targetUrl);
 
-    // 6. Fetch işlemi serviste yapılır
     return fetch(targetUrl, {
       method: 'POST',
       headers: headers,
@@ -72,9 +64,6 @@ export class ChatService {
     });
   }
 
-  /**
-   * Gelen header'ları temizler ve 'fetch' için hazırlar.
-   */
   private prepareHeaders(incomingHeaders: Request['headers']): Headers {
     const headers = new Headers();
     const ignoreKeys = [
@@ -101,9 +90,6 @@ export class ChatService {
     return headers;
   }
 
-  /**
-   * Hedef URL'ye göre doğru API anahtarını header'lara ekler.
-   */
   private addApiKeyToHeaders(headers: Headers, targetUrl: string): void {
     if (targetUrl.startsWith('https://generativelanguage.googleapis.com')) {
       if (!this.googleApiKey) {
