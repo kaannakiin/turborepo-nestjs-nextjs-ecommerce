@@ -2,6 +2,7 @@
 
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper from "@lib/fetchWrapper";
+import { queryClient } from "@lib/serverQueryClient";
 import {
   Button,
   Drawer,
@@ -50,6 +51,7 @@ const PayTRForm = ({
       reset(defaultValues);
     }
   }, [defaultValues, reset]);
+
   const onSubmit: SubmitHandler<PayTRPaymentMethodType> = async (data) => {
     const res = await fetchWrapper.post<{ success: boolean; message: string }>(
       "/admin/payments/create-payment-method",
@@ -59,8 +61,10 @@ const PayTRForm = ({
     if (res.success) {
       close();
       refetch?.();
+      queryClient.invalidateQueries({ queryKey: ["admin-payment-methods"] });
     }
   };
+
   return (
     <>
       {(isSubmitting || isLoading) && <GlobalLoadingOverlay />}

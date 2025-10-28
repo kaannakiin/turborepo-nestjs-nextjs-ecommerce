@@ -116,7 +116,7 @@ const PaymentMethods = ({
                       src={method.logo}
                       alt={`${method.name} logo`}
                       fill
-                      className="object-contain"
+                      className="object-contain "
                     />
                   </div>
                   <div className="text-center">

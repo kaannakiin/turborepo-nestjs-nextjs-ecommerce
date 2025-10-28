@@ -8,7 +8,6 @@ import { PaymentMethodType } from "@repo/types";
 import { IconInfoCircle } from "@tabler/icons-react";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
 import FormCard from "../../store/discounts/components/FormCard";
 import PaymentMethods from "./payment-methods/page";
 

@@ -37,8 +37,6 @@ import {
 } from "@tabler/icons-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import VariantGroupDrawer from "./VariantGroupDrawer";
-
-// DnD Kit imports
 import {
   closestCenter,
   DndContext,
@@ -66,7 +64,6 @@ interface ExistingVariantCardProps {
   setValue: UseFormSetValue<VariantProductZodType>;
 }
 
-// Sortable Variant Item Component
 interface SortableVariantItemProps {
   id: string;
   field: VariantGroupZodType;
@@ -343,7 +340,6 @@ const ExistingVariantCard = ({
     control,
     name: "existingVariants",
   });
-
   const {
     fields: combinatedFields,
     replace: combinatedReplace,
@@ -454,7 +450,6 @@ const ExistingVariantCard = ({
     [selectedRows.size, combinatedFields.length]
   );
 
-  // Bulk update handlers
   const handleBulkUpdate = useCallback(
     (field: keyof typeof bulkUpdateValues, value: string) => {
       setBulkUpdateValues((prev) => ({ ...prev, [field]: value }));
@@ -463,7 +458,6 @@ const ExistingVariantCard = ({
         const currentVariant = combinatedFields[index];
         if (currentVariant) {
           if (field === "stock") {
-            // Stock doğrudan variant objesinde ve number tipinde
             const numericValue = value ? parseFloat(value) : 0;
             if (!isNaN(numericValue)) {
               combinatedUpdate(index, {
@@ -476,7 +470,6 @@ const ExistingVariantCard = ({
             field === "discountPrice" ||
             field === "buyedPrice"
           ) {
-            // Price alanları prices array'inde
             const numericValue = value ? parseFloat(value) : null;
             if (!isNaN(numericValue!) || value === "") {
               combinatedUpdate(index, {
@@ -499,7 +492,6 @@ const ExistingVariantCard = ({
               });
             }
           } else {
-            // SKU, barcode gibi string alanlar
             combinatedUpdate(index, {
               ...currentVariant,
               [field]: value,
@@ -511,7 +503,6 @@ const ExistingVariantCard = ({
     [selectedRows, combinatedFields, combinatedUpdate]
   );
 
-  // Variant silme handler'ı
   const handleVariantDelete = useCallback(
     (index: number) => {
       const updatedFields = fields.filter((_, i) => i !== index);
@@ -521,7 +512,6 @@ const ExistingVariantCard = ({
     [fields, remove, regenerateCombinations]
   );
 
-  // Dropzone açma handler'ı
   const handleDropzoneOpen = useCallback(
     (index: number) => {
       setDropzoneSelectedIndex(index);

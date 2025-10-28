@@ -92,7 +92,6 @@ const VariantProductForm = ({
     mutationFn: async (data: VariantProductZodType) => {
       const { images, combinatedVariants, ...productData } = data;
 
-      // Resim ve dosya verilerini temizleyerek sadece JSON verisi hazırla
       const cleanCombinatedVariants = combinatedVariants.map(
         ({ images: variantImages, existingImages, ...variant }) => variant
       );
@@ -103,7 +102,6 @@ const VariantProductForm = ({
         })
       );
 
-      // Ürünün metadatasını (resimler hariç) sunucuya gönder
       const mainDataResponse = await fetchWrapper.post<{
         success: boolean;
         message: string;
@@ -149,7 +147,6 @@ const VariantProductForm = ({
         color: "green",
       });
 
-      // Arka planda resim yükleme işlemini başlat
       uploadAllImagesInBackground(data, productId, updatedCombinations);
 
       context.client.invalidateQueries({ queryKey: ["admin-products"] });
@@ -181,7 +178,6 @@ const VariantProductForm = ({
     updatedCombinations: { id: string; sku: string | null }[]
   ) => {
     try {
-      // --- 1. ANA ÜRÜN RESİMLERİNİN YÜKLENMESİ ---
       if (formData.images && formData.images.length > 0) {
         const productImageFormData = new FormData();
         const sortedImages = [...formData.images].sort(
@@ -205,7 +201,6 @@ const VariantProductForm = ({
         }
       }
 
-      // --- 2. YENİ OLUŞTURULAN VARYANT KOMBİNASYONLARININ RESİMLERİNİN YÜKLENMESİ ---
       for (const variant of formData.combinatedVariants) {
         if (variant.images && variant.images.length > 0) {
           const combinationInfo = updatedCombinations.find(
@@ -238,7 +233,6 @@ const VariantProductForm = ({
         }
       }
 
-      // --- 3. MEVCUT VARYANTLARIN OPSİYON RESİMLERİNİN YÜKLENMESİ ---
       for (const existingVariant of formData.existingVariants) {
         for (const option of existingVariant.options) {
           if (option.file) {

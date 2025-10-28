@@ -2,6 +2,7 @@
 
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper from "@lib/fetchWrapper";
+import { queryClient } from "@lib/serverQueryClient";
 import {
   Button,
   Drawer,
@@ -44,6 +45,7 @@ const Iyzicoform = ({
       isTestMode: true,
       iyzicoApiKey: "",
       iyzicoSecretKey: "",
+      isActive: true,
     },
   });
   useEffect(() => {
@@ -60,6 +62,7 @@ const Iyzicoform = ({
     if (res.success) {
       close();
       refetch?.();
+      queryClient.invalidateQueries({ queryKey: ["admin-payment-methods"] });
     }
   };
   return (
@@ -123,22 +126,40 @@ const Iyzicoform = ({
                     />
                   )}
                 />
-                <Controller
-                  control={control}
-                  name="isTestMode"
-                  render={({ field: { value, ...field }, fieldState }) => (
-                    <Switch
-                      {...field}
-                      checked={value}
-                      classNames={{
-                        label: "font-semibold",
-                      }}
-                      error={fieldState.error?.message}
-                      label={value ? "Test Modu Açık" : "Test Modu Kapalı"}
-                      size="md"
-                    />
-                  )}
-                />
+                <Group gap={"md"}>
+                  <Controller
+                    control={control}
+                    name="isTestMode"
+                    render={({ field: { value, ...field }, fieldState }) => (
+                      <Switch
+                        {...field}
+                        checked={value}
+                        classNames={{
+                          label: "font-semibold",
+                        }}
+                        error={fieldState.error?.message}
+                        label={value ? "Test Modu Açık" : "Test Modu Kapalı"}
+                        size="md"
+                      />
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="isActive"
+                    render={({ field: { value, ...field }, fieldState }) => (
+                      <Switch
+                        {...field}
+                        checked={value}
+                        classNames={{
+                          label: "font-semibold",
+                        }}
+                        error={fieldState.error?.message}
+                        label={value ? "Aktif" : "Pasif"}
+                        size="md"
+                      />
+                    )}
+                  />
+                </Group>
               </SimpleGrid>
             </div>
           </Drawer.Body>

@@ -134,6 +134,7 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
 
   const isBillingAddressSame = watch("isBillingAddressSame");
   const creditCardNumber = watch("creditCardNumber");
+
   useEffect(() => {
     if (errorMessage) {
       const params = new URLSearchParams(searchParams.toString());
@@ -163,9 +164,7 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
     }
   };
 
-  // Kart numarası değiştiğinde BIN kontrolü
   useEffect(() => {
-    // Önceki timeout'u temizle
     if (binCheckTimeoutRef.current) {
       clearTimeout(binCheckTimeoutRef.current);
       binCheckTimeoutRef.current = null;
@@ -177,16 +176,12 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
       return;
     }
 
-    // Sadece rakamları al
     const cleanNumber = creditCardNumber.replace(/\D/g, "");
 
-    // İlk 6 hane var mı kontrol et
     if (cleanNumber.length >= 6) {
       const currentBin = cleanNumber.substring(0, 6);
 
-      // Önceki BIN ile aynı mı kontrol et
       if (currentBin !== previousBinRef.current) {
-        // Debounce: 500ms bekle
         binCheckTimeoutRef.current = setTimeout(() => {
           previousBinRef.current = currentBin;
           checkBinNumber(currentBin);
@@ -197,7 +192,6 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
       previousBinRef.current = "";
     }
 
-    // Cleanup function
     return () => {
       if (binCheckTimeoutRef.current) {
         clearTimeout(binCheckTimeoutRef.current);
@@ -462,9 +456,7 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
                   error={fieldState.error?.message}
                   label={
                     <Text className="text-xs">
-                      Fatura adresim, teslimat adresim ile aynı olsun. (Kurumsal
-                      Fatura seçeneği için, check işaretini kaldırarak
-                      adresinizi düzenleyiniz.)
+                      Fatura adresim, teslimat adresim ile aynı olsun.
                     </Text>
                   }
                 />

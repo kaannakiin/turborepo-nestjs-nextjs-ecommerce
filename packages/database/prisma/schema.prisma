@@ -288,6 +288,49 @@ model ProductAsset {
   @@index([combinationId, order])
 }
 
+model ProductTagTranslation {
+  id     String @id @default(cuid())
+  locale Locale @default(TR)
+  name   String
+
+  productTagId String
+  productTag   ProductTag @relation(fields: [productTagId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([locale, productTagId])
+}
+
+model ProductTag {
+  id String @id @default(cuid())
+
+  color    String? // Opsiyonel hex kodu (örn: "#FF0000")
+  icon     String? // Opsiyonel ikon adı veya SVG
+  priority Int? // Opsiyonel, etiketlerin sıralaması için
+
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  translations ProductTagTranslation[]
+  products     ProductTagOnProduct[]
+}
+
+model ProductTagOnProduct {
+  productId    String
+  productTagId String
+  assignedAt   DateTime @default(now()) // Sadece ne zaman atandığını bilmek için
+
+  // İlişkiler
+  product    Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productTag ProductTag @relation(fields: [productTagId], references: [id], onDelete: Cascade)
+
+  // Bir ürüne aynı etiket birden fazla atanamasın
+  @@id([productId, productTagId])
+  // Hızlı sorgular için index'ler
+  @@index([productId])
+  @@index([productTagId])
+}
+
 model Product {
   id                     String                      @id @default(cuid())
   type                   ProductType                 @default(PHYSICAL)
@@ -314,10 +357,10 @@ model Product {
   translations           ProductTranslation[]
   variantCombinations    ProductVariantCombination[]
   variantGroups          ProductVariantGroup[]
-
-  buyableInCampaigns   CampaignBuyableProduct[]
-  conditionInCampaigns CampaignConditionProduct[]
-  offerInCampaigns     CampaignOffer[]
+  tags                   ProductTagOnProduct[]
+  buyableInCampaigns     CampaignBuyableProduct[]
+  conditionInCampaigns   CampaignConditionProduct[]
+  offerInCampaigns       CampaignOffer[]
 
   @@index([brandId])
   @@index([taxonomyCategoryId])
@@ -326,16 +369,22 @@ model Product {
   @@index([barcode])
 }
 
+enum VariantGroupRenderType {
+  DROPDOWN
+  BADGE
+}
+
 model ProductVariantGroup {
-  id             String                 @id @default(cuid())
-  productId      String
-  variantGroupId String
-  order          Int
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
-  product        Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
-  variantGroup   VariantGroup           @relation(fields: [variantGroupId], references: [id], onDelete: Cascade)
-  options        ProductVariantOption[]
+  id                String                 @id @default(cuid())
+  productId         String
+  variantGroupId    String
+  renderVisibleType VariantGroupRenderType @default(DROPDOWN)
+  order             Int
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  product           Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantGroup      VariantGroup           @relation(fields: [variantGroupId], references: [id], onDelete: Cascade)
+  options           ProductVariantOption[]
 
   @@unique([productId, variantGroupId])
   @@index([productId])

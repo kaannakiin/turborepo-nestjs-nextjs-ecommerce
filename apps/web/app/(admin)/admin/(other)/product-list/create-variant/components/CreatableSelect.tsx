@@ -39,7 +39,6 @@ const CreatableSelect = ({
 
   const [search, setSearch] = useState(value || "");
 
-  // Tüm varyantları getir
   const { data: allVariants, isLoading } = useQuery({
     queryKey: ["variants"],
     queryFn: async (): Promise<VariantGroupZodType[]> => {
@@ -55,7 +54,6 @@ const CreatableSelect = ({
     },
   });
 
-  // Tüm mevcut isimleri case-insensitive olarak topla
   const existingNames = useMemo(() => {
     if (!allVariants) return new Set<string>();
 
