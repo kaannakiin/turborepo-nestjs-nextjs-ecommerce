@@ -24,6 +24,7 @@ import CustomSearchInput from "@/components/CustomSearchInput";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import TableAsset from "@/(admin)/components/TableAsset";
 import fetchWrapper from "@lib/fetchWrapper";
+import { Route } from "next";
 
 // Response type
 interface CategoriesResponse {
@@ -158,7 +159,10 @@ const AdminCategoryTable = () => {
         <Group justify="space-between" align="center">
           <Title order={4}>Kategoriler</Title>
           <Group gap="lg">
-            <Button component={Link} href="/admin/product-list/categories/new">
+            <Button
+              component={Link}
+              href={"/admin/product-list/categories/new" as Route}
+            >
               Yeni Kategori Ekle
             </Button>
             <CustomSearchInput />
@@ -182,7 +186,10 @@ const AdminCategoryTable = () => {
       <Group justify="space-between" align="center">
         <Title order={4}>Kategoriler</Title>
         <Group gap="lg">
-          <Button component={Link} href="/admin/product-list/categories/new">
+          <Button
+            component={Link}
+            href={"/admin/product-list/categories/new" as Route}
+          >
             Yeni Kategori Ekle
           </Button>
           <CustomSearchInput />
@@ -262,7 +269,9 @@ const AdminCategoryTable = () => {
                           color="blue"
                           component={Link}
                           size={"sm"}
-                          href={`/admin/product-list/categories/${category.id}`}
+                          href={
+                            `/admin/product-list/categories/${category.id}` as Route
+                          }
                         >
                           <IconEdit />
                         </ActionIcon>

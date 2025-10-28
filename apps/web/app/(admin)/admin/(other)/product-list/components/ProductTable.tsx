@@ -34,6 +34,7 @@ import CustomSearchInput from "../../../../../components/CustomSearchInput";
 import GlobalLoadingOverlay from "../../../../../components/GlobalLoadingOverlay";
 import TableAsset from "../../../../components/TableAsset";
 import fetchWrapper from "@lib/fetchWrapper";
+import { Route } from "next";
 
 type ProductsResponse = {
   products: AdminProductTableData[];
@@ -181,8 +182,8 @@ const ProductTable = () => {
                       component={Link}
                       href={
                         product.isVariant
-                          ? `/admin//product-list/create-variant/${product.id}`
-                          : `/admin//product-list/create-basic/${product.id}`
+                          ? (`/admin//product-list/create-variant/${product.id}` as Route)
+                          : (`/admin//product-list/create-basic/${product.id}` as Route)
                       }
                     >
                       <IconEdit size={16} />
@@ -237,7 +238,7 @@ const ProductTable = () => {
               radius="md"
               withBorder
               component={Link}
-              href="/admin/product-list/create-basic/new"
+              href={"/admin/product-list/create-basic/new" as Route}
               onClick={close}
               style={{
                 cursor: "pointer",
@@ -289,7 +290,7 @@ const ProductTable = () => {
               radius="md"
               withBorder
               component={Link}
-              href="/admin/product-list/create-variant/new"
+              href={"/admin/product-list/create-variant/new" as Route}
               onClick={close}
               style={{
                 cursor: "pointer",

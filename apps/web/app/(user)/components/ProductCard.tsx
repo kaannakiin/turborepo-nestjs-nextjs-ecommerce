@@ -8,6 +8,7 @@ import { buildVariantOrProductUrl } from "../../../lib/helpers";
 import CustomImage from "../../components/CustomImage";
 import ProductPriceFormatter from "./ProductPriceFormatter";
 import { $Enums } from "@repo/database";
+import { Route } from "next";
 
 const ProductCard = ({ product }: { product: ProductPageDataType }) => {
   const { hovered, ref } = useHover();
@@ -68,7 +69,10 @@ const ProductCard = ({ product }: { product: ProductPageDataType }) => {
     ) || "#";
 
   return (
-    <Card className="bg-transparent cursor-pointer" onClick={() => push(url)}>
+    <Card
+      className="bg-transparent cursor-pointer"
+      onClick={() => push(url as Route)}
+    >
       <Card.Section inheritPadding>
         {(first || second) && (
           <AspectRatio

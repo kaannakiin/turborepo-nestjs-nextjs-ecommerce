@@ -1,6 +1,7 @@
 "use client";
 import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import { Accordion, Group, Stack, Text, UnstyledButton } from "@mantine/core";
+import { Route } from "next";
 import { usePathname, useRouter } from "next/navigation";
 import { ReactNode } from "react";
 
@@ -27,7 +28,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
             <UnstyledButton
               key={idx}
               onClick={() => {
-                push(link.url);
+                push(link.url as Route);
               }}
             >
               <Text
@@ -60,7 +61,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
                   <UnstyledButton
                     key={idx}
                     onClick={() => {
-                      push(link.url);
+                      push(link.url as Route);
                     }}
                   >
                     <Text

@@ -11,6 +11,7 @@ import CategoryPageDekstopFilter from "./CategoryPageDekstopFilter";
 import CategoryPageDesktopFiltersSection from "./CategoryPageDesktopFiltersSection";
 import CategoryPageMobileFiltersSection from "./CategoryPageMobileFiltersSection";
 import CategoryProductList from "./CategoryProductList";
+import { Route } from "next";
 
 interface CategoryClientPageProps {
   id: string;
@@ -59,7 +60,7 @@ const CategoryClientPage = ({
               .map((cat) => (
                 <Link
                   key={cat.id}
-                  href={`/categories-v2/${cat.slug}`}
+                  href={`/categories-v2/${cat.slug}` as Route}
                   className="text-gray-600 hover:text-black transition-colors"
                 >
                   {cat.name}

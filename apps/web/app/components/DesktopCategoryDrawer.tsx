@@ -11,6 +11,7 @@ import { CategoryHeaderData } from "@repo/types";
 import { $Enums } from "@repo/database";
 import Link from "next/link";
 import CustomImage from "./CustomImage";
+import { Route } from "next";
 
 interface DesktopCategoryDrawerProps {
   category: CategoryHeaderData;
@@ -102,7 +103,7 @@ const DesktopCategoryDrawer = ({
             </HoverCard.Dropdown>
           </HoverCard>
         ) : (
-          <Link href={`/categories/${translation.slug}`}>
+          <Link href={`/categories/${translation.slug}` as Route}>
             <Text
               fz={"md"}
               fw={700}

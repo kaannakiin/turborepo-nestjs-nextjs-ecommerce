@@ -44,6 +44,7 @@ import {
 } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import { $Enums } from "@repo/database";
+import { Route } from "next";
 const OrderClientPage = ({
   slug,
   session,
@@ -93,10 +94,10 @@ const OrderClientPage = ({
 
   if (data.userId !== null) {
     if (session) {
-      push(`/dashboard/orders/${slug}`);
+      push(`/dashboard/orders/${slug}` as Route);
       return <GlobalLoadingOverlay />;
     } else {
-      push(`/auth/login?redirectUri=/dashboard/orders/${slug}`);
+      push(`/auth/login?redirectUri=/dashboard/orders/${slug}` as Route);
       return <GlobalLoadingOverlay />;
     }
   }

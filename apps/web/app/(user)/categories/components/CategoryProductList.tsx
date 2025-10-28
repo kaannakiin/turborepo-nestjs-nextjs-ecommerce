@@ -9,6 +9,7 @@ import { ReadonlyURLSearchParams, useRouter } from "next/navigation";
 import { notFound } from "next/navigation";
 import { useEffect } from "react";
 import CategoryPageProductCard from "./CategoryPageProductCard";
+import { Route } from "next";
 
 interface CategoryProductListProps {
   categoryIds: string[];
@@ -117,7 +118,7 @@ const CategoryProductList = ({
     const currentPath = window.location.pathname;
     const sortValue = searchParams.get("sort");
     const newUrl = sortValue ? `${currentPath}?sort=${sortValue}` : currentPath;
-    router.push(newUrl);
+    router.push(newUrl as Route);
   };
 
   return (
