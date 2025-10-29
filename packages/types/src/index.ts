@@ -20,3 +20,4 @@ export * from "./discounts/discount.schema";
 export * from "./campaign/campaign.schema";
 export * from "./shared/shared-types";
 export * from "./payment-methods/payment-methods.schema";
+export * from "./api/admin/payment/payment.types";

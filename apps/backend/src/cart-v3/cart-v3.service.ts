@@ -2,12 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { Prisma, User } from '@repo/database';
 import {
   AddCartReqBodyV3Type,
+  addressInclude,
   CartActionResponseV3,
+  CartForPayment,
+  CartItemForPayment,
   CartItemV3,
   CartItemWithRelations,
   CartV3,
   DecraseOrIncreaseCartItemReqBodyV3Type,
   GetCartClientCheckoutReturnType,
+  GetCartForPaymentIncludeCartType,
+  GetCartForPaymentReturnType,
   NonAuthUserAddressZodType,
   TURKEY_DB_ID,
 } from '@repo/types';
@@ -1375,130 +1380,12 @@ export class CartV3Service {
 
   async getCartForPayment(
     cartId: string,
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<GetCartForPaymentReturnType> {
     try {
-      const addressInclude: Prisma.AddressSchemaInclude = {
-        city: { select: { id: true, name: true } },
-        country: {
-          select: {
-            id: true,
-            name: true,
-            emoji: true,
-            translations: true,
-          },
-        },
-        district: { select: { name: true, id: true } },
-        state: { select: { id: true, name: true } },
-      } as const;
-
-      const cart = await this.prisma.cart.findUnique({
+      const cart = (await this.prisma.cart.findUnique({
         where: { id: cartId },
-        include: {
-          user: true,
-          billingAddress: {
-            include: addressInclude,
-          },
-          shippingAddress: {
-            include: addressInclude,
-          },
-          cargoRule: {
-            select: {
-              id: true,
-              price: true,
-            },
-          },
-          items: {
-            where: {
-              isVisible: true,
-              deletedAt: null,
-              visibleCause: null,
-              quantity: { gt: 0 },
-              OR: [
-                {
-                  variant: null,
-                  variantId: null,
-                  product: { active: true, stock: { gt: 0 } },
-                },
-                {
-                  variant: { active: true, stock: { gt: 0 } },
-                  product: { active: true },
-                },
-              ],
-            },
-            include: {
-              product: {
-                include: {
-                  assets: {
-                    orderBy: {
-                      order: 'asc',
-                    },
-                    select: {
-                      asset: {
-                        select: { url: true, type: true },
-                      },
-                    },
-                  },
-                  translations: true,
-                  prices: true,
-                },
-              },
-              variant: {
-                include: {
-                  assets: {
-                    orderBy: {
-                      order: 'asc',
-                    },
-                    select: {
-                      asset: {
-                        select: { url: true, type: true },
-                      },
-                    },
-                  },
-                  prices: true,
-                  translations: true,
-                  options: {
-                    orderBy: [
-                      {
-                        productVariantOption: {
-                          productVariantGroup: {
-                            order: 'asc',
-                          },
-                        },
-                      },
-                      {
-                        productVariantOption: {
-                          order: 'asc',
-                        },
-                      },
-                    ],
-                    select: {
-                      productVariantOption: {
-                        select: {
-                          variantOption: {
-                            select: {
-                              asset: { select: { url: true, type: true } },
-                              hexValue: true,
-                              translations: true,
-                              id: true,
-                              variantGroup: {
-                                select: {
-                                  id: true,
-                                  translations: true,
-                                  type: true,
-                                },
-                              },
-                            },
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      });
+        include: GetCartForPaymentIncludeCartType,
+      })) as CartForPayment;
 
       if (!cart) {
         return { success: false, message: 'Sepet bulunamadı' };
@@ -1524,8 +1411,9 @@ export class CartV3Service {
           message: 'Lütfen gönderim yöntemi seçin',
         };
       }
+
       const cartTotal = this.shippingService.calculateCartTotal(
-        cart.items.map((item) => ({
+        cart.items.map((item: CartItemForPayment) => ({
           product: item.product,
           variant: item.variant || undefined,
           quantity: item.quantity,
@@ -1570,6 +1458,15 @@ export class CartV3Service {
             'Seçilen kargo yöntemi, adres veya sepet tutarındaki değişiklik nedeniyle artık geçerli değil. Lütfen kargo seçeneklerini güncelleyin.',
         };
       }
+
+      return {
+        success: true,
+        message: 'Sepet başarıyla alındı',
+        data: {
+          cart,
+          totalAmount: cartTotal,
+        },
+      };
     } catch (error) {
       console.error('Error fetching cart for payment:', error);
       return { success: false, message: 'Sepet alınırken bir hata oluştu' };
