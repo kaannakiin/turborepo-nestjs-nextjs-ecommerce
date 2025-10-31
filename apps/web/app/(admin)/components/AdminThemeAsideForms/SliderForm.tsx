@@ -19,7 +19,7 @@ import {
   useForm,
   zodResolver,
 } from "@repo/shared";
-import { SliderSchema, SliderType } from "@repo/types";
+import { SliderV2Schema, SliderType } from "@repo/types";
 import { IconX } from "@tabler/icons-react";
 import GlobalDropzone from "../../../components/GlobalDropzone";
 import fetchWrapper from "@lib/fetchWrapper";
@@ -74,7 +74,7 @@ const SliderForm = ({ defaultValues, onSubmit }: SliderFormProps) => {
     watch,
     formState: { errors },
   } = useForm<SliderType>({
-    resolver: zodResolver(SliderSchema),
+    resolver: zodResolver(SliderV2Schema),
     defaultValues: defaultValues || {
       uniqueId: createId(),
       customLink: "",
