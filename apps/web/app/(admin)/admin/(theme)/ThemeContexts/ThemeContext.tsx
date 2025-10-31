@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 
-type Media = "mobile" | "tablet" | "desktop";
+export type Media = "mobile" | "tablet" | "desktop";
 
 interface ThemeContextType {
   media: Media;

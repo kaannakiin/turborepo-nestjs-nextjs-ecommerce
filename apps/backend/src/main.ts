@@ -16,7 +16,7 @@ async function bootstrap() {
     const configService = app.get<ConfigService>(ConfigService);
     const nodeEnv = configService.get<string>('NODE_ENV', 'development');
     const isProduction = nodeEnv === 'production';
-    const domain = configService.get<string>('DOMAIN'); // Örn: .mydomain.com
+    const domain = configService.get<string>('DOMAIN');
     const csrfService = app.get(CsrfService);
     app.use(
       helmet({

@@ -1404,3 +1404,13 @@ model StorePaymentProvider {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model AssetLibrary {
+  id        String    @id @default(cuid())
+  assetType AssetType @default(IMAGE)
+  url       String
+  altText   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
