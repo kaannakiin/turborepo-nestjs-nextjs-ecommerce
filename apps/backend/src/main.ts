@@ -53,6 +53,7 @@ async function bootstrap() {
         'X-CSRF-Token',
         'User-Agent',
         'x-goog-api-key',
+        'X-Request-Channel',
       ],
 
       credentials: true,
@@ -92,6 +93,8 @@ async function bootstrap() {
           '/payment/iyzico/webhook',
           paymentCallbackUrl.pathname,
           '/payment/payment',
+          '/payments-v2/payment',
+          '/auth',
         ];
 
         if (
