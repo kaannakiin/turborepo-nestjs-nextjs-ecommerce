@@ -23,7 +23,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { IyzicoService } from './iyzico/iyzico.service';
 
 @Injectable()
-export class PaymentsV2Service {
+export class PaymentsService {
   private readonly CACHE_TTL = 5 * 60 * 1000;
   private readonly provider: StorePaymentProvider | null = null;
 
@@ -38,15 +38,8 @@ export class PaymentsV2Service {
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
-    const count = await this.prisma.order.count({
-      where: {
-        createdAt: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
-      },
-    });
-    return count;
+
+    return 5;
   }
 
   private async generateOrderNumber(): Promise<string> {
@@ -305,8 +298,8 @@ export class PaymentsV2Service {
     const buyer: NonThreeDSRequest['buyer'] = {
       city: cartShippingAddress.city?.name || 'Bölge yok',
       country: cartShippingAddress.country?.name || 'Ülke yok',
-      email: cartShippingAddress?.email || user?.email || 'Email Yok',
-      gsmNumber: cartShippingAddress.phone || user.phone || 'Telefon Yok',
+      email: cartShippingAddress?.email || user?.email || 'emailyok@gmail.com',
+      gsmNumber: cartShippingAddress.phone || user.phone || '+905555555555',
       id: user ? user.id : cart.id,
       identityNumber: cartShippingAddress.tcKimlikNo || '00000000000',
       name: cartShippingAddress.name || user.name || 'İsim Yok',
@@ -470,10 +463,83 @@ export class PaymentsV2Service {
       }
 
       if (nonThreeDSeq.status === 'success') {
+        console.log('Ödeme başarılı, yönlendiriliyor...');
         return res.redirect(
           `${this.configService.get<string>('WEB_UI_REDIRECT')}`,
         );
       }
     }
+  }
+
+  async handleWebhook({ req, res }: { req: Request; res: Response }) {
+    console.log('=== İyzico Webhook Received ===');
+
+    // Tüm header'ları yazdır
+    console.log('\n📋 ALL HEADERS:');
+    console.log('----------------');
+    Object.keys(req.headers).forEach((key) => {
+      console.log(`${key}: ${req.headers[key]}`);
+    });
+    console.log('----------------\n');
+
+    // İyzico spesifik header'lar
+    const eventType = req.headers['x-iyzico-event-type'] as string;
+    const signature = req.headers['x-iyz-signature-v3'] as string;
+
+    console.log('🔑 İyzico Specific Headers:');
+    console.log('- Event Type:', eventType);
+    console.log('- Signature V3:', signature);
+
+    console.log('\n📦 Request Body:');
+    console.log(JSON.stringify(req.body, null, 2));
+
+    // Signature validation
+    if (!signature) {
+      console.error('❌ Missing X-Iyz-Signature-V3 header');
+      return res.status(401).json({ error: 'Missing signature' });
+    }
+
+    // Webhook body parametreleri
+    const {
+      paymentConversationId,
+      merchantId,
+      paymentId,
+      status,
+      iyziReferenceCode,
+      iyziEventType,
+      iyziEventTime,
+      iyziPaymentId,
+    } = req.body;
+
+    console.log('\n📊 Parsed Data:');
+    console.log('- Payment Conversation ID:', paymentConversationId);
+    console.log('- Merchant ID:', merchantId);
+    console.log('- Payment ID:', paymentId);
+    console.log('- Status:', status);
+    console.log('- Iyzi Reference Code:', iyziReferenceCode);
+    console.log('- Iyzi Event Type:', iyziEventType);
+    console.log('- Iyzi Event Time:', iyziEventTime);
+    console.log('- Iyzi Payment ID:', iyziPaymentId);
+
+    // Ödeme durumuna göre işlem
+    console.log('\n💳 Payment Status:');
+    switch (status) {
+      case 'SUCCESS':
+        console.log('✓ Payment successful');
+        break;
+      case 'FAILURE':
+        console.log('✗ Payment failed');
+        break;
+      case 'INIT_THREEDS':
+        console.log('⟳ 3DS initiated');
+        break;
+      default:
+        console.log('Status:', status);
+    }
+
+    console.log('================================\n');
+
+    // Response
+    res.status(200).json({ success: true });
   }
 }

@@ -10,14 +10,14 @@ import {
 import type { User } from '@repo/database';
 import { PaymentZodSchema, type PaymentZodType } from '@repo/types';
 import type { Request, Response } from 'express';
+import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
-import { PaymentsV2Service } from './payments-v2.service';
-import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
+import { PaymentsService } from './payments.service';
 
 @Controller('payments-v2')
-export class PaymentsV2Controller {
-  constructor(private readonly paymentsV2Service: PaymentsV2Service) {}
+export class PaymentsController {
+  constructor(private readonly paymentsV2Service: PaymentsService) {}
   @Post('payment/:cartId')
   @UseGuards(OptionalJwtAuthGuard)
   async createPayment(
@@ -34,5 +34,10 @@ export class PaymentsV2Controller {
       req,
       res,
     });
+  }
+
+  @Post('webhook')
+  async handleWebhook(@Req() req: Request, @Res() res: Response) {
+    return this.paymentsV2Service.handleWebhook({ req, res });
   }
 }
