@@ -14,6 +14,22 @@ export const addressInclude: Prisma.AddressSchemaInclude = {
   state: { select: { id: true, name: true } },
 };
 
+export type ShippingAddressPayload = Prisma.AddressSchemaGetPayload<{
+  include: {
+    city: { select: { id: true; name: true } };
+    country: {
+      select: {
+        id: true;
+        name: true;
+        emoji: true;
+        translations: true;
+      };
+    };
+    district: { select: { name: true; id: true } };
+    state: { select: { id: true; name: true } };
+  };
+}>;
+
 const variantOptionsOrderBy: Prisma.ProductVariantCombinationOptionOrderByWithRelationInput[] =
   [
     {

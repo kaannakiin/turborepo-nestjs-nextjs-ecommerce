@@ -16,7 +16,7 @@ async function bootstrap() {
     const configService = app.get<ConfigService>(ConfigService);
     const nodeEnv = configService.get<string>('NODE_ENV', 'development');
     const isProduction = nodeEnv === 'production';
-    const domain = configService.get<string>('DOMAIN'); // Örn: .mydomain.com
+    const domain = configService.get<string>('DOMAIN');
     const csrfService = app.get(CsrfService);
     app.use(
       helmet({
@@ -53,6 +53,7 @@ async function bootstrap() {
         'X-CSRF-Token',
         'User-Agent',
         'x-goog-api-key',
+        'X-Request-Channel',
       ],
 
       credentials: true,
@@ -92,6 +93,8 @@ async function bootstrap() {
           '/payment/iyzico/webhook',
           paymentCallbackUrl.pathname,
           '/payment/payment',
+          '/payments-v2/payment',
+          '/auth',
         ];
 
         if (

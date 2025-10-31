@@ -157,6 +157,7 @@ export class PaymentService {
       throw new BadRequestException('İyzico API ile iletişim hatası');
     }
   }
+
   private async iyzicoGenerateSignature(dataArray: string[]): Promise<string> {
     const { secretKey } = await this.getIyzicoKeys();
     const dataToEncrypt = dataArray.join(this.separator);
