@@ -4,21 +4,25 @@ import { $Enums, StorePaymentProvider, User } from '@repo/database';
 import {
   BasketItem,
   CartItemForPayment,
-  GetCartForPaymentReturnType,
+  CompleteThreeDSRequest,
+  CompleteThreeDSResponse,
   InstallmentRequest,
   InstallmentResponse,
   IyzicoPaymentMethodType,
+  IyzicoWebhookPayload,
   NonThreeDSRequest,
   NonThreeDSResponse,
   PaymentChannel,
   PaymentZodType,
   PayTRPaymentMethodType,
   ShippingAddressPayload,
+  ThreeDCallback,
   ThreeDSRequest,
   ThreeDSResponse,
 } from '@repo/types';
 import { Request, Response } from 'express';
 import { CartV3Service } from 'src/cart-v3/cart-v3.service';
+import { OrdersService } from 'src/orders/orders.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { IyzicoService } from './iyzico/iyzico.service';
 
@@ -26,30 +30,17 @@ import { IyzicoService } from './iyzico/iyzico.service';
 export class PaymentsService {
   private readonly CACHE_TTL = 5 * 60 * 1000;
   private readonly provider: StorePaymentProvider | null = null;
-
+  private readonly webUrl: string;
   constructor(
     private readonly cartService: CartV3Service,
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly iyzicoService: IyzicoService,
-  ) {}
-  private async getTodayOrdersCount(): Promise<number> {
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
-
-    return 5;
-  }
-
-  private async generateOrderNumber(): Promise<string> {
-    const todayOrderCount = await this.getTodayOrdersCount();
-    const date = new Date();
-    const year = date.getFullYear().toString().slice(-2);
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    const orderCount = (todayOrderCount + 1).toString().padStart(4, '0');
-    return `ORD${year}${month}${day}${orderCount}`; // Örnek: ORD2406150001
+    private readonly orderService: OrdersService,
+  ) {
+    this.webUrl = this.configService
+      .getOrThrow<string>('WEB_UI_REDIRECT')
+      .slice(0, -1);
   }
 
   private getPaymentChannel(req: Request): PaymentChannel {
@@ -82,7 +73,14 @@ export class PaymentsService {
   private formatPrice(priceInTl: number): number {
     return Math.round(priceInTl * 100);
   }
-
+  private async getPaymentProvdider(type: $Enums.PaymentProvider) {
+    const provider = await this.prisma.storePaymentProvider.findUnique({
+      where: {
+        provider: type,
+      },
+    });
+    return provider;
+  }
   private async preparePaymentProviderConfig(): Promise<{
     success: boolean;
     message: string;
@@ -193,38 +191,27 @@ export class PaymentsService {
     });
   }
 
-  private async createOrder(cart: GetCartForPaymentReturnType['data']['cart']) {
-    // return await this.prisma.$transaction(async (prisma) => {
-    //   const orderNumber = await this.generateOrderNumber();
-    //   const order = await prisma.order.create({
-    //     data: {
-    //       orderNumber,
-    //     },
-    //   });
-    // });
-  }
-
   async createPayment({
     data,
     cartId,
     user,
     req,
-    res,
   }: {
     data: PaymentZodType;
     cartId: string;
     user: User | null;
     req: Request;
-    res: Response;
-  }) {
+  }): Promise<{
+    success: boolean;
+    message: string;
+    clearCart?: boolean;
+    orderNumber?: string;
+    data?: {
+      isThreeDS: boolean;
+      threeDSHtmlContent?: string;
+    };
+  }> {
     const cartResult = await this.cartService.getCartForPayment(cartId);
-
-    if (!cartResult) {
-      return {
-        success: false,
-        message: 'Sepet bulunamadı.',
-      };
-    }
 
     if (!cartResult.success) {
       return {
@@ -232,10 +219,26 @@ export class PaymentsService {
         message: cartResult.message,
       };
     }
+    if (!cartResult.data) {
+      await this.cartService.createCartPaymentAttempt(
+        cartId,
+        false,
+        'Sepet verisi bulunamadı.',
+      );
+      return {
+        success: false,
+        message: 'Sepet verisi bulunamadı.',
+      };
+    }
 
     const providerConfig = await this.preparePaymentProviderConfig();
 
     if (!providerConfig.success || !providerConfig.provider) {
+      await this.cartService.createCartPaymentAttempt(
+        cartId,
+        false,
+        'Ödeme sağlayıcısı bulunamadığı için ödeme yapılamıyor.',
+      );
       return {
         success: false,
         message:
@@ -243,7 +246,7 @@ export class PaymentsService {
       };
     }
 
-    const { cart } = cartResult.data;
+    const { cart, subTotal, totalDiscount } = cartResult.data;
 
     const basketItems = this.createBasketItems(
       cart.items as CartItemForPayment[],
@@ -318,6 +321,23 @@ export class PaymentsService {
       expireYear: data.expiryDate.replace(/\s+/g, '').split('/')[1],
     };
 
+    const orderResponse = await this.orderService.createOrUpdateOrderForPayment(
+      { cart, subTotal, totalDiscount },
+      cart.shippingAddress,
+      cart.billingAddress || cart.shippingAddress,
+      providerConfig.provider.type,
+      req.headers['user-agent']?.toString(),
+      ip.toString(),
+    );
+
+    if (!orderResponse.success) {
+      return {
+        success: false,
+        message: orderResponse.message,
+        clearCart: orderResponse.clearUserCart,
+      };
+    }
+
     if (providerConfig.provider.type === 'PAYTR') {
     }
 
@@ -336,6 +356,7 @@ export class PaymentsService {
         conversationId: installmentConversationId,
         price: totalPrice,
       });
+      console.log('installementReq', installementReq);
       if (
         !installementReq.conversationId ||
         installementReq.conversationId !== installmentConversationId
@@ -349,7 +370,8 @@ export class PaymentsService {
         );
       }
 
-      const { force3ds } = installementReq.installmentDetails[0];
+      const { force3ds, cardType, cardAssociation, cardFamilyName } =
+        installementReq.installmentDetails[0];
       const paymentConversationId = `payment_${new Date().toISOString()}`;
       const basePaymentBody: NonThreeDSRequest = {
         shippingAddress,
@@ -371,7 +393,7 @@ export class PaymentsService {
       if (force3ds) {
         const threeDSPaymentBody: ThreeDSRequest = {
           ...basePaymentBody,
-          callbackUrl: 'https://localhost:3001/payment/iyzico/three-d-callback',
+          callbackUrl: `${this.configService.get<string>('IYZICO_CALLBACK_URL')}/${orderResponse.order.id}`,
         };
 
         const threeDSreq = await this.iyzicoService.iyzicoFetch<
@@ -386,10 +408,52 @@ export class PaymentsService {
         );
 
         if (threeDSreq.conversationId !== paymentConversationId) {
+          await this.prisma.orderTransactionSchema.create({
+            data: {
+              orderId: orderResponse.order.id,
+              amount: orderResponse.order.totalFinalPrice,
+              paymentType:
+                cardType === 'CREDIT_CARD'
+                  ? 'CREDIT_CARD'
+                  : cardType === 'DEBIT_CARD'
+                    ? 'DIRECT_DEBIT'
+                    : 'OTHER',
+              provider: 'IYZICO',
+              status: 'FAILED',
+              gatewayResponse: JSON.parse(
+                JSON.stringify({
+                  ...threeDSreq,
+                  message: 'Conversation ID mismatch',
+                }),
+              ),
+            },
+          });
+
           throw new BadRequestException('Ödeme başlatılamadı.');
         }
 
         if (threeDSreq.status === 'failure') {
+          await this.prisma.orderTransactionSchema.create({
+            data: {
+              orderId: orderResponse.order.id,
+              amount: orderResponse.order.totalFinalPrice,
+              paymentType:
+                cardType === 'CREDIT_CARD'
+                  ? 'CREDIT_CARD'
+                  : cardType === 'DEBIT_CARD'
+                    ? 'DIRECT_DEBIT'
+                    : 'OTHER',
+              provider: 'IYZICO',
+              status: 'FAILED',
+              gatewayResponse: JSON.parse(
+                JSON.stringify({
+                  ...threeDSreq,
+                  message: threeDSreq.errorMessage,
+                }),
+              ),
+            },
+          });
+
           throw new BadRequestException(
             threeDSreq.errorMessage || 'Ödeme başlatılamadı.',
           );
@@ -404,13 +468,30 @@ export class PaymentsService {
           },
           iyzicoSecretKey,
         );
-
         if (!isValidSignature) {
+          await this.prisma.orderTransactionSchema.create({
+            data: {
+              orderId: orderResponse.order.id,
+              amount: orderResponse.order.totalFinalPrice,
+              providerTransactionId: threeDSreq.paymentId,
+              paymentType:
+                cardType === 'CREDIT_CARD'
+                  ? 'CREDIT_CARD'
+                  : cardType === 'DEBIT_CARD'
+                    ? 'DIRECT_DEBIT'
+                    : 'OTHER',
+              provider: 'IYZICO',
+              status: 'FAILED',
+              gatewayResponse: JSON.parse(
+                JSON.stringify({ message: 'Invalid signature', ...threeDSreq }),
+              ),
+            },
+          });
+
           throw new BadRequestException(
             'Ödeme başlatılamadı. Lütfen daha sonra tekrar deneyiniz.',
           );
         }
-
         return {
           success: true,
           message: '3D Secure doğrulaması gerekiyor.',
@@ -433,10 +514,52 @@ export class PaymentsService {
       );
 
       if (nonThreeDSeq.conversationId !== paymentConversationId) {
+        await this.prisma.orderTransactionSchema.create({
+          data: {
+            orderId: orderResponse.order.id,
+            amount: orderResponse.order.totalFinalPrice,
+            paymentType:
+              cardType === 'CREDIT_CARD'
+                ? 'CREDIT_CARD'
+                : cardType === 'DEBIT_CARD'
+                  ? 'DIRECT_DEBIT'
+                  : 'OTHER',
+            provider: 'IYZICO',
+            status: 'FAILED',
+            gatewayResponse: JSON.parse(
+              JSON.stringify({
+                message: 'Conversation ID mismatch',
+                ...nonThreeDSeq,
+              }),
+            ),
+          },
+        });
+
         throw new BadRequestException('Ödeme gerçekleştirilemedi.');
       }
 
       if (nonThreeDSeq.status === 'failure') {
+        await this.prisma.orderTransactionSchema.create({
+          data: {
+            orderId: orderResponse.order.id,
+            amount: orderResponse.order.totalFinalPrice,
+            paymentType:
+              cardType === 'CREDIT_CARD'
+                ? 'CREDIT_CARD'
+                : cardType === 'DEBIT_CARD'
+                  ? 'DIRECT_DEBIT'
+                  : 'OTHER',
+            provider: 'IYZICO',
+            status: 'FAILED',
+            gatewayResponse: JSON.parse(
+              JSON.stringify({
+                message: nonThreeDSeq.errorMessage,
+                ...nonThreeDSeq,
+              }),
+            ),
+          },
+        });
+
         throw new BadRequestException(
           nonThreeDSeq.errorMessage || 'Ödeme gerçekleştirilemedi.',
         );
@@ -457,49 +580,377 @@ export class PaymentsService {
       );
 
       if (!isValidSignature) {
+        await this.prisma.orderTransactionSchema.create({
+          data: {
+            orderId: orderResponse.order.id,
+            amount: orderResponse.order.totalFinalPrice,
+            providerTransactionId: nonThreeDSeq.paymentId,
+            paymentType:
+              cardType === 'CREDIT_CARD'
+                ? 'CREDIT_CARD'
+                : cardType === 'DEBIT_CARD'
+                  ? 'DIRECT_DEBIT'
+                  : 'OTHER',
+            provider: 'IYZICO',
+            status: 'FAILED',
+            gatewayResponse: JSON.parse(
+              JSON.stringify({
+                message: 'Invalid signature',
+                ...nonThreeDSeq,
+              }),
+            ),
+          },
+        });
+
         throw new BadRequestException(
           'Ödeme gerçekleştirilemedi. Lütfen daha sonra tekrar deneyiniz.',
         );
       }
 
       if (nonThreeDSeq.status === 'success') {
-        console.log('Ödeme başarılı, yönlendiriliyor...');
-        return res.redirect(
-          `${this.configService.get<string>('WEB_UI_REDIRECT')}`,
-        );
+        await this.prisma.$transaction(async (tx) => {
+          await tx.orderSchema.update({
+            where: {
+              id: orderResponse.order.id,
+            },
+            data: {
+              cart: {
+                update: {
+                  status: 'CONVERTED',
+                },
+              },
+              orderStatus: 'CONFIRMED',
+              paymentStatus: 'PAID',
+              transactions: {
+                create: {
+                  amount: orderResponse.order.totalFinalPrice,
+                  providerTransactionId: nonThreeDSeq.paymentId,
+                  paymentType:
+                    cardType === 'CREDIT_CARD'
+                      ? 'CREDIT_CARD'
+                      : cardType === 'DEBIT_CARD'
+                        ? 'DIRECT_DEBIT'
+                        : 'OTHER',
+                  provider: 'IYZICO',
+                  status: 'PAID',
+                  binNumber: nonThreeDSeq.binNumber,
+                  lastFourDigits: nonThreeDSeq.lastFourDigits,
+                  cardAssociation: nonThreeDSeq.cardAssociation,
+                  cardFamilyName: nonThreeDSeq.cardFamily,
+                  gatewayResponse: JSON.parse(JSON.stringify(nonThreeDSeq)),
+                },
+              },
+            },
+          });
+
+          await this.orderService.decreaseStockLevelsForOrder(
+            tx,
+            orderResponse.order.itemsSchema.map((item) => ({
+              productId: item.productId,
+              variantId: item.variantId,
+              quantity: item.quantity,
+            })),
+          );
+        });
+        return {
+          message: 'Ödeme başarıyla tamamlandı.',
+          success: true,
+          clearCart: true,
+          orderNumber: orderResponse.order.orderNumber,
+          data: {
+            isThreeDS: false,
+            threeDSHtmlContent: undefined,
+          },
+        };
       }
     }
   }
 
-  async handleWebhook({ req, res }: { req: Request; res: Response }) {
-    console.log('=== İyzico Webhook Received ===');
+  private returnUrlWithErrorMessage(
+    cartId: string,
+    errorMessage: string,
+  ): string {
+    const webUrl = new URL(this.webUrl);
+    return `${webUrl.toString()}/checkout/${cartId}?step=payment&error="${encodeURIComponent(
+      errorMessage,
+    )}"`;
+  }
 
-    // Tüm header'ları yazdır
-    console.log('\n📋 ALL HEADERS:');
-    console.log('----------------');
-    Object.keys(req.headers).forEach((key) => {
-      console.log(`${key}: ${req.headers[key]}`);
-    });
-    console.log('----------------\n');
+  private async returnMdStatusErrorUrl(
+    cartId: string,
+    mdStatus: string,
+  ): Promise<string> {
+    const webUrl = new URL(this.webUrl);
 
-    // İyzico spesifik header'lar
-    const eventType = req.headers['x-iyzico-event-type'] as string;
-    const signature = req.headers['x-iyz-signature-v3'] as string;
+    let errorMessage = '3D Secure doğrulaması başarısız oldu.';
 
-    console.log('🔑 İyzico Specific Headers:');
-    console.log('- Event Type:', eventType);
-    console.log('- Signature V3:', signature);
-
-    console.log('\n📦 Request Body:');
-    console.log(JSON.stringify(req.body, null, 2));
-
-    // Signature validation
-    if (!signature) {
-      console.error('❌ Missing X-Iyz-Signature-V3 header');
-      return res.status(401).json({ error: 'Missing signature' });
+    switch (mdStatus) {
+      case '0':
+      case '-1':
+        errorMessage =
+          '3D Secure doğrulaması yapılamadı. Lütfen tekrar deneyin.';
+        break;
+      case '2':
+        errorMessage =
+          'Kartınız 3D Secure için kayıtlı değil. Lütfen bankanızla iletişime geçin.';
+        break;
+      case '3':
+        errorMessage =
+          'Bankanız 3D Secure sistemine kayıtlı değil. Farklı bir kart deneyebilirsiniz.';
+        break;
+      case '4':
+        errorMessage =
+          'Doğrulama işlemi tamamlanamadı. Lütfen daha sonra tekrar deneyin.';
+        break;
+      case '5':
+        errorMessage =
+          'Doğrulama yapılamıyor. Lütfen farklı bir ödeme yöntemi deneyin.';
+        break;
+      case '6':
+        errorMessage =
+          '3D Secure hatası oluştu. Lütfen tekrar deneyin veya farklı bir kart kullanın.';
+        break;
+      case '7':
+        errorMessage =
+          'Sistem hatası oluştu. Lütfen birkaç dakika sonra tekrar deneyin.';
+        break;
+      case '8':
+        errorMessage =
+          'Kart numarası tanınamadı. Lütfen kart bilgilerinizi kontrol edin.';
+        break;
+      default:
+        errorMessage =
+          'Ödeme işlemi sırasında bir hata oluştu. Lütfen tekrar deneyin.';
     }
 
-    // Webhook body parametreleri
+    webUrl.pathname = `/checkout/${cartId}`;
+    webUrl.searchParams.set('error', errorMessage);
+    webUrl.searchParams.set('step', 'payment');
+
+    return webUrl.toString();
+  }
+
+  async handlePaymentCallback({
+    orderId,
+    data,
+    res,
+  }: {
+    orderId: string;
+    data: ThreeDCallback;
+    res: Response;
+  }) {
+    const order = await this.orderService.getOrderByIdForPayment(orderId);
+
+    if (!order) {
+      return res.redirect(
+        `${this.webUrl}/checkout/failure?error=Sipariş bulunamadı.`,
+      );
+    }
+
+    if (!data) {
+      await this.prisma.orderTransactionSchema.create({
+        data: {
+          orderId: order.id,
+          amount: order.totalFinalPrice,
+          provider: 'IYZICO',
+          status: 'FAILED',
+          gatewayResponse: { message: 'No data in callback' },
+          paymentType: 'OTHER',
+        },
+      });
+      return res.redirect(
+        this.returnUrlWithErrorMessage(order.cartId, 'Geçersiz ödeme verisi.'),
+      );
+    }
+
+    if (data.mdStatus && data.mdStatus !== '1') {
+      await this.prisma.orderTransactionSchema.create({
+        data: {
+          orderId: order.id,
+          amount: order.totalFinalPrice,
+          provider: 'IYZICO',
+          status: 'FAILED',
+          gatewayResponse: {
+            message: '3D Secure doğrulaması başarısız',
+            ...data,
+          },
+          paymentType: 'OTHER',
+          providerTransactionId: data.paymentId,
+        },
+      });
+      return res.redirect(
+        await this.returnMdStatusErrorUrl(order.cartId, data.mdStatus),
+      );
+    }
+
+    const iyzicoProviderConfig = await this.getPaymentProvdider('IYZICO');
+
+    if (!iyzicoProviderConfig) {
+      await this.prisma.orderTransactionSchema.create({
+        data: {
+          orderId: order.id,
+          amount: order.totalFinalPrice,
+          provider: 'IYZICO',
+          status: 'FAILED',
+          gatewayResponse: { message: 'Iyzico provider not found' },
+          paymentType: 'OTHER',
+          providerTransactionId: data.paymentId,
+        },
+      });
+      return res.redirect(
+        this.returnUrlWithErrorMessage(
+          order.cartId,
+          'Ödeme sağlayıcısı bulunamadı. Lütfen tekrar deneyin.',
+        ),
+      );
+    }
+
+    const iyzicoKeys = iyzicoProviderConfig.options as Pick<
+      IyzicoPaymentMethodType,
+      'iyzicoApiKey' | 'iyzicoSecretKey'
+    >;
+
+    const isValidSignature = this.iyzicoService.iyzicoValidateSignature(
+      'callback-url',
+      {
+        signature: data.signature,
+        conversationId: data.conversationId,
+        conversationData: data.conversationData,
+        mdStatus: data.mdStatus,
+        paymentId: data.paymentId,
+        status: data.status,
+      },
+      iyzicoKeys.iyzicoSecretKey,
+    );
+
+    if (!isValidSignature) {
+      await this.prisma.orderTransactionSchema.create({
+        data: {
+          orderId: order.id,
+          amount: order.totalFinalPrice,
+          provider: 'IYZICO',
+          status: 'FAILED',
+          gatewayResponse: { message: 'Invalid signature', ...data },
+          paymentType: 'OTHER',
+          providerTransactionId: data.paymentId,
+        },
+      });
+      return res.redirect(
+        this.returnUrlWithErrorMessage(
+          order.cartId,
+          'Ödeme doğrulaması başarısız oldu. Lütfen tekrar deneyin.',
+        ),
+      );
+    }
+
+    const conversationId = `complete-3ds-${new Date().toISOString()}`;
+
+    const paymentResult = await this.iyzicoService.iyzicoFetch<
+      CompleteThreeDSRequest,
+      CompleteThreeDSResponse
+    >(
+      iyzicoKeys.iyzicoApiKey,
+      iyzicoKeys.iyzicoSecretKey,
+      '/payment/3dsecure/auth',
+      iyzicoProviderConfig.isTestMode,
+      {
+        conversationData: data.conversationData,
+        paymentId: data.paymentId,
+        conversationId,
+        locale: 'tr',
+      },
+    );
+
+    if (paymentResult.conversationId !== conversationId) {
+      await this.prisma.orderTransactionSchema.create({
+        data: {
+          orderId: order.id,
+          amount: order.totalFinalPrice,
+          provider: 'IYZICO',
+          status: 'FAILED',
+          gatewayResponse: JSON.parse(JSON.stringify(paymentResult)),
+          paymentType: 'OTHER',
+          providerTransactionId: data.paymentId,
+        },
+      });
+      return res.redirect(
+        this.returnUrlWithErrorMessage(
+          order.cartId,
+          'Ödeme tamamlanamadı. Lütfen tekrar deneyin.',
+        ),
+      );
+    }
+
+    if (paymentResult.status === 'failure') {
+      await this.prisma.orderTransactionSchema.create({
+        data: {
+          orderId: order.id,
+          amount: order.totalFinalPrice,
+          provider: 'IYZICO',
+          status: 'FAILED',
+          gatewayResponse: JSON.parse(JSON.stringify(paymentResult)),
+          providerTransactionId: data.paymentId,
+          paymentType: 'OTHER',
+        },
+      });
+      return res.redirect(
+        this.returnUrlWithErrorMessage(
+          order.cartId,
+          paymentResult.errorMessage ||
+            'Ödeme tamamlanamadı. Lütfen tekrar deneyin.',
+        ),
+      );
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.orderSchema.update({
+        where: {
+          id: order.id,
+        },
+        data: {
+          cart: {
+            update: {
+              status: 'CONVERTED',
+            },
+          },
+          orderStatus: 'CONFIRMED',
+          paymentStatus: 'PAID',
+          transactions: {
+            create: {
+              amount: order.totalFinalPrice,
+              paymentType:
+                paymentResult.cardType === 'CREDIT_CARD'
+                  ? 'CREDIT_CARD'
+                  : paymentResult.cardType === 'DEBIT_CARD'
+                    ? 'DIRECT_DEBIT'
+                    : 'OTHER',
+              provider: 'IYZICO',
+              providerTransactionId: paymentResult.paymentId,
+              status: 'PAID',
+              binNumber: paymentResult.binNumber,
+              lastFourDigits: paymentResult.lastFourDigits,
+              cardAssociation: paymentResult.cardAssociation,
+              cardFamilyName: paymentResult.cardFamily,
+              gatewayResponse: JSON.parse(JSON.stringify(paymentResult)),
+            },
+          },
+        },
+      });
+      await this.orderService.decreaseStockLevelsForOrder(
+        tx,
+        order.itemsSchema.map((item) => ({
+          productId: item.productId,
+          variantId: item.variantId,
+          quantity: item.quantity,
+        })),
+      );
+    });
+
+    return res.redirect(`${this.webUrl}/orders/${order.orderNumber}`);
+  }
+
+  //EN SON BURASI KALDI BURADA İŞLEYECEĞİZ
+  async handleWebhook({ req, res }: { req: Request; res: Response }) {
     const {
       paymentConversationId,
       merchantId,
@@ -509,37 +960,8 @@ export class PaymentsService {
       iyziEventType,
       iyziEventTime,
       iyziPaymentId,
-    } = req.body;
+    } = req.body as IyzicoWebhookPayload;
 
-    console.log('\n📊 Parsed Data:');
-    console.log('- Payment Conversation ID:', paymentConversationId);
-    console.log('- Merchant ID:', merchantId);
-    console.log('- Payment ID:', paymentId);
-    console.log('- Status:', status);
-    console.log('- Iyzi Reference Code:', iyziReferenceCode);
-    console.log('- Iyzi Event Type:', iyziEventType);
-    console.log('- Iyzi Event Time:', iyziEventTime);
-    console.log('- Iyzi Payment ID:', iyziPaymentId);
-
-    // Ödeme durumuna göre işlem
-    console.log('\n💳 Payment Status:');
-    switch (status) {
-      case 'SUCCESS':
-        console.log('✓ Payment successful');
-        break;
-      case 'FAILURE':
-        console.log('✗ Payment failed');
-        break;
-      case 'INIT_THREEDS':
-        console.log('⟳ 3DS initiated');
-        break;
-      default:
-        console.log('Status:', status);
-    }
-
-    console.log('================================\n');
-
-    // Response
-    res.status(200).json({ success: true });
+    console.log('Received Iyzico webhook:', req.body);
   }
 }

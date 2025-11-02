@@ -1,6 +1,12 @@
 import { BadRequestException, Global, Injectable } from '@nestjs/common';
-import { SignatureValidationData } from '@repo/types';
+import { Prisma } from '@repo/database';
+import {
+  BasePaymentSuccessData,
+  GetCartForPaymentReturnType,
+  SignatureValidationData,
+} from '@repo/types';
 import { createHmac } from 'crypto';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 type ValidateSignature =
   | '3ds-initialize'
@@ -18,6 +24,7 @@ type ValidateSignature =
 @Global()
 @Injectable()
 export class IyzicoService {
+  constructor(private readonly prisma: PrismaService) {}
   private readonly separator = ':';
 
   private async createIyzicoHeaders(
@@ -48,10 +55,10 @@ export class IyzicoService {
     };
   }
 
-  private async iyzicoGenerateSignature(
+  private iyzicoGenerateSignature(
     dataArray: string[],
     secretKey: string,
-  ): Promise<string> {
+  ): string {
     const dataToEncrypt = dataArray.join(this.separator);
     const encryptedData = createHmac('sha256', secretKey)
       .update(dataToEncrypt)
@@ -64,11 +71,11 @@ export class IyzicoService {
     return numPrice.toString();
   }
 
-  async iyzicoValidateSignature(
+  iyzicoValidateSignature(
     type: ValidateSignature,
     data: SignatureValidationData,
     secretKey: string,
-  ): Promise<boolean> {
+  ): boolean {
     let parametersArray: string[] = [];
 
     switch (type) {
@@ -189,7 +196,7 @@ export class IyzicoService {
         throw new Error(`Unsupported signature type: ${type}`);
     }
 
-    const generatedSignature = await this.iyzicoGenerateSignature(
+    const generatedSignature = this.iyzicoGenerateSignature(
       parametersArray,
       secretKey,
     );

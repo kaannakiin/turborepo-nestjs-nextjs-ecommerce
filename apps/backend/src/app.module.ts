@@ -16,6 +16,7 @@ import { UserModule } from './user/user.module';
 import { CartV3Module } from './cart-v3/cart-v3.module';
 import { ChatModule } from './ai/chat/chat.module';
 import { PaymentsModule } from './payments/payments.module';
+import { OrdersModule } from './orders/orders.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { PaymentsModule } from './payments/payments.module';
     CartV3Module,
     ChatModule,
     PaymentsModule,
+    OrdersModule,
     // ThrottlerModule.forRootAsync({
     //   imports: [ConfigModule],
     //   inject: [ConfigService],

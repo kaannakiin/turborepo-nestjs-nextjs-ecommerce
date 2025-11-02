@@ -709,22 +709,35 @@ model CartItem {
 }
 
 model Cart {
-  id                String         @id @default(cuid())
-  status            CartStatus     @default(ACTIVE)
-  currency          Currency       @default(TRY)
-  locale            Locale         @default(TR)
-  shippingAddressId String?
-  billingAddressId  String?
-  cargoRuleId       String?
-  userId            String?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  billingAddress    AddressSchema? @relation("CartBillingAddress", fields: [billingAddressId], references: [id])
-  cargoRule         CargoRule?     @relation(fields: [cargoRuleId], references: [id])
-  shippingAddress   AddressSchema? @relation("CartShippingAddress", fields: [shippingAddressId], references: [id])
-  user              User?          @relation(fields: [userId], references: [id])
-  items             CartItem[]
-  orderAttempts     OrderSchema[]
+  id                       String                    @id @default(cuid())
+  status                   CartStatus                @default(ACTIVE)
+  currency                 Currency                  @default(TRY)
+  locale                   Locale                    @default(TR)
+  shippingAddressId        String?
+  billingAddressId         String?
+  cargoRuleId              String?
+  userId                   String?
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  billingAddress           AddressSchema?            @relation("CartBillingAddress", fields: [billingAddressId], references: [id])
+  cargoRule                CargoRule?                @relation(fields: [cargoRuleId], references: [id])
+  shippingAddress          AddressSchema?            @relation("CartShippingAddress", fields: [shippingAddressId], references: [id])
+  user                     User?                     @relation(fields: [userId], references: [id])
+  items                    CartItem[]
+  orderAttempts            OrderSchema[]
+  cartPaymentCheckAttempts CartPaymentCheckAttempts?
+}
+
+model CartPaymentCheckAttempts {
+  id     String @id @default(cuid())
+  cartId String @unique
+  cart   Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  message   String? @db.Text
+  isSuccess Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model FooterLinks {
@@ -1321,15 +1334,29 @@ enum ShipmentStatus {
 }
 
 model OrderItemSchema {
-  id              String   @id @default(cuid())
-  buyedPrice      Decimal // Para birimi için Float yerine Decimal
-  quantity        Int      @default(1)
-  totalPrice      Decimal
-  totalFinalPrice Decimal
-  discountAmount  Decimal?
-  taxAmount       Decimal?
+  id         String  @id @default(cuid())
+  // buyedPrice: Kullanıcının 1 adet ürün için ödediği 
+  //             NİHAİ BİRİM FİYAT (Örn: 80 TL)
+  buyedPrice Decimal
 
-  productSnapshot Json
+  quantity Int @default(1)
+
+  // totalPrice: Ürünün Orijinal (İndirimsiz) TOPLAM Fiyatı
+  //             (Örn: 100 TL * 2 adet = 200 TL)
+  totalPrice Decimal
+
+  // totalFinalPrice: Kullanıcının bu kalem için ödediği
+  //                  NİHAİ TOPLAM FİYAT (buyedPrice * quantity)
+  //                  (Örn: 80 TL * 2 adet = 160 TL)
+  totalFinalPrice Decimal
+
+  // discountAmount: Bu kalem için yapılan TOPLAM indirim
+  //                 (totalPrice - totalFinalPrice)
+  //                 (Örn: 200 TL - 160 TL = 40 TL)
+  discountAmount Decimal?
+  taxAmount      Decimal?
+
+  productSnapshot Json?
   variantSnapshot Json?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
@@ -1346,10 +1373,13 @@ model OrderItemSchema {
   // Bu item hangi sevkiyata (kargoya) ait?
   shipmentId String?
   shipment   Shipment? @relation(fields: [shipmentId], references: [id])
+
+  @@unique([orderId, productId, variantId])
 }
 
 model OrderSchema {
   id              String   @id @default(cuid())
+  orderNumber     String   @unique
   totalPrice      Decimal
   totalFinalPrice Decimal
   discountAmount  Decimal?
@@ -1374,7 +1404,7 @@ model OrderSchema {
   updatedAt DateTime @updatedAt
 
   // İlişkiler
-  cartId                  String?
+  cartId                  String?        @unique
   cart                    Cart?          @relation(fields: [cartId], references: [id])
   userId                  String?
   user                    User?          @relation(fields: [userId], references: [id])
@@ -1397,13 +1427,17 @@ model OrderTransactionSchema {
   order   OrderSchema @relation(fields: [orderId], references: [id])
 
   // Iyzico, PayTR vb. provider'dan gelen unique işlem ID'si
-  providerTransactionId String        @unique
+  providerTransactionId String?
   amount                Decimal // Bu işlemde ne kadar çekildi/iade edildi
   status                PaymentStatus // FAILED, PAID, PENDING
   paymentType           PaymentType // CREDIT_CARD, WALLET, etc.
-
+  provider              PaymentProvider // IYZICO, PAYTR, etc.
+  binNumber             String? // Eğer kredi kartı ile ödeme yapıldıysa, kartın BIN numarası  
+  lastFourDigits        String? // Eğer kredi kartı ile ödeme yapıldıysa, kartın son 4 hanesi
+  cardAssociation       CardAssociation? // MASTER_CARD, VISA, etc.
+  cardFamilyName        CardFamilyName? // Bonus, World, Maximum, etc.
   // Hata ayıklama için provider'dan dönen tüm ham response
-  gatewayResponse Json?
+  gatewayResponse       Json?
 
   createdAt DateTime @default(now())
 }
@@ -1422,4 +1456,21 @@ model Shipment {
 
   // Bu sevkiyatın içinde hangi ürünler var?
   orderItems OrderItemSchema[]
+}
+
+enum CardAssociation {
+  MASTER_CARD
+  VISA
+  TROY
+  AMERICAN_EXPRESS
+}
+
+enum CardFamilyName {
+  Bonus
+  Axess
+  World
+  Maximum
+  Paraf
+  CardFinans
+  Advantage
 }

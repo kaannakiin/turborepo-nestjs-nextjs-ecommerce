@@ -256,6 +256,7 @@ const AuthUserAddressList = ({
                         addressLine2: editingAddress.addressLine2 || undefined,
                         postalCode: editingAddress.zipCode || undefined,
                         tcKimlikNo: editingAddress.tcKimlikNo || undefined,
+                        districtId: editingAddress.districtId || undefined,
                       }
                     : undefined
                 }

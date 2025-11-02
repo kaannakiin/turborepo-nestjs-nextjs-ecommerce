@@ -197,6 +197,7 @@ export class ProductsService {
                 },
               },
               select: {
+                order: true,
                 variantOption: {
                   select: {
                     id: true,
@@ -252,6 +253,7 @@ export class ProductsService {
               select: {
                 productVariantOption: {
                   select: {
+                    order: true,
                     variantOption: {
                       select: {
                         id: true,

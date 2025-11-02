@@ -52,7 +52,6 @@ class AxiosWrapper {
       );
 
       this.csrfToken = response.data.csrfToken;
-      console.log("CSRF token initialized/refreshed.");
     } catch (error) {
       console.error("Failed to initialize CSRF token:", error);
       // Başarısız olursa Promise'ı reject et, böylece bekleyenler hata alır
@@ -94,13 +93,13 @@ class AxiosWrapper {
           // Eğer token henüz yoksa (constructor'daki istek bitmediyse),
           // promise'ın çözülmesini bekle.
           if (!this.csrfToken) {
-            console.warn("CSRF token not ready, awaiting initialization...");
             try {
               await this.csrfInitializationPromise;
             } catch (e) {
-              console.error("CSRF token await failed in request interceptor");
-              // Token alınamazsa bile isteği göndermeyi dene,
-              // muhtemelen 403 alıp response interceptor'da yenilenecek
+              console.error(
+                "CSRF token fetch failed in request interceptor:",
+                e
+              );
             }
           }
 

@@ -119,15 +119,16 @@ const VariantProductClient = ({ productData }: VariantProductClientProps) => {
   );
 
   const productMedia: Array<{ url: string; type: $Enums.AssetType }> = [
-    ...(assets.map((asset) => ({
-      url: asset.asset.url,
-      type: asset.asset.type,
-    })) || []),
     ...(selectedCombination?.assets.map((asset) => ({
       url: asset.asset.url,
       type: asset.asset.type,
     })) || []),
+    ...(assets.map((asset) => ({
+      url: asset.asset.url,
+      type: asset.asset.type,
+    })) || []),
   ];
+  console.log(selectedCombination.assets);
 
   return (
     <>

@@ -4,7 +4,7 @@ import * as z from "zod";
 export type GetOrdersReturnType = {
   success: boolean;
   message: string;
-  orders?: Prisma.OrderGetPayload<{
+  orders?: Prisma.OrderSchemaGetPayload<{
     include: {
       user: {
         select: {
@@ -37,7 +37,7 @@ export const GetOrdersSchema = z.object({
 
 export type GetOrderZodType = z.infer<typeof GetOrdersSchema>;
 
-type BaseOrderPayload = Prisma.OrderGetPayload<{
+type BaseOrderPayload = Prisma.OrderSchemaGetPayload<{
   include: {
     user: {
       select: {

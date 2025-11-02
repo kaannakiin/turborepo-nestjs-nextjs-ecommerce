@@ -1,7 +1,6 @@
 import { MantineColor, MantineColorsTuple } from "@mantine/core";
 import { $Enums } from "@repo/database";
 import {
-  CardAssociation,
   FontFamily,
   LocationType,
   MantineFontWeight,
@@ -735,7 +734,7 @@ export function getCartStatusColor(status: $Enums.CartStatus): string {
   }
 }
 
-export function getCartAssociationUrl(type: CardAssociation) {
+export function getCartAssociationUrl(type: $Enums.CardAssociation) {
   switch (type) {
     case "VISA":
       return "/visa.svg";
@@ -782,79 +781,6 @@ export function getOrderStatusColor(status: $Enums.OrderStatus): MantineColor {
       return "grape.5";
     case "SHIPPED":
       return "teal.5";
-  }
-}
-
-export function getOrderStatusPageLabel(status?: $Enums.OrderStatus): string {
-  if (!status) return "Tüm Siparişler";
-  switch (status) {
-    case "CANCELLED":
-      return "İptal Edilen Siparişler";
-    case "CONFIRMED":
-      return "Onaylanan Siparişler";
-    case "DELIVERED":
-      return "Teslim Edilen Siparişler";
-    case "PENDING":
-      return "Bekleyen Siparişler";
-    case "PROCESSING":
-      return "İşlenen Siparişler";
-    case "REFUNDED":
-      return "İade Edilen Siparişler";
-    case "SHIPPED":
-      return "Kargolanan Siparişler";
-    default:
-      return "Tüm Siparişler";
-  }
-}
-
-export function getPaymentStatusPageLabel(
-  status?: $Enums.PaymentStatus
-): string {
-  if (!status) return "Tüm Ödeme Durumları";
-  switch (status) {
-    case "FAILED":
-      return "Başarısız Ödemeler";
-    case "PAID":
-      return "Ödemesi Yapılanlar";
-    case "PARTIAL_REFUND":
-      return "Kısmi İade Edilenler";
-    case "PENDING":
-      return "Bekleyen Ödemeler";
-    case "REFUNDED":
-      return "İade Edilen Ödemeler";
-    default:
-      return "Tüm Ödeme Durumları";
-  }
-}
-
-export function getPaymentStatusInfos(status: $Enums.PaymentStatus): string {
-  switch (status) {
-    case "FAILED":
-      return "Başarısız";
-    case "PAID":
-      return "Ödendi";
-    case "PARTIAL_REFUND":
-      return "Kısmi İade";
-    case "PENDING":
-      return "Beklemede";
-    case "REFUNDED":
-      return "İade Edildi";
-  }
-}
-export function getPaymentStatusColor(
-  status: $Enums.PaymentStatus
-): MantineColor {
-  switch (status) {
-    case "FAILED":
-      return "red.5";
-    case "PAID":
-      return "green.5";
-    case "PARTIAL_REFUND":
-      return "yellow.5";
-    case "PENDING":
-      return "blue.5";
-    case "REFUNDED":
-      return "gray.5";
   }
 }
 
@@ -910,4 +836,45 @@ export function getCampaignOfferPageLabel(
     case "PRODUCT":
       return "Ürün Sayfası";
   }
+}
+
+const PaymentStatusInfos: Record<
+  $Enums.PaymentStatus,
+  { label: string; color: MantineColor }
+> = {
+  FAILED: { label: "Başarısız", color: "red.5" },
+  PENDING: { label: "Beklemede", color: "yellow.5" },
+  PARTIALLY_PAID: { label: "Kısmen Ödendi", color: "orange.5" },
+  PAID: { label: "Ödendi", color: "green.5" },
+};
+
+export function getPaymentStatusLabel(status: $Enums.PaymentStatus): string {
+  return PaymentStatusInfos[status].label;
+}
+
+const PaymentTypeConfigs: Record<
+  $Enums.PaymentType,
+  { label: string; color: MantineColor }
+> = {
+  CREDIT_CARD: { label: "Kredi Kartı", color: "blue.5" },
+  DIRECT_DEBIT: { label: "Banka Kartı", color: "indigo.5" },
+  APP_PAYMENT: { label: "Uygulama İçi Ödeme", color: "cyan.5" },
+  CASH_ON_DELIVERY: { label: "Kapıda Ödeme", color: "teal.5" },
+  CREDIT_CARD_ON_DELIVERY: { label: "Kapıda Kredi Kartı", color: "green.5" },
+  CASH: { label: "Nakit", color: "lime.5" },
+  BANK_REDIRECT: { label: "Banka Yönlendirme", color: "violet.5" },
+  WALLET: { label: "Dijital Cüzdan", color: "grape.5" },
+  BUY_ONLINE_PAY_AT_STORE: {
+    label: "Online Al Mağazada Öde",
+    color: "orange.5",
+  },
+  PAY_LATER: { label: "Sonra Öde", color: "yellow.5" },
+  SLICE_IT: { label: "Taksitle Öde", color: "pink.5" },
+  GIFT_CARD: { label: "Hediye Kartı", color: "red.5" },
+  MONEY_ORDER: { label: "Havale/EFT", color: "gray.5" },
+  OTHER: { label: "Diğer", color: "dark.3" },
+};
+
+export function getPaymentTypeLabel(type: $Enums.PaymentType): string {
+  return PaymentTypeConfigs[type]?.label || "Bilinmeyen";
 }

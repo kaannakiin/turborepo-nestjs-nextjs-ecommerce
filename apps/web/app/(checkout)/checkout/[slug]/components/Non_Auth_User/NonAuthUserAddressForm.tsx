@@ -24,6 +24,7 @@ import {
   SubmitHandler,
   useForm,
   useQuery,
+  useWatch,
   zodResolver,
 } from "@repo/shared";
 import {
@@ -75,8 +76,21 @@ const NonAuthUserAddressForm = ({
       surname: "",
     },
   });
-  const countryId = watch("countryId");
-  const addressType = watch("addressType");
+  const countryId = useWatch({
+    control,
+    name: "countryId",
+  });
+
+  const addressType = useWatch({
+    control,
+    name: "addressType",
+  });
+
+  const cityId = useWatch({
+    control,
+    name: "cityId",
+  });
+
   const { data: countries, isLoading: countriesIsLoading } = useQuery({
     queryKey: ["get-all-countries"],
     queryFn: async () => {
@@ -118,9 +132,12 @@ const NonAuthUserAddressForm = ({
     },
     enabled: !!countryId && addressType === "CITY",
   });
-  const cityId = watch("cityId");
 
-  const { data: district, isLoading: districtsLoading } = useQuery({
+  const {
+    data: district,
+    isLoading: districtsLoading,
+    refetch: refetchDistricts,
+  } = useQuery({
     queryKey: ["get-districts-turkey-city", countryId, cityId],
     queryFn: async () => {
       const fetchReq = await fetchWrapper.get<{
@@ -165,6 +182,13 @@ const NonAuthUserAddressForm = ({
   };
 
   const handleCityChange = (selectedCityId: string | null) => {
+    refetchDistricts();
+    console.log(
+      !!countryId &&
+        !!cityId &&
+        countryId === TURKEY_DB_ID &&
+        addressType === "CITY"
+    );
     setValue("cityId", selectedCityId);
     setValue("districtId", null);
     setValue("stateId", null);
@@ -414,7 +438,14 @@ const NonAuthUserAddressForm = ({
                   render={({ field, fieldState }) => (
                     <Select
                       {...field}
-                      onChange={handleCityChange}
+                      onChange={(selectedCityId: string | null) => {
+                        // 1. ÖNCE react-hook-form'un kendi onChange'ini çağır
+                        field.onChange(selectedCityId);
+
+                        // 2. SONRA kendi ek mantığını çalıştır
+                        setValue("districtId", null);
+                        setValue("stateId", null);
+                      }}
                       error={fieldState.error?.message}
                       placeholder="Şehir Seçin"
                       size="lg"

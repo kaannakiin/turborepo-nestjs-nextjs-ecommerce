@@ -1,7 +1,6 @@
-import { OrderStatus, PaymentStatus } from "@repo/database";
+import { $Enums } from "@repo/database";
 import { format, formatDistanceToNow } from "date-fns";
-import { tr } from "date-fns/locale";
-
+import { de, enUS, tr } from "date-fns/locale";
 export function slugify(text: string): string {
   if (!text || typeof text !== "string") return "";
 
@@ -37,56 +36,88 @@ export function slugify(text: string): string {
 }
 
 export class DateFormatter {
-  private static locale = tr;
+  /**
+   * Locale'e göre date-fns locale objesini döndür
+   */
+  private static getLocale(locale: $Enums.Locale) {
+    switch (locale) {
+      case "TR":
+        return tr;
+      case "EN":
+        return enUS;
+      case "DE":
+        return de;
+      default:
+        return tr;
+    }
+  }
 
   /**
    * Sadece tarih - 15 Oca 2025
    */
-  static withDay(date: string | Date): string {
-    return format(new Date(date), "d MMM yyyy", { locale: this.locale });
+  static withDay(date: string | Date, locale: $Enums.Locale = "TR"): string {
+    return format(new Date(date), "d MMM yyyy", {
+      locale: this.getLocale(locale),
+    });
   }
 
   /**
    * Tarih ve saat - 15 Oca 2025, 14:30
    */
-  static withTime(date: string | Date): string {
-    return format(new Date(date), "d MMM yyyy, HH:mm", { locale: this.locale });
+  static withTime(date: string | Date, locale: $Enums.Locale = "TR"): string {
+    return format(new Date(date), "d MMM yyyy, HH:mm", {
+      locale: this.getLocale(locale),
+    });
   }
 
   /**
    * Uzun tarih formatı - 15 Ocak 2025 Çarşamba
    */
-  static withFullDay(date: string | Date): string {
-    return format(new Date(date), "d MMMM yyyy EEEE", { locale: this.locale });
+  static withFullDay(
+    date: string | Date,
+    locale: $Enums.Locale = "TR"
+  ): string {
+    return format(new Date(date), "d MMMM yyyy EEEE", {
+      locale: this.getLocale(locale),
+    });
   }
 
   /**
    * Sadece saat - 14:30
    */
-  static onlyTime(date: string | Date): string {
-    return format(new Date(date), "HH:mm", { locale: this.locale });
+  static onlyTime(date: string | Date, locale: $Enums.Locale = "TR"): string {
+    return format(new Date(date), "HH:mm", {
+      locale: this.getLocale(locale),
+    });
   }
 
   /**
    * Kısa tarih - 15.01.2025
    */
-  static shortDate(date: string | Date): string {
-    return format(new Date(date), "dd.MM.yyyy", { locale: this.locale });
+  static shortDate(date: string | Date, locale: $Enums.Locale = "TR"): string {
+    return format(new Date(date), "dd.MM.yyyy", {
+      locale: this.getLocale(locale),
+    });
   }
 
   /**
    * Kısa tarih ve saat - 15.01.2025 14:30
    */
-  static shortDateTime(date: string | Date): string {
-    return format(new Date(date), "dd.MM.yyyy HH:mm", { locale: this.locale });
+  static shortDateTime(
+    date: string | Date,
+    locale: $Enums.Locale = "TR"
+  ): string {
+    return format(new Date(date), "dd.MM.yyyy HH:mm", {
+      locale: this.getLocale(locale),
+    });
   }
 
   /**
    * Göreceli zaman - 2 saat önce, 3 gün önce
    */
-  static relative(date: string | Date): string {
+  static relative(date: string | Date, locale: $Enums.Locale = "TR"): string {
     return formatDistanceToNow(new Date(date), {
-      locale: this.locale,
+      locale: this.getLocale(locale),
       addSuffix: true,
     });
   }
@@ -94,43 +125,52 @@ export class DateFormatter {
   /**
    * Ay ve yıl - Ocak 2025
    */
-  static monthYear(date: string | Date): string {
-    return format(new Date(date), "MMMM yyyy", { locale: this.locale });
+  static monthYear(date: string | Date, locale: $Enums.Locale = "TR"): string {
+    return format(new Date(date), "MMMM yyyy", {
+      locale: this.getLocale(locale),
+    });
   }
 
   /**
    * Sadece gün adı - Çarşamba
    */
-  static dayName(date: string | Date): string {
-    return format(new Date(date), "EEEE", { locale: this.locale });
+  static dayName(date: string | Date, locale: $Enums.Locale = "TR"): string {
+    return format(new Date(date), "EEEE", {
+      locale: this.getLocale(locale),
+    });
   }
 
   /**
    * Tablo için optimize edilmiş format - 15 Oca
    */
-  static forTable(date: string | Date): string {
-    return format(new Date(date), "d MMM", { locale: this.locale });
+  static forTable(date: string | Date, locale: $Enums.Locale = "TR"): string {
+    return format(new Date(date), "d MMM", {
+      locale: this.getLocale(locale),
+    });
   }
 
   /**
    * Dashboard için optimize edilmiş - 15.01 14:30
    */
-  static forDashboard(date: string | Date): string {
-    return format(new Date(date), "dd.MM HH:mm", { locale: this.locale });
+  static forDashboard(
+    date: string | Date,
+    locale: $Enums.Locale = "TR"
+  ): string {
+    return format(new Date(date), "dd.MM HH:mm", {
+      locale: this.getLocale(locale),
+    });
   }
 
   /**
    * Detaylı timestamp - 15 Ocak 2025, 14:30:45
    */
-  static timestamp(date: string | Date): string {
+  static timestamp(date: string | Date, locale: $Enums.Locale = "TR"): string {
     return format(new Date(date), "d MMMM yyyy, HH:mm:ss", {
-      locale: this.locale,
+      locale: this.getLocale(locale),
     });
   }
 }
-/**
- * EAN-13 barcode için check digit hesaplar
- */
+
 function calculateEAN13CheckDigit(digits: string): string {
   let sum = 0;
   for (let i = 0; i < 12; i++) {
@@ -333,6 +373,7 @@ export function getSortIndexFromQuery(index: number): ProductPageSortOption {
       return ProductPageSortOption.NEWEST;
   }
 }
+
 export function getIndexFromSortOption(
   sortOption: ProductPageSortOption
 ): number {
@@ -355,74 +396,103 @@ export function getIndexFromSortOption(
       return 0;
   }
 }
-export function getOrderStatusInt(status: OrderStatus): number {
-  switch (status) {
-    case "DELIVERED":
-      return 1;
-    case "SHIPPED":
-      return 2;
-    case "PROCESSING":
-      return 3;
-    case "PENDING":
-      return 4;
-    case "CANCELLED":
-      return 5;
-    case "CONFIRMED":
-      return 6;
-    case "REFUNDED":
-      return 7;
-  }
+
+const ORDER_STATUS_CONFIG = {
+  PENDING: {
+    value: 1,
+    label: "Beklemede",
+    badgeColor: "yellow",
+  },
+  CONFIRMED: {
+    value: 2,
+    label: "Onaylandı",
+    badgeColor: "blue",
+  },
+  PROCESSING: {
+    value: 3,
+    label: "İşleniyor",
+    badgeColor: "cyan",
+  },
+  SHIPPED: {
+    value: 4,
+    label: "Kargolandı",
+    badgeColor: "violet",
+  },
+  DELIVERED: {
+    value: 5,
+    label: "Teslim Edildi",
+    badgeColor: "teal",
+  },
+  COMPLETED: {
+    value: 6,
+    label: "Tamamlandı",
+    badgeColor: "green",
+  },
+  CANCELLED: {
+    value: 7,
+    label: "İptal Edildi",
+    badgeColor: "red",
+  },
+  REFUNDED: {
+    value: 8,
+    label: "İade Edildi",
+    badgeColor: "orange",
+  },
+  PARTIALLY_SHIPPED: {
+    value: 9,
+    label: "Kısmen Kargolandı",
+    badgeColor: "indigo",
+  },
+  PARTIALLY_DELIVERED: {
+    value: 10,
+    label: "Kısmen Teslim Edildi",
+    badgeColor: "lime",
+  },
+  PARTIALLY_REFUNDED: {
+    value: 11,
+    label: "Kısmen İade Edildi",
+    badgeColor: "pink",
+  },
+} as Record<
+  $Enums.OrderStatus,
+  { value: number; label: string; badgeColor: string }
+>;
+
+export function getOrderStatusBadgeLabel(status: $Enums.OrderStatus): string {
+  return ORDER_STATUS_CONFIG[status].label;
 }
 
-export function getOrderStatusFromInt(status: number): OrderStatus {
-  switch (status) {
-    case 1:
-      return "DELIVERED";
-    case 2:
-      return "SHIPPED";
-    case 3:
-      return "PROCESSING";
-    case 4:
-      return "PENDING";
-    case 5:
-      return "CANCELLED";
-    case 6:
-      return "CONFIRMED";
-    case 7:
-      return "REFUNDED";
-    default:
-      return "CONFIRMED";
-  }
+export function getOrderStatusBadgeColor(status: $Enums.OrderStatus): string {
+  return ORDER_STATUS_CONFIG[status].badgeColor;
 }
 
-export function getPaymentStatusInt(status: PaymentStatus): number {
-  switch (status) {
-    case "FAILED":
-      return 1;
-    case "PAID":
-      return 2;
-    case "PARTIAL_REFUND":
-      return 3;
-    case "PENDING":
-      return 4;
-    case "REFUNDED":
-      return 5;
-  }
+// Veya her ikisini birden döndüren bir fonksiyon
+export function getOrderStatusBadge(status: $Enums.OrderStatus) {
+  return {
+    label: ORDER_STATUS_CONFIG[status].label,
+    color: ORDER_STATUS_CONFIG[status].badgeColor,
+  };
 }
 
-export function getPaymentStatusFromInt(status: number): PaymentStatus {
-  switch (status) {
-    case 1:
-      return "FAILED";
-    case 2:
-      return "PAID";
-    case 3:
-      return "PARTIAL_REFUND";
-    case 4:
-      return "PENDING";
-    case 5:
-      return "REFUNDED";
-    default:
-      return "PENDING";
-  }
+export function getOrderStatusLabel(status: $Enums.OrderStatus): string {
+  return ORDER_STATUS_CONFIG[status].label;
+}
+
+export function convertIntToOrderStatus(status: number): $Enums.OrderStatus {
+  const entry = Object.entries(ORDER_STATUS_CONFIG).find(
+    ([_, config]) => config.value === status
+  );
+  return (entry?.[0] as $Enums.OrderStatus) ?? "PENDING";
+}
+
+export function convertOrderStatusToInt(status: $Enums.OrderStatus): number {
+  return ORDER_STATUS_CONFIG[status]?.value ?? 1;
+}
+
+export function getOrderStatusOptions() {
+  return Object.entries(ORDER_STATUS_CONFIG).map(([key, config]) => ({
+    value: key as $Enums.OrderStatus,
+    label: config.label,
+    numericValue: config.value,
+  }));
 }

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, User } from '@repo/database';
+import { $Enums, Prisma, User } from '@repo/database';
 import {
   AddCartReqBodyV3Type,
   addressInclude,
@@ -7,6 +7,7 @@ import {
   CartForPayment,
   CartItemForPayment,
   CartItemV3,
+  CartItemWithPrices,
   CartItemWithRelations,
   CartV3,
   DecraseOrIncreaseCartItemReqBodyV3Type,
@@ -445,7 +446,6 @@ export class CartV3Service {
     const cart = await this.prisma.cart.findUnique({
       where: {
         id: cartId,
-        status: 'ACTIVE',
       },
       include: {
         items: {
@@ -1195,11 +1195,9 @@ export class CartV3Service {
     success: boolean;
     message: string;
   }> {
-    // 1. Sepeti kontrol et
     const cart = await this.prisma.cart.findUnique({
       where: {
         id: cartId,
-        ...(userId && { userId }),
       },
     });
 
@@ -1378,6 +1376,61 @@ export class CartV3Service {
     };
   }
 
+  calculateCartItemDiscountAndPrice(
+    cartItems: CartItemWithPrices[],
+    currency: $Enums.Currency = 'TRY',
+  ): { subtotal: number; totalDiscount: number } {
+    let subtotal = 0;
+    let totalDiscount = 0;
+
+    for (const item of cartItems) {
+      // Önce variant'a, yoksa product'a bak (daha temiz bir yol)
+      const prices = item.variant?.prices || item.product?.prices;
+
+      // Fiyat listesi var mı kontrol et
+      if (!prices || prices.length === 0) {
+        continue; // Bu ürünü atla
+      }
+
+      // Doğru para birimini bul
+      const priceObj = prices.find((p) => p.currency === currency);
+
+      if (priceObj) {
+        // 1. Ara Toplam (subtotal): Her zaman ürünün indirimsiz ana fiyatını ekle
+        subtotal += priceObj.price * item.quantity;
+
+        // 2. İndirim Tutarı (totalDiscount): Geçerli bir indirim varsa,
+        //    indirim *miktarını* hesapla ve ekle.
+        if (priceObj.discountedPrice && priceObj.discountedPrice > 0) {
+          // İndirim miktarını (fiyat - indirimli fiyat) olarak hesapla
+          const discountPerItem = priceObj.price - priceObj.discountedPrice;
+
+          // Sadece pozitif bir indirim varsa ekle
+          if (discountPerItem > 0) {
+            totalDiscount += discountPerItem * item.quantity;
+          }
+        }
+      }
+    }
+
+    // İki değeri bir obje olarak döndür
+    return { subtotal, totalDiscount };
+  }
+
+  async createCartPaymentAttempt(
+    cartId: string,
+    result: boolean,
+    message: string,
+  ) {
+    return this.prisma.cartPaymentCheckAttempts.create({
+      data: {
+        cartId,
+        isSuccess: result,
+        message,
+      },
+    });
+  }
+
   async getCartForPayment(
     cartId: string,
   ): Promise<GetCartForPaymentReturnType> {
@@ -1388,17 +1441,44 @@ export class CartV3Service {
       })) as CartForPayment;
 
       if (!cart) {
+        await this.createCartPaymentAttempt(cartId, false, 'Sepet bulunamadı');
         return { success: false, message: 'Sepet bulunamadı' };
       }
 
       if (!cart.items || cart.items.length === 0) {
+        await this.createCartPaymentAttempt(
+          cartId,
+          false,
+          'Sepette ödeme için uygun ürün bulunamadı',
+        );
+
         return {
           success: false,
           message: 'Sepette ödeme için uygun ürün bulunamadı',
         };
       }
 
+      if (cart.orderAttempts && cart.orderAttempts.length > 0) {
+        await this.createCartPaymentAttempt(
+          cartId,
+          false,
+          'Bu sepet için zaten ödeme yapılmış veya kısmi ödeme yapılmış bir sipariş bulunmaktadır.',
+        );
+
+        return {
+          success: false,
+          message:
+            'Bu sepet için zaten ödeme yapılmış veya kısmi ödeme yapılmış bir sipariş bulunmaktadır.',
+        };
+      }
+
       if (!cart.shippingAddress || !cart.shippingAddressId) {
+        await this.createCartPaymentAttempt(
+          cartId,
+          false,
+          'Kullanıcı gönderim adresi eklememiş',
+        );
+
         return {
           success: false,
           message: 'Lütfen gönderim adresi ekleyin',
@@ -1406,20 +1486,46 @@ export class CartV3Service {
       }
 
       if (!cart.cargoRuleId || !cart.cargoRule) {
+        await this.createCartPaymentAttempt(
+          cartId,
+          false,
+          'Kullanıcı gönderim yöntemi seçmemiş',
+        );
+
         return {
           success: false,
           message: 'Lütfen gönderim yöntemi seçin',
         };
       }
+      for (const item of cart.items as CartItemForPayment[]) {
+        const stock = item.variant ? item.variant.stock : item.product.stock;
 
-      const cartTotal = this.shippingService.calculateCartTotal(
-        cart.items.map((item: CartItemForPayment) => ({
-          product: item.product,
-          variant: item.variant || undefined,
-          quantity: item.quantity,
-        })),
-        'TRY',
-      );
+        if (stock < item.quantity) {
+          const productName =
+            item.product.translations.find((t) => t.locale === cart.locale)
+              ?.name || 'İlgili Ürün';
+
+          const errorMessage = `Stokta yeterli ürün yok: "${productName}". (Sepetinizde ${item.quantity} adet var, stokta ${stock} adet kaldı.)`;
+
+          await this.createCartPaymentAttempt(cartId, false, errorMessage);
+
+          return {
+            success: false,
+            message:
+              'Bu işlemi şu anda gerçekleştiremiyoruz. Lütfen daha sonra tekrar deneyin.',
+          };
+        }
+      }
+
+      const { subtotal, totalDiscount } =
+        this.calculateCartItemDiscountAndPrice(
+          cart.items.map((item: CartItemForPayment) => ({
+            product: item.product,
+            variant: item.variant || undefined,
+            quantity: item.quantity,
+          })),
+          'TRY',
+        );
 
       const matchingZone = await this.shippingService.findMatchingCargoZone(
         cart.shippingAddress.countryId,
@@ -1430,10 +1536,16 @@ export class CartV3Service {
           ? cart.shippingAddress.cityId
           : null,
         cart.currency,
-        cartTotal,
+        totalDiscount > 0 ? subtotal - totalDiscount : subtotal,
       );
 
       if (!matchingZone) {
+        await this.createCartPaymentAttempt(
+          cartId,
+          false,
+          'Bu adres için kargo hizmeti bulunmuyor.',
+        );
+
         return {
           success: false,
           message: 'Bu adres için kargo hizmeti bulunmuyor.',
@@ -1441,6 +1553,12 @@ export class CartV3Service {
       }
 
       if (matchingZone.rules.length === 0) {
+        await this.createCartPaymentAttempt(
+          cartId,
+          false,
+          'Bu sepet tutarı için uygun kargo seçeneği bulunmuyor.',
+        );
+
         return {
           success: false,
           message: 'Bu sepet tutarı için uygun kargo seçeneği bulunmuyor.',
@@ -1452,6 +1570,12 @@ export class CartV3Service {
       );
 
       if (!isSelectedRuleStillValid) {
+        await this.createCartPaymentAttempt(
+          cartId,
+          false,
+          'Seçilen kargo yöntemi, adres veya sepet tutarındaki değişiklik nedeniyle artık geçerli değil. Lütfen kargo seçeneklerini güncelleyin.',
+        );
+
         return {
           success: false,
           message:
@@ -1464,12 +1588,22 @@ export class CartV3Service {
         message: 'Sepet başarıyla alındı',
         data: {
           cart,
-          totalAmount: cartTotal,
+          subTotal: subtotal,
+          totalDiscount,
         },
       };
     } catch (error) {
       console.error('Error fetching cart for payment:', error);
-      return { success: false, message: 'Sepet alınırken bir hata oluştu' };
+
+      const errorMessage =
+        error instanceof Error ? error.message : 'Bilinmeyen bir hata oluştu';
+
+      await this.createCartPaymentAttempt(cartId, false, errorMessage);
+
+      return {
+        success: false,
+        message: 'Sepet alınırken bir hata oluştu',
+      };
     }
   }
 }

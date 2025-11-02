@@ -1,5 +1,4 @@
 "use client";
-import { LOCALE_CART_COOKIE } from "@lib/constants";
 import fetchWrapper from "@lib/fetchWrapper";
 import {
   Button,
@@ -12,10 +11,10 @@ import {
 import { Controller, SubmitHandler, useForm, zodResolver } from "@repo/shared";
 import { LoginSchema, LoginSchemaType } from "@repo/types";
 import { IconMail, IconPhone } from "@tabler/icons-react";
+import { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
 import CustomPhoneInput from "../../(user)/components/CustomPhoneInput";
 import GlobalLoadingOverlay from "../../components/GlobalLoadingOverlay";
-import { Route } from "next";
 
 const LoginForm = () => {
   const {
@@ -55,7 +54,6 @@ const LoginForm = () => {
 
       await new Promise((resolve) => setTimeout(resolve, 100));
       //TODO: Bunu auth/login'de yapmak daha mantıklı olabilir
-      localStorage.removeItem(LOCALE_CART_COOKIE);
       // const mergeResult = await mergeCarts();
 
       // if (mergeResult.success) {
