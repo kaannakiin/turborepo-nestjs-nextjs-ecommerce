@@ -35,6 +35,7 @@ import {
   PaymentZodType,
 } from "@repo/types";
 import { IconCheck } from "@tabler/icons-react";
+import { Route } from "next";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -144,7 +145,9 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
       params.delete("error");
       replace(`?${params.toString()}`, { scroll: false });
     }
-  }, []); // ✅ Sadece mount'ta çalışsın
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const checkBinNumber = async (bin: string) => {
     try {
       const res = await fetchWrapper.post<BinCheckResponse>(
@@ -241,7 +244,7 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
         } else {
           // 3D Secure yoksa ve orderNumber varsa sipariş sayfasına yönlendir
           if (!paymentReq.data.data?.isThreeDS && paymentReq.data.orderNumber) {
-            push(`/order/${paymentReq.data.orderNumber}`);
+            push(`/order/${paymentReq.data.orderNumber}` as Route);
           }
         }
       } else {
