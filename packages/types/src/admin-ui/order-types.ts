@@ -1,5 +1,4 @@
 import { OrderItemSchema, Prisma } from "@repo/database";
-import { OmitKeyof } from "@repo/shared";
 import {
   CartItemForPayment,
   GetCartForPaymentReturnType,
@@ -193,7 +192,7 @@ export type OrderItemWithSnapshot = Omit<
   productSnapshot: CartItemForPayment["product"];
   variantSnapshot?: CartItemForPayment["variant"];
 };
-export type OrderWithSnapshot = OmitKeyof<
+export type OrderWithSnapshot = Omit<
   Prisma.OrderSchemaGetPayload<{
     include: {
       user: {
