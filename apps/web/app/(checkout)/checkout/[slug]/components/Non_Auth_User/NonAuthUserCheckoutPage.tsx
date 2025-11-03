@@ -57,6 +57,7 @@ const NonAuthUserCheckoutPage = ({
                   cityId: data.shippingAddress.cityId || null,
                   stateId: data.shippingAddress.stateId || null,
                   tcKimlikNo: data.shippingAddress.tcKimlikNo || null,
+                  districtId: data.shippingAddress.districtId || null,
                 }
               : null
           }

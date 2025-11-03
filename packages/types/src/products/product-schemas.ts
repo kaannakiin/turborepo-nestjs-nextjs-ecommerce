@@ -781,6 +781,7 @@ export type GetProductPageReturnType = {
               };
             };
             select: {
+              order: true;
               variantOption: {
                 select: {
                   id: true;
@@ -836,6 +837,7 @@ export type GetProductPageReturnType = {
             select: {
               productVariantOption: {
                 select: {
+                  order: true;
                   variantOption: {
                     select: {
                       id: true;

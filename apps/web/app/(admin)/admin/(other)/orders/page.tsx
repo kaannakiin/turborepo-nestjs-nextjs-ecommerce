@@ -1,139 +1,200 @@
 "use client";
+import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 import CustomPagination from "@/components/CustomPagination";
 import CustomSearchInput from "@/components/CustomSearchInput";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper from "@lib/fetchWrapper";
-import {
-  getOrderStatusColor,
-  getOrderStatusInfos,
-  getOrderStatusPageLabel,
-  getPaymentStatusColor,
-  getPaymentStatusInfos,
-} from "@lib/helpers";
+import fetchWrapper, { ApiError } from "@lib/fetchWrapper";
 import {
   ActionIcon,
+  Alert,
   Badge,
   Divider,
   Group,
+  HoverCard,
+  ScrollArea,
   Select,
   Stack,
   Table,
-  Tabs,
   Text,
   Title,
+  Tooltip,
 } from "@mantine/core";
-import { $Enums } from "@repo/database";
 import {
   DateFormatter,
-  getOrderStatusFromInt,
-  getOrderStatusInt,
-  getPaymentStatusInt,
+  getOrderStatusBadge,
+  getOrderStatusOptions,
   useQuery,
 } from "@repo/shared";
-import { GetOrdersReturnType } from "@repo/types";
-
-import { IconFileDescriptionFilled } from "@tabler/icons-react";
+import { AdminGetOrdersReturnType } from "@repo/types";
+import {
+  IconAddressBook,
+  IconAlertCircle,
+  IconEye,
+  IconInbox,
+  IconSearch,
+} from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import AdminOrderAddressCard from "./components/AdminOrderAddressCard";
+import AdminOrderItemCard from "./components/AdminOrderItemCard";
 
 const AdminOrdersPage = () => {
+  const searchParams = useSearchParams();
   const { replace, push } = useRouter();
-  const params = useSearchParams();
-  const page = parseInt(params.get("page") || "1", 10) || 1;
-  const osParam = params.get("os")
-    ? parseInt(params.get("os") as string, 10)
-    : undefined;
-  const psParam = params.get("ps")
-    ? parseInt(params.get("ps") as string, 10)
-    : undefined;
-  const search = params.get("search") || undefined;
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin-orders", { osParam, psParam, search, page }],
-    queryFn: async ({ pageParam }) => {
-      const res = await fetchWrapper.post<GetOrdersReturnType>(
-        "/admin/orders/get-orders",
-        {
-          page: pageParam || 1,
-          ...(osParam !== undefined && { orderStatus: osParam }),
-          ...(psParam !== undefined && { paymentStatus: psParam }),
-          ...(search && { search }),
-        }
-      );
-      if (!res.success || !res.data.success || !res.data.orders) {
-        return null;
+  const hasFilters = searchParams.has("status") || searchParams.has("search");
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin-orders", searchParams.toString()],
+    queryFn: async () => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (!params.has("page")) {
+        params.set("page", "1");
       }
-      return res.data;
+      if (!params.has("limit")) {
+        params.set("limit", "10");
+      }
+
+      const res = await fetchWrapper.get<AdminGetOrdersReturnType>(
+        `/admin/orders?${params.toString()}`
+      );
+
+      if (res.success) {
+        return res.data;
+      }
+
+      const errorResponse = res as ApiError;
+      throw new Error(errorResponse.error || "Bilinmeyen bir hata oluştu");
     },
+    gcTime: 0,
+    staleTime: 0,
   });
 
-  return (
-    <Stack gap={"xl"}>
-      {isLoading && <GlobalLoadingOverlay />}
-      <Stack gap={"xs"}>
-        <Tabs
-          variant="pills"
-          value={osParam ? getOrderStatusFromInt(osParam) : "all"}
-          onChange={(val) => {
-            const pageSearchParams = new URLSearchParams(params.toString());
-            if (val === "all") {
-              pageSearchParams.delete("os");
-            } else {
-              const statusInt = getOrderStatusInt(val as $Enums.OrderStatus);
-              pageSearchParams.set("os", statusInt.toString());
-            }
-            pageSearchParams.delete("page");
-            replace(`?${pageSearchParams.toString()}`);
-          }}
+  if (error) {
+    return (
+      <Stack gap="md">
+        <Group className="w-full" align="center" justify="space-between">
+          <Title order={2}>Siparişler</Title>
+        </Group>
+        <Divider />
+        <Alert
+          icon={<IconAlertCircle size={20} />}
+          title="Hata Oluştu"
+          color="red"
+          variant="filled"
         >
-          <Tabs.List>
-            <Tabs.Tab value="all">Tümü</Tabs.Tab>
-            {Object.entries($Enums.OrderStatus).map(([key, value]) => (
-              <Tabs.Tab key={key} value={value}>
-                {getOrderStatusPageLabel(value)}
-              </Tabs.Tab>
-            ))}
-          </Tabs.List>
-        </Tabs>
-        <Divider my={"xs"} />
-        <Group gap={"xl"} justify="space-between">
-          <Title order={3}>Siparişler</Title>
-          <Group gap={"md"}>
+          {error instanceof Error
+            ? error.message
+            : "Siparişler yüklenirken bir hata oluştu. Lütfen tekrar deneyin."}
+        </Alert>
+      </Stack>
+    );
+  }
+
+  if (!isLoading && data?.orders && data.orders.length === 0 && !hasFilters) {
+    return (
+      <Stack gap="md">
+        <Group className="w-full" align="center" justify="space-between">
+          <Title order={2}>Siparişler</Title>
+          <Group align="center" gap="md">
             <Select
-              data={[
-                { label: "Tümü", value: "all" },
-                ...Object.values($Enums.PaymentStatus).map((data) => ({
-                  label: getPaymentStatusInfos(data),
-                  value: getPaymentStatusInt(data).toString(),
-                })),
-              ]}
-              placeholder="Ödeme Durumu"
-              allowDeselect={false}
-              defaultValue={psParam?.toString() || "all"}
+              value={searchParams.get("status") || "all"}
               onChange={(e) => {
-                if (e === "all") {
-                  const pageSearchParams = new URLSearchParams(
-                    params.toString()
-                  );
-                  pageSearchParams.delete("ps");
-                  pageSearchParams.delete("page");
-                  replace(`?${pageSearchParams.toString()}`);
+                const params = new URLSearchParams(searchParams.toString());
+                params.delete("page");
+                if (e && e !== "all") {
+                  params.set("status", e);
                 } else {
-                  const pageSearchParams = new URLSearchParams(
-                    params.toString()
-                  );
-                  pageSearchParams.set("ps", e || "all");
-                  pageSearchParams.delete("page");
-                  replace(`?${pageSearchParams.toString()}`);
+                  params.delete("status");
                 }
+                replace(`?${params.toString()}`);
               }}
+              data={[
+                { value: "all", label: "Tümü" },
+                ...getOrderStatusOptions(),
+              ]}
             />
-            <CustomSearchInput
-              variant="filled"
-              placeholder="Tabloda Arama Yapın"
-            />
+            <CustomSearchInput />
           </Group>
         </Group>
+        <Divider />
+        <Stack align="center" justify="center" gap="md" py={60}>
+          <IconInbox size={64} stroke={1.5} color="gray" />
+          <Title order={3} c="dimmed">
+            Henüz sipariş yok
+          </Title>
+          <Text c="dimmed" size="sm">
+            İlk siparişiniz oluşturulduğunda burada görünecektir.
+          </Text>
+        </Stack>
       </Stack>
+    );
+  }
+
+  if (!isLoading && data?.orders && data.orders.length === 0 && hasFilters) {
+    return (
+      <Stack gap="md">
+        <Group className="w-full" align="center" justify="space-between">
+          <Title order={2}>Siparişler</Title>
+          <Group align="center" gap="md">
+            <Select
+              value={searchParams.get("status") || "all"}
+              onChange={(e) => {
+                const params = new URLSearchParams(searchParams.toString());
+                params.delete("page");
+                if (e && e !== "all") {
+                  params.set("status", e);
+                } else {
+                  params.delete("status");
+                }
+                replace(`?${params.toString()}`);
+              }}
+              data={[
+                { value: "all", label: "Tümü" },
+                ...getOrderStatusOptions(),
+              ]}
+            />
+            <CustomSearchInput />
+          </Group>
+        </Group>
+        <Divider />
+        <Stack align="center" justify="center" gap="md" py={60}>
+          <IconSearch size={64} stroke={1.5} color="gray" />
+          <Title order={3} c="dimmed">
+            Sonuç bulunamadı
+          </Title>
+          <Text c="dimmed" size="sm">
+            Arama kriterlerinize uygun sipariş bulunamadı. Lütfen farklı
+            filtreler deneyin.
+          </Text>
+        </Stack>
+      </Stack>
+    );
+  }
+
+  return (
+    <Stack gap="md">
+      {isLoading && <GlobalLoadingOverlay />}
+      <Group className="w-full" align="center" justify="space-between">
+        <Title order={2}>Siparişler</Title>
+        <Group align="center" gap="md">
+          <Select
+            value={searchParams.get("status") || "all"}
+            onChange={(e) => {
+              const params = new URLSearchParams(searchParams.toString());
+              params.delete("page");
+              if (e && e !== "all") {
+                params.set("status", e);
+              } else {
+                params.delete("status");
+              }
+              replace(`?${params.toString()}`);
+            }}
+            data={[{ value: "all", label: "Tümü" }, ...getOrderStatusOptions()]}
+          />
+          <CustomSearchInput />
+        </Group>
+      </Group>
+
       <Table.ScrollContainer minWidth={800}>
         <Table
           highlightOnHover
@@ -142,78 +203,145 @@ const AdminOrdersPage = () => {
         >
           <Table.Thead>
             <Table.Tr>
-              <Table.Th>Sipariş Numarası</Table.Th>
-              <Table.Th>Tarih</Table.Th>
+              <Table.Th>Sipariş No</Table.Th>
               <Table.Th>Müşteri</Table.Th>
-              <Table.Th>Sipariş Durumu</Table.Th>
-              <Table.Th>Ödeme Durumu</Table.Th>
-              <Table.Th w={24} />
+              <Table.Th>Ürünler</Table.Th>
+              <Table.Th>Toplam</Table.Th>
+              <Table.Th>Durum</Table.Th>
+              <Table.Th>Tarih</Table.Th>
+              <Table.Th />
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
-            {data?.orders &&
-              data?.orders.length > 0 &&
-              data.orders.map((order) => (
-                <Table.Tr
-                  key={order.id}
-                  className="cursor-pointer"
-                  onClick={() => push(`/admin/orders/${order.orderNumber}`)}
-                >
-                  <Table.Td w="18%">
-                    <Group gap={"xs"} align="center">
-                      <Text fw={700} fz={"md"}>
-                        {order.orderNumber}
+            {data?.orders?.map((order) => {
+              const { label, color } = getOrderStatusBadge(order.orderStatus);
+
+              const shippingAddress = order.shippingAddressSnapshot;
+              const billingAddress = order.billingAddressSnapshot;
+
+              return (
+                <Table.Tr key={order.id}>
+                  <Table.Td>
+                    <Text size="sm" fw={600}>
+                      {order.orderNumber}
+                    </Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Stack gap={2}>
+                      <Text size="sm" fw={500}>
+                        {order.user?.name} {order.user?.surname}
                       </Text>
-                    </Group>
+                      {order.user?.email && (
+                        <Text size="xs" c="dimmed">
+                          {order.user.email}
+                        </Text>
+                      )}
+                      {order.user?.phone && (
+                        <Text size="xs" c="dimmed">
+                          {order.user.phone}
+                        </Text>
+                      )}
+                    </Stack>
+                  </Table.Td>
+                  <Table.Td className="text-left">
+                    <Stack gap={4}>
+                      <HoverCard shadow="md" withArrow openDelay={200}>
+                        <HoverCard.Target>
+                          <Text fz={"md"} style={{ cursor: "pointer" }}>
+                            {order.itemSchema.length} ürün
+                          </Text>
+                        </HoverCard.Target>
+                        <HoverCard.Dropdown>
+                          <ScrollArea h={400} scrollbarSize={4}>
+                            <Stack gap={"md"} px={"xs"}>
+                              {order.itemSchema.map((item) => (
+                                <AdminOrderItemCard
+                                  key={item.id}
+                                  item={item}
+                                  locale={order.locale}
+                                  currency={order.currency}
+                                />
+                              ))}
+                            </Stack>
+                          </ScrollArea>
+                        </HoverCard.Dropdown>
+                      </HoverCard>
+                    </Stack>
+                  </Table.Td>
+                  <Table.Td>
+                    <Stack gap={2}>
+                      <ProductPriceFormatter
+                        price={order.totalFinalPrice}
+                        currency={order.currency}
+                      />
+                    </Stack>
+                  </Table.Td>
+                  <Table.Td>
+                    <Badge variant="light" color={color}>
+                      {label}
+                    </Badge>
                   </Table.Td>
                   <Table.Td>{DateFormatter.withTime(order.createdAt)}</Table.Td>
                   <Table.Td>
-                    {order.user ? (
-                      <Text tt={"capitalize"}>
-                        {order.user.name + " " + order.user.surname}
-                      </Text>
-                    ) : (
-                      <Text>Bilinmiyor</Text>
-                    )}
-                  </Table.Td>
-                  <Table.Td>
-                    <Badge
-                      color={getOrderStatusColor(order.orderStatus)}
-                      variant="filled"
-                      radius={"sm"}
-                      size="md"
-                    >
-                      {getOrderStatusInfos(order.orderStatus)}
-                    </Badge>
-                  </Table.Td>
-                  <Table.Td>
-                    <Badge
-                      color={getPaymentStatusColor(order.paymentStatus)}
-                      variant="light"
-                      radius={"sm"}
-                      size="md"
-                    >
-                      {getPaymentStatusInfos(order.paymentStatus)}
-                    </Badge>
-                  </Table.Td>
-                  <Table.Td>
-                    <ActionIcon
-                      variant="transparent"
-                      size={"lg"}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        push(`/admin/orders/${order.orderNumber}`);
-                      }}
-                    >
-                      <IconFileDescriptionFilled />
-                    </ActionIcon>
+                    <Group align="center" gap="xs">
+                      <Tooltip label="Siparişi Görüntüle">
+                        <ActionIcon
+                          variant="subtle"
+                          onClick={() => {
+                            push(`/admin/orders/${order.orderNumber}`);
+                          }}
+                        >
+                          <IconEye />
+                        </ActionIcon>
+                      </Tooltip>
+
+                      <HoverCard
+                        shadow="md"
+                        withArrow
+                        openDelay={200}
+                        width={500}
+                      >
+                        <HoverCard.Target>
+                          <Tooltip label="Adres Bilgileri">
+                            <ActionIcon variant="subtle">
+                              <IconAddressBook />
+                            </ActionIcon>
+                          </Tooltip>
+                        </HoverCard.Target>
+                        <HoverCard.Dropdown>
+                          <Stack gap="md">
+                            {shippingAddress && (
+                              <AdminOrderAddressCard
+                                shippingAddress={shippingAddress}
+                              />
+                            )}
+
+                            {billingAddress && (
+                              <AdminOrderAddressCard
+                                shippingAddress={billingAddress}
+                                isBilling={true}
+                                title="Fatura Adresi"
+                              />
+                            )}
+
+                            {!shippingAddress && !billingAddress && (
+                              <Text size="sm" c="dimmed" ta="center">
+                                Adres bilgisi bulunamadı
+                              </Text>
+                            )}
+                          </Stack>
+                        </HoverCard.Dropdown>
+                      </HoverCard>
+                    </Group>
                   </Table.Td>
                 </Table.Tr>
-              ))}
+              );
+            })}
           </Table.Tbody>
         </Table>
       </Table.ScrollContainer>
-      {data?.pagination && data.pagination.totalItems > 0 && (
+
+      {data?.pagination && data.pagination.totalPages > 1 && (
         <CustomPagination total={data.pagination.totalPages} />
       )}
     </Stack>

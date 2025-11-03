@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LOCALE_CART_COOKIE } from "@lib/constants";
 import fetchWrapper from "@lib/fetchWrapper";
 import {
   Button,
@@ -14,10 +13,10 @@ import {
 } from "@mantine/core";
 import { Controller, SubmitHandler, useForm } from "@repo/shared";
 import { RegisterSchema, RegisterSchemaType } from "@repo/types";
+import { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
 import CustomPhoneInput from "../../(user)/components/CustomPhoneInput";
 import GlobalLoadingOverlay from "../../components/GlobalLoadingOverlay";
-import { Route } from "next";
 
 const RegisterForm = () => {
   const {
@@ -71,7 +70,6 @@ const RegisterForm = () => {
         });
         return;
       }
-      localStorage.removeItem(LOCALE_CART_COOKIE);
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       //TODO MERGE CARTS

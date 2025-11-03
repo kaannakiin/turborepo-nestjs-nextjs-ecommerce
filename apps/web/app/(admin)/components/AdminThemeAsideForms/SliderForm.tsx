@@ -1,4 +1,5 @@
 "use client";
+import fetchWrapper from "@lib/fetchWrapper";
 import {
   ActionIcon,
   Box,
@@ -12,6 +13,7 @@ import {
   TextInput,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
+import { $Enums } from "@repo/database";
 import {
   Controller,
   createId,
@@ -19,11 +21,9 @@ import {
   useForm,
   zodResolver,
 } from "@repo/shared";
-import { SliderV2Schema, SliderType } from "@repo/types";
+import { SliderSchema, SliderType } from "@repo/types";
 import { IconX } from "@tabler/icons-react";
 import GlobalDropzone from "../../../components/GlobalDropzone";
-import fetchWrapper from "@lib/fetchWrapper";
-import { $Enums } from "@repo/database";
 
 interface SliderFormProps {
   defaultValues?: SliderType;
@@ -74,7 +74,7 @@ const SliderForm = ({ defaultValues, onSubmit }: SliderFormProps) => {
     watch,
     formState: { errors },
   } = useForm<SliderType>({
-    resolver: zodResolver(SliderV2Schema),
+    resolver: zodResolver(SliderSchema),
     defaultValues: defaultValues || {
       uniqueId: createId(),
       customLink: "",

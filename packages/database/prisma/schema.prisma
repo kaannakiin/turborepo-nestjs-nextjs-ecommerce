@@ -9,6 +9,152 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum VariantGroupRenderType {
+  DROPDOWN
+  BADGE
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  SCHEDULED
+  ARCHIVED
+}
+
+enum CampaignType {
+  CROSS_SELLING
+  UP_SELLING
+}
+
+enum CampaignOfferTargetPage {
+  CHECKOUT_PAGE
+  POST_CHECKOUT
+  PRODUCT
+}
+
+enum CartStatus {
+  ACTIVE
+  ABANDONED
+  CONVERTED
+  MERGED
+}
+
+enum LayoutComponentType {
+  MARQUEE
+  SLIDER
+  PRODUCT_LIST
+  CATEGORY_GRID
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  USER
+}
+
+enum Locale {
+  TR
+  EN
+  DE
+}
+
+enum Currency {
+  TRY
+  USD
+  EUR
+  GBP
+}
+
+enum VariantGroupType {
+  LIST
+  COLOR
+}
+
+enum AssetType {
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+}
+
+enum ProductType {
+  DIGITAL
+  PHYSICAL
+}
+
+enum CountryType {
+  NONE
+  STATE
+  CITY
+}
+
+enum WhereAdded {
+  PRODUCT_PAGE
+  CATEGORY_PAGE
+  BRAND_PAGE
+  CART_PAGE
+}
+
+enum inVisibleCause {
+  DELETED
+  DELETED_BY_USER
+  DELETED_BY_ADMIN
+  OUT_OF_STOCK
+  CURRENCY_MISMATCH
+  LOCALE_MISMATCH
+}
+
+enum RuleType {
+  SalesPrice
+  ProductWeight
+}
+
+enum PaymentProvider {
+  IYZICO
+  PAYTR
+  STRIPE
+  PAYPAL
+  BANK_TRANSFER
+}
+
+enum DiscountType {
+  PERCENTAGE
+  PERCENTAGE_GROW_QUANTITY
+  PERCENTAGE_GROW_PRICE
+  FIXED_AMOUNT
+  FIXED_AMOUNT_GROW_QUANTITY
+  FIXED_AMOUNT_GROW_PRICE
+  FREE_SHIPPING
+}
+
+enum AllowedDiscountedItemsBy {
+  price
+  discounted_price
+}
+
+enum FilterOperator {
+  AND
+  OR
+}
+
+enum DiscountConditionType {
+  PRODUCT
+  CATEGORY
+  BRAND
+  VARIANT
+}
+
+enum DiscountEffectType {
+  AUTOMATIC
+  COUPON
+}
+
+enum DiscountWhereVisible {
+  PRODUCT_PAGE
+  CHECKOUT_PAGE
+  ALL
+}
+
 model Asset {
   id                String             @id @default(cuid())
   type              AssetType          @default(IMAGE)
@@ -26,25 +172,24 @@ model Asset {
 }
 
 model User {
-  id                String                 @id @default(cuid())
-  role              UserRole               @default(USER)
+  id                String             @id @default(cuid())
+  role              UserRole           @default(USER)
   name              String
   surname           String
-  email             String?                @unique
-  phone             String?                @unique
+  email             String?            @unique
+  phone             String?            @unique
   password          String?
   imageUrl          String?
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
-  defaultAddressId  String?                @unique
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  defaultAddressId  String?            @unique
   addresses         AddressSchema[]
   carts             Cart[]
   specificDiscounts DiscountCustomer[]
   discountUsages    DiscountUsage[]
-  orders            Order[]
-  paymentRequests   PaymentRequestSchema[]
   refreshTokens     RefreshTokens[]
-  defaultAddress    AddressSchema?         @relation("UserDefaultAddress", fields: [defaultAddressId], references: [id])
+  defaultAddress    AddressSchema?     @relation("UserDefaultAddress", fields: [defaultAddressId], references: [id])
+  orders            OrderSchema[]
 
   @@index([id, email, phone])
 }
@@ -289,44 +434,36 @@ model ProductAsset {
 }
 
 model ProductTagTranslation {
-  id     String @id @default(cuid())
-  locale Locale @default(TR)
-  name   String
-
+  id           String     @id @default(cuid())
+  locale       Locale     @default(TR)
+  name         String
   productTagId String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
   productTag   ProductTag @relation(fields: [productTagId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   @@unique([locale, productTagId])
 }
 
 model ProductTag {
-  id String @id @default(cuid())
-
-  color    String? // Opsiyonel hex kodu (örn: "#FF0000")
-  icon     String? // Opsiyonel ikon adı veya SVG
-  priority Int? // Opsiyonel, etiketlerin sıralaması için
-
+  id           String                  @id @default(cuid())
+  color        String?
+  icon         String?
+  priority     Int?
   createdAt    DateTime                @default(now())
   updatedAt    DateTime                @updatedAt
-  translations ProductTagTranslation[]
   products     ProductTagOnProduct[]
+  translations ProductTagTranslation[]
 }
 
 model ProductTagOnProduct {
   productId    String
   productTagId String
-  assignedAt   DateTime @default(now()) // Sadece ne zaman atandığını bilmek için
+  assignedAt   DateTime   @default(now())
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productTag   ProductTag @relation(fields: [productTagId], references: [id], onDelete: Cascade)
 
-  // İlişkiler
-  product    Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productTag ProductTag @relation(fields: [productTagId], references: [id], onDelete: Cascade)
-
-  // Bir ürüne aynı etiket birden fazla atanamasın
   @@id([productId, productTagId])
-  // Hızlı sorgular için index'ler
   @@index([productId])
   @@index([productTagId])
 }
@@ -344,23 +481,23 @@ model Product {
   brandId                String?
   taxonomyCategoryId     String?
   visibleAllCombinations Boolean                     @default(false)
+  buyableInCampaigns     CampaignBuyableProduct[]
+  conditionInCampaigns   CampaignConditionProduct[]
+  offerInCampaigns       CampaignOffer[]
   cartItems              CartItem[]
   discountConditions     DiscountProduct[]
   footerLinks            FooterLinks[]
-  orderItems             OrderItem[]
   brand                  Brand?                      @relation(fields: [brandId], references: [id])
   taxonomyCategory       TaxonomyCategory?           @relation(fields: [taxonomyCategoryId], references: [id])
   assets                 ProductAsset[]
   categories             ProductCategory[]
   productListItems       ProductListCarouselItem[]
   prices                 ProductPrice[]
+  tags                   ProductTagOnProduct[]
   translations           ProductTranslation[]
   variantCombinations    ProductVariantCombination[]
   variantGroups          ProductVariantGroup[]
-  tags                   ProductTagOnProduct[]
-  buyableInCampaigns     CampaignBuyableProduct[]
-  conditionInCampaigns   CampaignConditionProduct[]
-  offerInCampaigns       CampaignOffer[]
+  orderItem              OrderItemSchema[]
 
   @@index([brandId])
   @@index([taxonomyCategoryId])
@@ -369,19 +506,14 @@ model Product {
   @@index([barcode])
 }
 
-enum VariantGroupRenderType {
-  DROPDOWN
-  BADGE
-}
-
 model ProductVariantGroup {
   id                String                 @id @default(cuid())
   productId         String
   variantGroupId    String
-  renderVisibleType VariantGroupRenderType @default(DROPDOWN)
   order             Int
   createdAt         DateTime               @default(now())
   updatedAt         DateTime               @updatedAt
+  renderVisibleType VariantGroupRenderType @default(DROPDOWN)
   product           Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
   variantGroup      VariantGroup           @relation(fields: [variantGroupId], references: [id], onDelete: Cascade)
   options           ProductVariantOption[]
@@ -410,27 +542,26 @@ model ProductVariantOption {
 }
 
 model ProductVariantCombination {
-  id                 String                            @id @default(cuid())
-  productId          String
-  sku                String?
-  barcode            String?
-  stock              Int                               @default(0)
-  active             Boolean                           @default(true)
-  createdAt          DateTime                          @default(now())
-  updatedAt          DateTime                          @updatedAt
-  cartItems          CartItem[]
-  discountConditions DiscountProductVariant[]
-  orderItems         OrderItem[]
-  assets             ProductAsset[]
-  productListItems   ProductListCarouselItem[]
-  prices             ProductPrice[]
-  product            Product                           @relation(fields: [productId], references: [id], onDelete: Cascade)
-  options            ProductVariantCombinationOption[]
-  translations       ProductVariantTranslation[]
-
+  id                   String                            @id @default(cuid())
+  productId            String
+  sku                  String?
+  barcode              String?
+  stock                Int                               @default(0)
+  active               Boolean                           @default(true)
+  createdAt            DateTime                          @default(now())
+  updatedAt            DateTime                          @updatedAt
   buyableInCampaigns   CampaignBuyableVariant[]
   conditionInCampaigns CampaignConditionVariant[]
   offerInCampaigns     CampaignOffer[]
+  cartItems            CartItem[]
+  discountConditions   DiscountProductVariant[]
+  assets               ProductAsset[]
+  productListItems     ProductListCarouselItem[]
+  prices               ProductPrice[]
+  product              Product                           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  options              ProductVariantCombinationOption[]
+  translations         ProductVariantTranslation[]
+  orderItem            OrderItemSchema[]
 
   @@unique([productId, sku])
   @@unique([productId, barcode])
@@ -578,23 +709,35 @@ model CartItem {
 }
 
 model Cart {
-  id                String                 @id @default(cuid())
-  status            CartStatus             @default(ACTIVE)
-  currency          Currency               @default(TRY)
-  locale            Locale                 @default(TR)
-  shippingAddressId String?
-  billingAddressId  String?
-  cargoRuleId       String?
-  userId            String?
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
-  billingAddress    AddressSchema?         @relation("CartBillingAddress", fields: [billingAddressId], references: [id])
-  cargoRule         CargoRule?             @relation(fields: [cargoRuleId], references: [id])
-  shippingAddress   AddressSchema?         @relation("CartShippingAddress", fields: [shippingAddressId], references: [id])
-  user              User?                  @relation(fields: [userId], references: [id])
-  items             CartItem[]
-  order             Order?
-  paymentRequests   PaymentRequestSchema[]
+  id                       String                    @id @default(cuid())
+  status                   CartStatus                @default(ACTIVE)
+  currency                 Currency                  @default(TRY)
+  locale                   Locale                    @default(TR)
+  shippingAddressId        String?
+  billingAddressId         String?
+  cargoRuleId              String?
+  userId                   String?
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  billingAddress           AddressSchema?            @relation("CartBillingAddress", fields: [billingAddressId], references: [id])
+  cargoRule                CargoRule?                @relation(fields: [cargoRuleId], references: [id])
+  shippingAddress          AddressSchema?            @relation("CartShippingAddress", fields: [shippingAddressId], references: [id])
+  user                     User?                     @relation(fields: [userId], references: [id])
+  items                    CartItem[]
+  orderAttempts            OrderSchema[]
+  cartPaymentCheckAttempts CartPaymentCheckAttempts?
+}
+
+model CartPaymentCheckAttempts {
+  id     String @id @default(cuid())
+  cartId String @unique
+  cart   Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  message   String? @db.Text
+  isSuccess Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model FooterLinks {
@@ -747,7 +890,7 @@ model Layout {
 }
 
 model AddressSchema {
-  id                         String      @id @default(cuid())
+  id                         String        @id @default(cuid())
   email                      String?
   addressTitle               String?
   phone                      String
@@ -762,22 +905,24 @@ model AddressSchema {
   cityId                     String?
   userId                     String?
   addressLocationType        CountryType
-  isBillingAddress           Boolean     @default(false)
-  isCorporateInvoice         Boolean     @default(false)
+  isBillingAddress           Boolean       @default(false)
+  isCorporateInvoice         Boolean       @default(false)
   companyName                String?
   taxNumber                  String?
   companyRegistrationAddress String?
   districtId                 String?
-  createdAt                  DateTime    @default(now())
-  updatedAt                  DateTime    @updatedAt
-  city                       City?       @relation(fields: [cityId], references: [id])
-  country                    Country     @relation(fields: [countryId], references: [id])
-  district                   District?   @relation(fields: [districtId], references: [id])
-  state                      State?      @relation(fields: [stateId], references: [id])
-  user                       User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  billingCarts               Cart[]      @relation("CartBillingAddress")
-  shippingCarts              Cart[]      @relation("CartShippingAddress")
-  defaultForUser             User?       @relation("UserDefaultAddress")
+  createdAt                  DateTime      @default(now())
+  updatedAt                  DateTime      @updatedAt
+  city                       City?         @relation(fields: [cityId], references: [id])
+  country                    Country       @relation(fields: [countryId], references: [id])
+  district                   District?     @relation(fields: [districtId], references: [id])
+  state                      State?        @relation(fields: [stateId], references: [id])
+  user                       User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  billingCarts               Cart[]        @relation("CartBillingAddress")
+  shippingCarts              Cart[]        @relation("CartShippingAddress")
+  defaultForUser             User?         @relation("UserDefaultAddress")
+  shippingOrders             OrderSchema[] @relation("OrderSchemaShippingAddress")
+  billingOrders              OrderSchema[] @relation("OrderSchemaBillingAddress")
 
   @@index([userId])
   @@index([countryId])
@@ -819,148 +964,27 @@ model Location {
 }
 
 model CargoRule {
-  id              String                 @id @default(cuid())
-  name            String
-  ruleType        RuleType               @default(SalesPrice)
-  minValue        Float?
-  maxValue        Float?
-  price           Float?
-  currency        Currency               @default(TRY)
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
-  cargoZoneId     String?
-  CargoZone       CargoZone?             @relation(fields: [cargoZoneId], references: [id])
-  carts           Cart[]
-  paymentRequests PaymentRequestSchema[]
+  id          String        @id @default(cuid())
+  name        String
+  ruleType    RuleType      @default(SalesPrice)
+  minValue    Float?
+  maxValue    Float?
+  price       Float?
+  currency    Currency      @default(TRY)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  cargoZoneId String?
+  CargoZone   CargoZone?    @relation(fields: [cargoZoneId], references: [id])
+  carts       Cart[]
+  orders      OrderSchema[]
 
   @@index([ruleType])
-}
-
-model OrderItem {
-  id              String                     @id @default(cuid())
-  buyedPrice      Float
-  originalPrice   Float?
-  quantity        Int                        @default(1)
-  totalPrice      Float
-  buyedVariants   Json?
-  productSnapshot Json?
-  transactionId   String?
-  productId       String
-  variantId       String?
-  orderId         String
-  createdAt       DateTime                   @default(now())
-  updatedAt       DateTime                   @updatedAt
-  order           Order                      @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product         Product                    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  variant         ProductVariantCombination? @relation(fields: [variantId], references: [id], onDelete: Cascade)
-
-  @@unique([orderId, productId, variantId])
-  @@index([orderId])
-  @@index([productId])
-}
-
-model Order {
-  id              String                @id @default(cuid())
-  paymentId       String                @unique
-  conversationId  String?
-  orderNumber     String                @unique
-  orderStatus     OrderStatus           @default(PENDING)
-  paymentStatus   PaymentStatus         @default(PENDING)
-  paymentType     PaymentType           @default(THREE_D_SECURE)
-  currency        Currency              @default(TRY)
-  locale          Locale                @default(TR)
-  subtotal        Float
-  totalAmount     Float
-  taxAmount       Float?
-  shippingCost    Float?
-  discountAmount  Float?
-  customerNotes   String?
-  adminNotes      String?
-  confirmedAt     DateTime?
-  shippedAt       DateTime?
-  deliveredAt     DateTime?
-  cancelledAt     DateTime?
-  cardType        String?
-  cardFamily      String?
-  cardAssociation String?
-  binNumber       String?
-  lastFourDigits  String?
-  shippingAddress Json?
-  billingAddress  Json?
-  userId          String?
-  cartId          String?               @unique
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
-  discountUsage   DiscountUsage?
-  cart            Cart?                 @relation(fields: [cartId], references: [id])
-  user            User?                 @relation(fields: [userId], references: [id])
-  orderItems      OrderItem[]
-  paymentRequests PaymentRequestSchema?
-
-  @@index([paymentId, orderNumber, paymentStatus, orderStatus])
-}
-
-model PaymentRequestSchema {
-  id              String               @id @default(cuid())
-  userId          String?
-  paymentProvider PaymentProvider      @default(IYZICO)
-  paymentStatus   PaymentRequestStatus @default(WAITING_THREE_D_SECURE)
-  cargoRuleId     String?
-  billingAddress  Json?
-  shippingAddress Json?
-  transactionId   String?
-  paymentId       String?
-  conversationId  String?
-  amount          Decimal              @db.Decimal(10, 2)
-  currency        Currency             @default(TRY)
-  subtotal        Decimal?             @db.Decimal(10, 2)
-  shippingCost    Decimal?             @db.Decimal(10, 2)
-  discountAmount  Decimal?             @db.Decimal(10, 2)
-  taxAmount       Decimal?             @db.Decimal(10, 2)
-  cardType        String?
-  cardFamily      String?
-  cardAssociation String?
-  binNumber       String?
-  lastFourDigits  String?
-  installment     Int                  @default(1)
-  errorCode       String?
-  errorMessage    String?
-  errorGroup      String?
-  failureReason   String?
-  isReviewed      Boolean              @default(false)
-  reviewedAt      DateTime?
-  reviewedBy      String?
-  adminNotes      String?
-  cartId          String?
-  orderId         String?              @unique
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
-  completedAt     DateTime?
-  cargoRule       CargoRule?           @relation(fields: [cargoRuleId], references: [id])
-  cart            Cart?                @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  order           Order?               @relation(fields: [orderId], references: [id])
-  user            User?                @relation(fields: [userId], references: [id])
-
-  @@index([cartId])
-  @@index([orderId])
-  @@index([paymentStatus])
-  @@index([userId])
-  @@index([createdAt])
-  @@index([paymentId])
-}
-
-enum CampaignStatus {
-  DRAFT // Taslak, henüz yayınlanmamış
-  ACTIVE // Şu an aktif olan
-  SCHEDULED // Gelecekte aktif olacak
-  ARCHIVED // Pasif, "silinmiş" gibi düşünülebilir
 }
 
 model Discount {
   id                           String                    @id @default(cuid())
   title                        String
   type                         DiscountType
-  status                       CampaignStatus            @default(DRAFT)
   currencies                   Currency[]
   startDate                    DateTime?
   endDate                      DateTime?
@@ -981,15 +1005,14 @@ model Discount {
   discountAmount               Float?
   isAllCustomers               Boolean                   @default(true)
   isAllProducts                Boolean                   @default(true)
-
-  coupons         Coupon[]
-  conditionGroups DiscountConditionGroup[]
-  customers       DiscountCustomer[]
-  tiers           DiscountTier[]
-  usages          DiscountUsage[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt                    DateTime                  @default(now())
+  updatedAt                    DateTime                  @updatedAt
+  status                       CampaignStatus            @default(DRAFT)
+  coupons                      Coupon[]
+  conditionGroups              DiscountConditionGroup[]
+  customers                    DiscountCustomer[]
+  tiers                        DiscountTier[]
+  usages                       DiscountUsage[]
 
   @@index([startDate, endDate])
 }
@@ -1001,9 +1024,9 @@ model Coupon {
   usageCount Int             @default(0)
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
+  isDelete   Boolean         @default(false)
   discount   Discount        @relation(fields: [discountId], references: [id], onDelete: Cascade)
   usages     DiscountUsage[]
-  isDelete   Boolean         @default(false)
 
   @@index([code])
   @@index([discountId])
@@ -1092,7 +1115,6 @@ model DiscountUsage {
   usedAt     DateTime @default(now())
   coupon     Coupon   @relation(fields: [couponId], references: [id])
   discount   Discount @relation(fields: [discountId], references: [id])
-  order      Order    @relation(fields: [orderId], references: [id])
   user       User     @relation(fields: [userId], references: [id])
 
   @@index([discountId])
@@ -1100,55 +1122,30 @@ model DiscountUsage {
   @@index([userId])
 }
 
-enum CampaignType {
-  CROSS_SELLING
-  UP_SELLING
-}
-
-enum CampaignOfferTargetPage {
-  CHECKOUT_PAGE
-  POST_CHECKOUT
-  PRODUCT
-}
-
 model Campaign {
-  id              String          @id @default(cuid())
-  title           String
-  campaignType    CampaignType
-  validCurrencies Currency[]
-  dates           Json
-  requirements    Json
-  status          CampaignStatus  @default(DRAFT)
-  offers          CampaignOffer[]
-
-  // --- UP-SELL İLİŞKİLERİ ---
-  // Zod: buyableProducts.productIds
-  buyableProducts CampaignBuyableProduct[]
-  // Zod: buyableProducts.variantIds
-  buyableVariants CampaignBuyableVariant[]
-
-  // --- CROSS-SELL İLİŞKİLERİ ---
-  // Zod: conditions.isAllProducts
-  conditionsIsAllProducts Boolean? // Sadece Cross-Sell için
-
-  // Zod: conditions.productIds
-  conditionProducts CampaignConditionProduct[]
-  // Zod: conditions.variantIds
-  conditionVariants CampaignConditionVariant[]
-
-  // Zod: conditions.campaignOfferTargetType
-  campaignOfferType CampaignOfferTargetPage?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                      String                     @id @default(cuid())
+  title                   String
+  campaignType            CampaignType
+  validCurrencies         Currency[]
+  createdAt               DateTime                   @default(now())
+  updatedAt               DateTime                   @updatedAt
+  dates                   Json
+  requirements            Json
+  conditionsIsAllProducts Boolean?
+  campaignOfferType       CampaignOfferTargetPage?
+  status                  CampaignStatus             @default(DRAFT)
+  buyableProducts         CampaignBuyableProduct[]
+  buyableVariants         CampaignBuyableVariant[]
+  conditionProducts       CampaignConditionProduct[]
+  conditionVariants       CampaignConditionVariant[]
+  offers                  CampaignOffer[]
 }
 
 model CampaignBuyableProduct {
   campaignId String
   productId  String
-
-  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@id([campaignId, productId])
 }
@@ -1156,9 +1153,8 @@ model CampaignBuyableProduct {
 model CampaignBuyableVariant {
   campaignId String
   variantId  String
-
-  campaign Campaign                  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  variant  ProductVariantCombination @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  campaign   Campaign                  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  variant    ProductVariantCombination @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
   @@id([campaignId, variantId])
 }
@@ -1166,9 +1162,8 @@ model CampaignBuyableVariant {
 model CampaignConditionProduct {
   campaignId String
   productId  String
-
-  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@id([campaignId, productId])
 }
@@ -1176,37 +1171,52 @@ model CampaignConditionProduct {
 model CampaignConditionVariant {
   campaignId String
   variantId  String
-
-  campaign Campaign                  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  variant  ProductVariantCombination @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  campaign   Campaign                  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  variant    ProductVariantCombination @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
   @@id([campaignId, variantId])
 }
 
 model CampaignOffer {
-  id          String  @id @default(cuid())
-  order       Int
-  title       String
-  description String
-  productId   String?
-  variantId   String?
-
+  id                          String                     @id @default(cuid())
+  order                       Int
+  title                       String
+  description                 String
+  productId                   String?
+  variantId                   String?
   discountType                DiscountType
   discountValue               Float
   discountValueAppliedByPrice AllowedDiscountedItemsBy
   addCountDown                Boolean
   countDownMinute             Int?
-  showPrroductIfInCart        Boolean                  @default(false)
-
-  campaignId String
-  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-
-  product Product?                   @relation(fields: [productId], references: [id], onDelete: SetNull)
-  variant ProductVariantCombination? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  showPrroductIfInCart        Boolean                    @default(false)
+  campaignId                  String
+  campaign                    Campaign                   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  product                     Product?                   @relation(fields: [productId], references: [id])
+  variant                     ProductVariantCombination? @relation(fields: [variantId], references: [id])
 
   @@index([campaignId])
   @@index([productId])
   @@index([variantId])
+}
+
+model StorePaymentProvider {
+  id         String          @id @default(cuid())
+  active     Boolean         @default(true)
+  options    Json?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  isTestMode Boolean         @default(true)
+  provider   PaymentProvider @unique
+}
+
+model AssetLibrary {
+  id        String    @id @default(cuid())
+  assetType AssetType @default(IMAGE)
+  url       String
+  altText   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 view ProductUnifiedView {
@@ -1234,183 +1244,231 @@ view ProductUnifiedView {
   variantOptions         Json?
 }
 
-enum CartStatus {
-  ACTIVE
-  ABANDONED
-  CONVERTED
-  MERGED
-}
-
-enum LayoutComponentType {
-  MARQUEE
-  SLIDER
-  PRODUCT_LIST
-  CATEGORY_GRID
-}
-
-enum UserRole {
-  OWNER
-  ADMIN
-  USER
-}
-
-enum Locale {
-  TR
-  EN
-  DE
-}
-
-enum Currency {
-  TRY
-  USD
-  EUR
-  GBP
-}
-
-enum VariantGroupType {
-  LIST
-  COLOR
-}
-
-enum AssetType {
-  IMAGE
-  VIDEO
-  AUDIO
-  DOCUMENT
-}
-
-enum ProductType {
-  DIGITAL
-  PHYSICAL
-}
-
-enum CountryType {
-  NONE
-  STATE
-  CITY
-}
-
-enum WhereAdded {
-  PRODUCT_PAGE
-  CATEGORY_PAGE
-  BRAND_PAGE
-  CART_PAGE
-}
-
-enum inVisibleCause {
-  DELETED
-  DELETED_BY_USER
-  DELETED_BY_ADMIN
-  OUT_OF_STOCK
-  CURRENCY_MISMATCH
-  LOCALE_MISMATCH
-}
-
-enum RuleType {
-  SalesPrice
-  ProductWeight
-}
-
 enum OrderStatus {
+  // Sipariş oluşturuldu ancak ödeme henüz tamamlanmadı veya onaylanmadı.
   PENDING
+  // Ödeme başarıyla alındı. Depoya/satıcıya "hazırlayın" diye iletilebilir.
   CONFIRMED
+  // Siparişin içindeki en az bir OrderItem hazırlanıyor.
   PROCESSING
+  // Sipariş içindeki BAZI item'lar kargolandı.
+  PARTIALLY_SHIPPED
+  // Sipariş içindeki TÜM item'lar kargolandı.
   SHIPPED
+  // Sipariş içindeki BAZI item'lar teslim edildi.
+  PARTIALLY_DELIVERED
+  // Sipariş içindeki TÜM item'lar teslim edildi.
   DELIVERED
+  // Sipariş (veya içindeki tüm item'lar) iptal edildi.
   CANCELLED
+  // Siparişin BİR KISMI için para iadesi yapıldı.
+  PARTIALLY_REFUNDED
+  // Siparişin TAMAMI için para iadesi yapıldı.
+  REFUNDED
+  // Sipariş teslim edildi ve iade/değişim süresi doldu. Arşivlenebilir.
+  COMPLETED
+}
+
+enum OrderItemStatus {
+  // Siparişin ödemesi bekleniyor.
+  PENDING
+  // Siparişin ödemesi alındı. Ürün depoda hazırlanıyor.
+  PREPARING
+  // Bu ürün kargoya verildi.
+  SHIPPED
+  // Bu ürün müşteriye teslim edildi.
+  DELIVERED
+  // Müşteri bu ürünü (kargolanmadan) iptal etme talebi gönderdi.
+  CANCEL_REQUESTED
+  // İptal talebi reddedildi.
+  CANCEL_REJECTED
+  // İptal talebi onaylandı.
+  CANCELLED
+  // Müşteri ürünü teslim aldıktan sonra iade talebi oluşturdu.
+  REFUND_REQUESTED
+  // İade talebi incelendi ve "ürünü geri gönderebilirsin" onayı verildi.
+  REFUND_REQUEST_ACCEPTED
+  // İade talebi reddedildi.
+  REFUND_REJECTED
+  // Ürün depoya geri geldi ve müşteriye para iadesi yapıldı.
   REFUNDED
 }
 
 enum PaymentStatus {
-  PENDING
-  PAID
+  // Ödeme başarısız oldu
   FAILED
-  REFUNDED
-  PARTIAL_REFUND
+  // Ödeme tamamlandı
+  PAID
+  // Kısmi ödeme alındı (örn: Kısmi iade sonrası)
+  PARTIALLY_PAID
+  // Ödeme bekleniyor
+  PENDING
 }
 
 enum PaymentType {
-  THREE_D_SECURE
-  NON_THREE_D_SECURE
-  BANK_TRANSFER
+  APP_PAYMENT
+  BANK_REDIRECT
+  BUY_ONLINE_PAY_AT_STORE
+  CASH
+  CASH_ON_DELIVERY
+  CREDIT_CARD
+  CREDIT_CARD_ON_DELIVERY
+  DIRECT_DEBIT
+  GIFT_CARD
+  MONEY_ORDER
+  OTHER
+  PAY_LATER
+  SLICE_IT
+  WALLET
 }
 
-enum PaymentProvider {
-  IYZICO
-  PAYTR
-  STRIPE
-  PAYPAL
-  BANK_TRANSFER
-}
-
-enum PaymentRequestStatus {
+enum ShipmentStatus {
+  // Kargo bilgisi girildi, kargo şubesine verilmedi
   PENDING
-  WAITING_THREE_D_SECURE
-  THREE_D_SECURE_FAILED
-  THREE_D_SECURE_SUCCESS
-  PROCESSING
-  SUCCESS
+  // Yolda
+  IN_TRANSIT
+  // Teslim Edildi
+  DELIVERED
+  // Teslimat Başarısız
   FAILED
-  CANCELLED
-  REFUNDED
-  TIMEOUT
 }
 
-enum DiscountType {
-  PERCENTAGE
-  PERCENTAGE_GROW_QUANTITY
-  PERCENTAGE_GROW_PRICE
-  FIXED_AMOUNT
-  FIXED_AMOUNT_GROW_QUANTITY
-  FIXED_AMOUNT_GROW_PRICE
-  FREE_SHIPPING
+model OrderItemSchema {
+  id         String  @id @default(cuid())
+  // buyedPrice: Kullanıcının 1 adet ürün için ödediği 
+  //             NİHAİ BİRİM FİYAT (Örn: 80 TL)
+  buyedPrice Decimal
+
+  quantity Int @default(1)
+
+  // totalPrice: Ürünün Orijinal (İndirimsiz) TOPLAM Fiyatı
+  //             (Örn: 100 TL * 2 adet = 200 TL)
+  totalPrice Decimal
+
+  // totalFinalPrice: Kullanıcının bu kalem için ödediği
+  //                  NİHAİ TOPLAM FİYAT (buyedPrice * quantity)
+  //                  (Örn: 80 TL * 2 adet = 160 TL)
+  totalFinalPrice Decimal
+
+  // discountAmount: Bu kalem için yapılan TOPLAM indirim
+  //                 (totalPrice - totalFinalPrice)
+  //                 (Örn: 200 TL - 160 TL = 40 TL)
+  discountAmount Decimal?
+  taxAmount      Decimal?
+
+  productSnapshot Json?
+  variantSnapshot Json?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  status          OrderItemStatus @default(PENDING)
+
+  // İlişkiler
+  variantId String?
+  variant   ProductVariantCombination? @relation(fields: [variantId], references: [id])
+  productId String
+  product   Product                    @relation(fields: [productId], references: [id])
+  orderId   String
+  order     OrderSchema                @relation(fields: [orderId], references: [id])
+
+  // Bu item hangi sevkiyata (kargoya) ait?
+  shipmentId String?
+  shipment   Shipment? @relation(fields: [shipmentId], references: [id])
+
+  @@unique([orderId, productId, variantId])
 }
 
-enum AllowedDiscountedItemsBy {
-  price
-  discounted_price
+model OrderSchema {
+  id              String   @id @default(cuid())
+  orderNumber     String   @unique
+  totalPrice      Decimal
+  totalFinalPrice Decimal
+  discountAmount  Decimal?
+  taxAmount       Decimal?
+  shippingCost    Decimal?
+
+  currency  Currency @default(TRY)
+  locale    Locale   @default(TR)
+  orderNote String?  @db.Text
+
+  paymentProvider PaymentProvider @default(IYZICO)
+  paymentStatus   PaymentStatus   @default(PENDING) // Özet ödeme durumu
+  orderStatus     OrderStatus     @default(PENDING) // Özet sipariş durumu
+
+  shippingAddressSnapshot Json?
+  billingAddressSnapshot  Json?
+  cargoRuleSnapshot       Json?
+
+  clientIp  String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // İlişkiler
+  cartId                  String?        @unique
+  cart                    Cart?          @relation(fields: [cartId], references: [id])
+  userId                  String?
+  user                    User?          @relation(fields: [userId], references: [id])
+  shippingAddressRecordId String?
+  shippingAddressRecord   AddressSchema? @relation("OrderSchemaShippingAddress", fields: [shippingAddressRecordId], references: [id])
+  billingAddressRecordId  String?
+  billingAddressRecord    AddressSchema? @relation("OrderSchemaBillingAddress", fields: [billingAddressRecordId], references: [id])
+  cargoRuleId             String?
+  cargoRule               CargoRule?     @relation(fields: [cargoRuleId], references: [id])
+
+  // Siparişe bağlı tüm alt modeller
+  itemsSchema  OrderItemSchema[]
+  transactions OrderTransactionSchema[]
+  shipments    Shipment[]
 }
 
-enum FilterOperator {
-  AND
-  OR
+model OrderTransactionSchema {
+  id      String      @id @default(cuid())
+  orderId String
+  order   OrderSchema @relation(fields: [orderId], references: [id])
+
+  // Iyzico, PayTR vb. provider'dan gelen unique işlem ID'si
+  providerTransactionId String?
+  amount                Decimal // Bu işlemde ne kadar çekildi/iade edildi
+  status                PaymentStatus // FAILED, PAID, PENDING
+  paymentType           PaymentType // CREDIT_CARD, WALLET, etc.
+  provider              PaymentProvider // IYZICO, PAYTR, etc.
+  binNumber             String? // Eğer kredi kartı ile ödeme yapıldıysa, kartın BIN numarası  
+  lastFourDigits        String? // Eğer kredi kartı ile ödeme yapıldıysa, kartın son 4 hanesi
+  cardAssociation       CardAssociation? // MASTER_CARD, VISA, etc.
+  cardFamilyName        String? // Bonus, World, Maximum, etc.
+  // Hata ayıklama için provider'dan dönen tüm ham response
+  gatewayResponse       Json?
+
+  createdAt DateTime @default(now())
 }
 
-enum DiscountConditionType {
-  PRODUCT
-  CATEGORY
-  BRAND
-  VARIANT
-}
+model Shipment {
+  id      String      @id @default(cuid())
+  orderId String
+  order   OrderSchema @relation(fields: [orderId], references: [id])
 
-enum DiscountEffectType {
-  AUTOMATIC
-  COUPON
-}
-
-enum DiscountWhereVisible {
-  PRODUCT_PAGE
-  CHECKOUT_PAGE
-  ALL
-}
-
-model StorePaymentProvider {
-  id         String          @id @default(cuid())
-  active     Boolean         @default(true)
-  isTestMode Boolean         @default(true)
-  provider   PaymentProvider @unique
-  options    Json?
+  trackingCode     String? // Kargo Takip Kodu
+  shippingProvider String? // MNG, Aras, Yurtiçi, etc.
+  status           ShipmentStatus @default(PENDING)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Bu sevkiyatın içinde hangi ürünler var?
+  orderItems OrderItemSchema[]
 }
 
-model AssetLibrary {
-  id        String    @id @default(cuid())
-  assetType AssetType @default(IMAGE)
-  url       String
-  altText   String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum CardAssociation {
+  VISA
+  MASTER_CARD
+  AMERICAN_EXPRESS
+  TROY
+  DISCOVER
+  DINERS_CLUB
+  JCB
+  UNIONPAY
+  MAESTRO
+  MIR
+  CUP
+  UNKNOWN
 }

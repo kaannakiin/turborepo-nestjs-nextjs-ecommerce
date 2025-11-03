@@ -5,7 +5,7 @@
     "moduleResolution": "nodenext",
     "strict": false
   },
-  "include": ["src"],
-
+  "rootDir": "./src",
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }

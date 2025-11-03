@@ -6,3 +6,10 @@ export const colorHex = z
   .regex(/^#([A-Fa-f0-9]{6})$/, {
     error: "Geçersiz renk kodu. Hex formatında olmalıdır.",
   });
+
+export interface Pagination {
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+  perPage: number;
+}

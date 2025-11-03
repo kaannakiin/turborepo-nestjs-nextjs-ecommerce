@@ -1,33 +1,44 @@
 import {
-  Body,
   Controller,
   Get,
   Param,
-  Post,
+  ParseEnumPipe,
+  ParseIntPipe,
+  Query,
   UseGuards,
-  UsePipes,
 } from '@nestjs/common';
-import { type GetOrderZodType, GetOrdersSchema } from '@repo/types';
+import { $Enums } from '@repo/database';
+import { NullableStringPipe } from 'src/common/pipes/nullable-string.pipe';
+import { OrdersService } from './orders.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import { Roles } from 'src/user/reflectors/roles.decorator';
-import { OrdersService } from './orders.service';
 
-@Controller('/admin/orders')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(['ADMIN', 'OWNER'])
+@Controller('/admin/orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  @Post('get-orders')
-  @UsePipes(new ZodValidationPipe(GetOrdersSchema))
-  async getOrders(@Body() body: GetOrderZodType) {
-    return this.ordersService.getOrders(body);
+  @Get()
+  async getAllOrders(
+    @Query('page', new ParseIntPipe()) page: number,
+    @Query('limit', new ParseIntPipe()) limit: number,
+    @Query('search', new NullableStringPipe())
+    search?: string,
+    @Query('status', new ParseEnumPipe($Enums.OrderStatus, { optional: true }))
+    orderStatus?: $Enums.OrderStatus,
+  ) {
+    return this.ordersService.getOrders({
+      page,
+      limit,
+      search,
+      orderStatus,
+    });
   }
 
-  @Get(':orderNumber')
-  async getOrder(@Param('orderNumber') orderNumber: string) {
+  @Get('/:orderNumber')
+  async getOrderByOrderNumber(@Param('orderNumber') orderNumber: string) {
     return this.ordersService.getOrderByOrderNumber(orderNumber);
   }
 }

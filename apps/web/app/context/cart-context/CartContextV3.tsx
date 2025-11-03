@@ -1,5 +1,6 @@
 "use client";
 
+import { LOCALE_CART_COOKIE } from "@lib/constants";
 import fetchWrapper from "@lib/fetchWrapper";
 import { useLocalStorage } from "@mantine/hooks";
 import { createId, useMutation, useQuery } from "@repo/shared";
@@ -54,7 +55,7 @@ export const CartContextV3 =
 
 export function CartProviderV3({ children }: { children: React.ReactNode }) {
   const [cartId, setCartId] = useLocalStorage<string | null>({
-    key: "cartIdV3",
+    key: LOCALE_CART_COOKIE,
     defaultValue: null,
   });
 
@@ -73,11 +74,11 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
       );
       if (!res.success) {
         console.error("Failed to fetch cart:");
-        localStorage.removeItem("cartIdV3");
+        localStorage.removeItem(LOCALE_CART_COOKIE);
         throw new Error("Failed to fetch cart");
       }
       if (!res.data.success || !res.data.cart) {
-        localStorage.removeItem("cartIdV3");
+        localStorage.removeItem(LOCALE_CART_COOKIE);
         throw new Error("No cart data found");
       }
       return res.data.cart;

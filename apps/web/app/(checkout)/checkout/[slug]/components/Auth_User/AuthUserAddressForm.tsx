@@ -22,6 +22,7 @@ import {
   SubmitHandler,
   useForm,
   useQuery,
+  useWatch,
   zodResolver,
 } from "@repo/shared";
 import {
@@ -49,13 +50,12 @@ const AuthUserAddressForm = ({
     control,
     handleSubmit,
     formState: { isSubmitting },
-    watch,
     setValue,
   } = useForm<AuthUserAddressZodType>({
     resolver: zodResolver(AuthUserAddressSchema),
     defaultValues: defaultValues || {
       addressLine1: "",
-      addressLine2: null,
+      addressLine2: "",
       cityId: "",
       countryId: TURKEY_DB_ID,
       addressTitle: "",
@@ -68,8 +68,21 @@ const AuthUserAddressForm = ({
       surname: "",
     },
   });
-  const countryId = watch("countryId");
-  const addressType = watch("addressType");
+  const countryId = useWatch({
+    control,
+    name: "countryId",
+  });
+
+  const addressType = useWatch({
+    control,
+    name: "addressType",
+  });
+
+  const cityId = useWatch({
+    control,
+    name: "cityId",
+  });
+
   const { data: countries, isLoading: countriesIsLoading } = useQuery({
     queryKey: ["get-all-countries"],
     queryFn: async () => {
@@ -111,7 +124,6 @@ const AuthUserAddressForm = ({
     },
     enabled: !!countryId && addressType === "CITY",
   });
-  const cityId = watch("cityId");
 
   const { data: district, isLoading: districtsLoading } = useQuery({
     queryKey: ["get-districts-turkey-city", countryId, cityId],
@@ -126,6 +138,7 @@ const AuthUserAddressForm = ({
       if (!fetchReq.data.success || !fetchReq.data.data) {
         return [];
       }
+
       return fetchReq.data.data;
     },
     enabled:
@@ -155,6 +168,7 @@ const AuthUserAddressForm = ({
     setValue("cityId", null);
     setValue("districtId", null);
   };
+
   const handleCityChange = (selectedCityId: string | null) => {
     setValue("cityId", selectedCityId);
     setValue("districtId", null);
@@ -320,6 +334,7 @@ const AuthUserAddressForm = ({
                 )}
               />
             )}
+
             {addressType === "CITY" && countryId === TURKEY_DB_ID && (
               <Controller
                 control={control}

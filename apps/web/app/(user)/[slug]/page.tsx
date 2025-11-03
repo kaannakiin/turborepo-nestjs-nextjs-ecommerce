@@ -40,6 +40,8 @@ const ProductPage = async ({ params }: { params: Params }) => {
       }
       return data.data;
     },
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 1 * 60 * 1000, // 1 minute
   });
 
   if (!productMainData) {

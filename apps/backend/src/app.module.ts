@@ -9,14 +9,15 @@ import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
 import { LocationsModule } from './locations/locations.module';
 import { MinioModule } from './minio/minio.module';
-import { PaymentModule } from './payment/payment.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { UserPageModule } from './user-page/user-page.module';
 import { UserModule } from './user/user.module';
 import { CartV3Module } from './cart-v3/cart-v3.module';
 import { ChatModule } from './ai/chat/chat.module';
-import { PaymentsV2Module } from './payments-v2/payments-v2.module';
+import { PaymentsModule } from './payments/payments.module';
+import { OrdersModule } from './orders/orders.module';
+import { SharedModule } from './common/services/shared.module';
 
 @Module({
   imports: [
@@ -42,10 +43,11 @@ import { PaymentsV2Module } from './payments-v2/payments-v2.module';
     LocationsModule,
     UserPageModule,
     ShippingModule,
-    PaymentModule,
+    SharedModule,
     CartV3Module,
     ChatModule,
-    PaymentsV2Module,
+    PaymentsModule,
+    OrdersModule,
     // ThrottlerModule.forRootAsync({
     //   imports: [ConfigModule],
     //   inject: [ConfigService],

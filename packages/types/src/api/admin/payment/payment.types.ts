@@ -117,6 +117,13 @@ export const GetCartForPaymentIncludeCartType: Prisma.CartInclude = {
     select: {
       id: true,
       price: true,
+      name: true,
+      currency: true,
+    },
+  },
+  orderAttempts: {
+    where: {
+      paymentStatus: { in: ["PARTIALLY_PAID", "PAID"] },
     },
   },
   items: {
@@ -145,7 +152,10 @@ export type GetCartForPaymentReturnType = {
   success: boolean;
   message: string;
   data?: {
-    totalAmount: number;
+    totalPrice: number;
+    discountAmount: number;
+    shippingCost: number;
+    totalFinalPrice: number;
     cart: Prisma.CartGetPayload<{
       include: typeof GetCartForPaymentIncludeCartType;
     }>;

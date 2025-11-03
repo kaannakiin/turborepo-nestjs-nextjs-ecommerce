@@ -3,7 +3,7 @@
 import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import GlobalLoader from "@/components/GlobalLoader";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import { TURKEY_DB_ID } from "@lib/constants";
+import { LOCALE_CART_COOKIE, TURKEY_DB_ID } from "@lib/constants";
 import fetchWrapper from "@lib/fetchWrapper";
 import { getCartAssociationUrl } from "@lib/helpers";
 import {
@@ -35,6 +35,7 @@ import {
   PaymentZodType,
 } from "@repo/types";
 import { IconCheck } from "@tabler/icons-react";
+import { Route } from "next";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -136,12 +137,16 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
   const creditCardNumber = watch("creditCardNumber");
 
   useEffect(() => {
-    if (errorMessage) {
+    const error = searchParams.get("error");
+    if (error) {
+      setErrorMessage(error);
+
       const params = new URLSearchParams(searchParams.toString());
       params.delete("error");
-      replace(`?${params.toString()}`);
+      replace(`?${params.toString()}`, { scroll: false });
     }
-  }, [errorMessage, replace, searchParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const checkBinNumber = async (bin: string) => {
     try {
@@ -206,17 +211,29 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
     const paymentReq = await fetchWrapper.post<{
       success: boolean;
       message: string;
-      initThreeD?: boolean;
-      threeDHtmlContent?: string;
+      clearCart?: boolean;
       orderNumber?: string;
-    }>(`/payment/create-payment/${cart.cartId}`, data);
+      data?: {
+        isThreeDS: boolean;
+        threeDSHtmlContent?: string;
+      };
+    }>(`/payment/${cart.cartId}`, data);
 
     if (paymentReq.success) {
       if (paymentReq.data.success) {
-        if (paymentReq.data.initThreeD && paymentReq.data.threeDHtmlContent) {
+        // clearCart true gelirse localStorage'dan sepeti sil
+        if (paymentReq.data.clearCart) {
+          localStorage.removeItem(LOCALE_CART_COOKIE);
+        }
+
+        // 3D Secure kontrolü
+        if (
+          paymentReq.data.data?.isThreeDS &&
+          paymentReq.data.data?.threeDSHtmlContent
+        ) {
           console.log(paymentReq.data);
           const tempDiv = document.createElement("div");
-          tempDiv.innerHTML = atob(paymentReq.data.threeDHtmlContent);
+          tempDiv.innerHTML = atob(paymentReq.data.data.threeDSHtmlContent);
           document.body.appendChild(tempDiv);
           const form = tempDiv.querySelector("form");
           if (form) {
@@ -225,13 +242,15 @@ const PaymentStep = ({ cart }: PaymentStepProps) => {
             throw new Error("3D Secure form bulunamadı");
           }
         } else {
-          if (!paymentReq.data.initThreeD && paymentReq.data.orderNumber) {
-            push(`/order/${paymentReq.data.orderNumber}`);
+          // 3D Secure yoksa ve orderNumber varsa sipariş sayfasına yönlendir
+          if (!paymentReq.data.data?.isThreeDS && paymentReq.data.orderNumber) {
+            push(`/order/${paymentReq.data.orderNumber}` as Route);
           }
         }
       } else {
         // API'den success: false geldi (Örn: Yetersiz bakiye)
         // Hata mesajını göster
+        console.error(paymentReq.data.message);
       }
     }
   };

@@ -33,7 +33,16 @@ interface CheckoutPageRightSectionProps {
 const CartItem = ({ item }: { item: CartV3["items"][0] }) => (
   <div className="flex gap-3 w-full">
     <div className="relative flex-shrink-0">
-      <Avatar size="xl" radius="xs" src={item.productAsset.url} />
+      <Avatar
+        size="xl"
+        radius="xs"
+        src={
+          item.productAsset && item.productAsset.url
+            ? item.productAsset.url
+            : "https://placehold.co/600x400?text=Placeholder"
+        }
+      />
+
       <Badge
         size="md"
         variant="filled"

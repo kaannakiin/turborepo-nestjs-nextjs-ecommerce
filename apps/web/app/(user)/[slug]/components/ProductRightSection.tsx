@@ -124,7 +124,6 @@ const ProductRightSection = ({
   if (!variantPrice) {
     return null;
   }
-
   return (
     <Stack gap={"xl"} className="max-w-xl ">
       <Stack gap={"xs"}>
@@ -183,6 +182,7 @@ const ProductRightSection = ({
                 {group.renderVisibleType === "DROPDOWN" ? (
                   (() => {
                     const selectData = group.options
+                      .sort((a, b) => a.order - b.order)
                       .map((option) => {
                         const optionTranslation =
                           option.variantOption.translations.find(

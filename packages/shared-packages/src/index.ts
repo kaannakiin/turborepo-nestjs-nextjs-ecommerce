@@ -1,4 +1,3 @@
-//packages\shared-packages\src\index.ts
 export { zodResolver } from "@hookform/resolvers/zod";
 export { createId } from "@paralleldrive/cuid2";
 export * from "@tanstack/react-query";

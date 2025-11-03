@@ -18,34 +18,6 @@ function askQuestion(question: string): Promise<string> {
   });
 }
 
-// Cart ve Order verilerini sil
-async function deleteCartAndOrderData() {
-  console.log(
-    "\n🗑️ Cart ve Order verilerini temizleme işlemi başlatılıyor...\n"
-  );
-
-  try {
-    await prisma.$transaction(async (tx) => {
-      const deletedOrderItems = await tx.orderItem.deleteMany({});
-      console.log(`✅ ${deletedOrderItems.count} adet OrderItem silindi`);
-
-      const deletedOrders = await tx.order.deleteMany({});
-      console.log(`✅ ${deletedOrders.count} adet Order silindi`);
-
-      const deletedCartItems = await tx.cartItem.deleteMany({});
-      console.log(`✅ ${deletedCartItems.count} adet CartItem silindi`);
-
-      const deletedCarts = await tx.cart.deleteMany({});
-      console.log(`✅ ${deletedCarts.count} adet Cart silindi`);
-
-      console.log("\n✨ Tüm veriler başarıyla temizlendi!");
-    });
-  } catch (error) {
-    console.error("❌ Hata oluştu:", error);
-    throw error;
-  }
-}
-
 // Sadece Cart verilerini sil
 async function deleteCartData() {
   console.log("\n🗑️ Cart verilerini temizleme işlemi başlatılıyor...\n");
@@ -59,26 +31,6 @@ async function deleteCartData() {
       console.log(`✅ ${deletedCarts.count} adet Cart silindi`);
 
       console.log("\n✨ Cart verileri başarıyla temizlendi!");
-    });
-  } catch (error) {
-    console.error("❌ Hata oluştu:", error);
-    throw error;
-  }
-}
-
-// Sadece Order verilerini sil
-async function deleteOrderData() {
-  console.log("\n🗑️ Order verilerini temizleme işlemi başlatılıyor...\n");
-
-  try {
-    await prisma.$transaction(async (tx) => {
-      const deletedOrderItems = await tx.orderItem.deleteMany({});
-      console.log(`✅ ${deletedOrderItems.count} adet OrderItem silindi`);
-
-      const deletedOrders = await tx.order.deleteMany({});
-      console.log(`✅ ${deletedOrders.count} adet Order silindi`);
-
-      console.log("\n✨ Order verileri başarıyla temizlendi!");
     });
   } catch (error) {
     console.error("❌ Hata oluştu:", error);
@@ -152,7 +104,6 @@ async function main() {
       switch (choice) {
         case "1":
           if (await confirmAction("TÜM Cart ve Order verilerini silme")) {
-            await deleteCartAndOrderData();
             await askQuestion("\nDevam etmek için Enter'a basın...");
           } else {
             console.log("❌ İşlem iptal edildi");
@@ -172,7 +123,6 @@ async function main() {
 
         case "3":
           if (await confirmAction("Order verilerini silme")) {
-            await deleteOrderData();
             await askQuestion("\nDevam etmek için Enter'a basın...");
           } else {
             console.log("❌ İşlem iptal edildi");
