@@ -170,7 +170,11 @@ export class OrdersService {
           },
           itemsSchema: true,
           shipments: true,
-          transactions: true,
+          transactions: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+          },
         },
       });
 

@@ -5,11 +5,17 @@ import {
   ParseEnumPipe,
   ParseIntPipe,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { $Enums } from '@repo/database';
 import { NullableStringPipe } from 'src/common/pipes/nullable-string.pipe';
 import { OrdersService } from './orders.service';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Roles } from 'src/user/reflectors/roles.decorator';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(['ADMIN', 'OWNER'])
 @Controller('/admin/orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}

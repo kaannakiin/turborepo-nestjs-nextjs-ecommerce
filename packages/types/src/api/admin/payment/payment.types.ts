@@ -152,8 +152,10 @@ export type GetCartForPaymentReturnType = {
   success: boolean;
   message: string;
   data?: {
-    subTotal: number;
-    totalDiscount: number;
+    totalPrice: number;
+    discountAmount: number;
+    shippingCost: number;
+    totalFinalPrice: number;
     cart: Prisma.CartGetPayload<{
       include: typeof GetCartForPaymentIncludeCartType;
     }>;

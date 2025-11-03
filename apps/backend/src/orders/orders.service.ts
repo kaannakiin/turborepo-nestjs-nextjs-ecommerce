@@ -26,7 +26,13 @@ export class OrdersService {
   }> {
     return await this.prisma.$transaction(
       async (tx) => {
-        const { cart, subTotal, totalDiscount } = data;
+        const {
+          cart,
+          totalPrice,
+          discountAmount,
+          shippingCost,
+          totalFinalPrice,
+        } = data;
 
         const cartItems = cart.items as CartItemForPayment[];
 
@@ -97,8 +103,6 @@ export class OrdersService {
             };
           });
 
-        const shippingCost = cart.cargoRule?.price || 0;
-
         if (
           orderExist &&
           (orderExist.paymentStatus === 'PENDING' ||
@@ -111,9 +115,9 @@ export class OrdersService {
           const updatedOrder = await tx.orderSchema.update({
             where: { id: orderExist.id },
             data: {
-              totalPrice: subTotal,
-              totalFinalPrice: subTotal - totalDiscount + shippingCost,
-              discountAmount: totalDiscount,
+              totalPrice: totalPrice,
+              totalFinalPrice: totalFinalPrice,
+              discountAmount: discountAmount,
               shippingCost: shippingCost,
               currency: cart.currency,
               locale: cart.locale,
@@ -166,9 +170,9 @@ export class OrdersService {
             data: {
               orderNumber,
               cartId: cart.id,
-              totalPrice: subTotal,
-              totalFinalPrice: subTotal - totalDiscount + shippingCost,
-              discountAmount: totalDiscount,
+              totalPrice: totalPrice,
+              totalFinalPrice: totalFinalPrice,
+              discountAmount: discountAmount,
               shippingCost: shippingCost,
               currency: cart.currency,
               locale: cart.locale,

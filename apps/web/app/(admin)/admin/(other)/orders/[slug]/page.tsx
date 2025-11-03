@@ -7,10 +7,14 @@ import fetchWrapper, { ApiError } from "@lib/fetchWrapper";
 
 import { getPaymentStatusLabel, getPaymentTypeLabel } from "@lib/helpers";
 import {
+  Alert,
   AspectRatio,
   Badge,
+  Card,
+  Divider,
   Grid,
   Group,
+  HoverCard,
   Image,
   ScrollArea, // DEĞİŞİKLİK: ScrollArea import edildi
   SimpleGrid,
@@ -22,7 +26,7 @@ import {
 } from "@mantine/core";
 import { DateFormatter, useQuery } from "@repo/shared";
 import { AdminGetOrderReturnType } from "@repo/types";
-import { IconMail, IconPhone, IconUser } from "@tabler/icons-react";
+import { IconMail, IconNote, IconPhone, IconUser } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
 import FormCard from "../../store/discounts/components/FormCard";
 import AdminOrderAddressCard from "../components/AdminOrderAddressCard";
@@ -342,174 +346,223 @@ const AdminOrderViewPage = () => {
           <Stack gap={"lg"}>
             <FormCard title="Sipariş Özeti">
               <Text>{DateFormatter.withTime(data.createdAt, locale)}</Text>
+
               <Group justify="space-between">
-                <Text fz={"md"}>Ara Toplam </Text>
-                <ProductPriceFormatter price={data.totalPrice} />
+                <Text>Ara Toplam</Text>
+                <ProductPriceFormatter price={data.totalPrice} fw={500} />
               </Group>
-              {cargoRuleSnapshot.price > 0 ? (
+
+              {Number(data.discountAmount) > 0 && (
                 <Group justify="space-between">
-                  <Text fz={"md"}>Kargo Ücreti ({cargoRuleSnapshot.name})</Text>
-                  <ProductPriceFormatter price={cargoRuleSnapshot.price} />
-                </Group>
-              ) : (
-                <Group justify="space-between">
-                  <Text fz={"md"}>
-                    Kargo Ücreti{" "}
-                    {cargoRuleSnapshot.name
-                      ? `(${cargoRuleSnapshot.name})`
-                      : ""}
-                  </Text>
-                  <Text fz={"md"}>Ücretsiz</Text>
+                  <Text c="green.7">İndirim Tutarı</Text>
+                  <ProductPriceFormatter
+                    price={Number(data.discountAmount)}
+                    c="green.7"
+                    fw={500}
+                  />
                 </Group>
               )}
+
               <Group justify="space-between">
-                <Text fz={"md"}>Toplam</Text>
-                <ProductPriceFormatter price={data.totalFinalPrice} />
+                <Text>
+                  Kargo Ücreti
+                  {cargoRuleSnapshot.name && (
+                    <Text component="span" c="dimmed" fz="sm" ml={4}>
+                      ({cargoRuleSnapshot.name})
+                    </Text>
+                  )}
+                </Text>
+                {cargoRuleSnapshot.price > 0 ? (
+                  <ProductPriceFormatter
+                    price={cargoRuleSnapshot.price}
+                    fw={500}
+                  />
+                ) : (
+                  <Text c="green.7" fw={500}>
+                    Ücretsiz
+                  </Text>
+                )}
+              </Group>
+
+              <Divider my="sm" />
+
+              <Group justify="space-between">
+                <Text fw={600} fz="lg">
+                  Toplam
+                </Text>
+                <ProductPriceFormatter
+                  price={data.totalFinalPrice}
+                  fw={700}
+                  fz="lg"
+                />
               </Group>
             </FormCard>
             {data.transactions && data.transactions.length > 0 && (
               <FormCard title="Ödemeler">
-                <ScrollArea h={400} type="auto" p="xs">
-                  <div className="space-y-4">
+                <ScrollArea h={400} type="auto">
+                  <div className="flex flex-wrap gap-3 p-2">
                     {[...data.transactions]
                       .sort((a, b) => {
                         if (a.status === "PAID" && b.status !== "PAID")
                           return -1;
                         if (a.status !== "PAID" && b.status === "PAID")
                           return 1;
-                        return (
-                          new Date(b.createdAt).getTime() -
-                          new Date(a.createdAt).getTime()
-                        );
                       })
                       .map((transaction) => {
                         const gatewayResponse =
                           // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           transaction.gatewayResponse as any;
-                        const hasCustomMessage = gatewayResponse?.message;
+                        const isPaid = transaction.status === "PAID";
+                        const isFailed = transaction.status === "FAILED";
 
                         return (
-                          <div
+                          <HoverCard
                             key={transaction.id}
-                            className={`border rounded-lg p-4 ${
-                              transaction.status === "PAID"
-                                ? "border-green-500 bg-green-50"
-                                : transaction.status === "FAILED"
-                                  ? "border-red-500 bg-red-50"
-                                  : "border-yellow-500 bg-yellow-50"
-                            }`}
+                            width={320}
+                            shadow="md"
                           >
-                            {/* Üst Kısım: Temel Bilgiler */}
-                            <div className="grid grid-cols-2 gap-4 mb-3">
-                              <div>
-                                <p className="text-xs text-gray-500">Durum</p>
-                                <p className="font-semibold">
-                                  {getPaymentStatusLabel(transaction.status)}
-                                </p>
-                              </div>
+                            <HoverCard.Target>
+                              <Card
+                                className="cursor-pointer transition-all hover:scale-105"
+                                withBorder
+                                p="md"
+                                radius="md"
+                                w={180}
+                                style={{
+                                  borderColor: isPaid
+                                    ? "var(--mantine-color-green-6)"
+                                    : isFailed
+                                      ? "var(--mantine-color-red-6)"
+                                      : "var(--mantine-color-yellow-6)",
+                                  backgroundColor: isPaid
+                                    ? "var(--mantine-color-green-0)"
+                                    : isFailed
+                                      ? "var(--mantine-color-red-0)"
+                                      : "var(--mantine-color-yellow-0)",
+                                }}
+                              >
+                                <Stack gap="xs">
+                                  <Badge
+                                    color={
+                                      isPaid
+                                        ? "green"
+                                        : isFailed
+                                          ? "red"
+                                          : "yellow"
+                                    }
+                                    variant="light"
+                                    size="sm"
+                                  >
+                                    {getPaymentStatusLabel(transaction.status)}
+                                  </Badge>
+                                  <ProductPriceFormatter
+                                    price={transaction.amount}
+                                    fw={700}
+                                    fz="xl"
+                                  />
+                                  <Text size="xs" c="dimmed">
+                                    {new Date(
+                                      transaction.createdAt
+                                    ).toLocaleDateString("tr-TR", {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                    })}
+                                  </Text>
+                                </Stack>
+                              </Card>
+                            </HoverCard.Target>
 
-                              <div>
-                                <p className="text-xs text-gray-500">Tutar</p>
-                                <p className="font-semibold">
-                                  {Number(transaction.amount).toFixed(2)} ₺
-                                </p>
-                              </div>
+                            <HoverCard.Dropdown>
+                              <Stack gap="sm">
+                                <Group justify="space-between">
+                                  <Text size="sm" c="dimmed">
+                                    Ödeme Yöntemi
+                                  </Text>
+                                  <Text size="sm" fw={600}>
+                                    {getPaymentTypeLabel(
+                                      transaction.paymentType
+                                    )}
+                                  </Text>
+                                </Group>
 
-                              <div>
-                                <p className="text-xs text-gray-500">
-                                  Ödeme Yöntemi
-                                </p>
-                                <Text fw={700}>
-                                  {getPaymentTypeLabel(transaction.paymentType)}
-                                </Text>
-                              </div>
+                                <Group justify="space-between">
+                                  <Text size="sm" c="dimmed">
+                                    Sağlayıcı
+                                  </Text>
+                                  <Text size="sm" fw={600}>
+                                    {transaction.provider}
+                                  </Text>
+                                </Group>
 
-                              <div>
-                                <p className="text-xs text-gray-500">
-                                  Sağlayıcı
-                                </p>
-                                <p className="font-semibold">
-                                  {transaction.provider}
-                                </p>
-                              </div>
-                            </div>
+                                {transaction.binNumber &&
+                                  transaction.lastFourDigits && (
+                                    <>
+                                      <Divider />
+                                      <div>
+                                        <Text size="xs" c="dimmed" mb={4}>
+                                          Kart Bilgileri
+                                        </Text>
+                                        <Text size="sm" ff="monospace">
+                                          {transaction.binNumber}******
+                                          {transaction.lastFourDigits}
+                                        </Text>
+                                        {transaction.cardAssociation && (
+                                          <Text size="xs" c="dimmed" mt={2}>
+                                            {transaction.cardAssociation}
+                                            {transaction.cardFamilyName &&
+                                              ` - ${transaction.cardFamilyName}`}
+                                          </Text>
+                                        )}
+                                      </div>
+                                    </>
+                                  )}
 
-                            {/* Kart Bilgileri (varsa) */}
-                            {transaction.binNumber &&
-                              transaction.lastFourDigits && (
-                                <div className="border-t pt-3 mb-3">
-                                  <div className="flex flex-col gap-1">
+                                {transaction.providerTransactionId && (
+                                  <>
+                                    <Divider />
                                     <div>
-                                      <p className="text-xs text-gray-500">
-                                        Kart
-                                      </p>
-                                      <p className="font-mono">
-                                        {transaction.binNumber}******
-                                        {transaction.lastFourDigits}
-                                      </p>
+                                      <Text size="xs" c="dimmed" mb={4}>
+                                        İşlem ID
+                                      </Text>
+                                      <Text size="xs" ff="monospace">
+                                        {transaction.providerTransactionId}
+                                      </Text>
                                     </div>
+                                  </>
+                                )}
 
-                                    {transaction.cardAssociation && (
-                                      <div>
-                                        <p className="text-xs text-gray-500">
-                                          Kart Tipi
-                                        </p>
-                                        <p>{transaction.cardAssociation}</p>
-                                      </div>
-                                    )}
+                                {gatewayResponse?.message && (
+                                  <>
+                                    <Divider />
+                                    <Alert
+                                      icon={<IconNote size={16} />}
+                                      title="Admin Notu"
+                                      color="blue"
+                                      variant="light"
+                                    >
+                                      <Text size="sm">
+                                        {gatewayResponse.message}
+                                      </Text>
+                                    </Alert>
+                                  </>
+                                )}
 
-                                    {transaction.cardFamilyName && (
-                                      <div>
-                                        <p className="text-xs text-gray-500">
-                                          Kart Ailesi
-                                        </p>
-                                        <p>{transaction.cardFamilyName}</p>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            {transaction.providerTransactionId && (
-                              <div className="border-t pt-3 mb-3">
-                                <p className="text-xs text-gray-500">
-                                  İşlem ID
-                                </p>
-                                <p className="font-mono text-sm">
-                                  {transaction.providerTransactionId}
-                                </p>
-                              </div>
-                            )}
-
-                            {/* Admin Mesajı (varsa) */}
-                            {hasCustomMessage && (
-                              <div className="border-t pt-3">
-                                <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                                  <p className="text-xs text-blue-600 font-semibold mb-1">
-                                    📝 Admin Notu:
-                                  </p>
-                                  <p className="text-sm text-blue-900">
-                                    {gatewayResponse.message}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Tarih */}
-                            <div className="border-t pt-3 mt-3">
-                              <p className="text-xs text-gray-500">
-                                {new Date(transaction.createdAt).toLocaleString(
-                                  "tr-TR",
-                                  {
+                                <Divider />
+                                <Text size="xs" c="dimmed" ta="center">
+                                  {new Date(
+                                    transaction.createdAt
+                                  ).toLocaleString("tr-TR", {
                                     day: "2-digit",
                                     month: "2-digit",
                                     year: "numeric",
                                     hour: "2-digit",
                                     minute: "2-digit",
-                                  }
-                                )}
-                              </p>
-                            </div>
-                          </div>
+                                  })}
+                                </Text>
+                              </Stack>
+                            </HoverCard.Dropdown>
+                          </HoverCard>
                         );
                       })}
                   </div>

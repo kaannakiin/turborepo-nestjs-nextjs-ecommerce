@@ -1435,7 +1435,7 @@ model OrderTransactionSchema {
   binNumber             String? // Eğer kredi kartı ile ödeme yapıldıysa, kartın BIN numarası  
   lastFourDigits        String? // Eğer kredi kartı ile ödeme yapıldıysa, kartın son 4 hanesi
   cardAssociation       CardAssociation? // MASTER_CARD, VISA, etc.
-  cardFamilyName        CardFamilyName? // Bonus, World, Maximum, etc.
+  cardFamilyName        String? // Bonus, World, Maximum, etc.
   // Hata ayıklama için provider'dan dönen tüm ham response
   gatewayResponse       Json?
 
@@ -1459,18 +1459,16 @@ model Shipment {
 }
 
 enum CardAssociation {
-  MASTER_CARD
   VISA
-  TROY
+  MASTER_CARD
   AMERICAN_EXPRESS
-}
-
-enum CardFamilyName {
-  Bonus
-  Axess
-  World
-  Maximum
-  Paraf
-  CardFinans
-  Advantage
+  TROY
+  DISCOVER
+  DINERS_CLUB
+  JCB
+  UNIONPAY
+  MAESTRO
+  MIR
+  CUP
+  UNKNOWN
 }

@@ -246,7 +246,8 @@ export class PaymentsService {
       };
     }
 
-    const { cart, subTotal, totalDiscount } = cartResult.data;
+    const { cart, discountAmount, shippingCost, totalFinalPrice, totalPrice } =
+      cartResult.data;
 
     const basketItems = this.createBasketItems(
       cart.items as CartItemForPayment[],
@@ -256,12 +257,6 @@ export class PaymentsService {
 
     const cleanCardNumber = data.creditCardNumber.replace(/\s+/g, '');
     const locale = cart.locale === 'TR' ? 'tr' : 'en';
-    const totalInInt = basketItems.reduce((sum, item) => {
-      const priceInKurus = this.formatPrice(item.price);
-      return sum + priceInKurus * item.quantity;
-    }, 0);
-
-    const totalPrice = totalInInt / 100;
 
     const cartShippingAddress = cart.shippingAddress as ShippingAddressPayload;
     const cartBillingAddress =
@@ -322,7 +317,7 @@ export class PaymentsService {
     };
 
     const orderResponse = await this.orderService.createOrUpdateOrderForPayment(
-      { cart, subTotal, totalDiscount },
+      { cart, discountAmount, shippingCost, totalFinalPrice, totalPrice },
       cart.shippingAddress,
       cart.billingAddress || cart.shippingAddress,
       providerConfig.provider.type,
@@ -356,7 +351,6 @@ export class PaymentsService {
         conversationId: installmentConversationId,
         price: totalPrice,
       });
-      console.log('installementReq', installementReq);
       if (
         !installementReq.conversationId ||
         installementReq.conversationId !== installmentConversationId

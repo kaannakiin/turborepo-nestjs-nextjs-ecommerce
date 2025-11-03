@@ -1440,75 +1440,66 @@ export class CartV3Service {
         include: GetCartForPaymentIncludeCartType,
       })) as CartForPayment;
 
+      // --- 1. Temel Sepet Doğrulamaları ---
       if (!cart) {
         await this.createCartPaymentAttempt(cartId, false, 'Sepet bulunamadı');
         return { success: false, message: 'Sepet bulunamadı' };
       }
-
       if (!cart.items || cart.items.length === 0) {
         await this.createCartPaymentAttempt(
           cartId,
           false,
           'Sepette ödeme için uygun ürün bulunamadı',
         );
-
         return {
           success: false,
           message: 'Sepette ödeme için uygun ürün bulunamadı',
         };
       }
-
       if (cart.orderAttempts && cart.orderAttempts.length > 0) {
         await this.createCartPaymentAttempt(
           cartId,
           false,
           'Bu sepet için zaten ödeme yapılmış veya kısmi ödeme yapılmış bir sipariş bulunmaktadır.',
         );
-
         return {
           success: false,
           message:
             'Bu sepet için zaten ödeme yapılmış veya kısmi ödeme yapılmış bir sipariş bulunmaktadır.',
         };
       }
-
       if (!cart.shippingAddress || !cart.shippingAddressId) {
         await this.createCartPaymentAttempt(
           cartId,
           false,
           'Kullanıcı gönderim adresi eklememiş',
         );
-
         return {
           success: false,
           message: 'Lütfen gönderim adresi ekleyin',
         };
       }
-
       if (!cart.cargoRuleId || !cart.cargoRule) {
         await this.createCartPaymentAttempt(
           cartId,
           false,
           'Kullanıcı gönderim yöntemi seçmemiş',
         );
-
         return {
           success: false,
           message: 'Lütfen gönderim yöntemi seçin',
         };
       }
+
+      // --- 2. Stok Kontrolü ---
       for (const item of cart.items as CartItemForPayment[]) {
         const stock = item.variant ? item.variant.stock : item.product.stock;
-
         if (stock < item.quantity) {
           const productName =
             item.product.translations.find((t) => t.locale === cart.locale)
               ?.name || 'İlgili Ürün';
-
           const errorMessage = `Stokta yeterli ürün yok: "${productName}". (Sepetinizde ${item.quantity} adet var, stokta ${stock} adet kaldı.)`;
-
           await this.createCartPaymentAttempt(cartId, false, errorMessage);
-
           return {
             success: false,
             message:
@@ -1517,16 +1508,31 @@ export class CartV3Service {
         }
       }
 
-      const { subtotal, totalDiscount } =
+      // --- 3. Fiyat Hesaplama Aşaması (SSOT) ---
+
+      // 3a. Ürün Bazlı Fiyatları Al
+      // (itemsTotalPrice = Ürünlerin indirimsiz ham toplamı)
+      // (itemsTotalDiscount = SADECE ürünlere ait indirimlerin toplamı)
+      const { subtotal: itemsTotalPrice, totalDiscount: itemsTotalDiscount } =
         this.calculateCartItemDiscountAndPrice(
           cart.items.map((item: CartItemForPayment) => ({
             product: item.product,
             variant: item.variant || undefined,
             quantity: item.quantity,
           })),
-          'TRY',
+          cart.currency, // Kodu 'TRY' yerine dinamik cart currency'si ile kullan
         );
 
+      // 3b. Sepet Bazlı İndirimleri Al (Kupon, Kampanya vb.)
+      // !!! ÖNEMLİ: Bu bilgiyi 'cart' objesinden alman lazım.
+      // Örn: cart.couponDiscountAmount veya cart.appliedCampaignDiscount
+      const cartLevelDiscount = 0; // Kanka, burayı kendi kupon mantığına göre doldurmalısın.
+
+      // 3c. Kargo Hesaplaması İçin Net Ürün Tutarını Bul
+      const itemsTotalAfterAllDiscounts =
+        itemsTotalPrice - itemsTotalDiscount - cartLevelDiscount;
+
+      // --- 4. Kargo Doğrulama Aşaması ---
       const matchingZone = await this.shippingService.findMatchingCargoZone(
         cart.shippingAddress.countryId,
         cart.shippingAddress.addressLocationType === 'STATE'
@@ -1536,7 +1542,7 @@ export class CartV3Service {
           ? cart.shippingAddress.cityId
           : null,
         cart.currency,
-        totalDiscount > 0 ? subtotal - totalDiscount : subtotal,
+        itemsTotalAfterAllDiscounts, // Kargo hesaplamasını TÜM indirimler düşülmüş halinden yap
       );
 
       if (!matchingZone) {
@@ -1545,7 +1551,6 @@ export class CartV3Service {
           false,
           'Bu adres için kargo hizmeti bulunmuyor.',
         );
-
         return {
           success: false,
           message: 'Bu adres için kargo hizmeti bulunmuyor.',
@@ -1558,7 +1563,6 @@ export class CartV3Service {
           false,
           'Bu sepet tutarı için uygun kargo seçeneği bulunmuyor.',
         );
-
         return {
           success: false,
           message: 'Bu sepet tutarı için uygun kargo seçeneği bulunmuyor.',
@@ -1575,7 +1579,6 @@ export class CartV3Service {
           false,
           'Seçilen kargo yöntemi, adres veya sepet tutarındaki değişiklik nedeniyle artık geçerli değil. Lütfen kargo seçeneklerini güncelleyin.',
         );
-
         return {
           success: false,
           message:
@@ -1583,23 +1586,40 @@ export class CartV3Service {
         };
       }
 
+      // --- 5. Nihai Rakamları Toparlama ---
+      // Tüm doğrulamalar tamam. OrdersService'e gidecek net rakamları hazırla.
+
+      // 5a. Kargo Ücreti
+      // Kuralın geçerli olduğunu 'isSelectedRuleStillValid' ile doğruladık.
+      const finalShippingCost = cart.cargoRule.price;
+
+      // 5b. Siparişin Ham Toplamı (Ürünlerin indirimsiz fiyatı)
+      const finalTotalPrice = itemsTotalPrice;
+
+      // 5c. Siparişin Toplam İndirimi (Ürün İndirimleri + Sepet İndirimleri)
+      const finalDiscountAmount = itemsTotalDiscount + cartLevelDiscount;
+
+      // 5d. Müşterinin Ödeyeceği NET Tutar (Genel Toplam)
+      const finalGrandTotal = itemsTotalAfterAllDiscounts + finalShippingCost;
+
+      // --- 6. Net Veriyi Döndür ---
       return {
         success: true,
         message: 'Sepet başarıyla alındı',
         data: {
           cart,
-          subTotal: subtotal,
-          totalDiscount,
+
+          totalPrice: finalTotalPrice,
+          discountAmount: finalDiscountAmount,
+          shippingCost: finalShippingCost,
+          totalFinalPrice: finalGrandTotal,
         },
       };
     } catch (error) {
       console.error('Error fetching cart for payment:', error);
-
       const errorMessage =
         error instanceof Error ? error.message : 'Bilinmeyen bir hata oluştu';
-
       await this.createCartPaymentAttempt(cartId, false, errorMessage);
-
       return {
         success: false,
         message: 'Sepet alınırken bir hata oluştu',

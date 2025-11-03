@@ -1,4 +1,4 @@
-import { $Enums, CardAssociation, CardFamilyName } from "@repo/database";
+import { $Enums, CardAssociation } from "@repo/database";
 
 export type IyzLocale = "tr" | "en";
 export type CardType = "CREDIT_CARD" | "DEBIT_CARD" | "PREPAID_CARD";
@@ -115,7 +115,7 @@ export interface BinCheckSuccessResponse extends IyzicoSuccessResponse {
   binNumber: string;
   cardType: CardType;
   cardAssociation: CardAssociation;
-  cardFamily: CardFamilyName;
+  cardFamily: string;
   bankName: string;
   bankCode: number;
   commercial: number;
@@ -139,7 +139,7 @@ export interface InstallmentDetail {
   price: number;
   cardType: CardType;
   cardAssociation: CardAssociation;
-  cardFamilyName: CardFamilyName;
+  cardFamilyName: string;
   force3ds: number;
   bankCode: number;
   bankName: string;
@@ -170,7 +170,7 @@ export interface BasePaymentSuccessData {
   iyziCommissionFee: number;
   cardType: CardType;
   cardAssociation: CardAssociation;
-  cardFamily: CardFamilyName;
+  cardFamily: string;
   binNumber: string;
   lastFourDigits: string;
   basketId: string;
