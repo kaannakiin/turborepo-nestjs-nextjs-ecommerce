@@ -30,6 +30,7 @@ import { IconMail, IconNote, IconPhone, IconUser } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
 import FormCard from "../../store/discounts/components/FormCard";
 import AdminOrderAddressCard from "../components/AdminOrderAddressCard";
+import { Prisma } from "@repo/database";
 
 const AdminOrderViewPage = () => {
   const { slug } = useParams();
@@ -196,66 +197,20 @@ const AdminOrderViewPage = () => {
                             </Table.Td>
 
                             <Table.Td>
-                              <Stack gap={4}>
-                                <ProductPriceFormatter
-                                  price={item.buyedPrice}
-                                  currency={currency}
-                                  fw={500}
-                                />
-                                {item.discountAmount &&
-                                  Number(item.discountAmount) > 0 && (
-                                    <Text
-                                      size="xs"
-                                      td="line-through"
-                                      c="dimmed"
-                                    >
-                                      <ProductPriceFormatter
-                                        price={
-                                          Number(item.totalPrice) /
-                                          item.quantity
-                                        }
-                                        currency={currency}
-                                      />
-                                    </Text>
-                                  )}
-                              </Stack>
+                              <ProductPriceFormatter
+                                price={item.buyedPrice}
+                                currency={currency}
+                                fw={500}
+                              />
                             </Table.Td>
 
                             <Table.Td>
-                              <Stack gap={4}>
-                                <ProductPriceFormatter
-                                  price={item.totalFinalPrice}
-                                  currency={currency}
-                                  fw={600}
-                                  size="sm"
-                                />
-                                {item.discountAmount &&
-                                  Number(item.discountAmount) > 0 && (
-                                    <Group gap={4}>
-                                      <Text
-                                        size="xs"
-                                        td="line-through"
-                                        c="dimmed"
-                                      >
-                                        <ProductPriceFormatter
-                                          price={item.totalPrice}
-                                          currency={currency}
-                                        />
-                                      </Text>
-                                      <Badge
-                                        size="xs"
-                                        color="green"
-                                        variant="light"
-                                      >
-                                        -
-                                        <ProductPriceFormatter
-                                          price={item.discountAmount}
-                                          currency={currency}
-                                        />
-                                      </Badge>
-                                    </Group>
-                                  )}
-                              </Stack>
+                              <ProductPriceFormatter
+                                price={item.totalFinalPrice}
+                                currency={currency}
+                                fw={600}
+                                size="sm"
+                              />
                             </Table.Td>
                           </Table.Tr>
                         );
@@ -399,7 +354,7 @@ const AdminOrderViewPage = () => {
             </FormCard>
             {data.transactions && data.transactions.length > 0 && (
               <FormCard title="Ödemeler">
-                <ScrollArea h={400} type="auto">
+                <ScrollArea h={200} type="auto">
                   <div className="flex flex-wrap gap-3 p-2">
                     {[...data.transactions]
                       .sort((a, b) => {
@@ -410,8 +365,7 @@ const AdminOrderViewPage = () => {
                       })
                       .map((transaction) => {
                         const gatewayResponse =
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                          transaction.gatewayResponse as any;
+                          transaction.gatewayResponse as Prisma.JsonObject;
                         const isPaid = transaction.status === "PAID";
                         const isFailed = transaction.status === "FAILED";
 
@@ -423,7 +377,7 @@ const AdminOrderViewPage = () => {
                           >
                             <HoverCard.Target>
                               <Card
-                                className="cursor-pointer transition-all hover:scale-105"
+                                className="cursor-pointer w-full transition-all hover:scale-105"
                                 withBorder
                                 p="md"
                                 radius="md"
@@ -542,7 +496,12 @@ const AdminOrderViewPage = () => {
                                       variant="light"
                                     >
                                       <Text size="sm">
-                                        {gatewayResponse.message}
+                                        {typeof gatewayResponse.message ===
+                                        "object"
+                                          ? JSON.stringify(
+                                              gatewayResponse.message
+                                            )
+                                          : String(gatewayResponse.message)}
                                       </Text>
                                     </Alert>
                                   </>

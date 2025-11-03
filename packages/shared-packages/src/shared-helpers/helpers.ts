@@ -1,6 +1,6 @@
 import { $Enums } from "@repo/database";
+import { dateFns, de, enUS, tr } from "@repo/shared";
 import { format, formatDistanceToNow } from "date-fns";
-import { de, enUS, tr } from "date-fns/locale";
 export function slugify(text: string): string {
   if (!text || typeof text !== "string") return "";
 
@@ -168,6 +168,25 @@ export class DateFormatter {
     return format(new Date(date), "d MMMM yyyy, HH:mm:ss", {
       locale: this.getLocale(locale),
     });
+  }
+
+  static parseIsoString(
+    isoString: string | null,
+    locale: $Enums.Locale = "TR"
+  ): Date | null {
+    if (!isoString) return null;
+
+    try {
+      const date = dateFns.parseISO(isoString);
+
+      if (dateFns.isValid(date)) {
+        return date;
+      }
+      return null;
+    } catch (error) {
+      console.error("Invalid ISO string:", isoString, error);
+      return null;
+    }
   }
 }
 

@@ -274,17 +274,6 @@ const AdminOrdersPage = () => {
                         price={order.totalFinalPrice}
                         currency={order.currency}
                       />
-                      {order.discountAmount &&
-                        Number(order.discountAmount) > 0 && (
-                          <Text size="xs" c="green">
-                            -
-                            <ProductPriceFormatter
-                              price={order.discountAmount}
-                              currency={order.currency}
-                            />{" "}
-                            indirim
-                          </Text>
-                        )}
                     </Stack>
                   </Table.Td>
                   <Table.Td>
@@ -292,11 +281,7 @@ const AdminOrdersPage = () => {
                       {label}
                     </Badge>
                   </Table.Td>
-                  <Table.Td>
-                    <Text size="xs">
-                      {DateFormatter.withTime(order.createdAt)}
-                    </Text>
-                  </Table.Td>
+                  <Table.Td>{DateFormatter.withTime(order.createdAt)}</Table.Td>
                   <Table.Td>
                     <Group align="center" gap="xs">
                       <Tooltip label="Siparişi Görüntüle">

@@ -8,6 +8,7 @@ import { DiscountsModule } from './discounts/discounts.module';
 import { CampaignsModule } from './campaigns/campaigns.module';
 import { PaymentsModule } from './payments/payments.module';
 import { OrdersModule } from './orders/orders.module';
+import { CartsModule } from './carts/carts.module';
 
 @Module({
   controllers: [AdminController],
@@ -20,6 +21,7 @@ import { OrdersModule } from './orders/orders.module';
     CampaignsModule,
     PaymentsModule,
     OrdersModule,
+    CartsModule,
   ],
 })
 export class AdminModule {}
