@@ -17,6 +17,7 @@ import { CartV3Module } from './cart-v3/cart-v3.module';
 import { ChatModule } from './ai/chat/chat.module';
 import { PaymentsModule } from './payments/payments.module';
 import { OrdersModule } from './orders/orders.module';
+import { SharedModule } from './common/services/shared.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { OrdersModule } from './orders/orders.module';
     LocationsModule,
     UserPageModule,
     ShippingModule,
+    SharedModule,
     CartV3Module,
     ChatModule,
     PaymentsModule,

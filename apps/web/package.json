@@ -31,7 +31,6 @@
     "@repo/types": "*",
     "@tabler/icons-react": "^3.34.1",
     "@tailwindcss/postcss": "^4.1.12",
-    "ag-grid-react": "^34.2.0",
     "axios": "^1.12.2",
     "dayjs": "^1.11.18",
     "embla-carousel": "^8.6.0",

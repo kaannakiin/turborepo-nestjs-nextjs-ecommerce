@@ -1,6 +1,7 @@
 import { $Enums } from "@repo/database";
-import { dateFns, de, enUS, tr } from "@repo/shared";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, isValid, parseISO } from "date-fns";
+import {} from "date-fns";
+import { enUS, de, tr } from "date-fns/locale";
 export function slugify(text: string): string {
   if (!text || typeof text !== "string") return "";
 
@@ -177,9 +178,9 @@ export class DateFormatter {
     if (!isoString) return null;
 
     try {
-      const date = dateFns.parseISO(isoString);
+      const date = parseISO(isoString);
 
-      if (dateFns.isValid(date)) {
+      if (isValid(date)) {
         return date;
       }
       return null;

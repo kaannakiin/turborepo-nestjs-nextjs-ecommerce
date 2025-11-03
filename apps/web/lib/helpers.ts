@@ -708,30 +708,22 @@ export function calculateDiscountRate(
   return `${Math.round(discountRate * 10) / 10}%`; // Virgülden sonra 1 basamak
 }
 
+export const cartStatusConfig: Record<
+  $Enums.CartStatus,
+  { label: string; color: MantineColor }
+> = {
+  ABANDONED: { label: "Terkedilmiş", color: "red" },
+  ACTIVE: { label: "Aktif", color: "green" },
+  CONVERTED: { label: "Satın Alınmış", color: "blue" },
+  MERGED: { label: "Birleştirilmiş", color: "gray" },
+};
+
 export function getCartStatusLabel(status: $Enums.CartStatus): string {
-  switch (status) {
-    case "ABANDONED":
-      return "Terkedilmiş";
-    case "ACTIVE":
-      return "Aktif";
-    case "CONVERTED":
-      return "Satın Alınmış";
-    case "MERGED":
-      return "Birleştirilmiş";
-  }
+  return cartStatusConfig[status].label;
 }
 
-export function getCartStatusColor(status: $Enums.CartStatus): string {
-  switch (status) {
-    case "ABANDONED":
-      return "red";
-    case "ACTIVE":
-      return "green";
-    case "CONVERTED":
-      return "blue";
-    case "MERGED":
-      return "gray";
-  }
+export function getCartStatusColor(status: $Enums.CartStatus): MantineColor {
+  return cartStatusConfig[status].color;
 }
 
 export function getCartAssociationUrl(type: $Enums.CardAssociation) {

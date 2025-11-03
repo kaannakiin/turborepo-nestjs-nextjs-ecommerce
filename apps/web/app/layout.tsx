@@ -1,8 +1,8 @@
+import "@blocknote/mantine/blocknoteStyles.css";
 import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
 import ThemeProvider from "./(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import LayoutProviderWrapper from "./components/LayoutProviderWrapper";
 import "./globals.css";
-import "@blocknote/mantine/blocknoteStyles.css";
 
 export default function RootLayout({
   children,

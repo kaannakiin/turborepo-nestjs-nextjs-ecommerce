@@ -65,7 +65,7 @@ const AdminAppShellLayout = ({
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar className="flex flex-col gap-4">
+      <AppShell.Navbar className="flex flex-col gap-0">
         <AdminNavbar onNavItemClick={handleNavItemClick} />
       </AppShell.Navbar>
 
