@@ -177,17 +177,12 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
         );
       }
     },
-
-    // ✅ onSuccess'te sunucudan gelen veriyi direkt cache'e set et
     onSuccess: (data, variables, onMutateResult, context) => {
       const newCartId = data.cartId;
       if (newCartId) {
         context.client.setQueryData(["cart-v3", newCartId], data);
       }
     },
-
-    // ❌ onSettled'ı kaldır veya sadece background refetch yap
-    // İsterseniz hiç refetch yapmayabilirsiniz çünkü optimistic + onSuccess yeterli
   });
 
   const decreaseItemQuantity = useMutation({
@@ -549,108 +544,17 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
   return (
     <CartContextV3.Provider
       value={{
-        addNewItem: async (params) => {
-          if (addNewItem.isPending) {
-            return {
-              success: false,
-              message: "Another add operation in progress",
-            };
-          }
-          try {
-            const result = await addNewItem.mutateAsync(params);
-            return { success: true, newCart: result };
-          } catch (error) {
-            return {
-              success: false,
-              message: error instanceof Error ? error.message : "Unknown error",
-            };
-          }
-        },
-        increaseItemQuantity: async (
-          productId: string,
-          variantId?: string
-        ): Promise<CartActionResponseV3> => {
-          if (increaseItemQuantity.isPending) {
-            return {
-              success: false,
-              message: "Another increase operation in progress",
-            };
-          }
-          try {
-            const result = await increaseItemQuantity.mutateAsync({
-              productId,
-              variantId,
-            });
-            return { success: true, newCart: result };
-          } catch (error) {
-            return {
-              success: false,
-              message: error instanceof Error ? error.message : "Unknown error",
-            };
-          }
-        },
-        decreaseItemQuantity: async (
-          productId: string,
-          variantId?: string
-        ): Promise<CartActionResponseV3> => {
-          try {
-            const result = await decreaseItemQuantity.mutateAsync({
-              productId,
-              variantId,
-            });
-            return { success: true, newCart: result };
-          } catch (error) {
-            return {
-              success: false,
-              message: error instanceof Error ? error.message : "Unknown error",
-            };
-          }
-        },
-        removeItem: async (
-          productId: string,
-          variantId?: string
-        ): Promise<CartActionResponseV3> => {
-          if (removeItem.isPending) {
-            return {
-              success: false,
-              message: "Another remove operation in progress",
-            };
-          }
-          try {
-            const result = await removeItem.mutateAsync({
-              productId,
-              variantId,
-            });
-            return { success: true, newCart: result };
-          } catch (error) {
-            return {
-              success: false,
-              message: error instanceof Error ? error.message : "Unknown error",
-            };
-          }
-        },
-        clearCart: async (): Promise<CartActionResponseV3> => {
-          if (!cartId) {
-            return { success: false, message: "No cart to clear" };
-          }
-          if (clearCart.isPending) {
-            return {
-              success: false,
-              message: "Another clear operation in progress",
-            };
-          }
-          try {
-            const result = await clearCart.mutateAsync(cartId);
-            return { success: true, newCart: result };
-          } catch (error) {
-            return {
-              success: false,
-              message: error instanceof Error ? error.message : "Unknown error",
-            };
-          }
-        },
-        isCartLoading,
         cart,
+        isCartLoading,
+        // refreshCart: refetch,
+        addNewItem,
+        increaseItemQuantity,
+        decreaseItemQuantity,
+        removeItem,
+        // updateItemQuantity,
+        clearCart,
+        // mergeCarts,
+        // setOrderNote,
       }}
     >
       {children}
@@ -658,10 +562,74 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
   );
 }
 
+// CartContextV3.tsx (en alttaki hook)
+
 export function useCartV3() {
   const context = useContext(CartContextV3);
   if (!context) {
-    throw new Error("useCartV3 must be used within a CartProviderV2");
+    throw new Error("useCartV3 must be used within a CartProviderV3");
   }
-  return context;
+
+  const {
+    cart,
+    isCartLoading,
+    addNewItem, // Bu artık 'UseMutationResult' objesi
+    increaseItemQuantity, // Bu da öyle
+    decreaseItemQuantity,
+    removeItem,
+    clearCart,
+  } = context;
+
+  return {
+    cart,
+    isCartLoading,
+    // refreshCart,
+
+    addNewItem: (params: CartItemV3) => {
+      addNewItem.mutate(params);
+    },
+
+    increaseItem: (productId: string, variantId?: string) => {
+      increaseItemQuantity.mutate({ productId, variantId });
+    },
+
+    decreaseItem: (productId: string, variantId?: string) => {
+      decreaseItemQuantity.mutate({ productId, variantId });
+    },
+
+    removeItem: (productId: string, variantId?: string) => {
+      removeItem.mutate({ productId, variantId });
+    },
+
+    // updateItemQuantity: (
+    //   productId: string,
+    //   quantity: number,
+    //   variantId?: string
+    // ) => {
+    //   updateItemQuantity.mutate({ productId, quantity, variantId });
+    // },
+
+    clearCart: () => {
+      if (cart?.cartId) {
+        clearCart.mutate(cart.cartId);
+      }
+    },
+
+    // Yüklenme durumları (UI'da spinner göstermek için)
+    isAddingItem: addNewItem.isPending,
+    isIncreasingItem: increaseItemQuantity.isPending,
+    isDecreasingItem: decreaseItemQuantity.isPending,
+    isRemovingItem: removeItem.isPending,
+    // isUpdatingQuantity: updateItemQuantity.isPending,
+    isClearingCart: clearCart.isPending,
+
+    // Genel bir güncelleme durumu
+    isCartUpdating:
+      addNewItem.isPending ||
+      increaseItemQuantity.isPending ||
+      decreaseItemQuantity.isPending ||
+      removeItem.isPending ||
+      // updateItemQuantity.isPending ||
+      clearCart.isPending,
+  };
 }
