@@ -2,13 +2,13 @@
 
 import { LOCALE_CART_COOKIE } from "@lib/constants";
 import fetchWrapper, { ApiError } from "@lib/fetchWrapper";
-import { createId, useMutation, useQuery } from "@repo/shared";
 import {
-  CartActionResponse,
-  CartItemV3,
-  CartV3,
-  CartV3ContextType,
-} from "@repo/types";
+  createId,
+  useMutation,
+  UseMutationResult,
+  useQuery,
+} from "@repo/shared";
+import { CartActionResponse, CartItemV3, CartV3 } from "@repo/types";
 import {
   createContext,
   useCallback,
@@ -16,6 +16,26 @@ import {
   useEffect,
   useState,
 } from "react";
+
+type CartItemParams = { productId: string; variantId?: string };
+type UpdateQtyParams = {
+  productId: string;
+  quantity: number;
+  variantId?: string;
+};
+
+type CartV3ContextType = {
+  cart: CartV3 | null | undefined;
+  isCartLoading: boolean;
+  addNewItem: UseMutationResult<CartV3, Error, CartItemV3>;
+  increaseItemQuantity: UseMutationResult<CartV3, Error, CartItemParams>;
+  decreaseItemQuantity: UseMutationResult<CartV3, Error, CartItemParams>;
+  removeItem: UseMutationResult<CartV3, Error, CartItemParams>;
+  updateItemQuantity: UseMutationResult<CartV3, Error, UpdateQtyParams>;
+  clearCart: UseMutationResult<CartV3, Error, string>;
+  mergeCarts: UseMutationResult<CartV3, Error, string>;
+  setOrderNote: UseMutationResult<CartV3, Error, string>;
+};
 
 const helperCart = (
   items: CartItemV3[]

@@ -55,26 +55,6 @@ export type CartActionResponse = {
   newCart?: CartV3;
 };
 
-type CartItemParams = { productId: string; variantId?: string };
-type UpdateQtyParams = {
-  productId: string;
-  quantity: number;
-  variantId?: string;
-};
-
-export type CartV3ContextType = {
-  cart: CartV3 | null | undefined;
-  isCartLoading: boolean;
-  addNewItem: UseMutationResult<CartV3, Error, CartItemV3>;
-  increaseItemQuantity: UseMutationResult<CartV3, Error, CartItemParams>;
-  decreaseItemQuantity: UseMutationResult<CartV3, Error, CartItemParams>;
-  removeItem: UseMutationResult<CartV3, Error, CartItemParams>;
-  updateItemQuantity: UseMutationResult<CartV3, Error, UpdateQtyParams>;
-  clearCart: UseMutationResult<CartV3, Error, string>;
-  mergeCarts: UseMutationResult<CartV3, Error, string>;
-  setOrderNote: UseMutationResult<CartV3, Error, string>;
-};
-
 export const AddCartReqBodyV3Schema = z.object({
   productId: z.cuid2({
     error: "Geçersiz ürün kimliği",
