@@ -1,9 +1,8 @@
-// lib/auth.ts
 import { TokenPayload } from "@repo/types";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { cache } from "react";
 
-export const getSession = cache(async (): Promise<TokenPayload | null> => {
+export const getSession = async (): Promise<TokenPayload | null> => {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -14,7 +13,7 @@ export const getSession = cache(async (): Promise<TokenPayload | null> => {
       method: "GET",
       headers: { Cookie: `token=${token}` },
       credentials: "include",
-      next: { revalidate: 60 }, // 60 saniye cache
+      cache: "no-store",
     });
 
     if (!payloadFetch.ok) return null;
@@ -22,4 +21,4 @@ export const getSession = cache(async (): Promise<TokenPayload | null> => {
   } catch {
     return null;
   }
-});
+};

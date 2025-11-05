@@ -703,9 +703,66 @@ model CartItem {
   cart         Cart                       @relation(fields: [cartId], references: [id], onDelete: Cascade)
   product      Product?                   @relation(fields: [productId], references: [id], onDelete: Cascade)
   variant      ProductVariantCombination? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  logs         CartActivityLog[]
 
   @@unique([cartId, productId, variantId])
   @@index([cartId, productId, variantId])
+}
+
+model CartActivityLog {
+  id     String @id @default(cuid())
+  cartId String
+  cart   Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  // Eylem spesifik bir ürünle ilgiliyse (opsiyonel)
+  cartItemId String?
+  cartItem   CartItem? @relation(fields: [cartItemId], references: [id], onDelete: SetNull)
+
+  activityType CartActivityType // Ne olduğunu belirten enum
+
+  // Eylemi kim yaptı? (Kullanıcı, Admin veya Sistem)
+  actorType ActorType @default(USER)
+  actorId   String? // Eylemi yapanın ID'si (eğer varsa)
+
+  // Ekstra detayları (JSON olarak) saklamak için
+  // Örn: Miktar değişiminde {"old": 2, "new": 3}
+  // Örn: Görünmez olma {"cause": "OUT_OF_STOCK"}
+  details Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([cartId, createdAt(sort: Desc)])
+  @@index([cartItemId])
+}
+
+// Bu eylemleri tetikleyen enumlar
+enum CartActivityType {
+  // Sepet Eylemleri
+  CART_CREATED
+  CART_MERGED // Misafir sepeti kullanıcıyla birleşti
+  CART_STATUS_CHANGED // Örn: ACTIVE -> ABANDONED
+
+  // Ürün Eylemleri
+  ITEM_ADDED
+  ITEM_REMOVED
+  ITEM_QUANTITY_CHANGED
+
+  // Görünürlük Eylemleri (senin inVisibleCause'una istinaden)
+  ITEM_VISIBILITY_CHANGED // Bir ürün görünmez/görünür oldu
+
+  // Adres Eylemleri
+  SHIPPING_ADDRESS_SET
+  BILLING_ADDRESS_SET
+
+  // Ödeme Eylemleri
+  PAYMENT_ATTEMPT_FAILED
+  PAYMENT_ATTEMPT_SUCCESS
+}
+
+enum ActorType {
+  USER // Müşteri
+  ADMIN // Admin panelinden bir yetkili
+  SYSTEM // Stok kontrolü, cron job gibi otomatik sistemler
 }
 
 model Cart {
@@ -726,6 +783,7 @@ model Cart {
   items                    CartItem[]
   orderAttempts            OrderSchema[]
   cartPaymentCheckAttempts CartPaymentCheckAttempts?
+  cartActivityLogs         CartActivityLog[]
 }
 
 model CartPaymentCheckAttempts {
@@ -1471,4 +1529,22 @@ enum CardAssociation {
   MIR
   CUP
   UNKNOWN
+}
+
+model ErrorLog {
+  id String @id @default(cuid())
+
+  // Hatanın kendisi
+  message   String  @db.Text // error.message
+  stack     String? @db.Text // error.stack (en önemlisi)
+  errorCode String? // e.g., Prisma'nın P2025 kodu
+
+  // Hatanın bağlamı (Context)
+  context String // Hatanın nerede olduğunu söyler. Örn: "CartV3Service.createLog"
+  meta    Json? // Hata anındaki veriler. Örn: { cartId: "...", activityType: "..." }
+
+  createdAt DateTime @default(now())
+
+  @@index([context])
+  @@index([createdAt(sort: Desc)])
 }

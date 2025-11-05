@@ -156,7 +156,7 @@ const AuthUserShippingList = ({ cart }: AuthUserShippingListProps) => {
               const res = await fetchWrapper.put<{
                 success: boolean;
                 message: string;
-              }>(`/cart-v3/set-cart-cargo-rule`, {
+              }>(`/cart/set-cart-cargo-rule`, {
                 cartId: cart?.cart?.cartId,
                 cargoRuleId: selectedCargoRuleId,
               });

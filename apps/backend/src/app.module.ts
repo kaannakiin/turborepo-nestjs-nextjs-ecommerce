@@ -18,7 +18,8 @@ import { ChatModule } from './ai/chat/chat.module';
 import { PaymentsModule } from './payments/payments.module';
 import { OrdersModule } from './orders/orders.module';
 import { SharedModule } from './common/services/shared.module';
-
+import { PrismaLoggerModule } from './prisma-logger/prisma-logger.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 @Module({
   imports: [
     PrismaModule,
@@ -48,6 +49,11 @@ import { SharedModule } from './common/services/shared.module';
     ChatModule,
     PaymentsModule,
     OrdersModule,
+    PrismaLoggerModule,
+    EventEmitterModule.forRoot({
+      global: true,
+      verboseMemoryLeak: true,
+    }),
     // ThrottlerModule.forRootAsync({
     //   imports: [ConfigModule],
     //   inject: [ConfigService],

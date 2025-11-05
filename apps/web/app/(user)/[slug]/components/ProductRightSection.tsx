@@ -144,14 +144,14 @@ const ProductRightSection = ({
             </Badge>
             <div className="flex-1 flex flex-col">
               <ProductPriceFormatter
-                fz={"xs"}
+                fz={"md"}
+                fw={700}
                 price={variantPrice.price}
-                className="line-through text-gray-500"
               />
               <ProductPriceFormatter
                 price={variantPrice.discountedPrice}
-                fz={"md"}
-                fw={700}
+                fz={"xs"}
+                className="line-through text-gray-500"
               />
             </div>
           </Group>

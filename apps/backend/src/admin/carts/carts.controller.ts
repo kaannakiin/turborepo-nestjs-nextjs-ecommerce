@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Param,
   ParseEnumPipe,
   ParseIntPipe,
   Query,
@@ -18,6 +19,7 @@ import { CartsService } from './carts.service';
 @Roles(['ADMIN', 'OWNER'])
 export class CartsController {
   constructor(private readonly cartsService: CartsService) {}
+
   @Get()
   async getAllCarts(
     @Query('page', new ParseIntPipe()) page: number,
@@ -37,4 +39,7 @@ export class CartsController {
       endDate,
     });
   }
+
+  @Get('/:cartId')
+  async getCartById(@Param('cartId') cartId: string) {}
 }

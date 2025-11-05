@@ -314,7 +314,7 @@ const AuthUserAddressList = ({
                 const res = await fetchWrapper.post<{
                   success: boolean;
                   message: string;
-                }>(`/cart-v3/update-cart-address`, {
+                }>(`/cart/update-cart-address`, {
                   cartId,
                   addressId: selectedAddressId,
                 });

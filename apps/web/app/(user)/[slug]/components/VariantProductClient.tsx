@@ -128,7 +128,6 @@ const VariantProductClient = ({ productData }: VariantProductClientProps) => {
       type: asset.asset.type,
     })) || []),
   ];
-  console.log(selectedCombination.assets);
 
   return (
     <>

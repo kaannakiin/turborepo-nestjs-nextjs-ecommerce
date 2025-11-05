@@ -1,7 +1,6 @@
 import { $Enums } from "@repo/database";
 import { format, formatDistanceToNow, isValid, parseISO } from "date-fns";
-import {} from "date-fns";
-import { enUS, de, tr } from "date-fns/locale";
+import { de, enUS, tr } from "date-fns/locale";
 export function slugify(text: string): string {
   if (!text || typeof text !== "string") return "";
 
@@ -515,4 +514,101 @@ export function getOrderStatusOptions() {
     label: config.label,
     numericValue: config.value,
   }));
+}
+
+/**
+ * Verilen 'Locale' (bölge/dil) bilgisine dayanarak sistemde kullanılması gereken
+ * varsayılan 'Currency' (para birimi) kodunu döndürür.
+ *
+ * ### Kullanım Amacı
+ * Bu fonksiyon, admin panelinden yönetilen "Hangi bölgede hangi para birimi gösterilsin?"
+ * iş kuralını merkezi bir yerden uygular. Örneğin, 'EN' (İngilizce) locale'ine sahip
+ * bir kullanıcının 'TRY' (Türk Lirası) cinsinden fiyat görmesini sağlar.
+ *
+ * Sepet birleştirme (`mergeCarts`) veya yeni sepet oluşturma (`createCart`) gibi
+ * işlemlerde, sepetin para birimini kullanıcının mevcut locale'ine göre
+ * doğru bir şekilde ayarlamak için kullanılır.
+ *
+ * @param locale Para birimi eşleşmesi aranacak olan locale kodu (örn: 'TR', 'EN').
+ * @returns Eşleşen '$Enums.Currency' (örn: 'TRY', 'EUR'). Eşleşme bulunamazsa 'TRY' olarak fallback yapar.
+ */
+export const getDefaultCurrencyForLocale = (
+  locale: $Enums.Locale
+): $Enums.Currency => {
+  const mapping: Record<$Enums.Locale, $Enums.Currency> = {
+    TR: "TRY",
+    EN: "TRY",
+    DE: "EUR",
+  };
+
+  return mapping[locale] || "TRY";
+};
+const WhereAddedOptions: Record<
+  $Enums.WhereAdded,
+  { label: string; messageLabel: string }
+> = {
+  BRAND_PAGE: { label: "Marka Sayfası", messageLabel: "Marka sayfasından" },
+  CATEGORY_PAGE: {
+    label: "Kategori Sayfası",
+    messageLabel: "Kategori sayfasından",
+  },
+  PRODUCT_PAGE: { label: "Ürün Sayfası", messageLabel: "Ürün sayfasından" },
+  CART_PAGE: { label: "Sepet Sayfası", messageLabel: "Sepet sayfasından" },
+};
+
+export function getWhereAddedLabel(where: $Enums.WhereAdded): string {
+  return WhereAddedOptions[where]?.label || "Bilinmeyen";
+}
+export function getWhereAddedMessageLabel(where: $Enums.WhereAdded): string {
+  return WhereAddedOptions[where]?.messageLabel || "Bilinmeyen";
+}
+
+const cartActivityOptions: Record<$Enums.CartActivityType, { label: string }> =
+  {
+    BILLING_ADDRESS_SET: { label: "Fatura adresi ayarlandı" },
+    SHIPPING_ADDRESS_SET: { label: "Teslimat adresi ayarlandı" },
+    ITEM_ADDED: { label: "Ürün sepete eklendi" },
+    ITEM_REMOVED: { label: "Ürün sepetten çıkarıldı" },
+    ITEM_QUANTITY_CHANGED: { label: "Ürün miktarı güncellendi" },
+    CART_MERGED: { label: "Sepet birleştirildi" },
+    CART_CREATED: { label: "Yeni sepet oluşturuldu" },
+    CART_STATUS_CHANGED: { label: "Sepet durumu değiştirildi" },
+    ITEM_VISIBILITY_CHANGED: { label: "Ürün görünürlüğü değiştirildi" },
+    PAYMENT_ATTEMPT_FAILED: { label: "Ödeme denemesi başarısız oldu" },
+    PAYMENT_ATTEMPT_SUCCESS: { label: "Ödeme denemesi başarılı oldu" },
+  };
+
+export function getCartActivityLabel(
+  activityType: $Enums.CartActivityType
+): string {
+  return cartActivityOptions[activityType]?.label || "Bilinmeyen";
+}
+
+const actorTypeConfigs: Record<
+  $Enums.ActorType,
+  {
+    label: string;
+  }
+> = {
+  ADMIN: { label: "Yönetici" },
+  USER: { label: "Kullanıcı" },
+  SYSTEM: { label: "Sistem" },
+};
+
+export function getActorTypeLabel(actorType: $Enums.ActorType): string {
+  return actorTypeConfigs[actorType]?.label || "Bilinmeyen";
+}
+
+export const cartStatusConfigs: Record<
+  $Enums.CartStatus,
+  { logLabel: string }
+> = {
+  ABANDONED: { logLabel: "Terkedilmiş" },
+  ACTIVE: { logLabel: "Aktif" },
+  CONVERTED: { logLabel: "Dönüştürülmüş" },
+  MERGED: { logLabel: "Birleştirilmiş" },
+};
+
+export function getCartStatusLogLabel(status: $Enums.CartStatus): string {
+  return cartStatusConfigs[status]?.logLabel || "Bilinmeyen";
 }
