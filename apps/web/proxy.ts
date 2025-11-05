@@ -7,11 +7,11 @@ const adminRoutes = ["/api/admin", "/admin"];
 const userRoutes = ["/dashboard", "/profile", "/api/user"];
 
 const clearCookies = (response: NextResponse) => {
-  response.cookies.set("token", "", { expires: new Date(0), path: "/" });
-  response.cookies.set("refresh_token", "", {
-    expires: new Date(0),
-    path: "/",
-  });
+  // response.cookies.set("token", "", { expires: new Date(0), path: "/" });
+  // response.cookies.set("refresh_token", "", {
+  //   expires: new Date(0),
+  //   path: "/",
+  // });
   return response;
 };
 

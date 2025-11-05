@@ -5,10 +5,10 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class LocationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prismaService: PrismaService) {}
 
   async getAllCountries() {
-    return this.prisma.country.findMany({
+    return this.prismaService.country.findMany({
       select: {
         translations: {
           select: {
@@ -24,7 +24,7 @@ export class LocationsService {
   }
 
   async getCitiesByCountry(countryId: string) {
-    return this.prisma.city.findMany({
+    return this.prismaService.city.findMany({
       where: {
         countryId: countryId,
       },
@@ -36,7 +36,7 @@ export class LocationsService {
   }
 
   async getStatesByCountry(countryId: string) {
-    return this.prisma.state.findMany({
+    return this.prismaService.state.findMany({
       where: {
         countryId: countryId,
       },
@@ -50,7 +50,7 @@ export class LocationsService {
     if (countryId !== TURKEY_DB_ID) {
       throw new BadRequestException('Geçersiz ülke kimliği');
     }
-    const city = await this.prisma.city.findUnique({
+    const city = await this.prismaService.city.findUnique({
       where: {
         id: cityId,
       },
@@ -70,7 +70,7 @@ export class LocationsService {
   }
   async getUserAddresses(userId: string) {
     const [addresses, user] = await Promise.all([
-      this.prisma.addressSchema.findMany({
+      this.prismaService.addressSchema.findMany({
         where: { userId },
         include: {
           city: {
@@ -90,7 +90,7 @@ export class LocationsService {
           },
         },
       }),
-      this.prisma.user.findUnique({
+      this.prismaService.user.findUnique({
         where: { id: userId },
         select: { defaultAddressId: true },
       }),
@@ -104,7 +104,7 @@ export class LocationsService {
   }
 
   async addUserAddress(userId: string, address: AuthUserAddressZodType) {
-    const user = await this.prisma.user.findUnique({
+    const user = await this.prismaService.user.findUnique({
       where: {
         id: userId,
       },
@@ -114,7 +114,7 @@ export class LocationsService {
       throw new BadRequestException('Kullanıcı bulunamadı');
     }
 
-    const createdAddress = await this.prisma.addressSchema.upsert({
+    const createdAddress = await this.prismaService.addressSchema.upsert({
       where: {
         id: address.id,
       },
@@ -186,7 +186,7 @@ export class LocationsService {
       },
     });
 
-    const newUserAddress = await this.prisma.user.update({
+    const newUserAddress = await this.prismaService.user.update({
       where: { id: user.id },
       data: { defaultAddressId: createdAddress.id },
     });

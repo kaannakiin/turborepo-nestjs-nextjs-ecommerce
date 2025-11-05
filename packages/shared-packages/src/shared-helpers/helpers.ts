@@ -11,7 +11,7 @@ export function slugify(text: string): string {
     Ğ: "G",
     ı: "i",
     I: "I",
-    İ: "i", // Büyük İ'yi küçük i yap
+    İ: "i",
     ö: "o",
     Ö: "O",
     ş: "s",
@@ -20,7 +20,6 @@ export function slugify(text: string): string {
     Ü: "U",
   };
 
-  // Önce Türkçe karakterleri dönüştür
   let result = text.trim();
   for (const [turkish, latin] of Object.entries(turkishCharMap)) {
     result = result.replaceAll(turkish, latin);
@@ -28,10 +27,10 @@ export function slugify(text: string): string {
 
   return result
     .toLowerCase()
-    .replace(/\s+/g, "-") // Boşlukları tire yap
-    .replace(/[^a-z0-9-]/g, "") // Sadece harf, rakam, tire bırak
-    .replace(/-+/g, "-") // Çoklu tireleri tek tire yap
-    .replace(/^-+|-+$/g, "") // Başta/sondaki tireleri kaldır
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "")
     .substring(0, 100);
 }
 
@@ -172,19 +171,54 @@ export class DateFormatter {
 
   static parseIsoString(
     isoString: string | null,
-    locale: $Enums.Locale = "TR"
+    setToStartOfDay: boolean = false,
+    setToEndOfDay: boolean = false
   ): Date | null {
     if (!isoString) return null;
 
     try {
-      const date = parseISO(isoString);
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(isoString)) {
+        const [day, month, year] = isoString.split("/").map(Number);
 
+        if (setToStartOfDay) {
+          return new Date(year, month - 1, day, 0, 0, 0, 0);
+        }
+
+        if (setToEndOfDay) {
+          return new Date(year, month - 1, day, 23, 59, 59, 999);
+        }
+
+        return new Date(year, month - 1, day, 0, 0, 0, 0);
+      }
+
+      if (/^\d{4}-\d{2}-\d{2}$/.test(isoString)) {
+        const [year, month, day] = isoString.split("-").map(Number);
+
+        if (setToStartOfDay) {
+          return new Date(year, month - 1, day, 0, 0, 0, 0);
+        }
+
+        if (setToEndOfDay) {
+          return new Date(year, month - 1, day, 23, 59, 59, 999);
+        }
+
+        return new Date(year, month - 1, day, 0, 0, 0, 0);
+      }
+
+      const date = parseISO(isoString);
       if (isValid(date)) {
+        if (setToStartOfDay) {
+          date.setHours(0, 0, 0, 0);
+        }
+        if (setToEndOfDay) {
+          date.setHours(23, 59, 59, 999);
+        }
         return date;
       }
+
       return null;
     } catch (error) {
-      console.error("Invalid ISO string:", isoString, error);
+      console.error("Invalid date string:", isoString, error);
       return null;
     }
   }
@@ -229,27 +263,22 @@ export function generateSKU(
     includeTimestamp = true,
   } = options || {};
 
-  // Ürün adından prefix oluştur (mevcut slugify fonksiyonunu kullan)
   const productSlug = slugify(productName);
   const productPrefix = prefix || productSlug.substring(0, 6).toUpperCase();
 
-  // Timestamp (son 6 hanesi)
   const timestamp = includeTimestamp ? Date.now().toString().slice(-6) : "";
 
-  // Rastgele 4 haneli sayı
   const randomPart = generateRandomNumber(4);
 
-  // SKU'yu birleştir
   let sku = [productPrefix, timestamp, randomPart]
     .filter((part) => part.length > 0)
     .join("-");
 
-  // Maksimum uzunluk kontrolü
   if (sku.length > maxLength) {
     const prefixLength = Math.min(productPrefix.length, 4);
     const timestampLength = includeTimestamp ? 6 : 0;
     const randomLength = 4;
-    const separatorLength = includeTimestamp ? 2 : 1; // Tire sayısı
+    const separatorLength = includeTimestamp ? 2 : 1;
 
     const availableLength =
       maxLength - timestampLength - randomLength - separatorLength;
@@ -277,46 +306,35 @@ export function generateEAN13Barcode(
     companyCode?: string;
   }
 ): string {
-  const {
-    countryCode = "869", // Türkiye
-    companyCode = "",
-  } = options || {};
+  const { countryCode = "869", companyCode = "" } = options || {};
 
-  // Ülke kodu (3 hane)
   const country = countryCode.padStart(3, "0");
 
-  // Şirket kodu (4-5 hane) - eğer belirtilmemişse rastgele oluştur
   let company = companyCode;
   if (!company) {
     company = generateRandomNumber(4);
   }
   company = company.substring(0, 5).padStart(4, "0");
 
-  // Ürün kodu (4-5 hane) - ürün adından hash veya rastgele
   let productCode = "";
   if (productName) {
-    // Ürün adından basit hash oluştur
     let hash = 0;
     for (let i = 0; i < productName.length; i++) {
       const char = productName.charCodeAt(i);
       hash = (hash << 5) - hash + char;
-      hash = hash & hash; // 32bit integer'a çevir
+      hash = hash & hash;
     }
     productCode = Math.abs(hash).toString().substring(0, 5).padStart(5, "0");
   } else {
     productCode = generateRandomNumber(5);
   }
 
-  // İlk 12 haneyi birleştir
   const first12Digits = country + company + productCode;
 
-  // 12 hane olacak şekilde ayarla
   const barcode12 = first12Digits.substring(0, 12).padStart(12, "0");
 
-  // Check digit hesapla
   const checkDigit = calculateEAN13CheckDigit(barcode12);
 
-  // Final barcode
   return barcode12 + checkDigit;
 }
 
@@ -341,11 +359,11 @@ export function generateProductCodes(
 export const ProductPageSortOption = {
   NEWEST: "newest",
   OLDEST: "oldest",
-  PRICE_DESC: "price-desc", // Azalan fiyat
-  PRICE_ASC: "price-asc", // Artan fiyat
-  BEST_SELLING: "best-selling", // En çok satan
-  A_Z: "a-z", // İsim A'dan Z'ye
-  Z_A: "z-a", // İsim Z'den A'y
+  PRICE_DESC: "price-desc",
+  PRICE_ASC: "price-asc",
+  BEST_SELLING: "best-selling",
+  A_Z: "a-z",
+  Z_A: "z-a",
 };
 
 export type ProductPageSortOption =
@@ -485,7 +503,6 @@ export function getOrderStatusBadgeColor(status: $Enums.OrderStatus): string {
   return ORDER_STATUS_CONFIG[status].badgeColor;
 }
 
-// Veya her ikisini birden döndüren bir fonksiyon
 export function getOrderStatusBadge(status: $Enums.OrderStatus) {
   return {
     label: ORDER_STATUS_CONFIG[status].label,
@@ -601,14 +618,41 @@ export function getActorTypeLabel(actorType: $Enums.ActorType): string {
 
 export const cartStatusConfigs: Record<
   $Enums.CartStatus,
-  { logLabel: string }
+  { logLabel: string; selectLabel: string; sortValue: number }
 > = {
-  ABANDONED: { logLabel: "Terkedilmiş" },
-  ACTIVE: { logLabel: "Aktif" },
-  CONVERTED: { logLabel: "Dönüştürülmüş" },
-  MERGED: { logLabel: "Birleştirilmiş" },
+  ABANDONED: {
+    logLabel: "Terkedilmiş",
+    selectLabel: "Terkedilmiş Sepetler",
+    sortValue: 1,
+  },
+  ACTIVE: { logLabel: "Aktif", selectLabel: "Aktif Sepetler", sortValue: 2 },
+  CONVERTED: {
+    logLabel: "Sipariş Oluşturulan",
+    selectLabel: "Sipariş Oluşturulan Sepetler",
+    sortValue: 3,
+  },
+  MERGED: {
+    logLabel: "Birleştirilmiş",
+    selectLabel: "Birleştirilmiş Sepetler",
+    sortValue: 4,
+  },
 };
 
 export function getCartStatusLogLabel(status: $Enums.CartStatus): string {
   return cartStatusConfigs[status]?.logLabel || "Bilinmeyen";
+}
+
+export function getCartStatusSelectLabel(status: $Enums.CartStatus): string {
+  return cartStatusConfigs[status]?.selectLabel || "Bilinmeyen";
+}
+
+export function getCartStatusSortValue(status: $Enums.CartStatus): number {
+  return cartStatusConfigs[status]?.sortValue || 99;
+}
+
+export function getCartStatusByValue(value: number): $Enums.CartStatus | null {
+  const entry = Object.entries(cartStatusConfigs).find(
+    ([_, config]) => config.sortValue === value
+  );
+  return (entry?.[0] as $Enums.CartStatus) || null;
 }

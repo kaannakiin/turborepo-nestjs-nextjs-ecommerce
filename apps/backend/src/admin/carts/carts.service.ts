@@ -9,7 +9,7 @@ export class CartsService {
   private locale: $Enums.Locale;
   constructor(
     private readonly localeService: LocaleService,
-    private prisma: PrismaService,
+    private prismaService: PrismaService,
   ) {
     this.locale = this.localeService.getLocale();
   }
@@ -59,8 +59,8 @@ export class CartsService {
     };
 
     try {
-      const [carts, totalCount] = await this.prisma.$transaction([
-        this.prisma.cart.findMany({
+      const [carts, totalCount] = await this.prismaService.$transaction([
+        this.prismaService.cart.findMany({
           where: where,
           take: limit,
           skip: skip,
@@ -77,7 +77,7 @@ export class CartsService {
             },
           },
         }),
-        this.prisma.cart.count({ where }),
+        this.prismaService.cart.count({ where }),
       ]);
 
       return {
@@ -100,5 +100,17 @@ export class CartsService {
         data: null,
       };
     }
+  }
+
+  async getCartForAdmin(cartId: string) {
+    const cart = await this.prismaService.cart.findUnique({
+      where: { id: cartId },
+      include: {
+        user: true,
+        items: {
+          include: {},
+        },
+      },
+    });
   }
 }

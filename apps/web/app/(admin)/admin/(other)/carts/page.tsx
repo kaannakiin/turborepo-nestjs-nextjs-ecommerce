@@ -4,33 +4,69 @@ import CustomSearchInput from "@/components/CustomSearchInput";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper, { ApiError } from "@lib/fetchWrapper";
 import { getCartStatusColor, getCartStatusLabel } from "@lib/helpers";
-import { Badge, Button, Group, Stack, Table, Text, Title } from "@mantine/core";
-import { useQuery } from "@repo/shared";
+import {
+  Badge,
+  Button,
+  Group,
+  Select,
+  Stack,
+  Table,
+  Text,
+  Title,
+} from "@mantine/core";
+import { $Enums } from "@repo/database";
+import {
+  DateFormatter,
+  getCartStatusByValue,
+  getCartStatusSelectLabel,
+  getCartStatusSortValue,
+  useQuery,
+} from "@repo/shared";
 import { GetAllCartsReturnType } from "@repo/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import CustomDateFilters from "../components/CustomDateFilters";
+import { Route } from "next";
 
 const AdminCartsPage = () => {
-  const { replace } = useRouter();
+  const { replace, push } = useRouter();
   const searchParams = useSearchParams();
 
   const search = (searchParams.get("search") as string) || null;
   const page = parseInt((searchParams.get("page") as string) || "1", 10);
-  const limit = parseInt((searchParams.get("limit") as string) || "10", 10);
+  const limit = parseInt((searchParams.get("limit") as string) || "14", 10);
   const startDate = searchParams.get("startDate") || null;
   const endDate = searchParams.get("endDate") || null;
-
-  const hasActiveFilters = !!(search || startDate || endDate || page > 1);
+  const status =
+    parseInt((searchParams.get("status") as string) || null) || null;
+  const hasActiveFilters = !!(
+    search ||
+    startDate ||
+    endDate ||
+    status ||
+    page > 1
+  );
 
   const { isLoading, data } = useQuery({
-    queryKey: ["admin-user-carts", { page, limit, search, startDate, endDate }],
+    queryKey: [
+      "admin-user-carts",
+      { page, limit, search, startDate, endDate, status },
+    ],
     queryFn: async () => {
+      const cartStatus = status ? getCartStatusByValue(status) : null;
       const response = await fetchWrapper.get<GetAllCartsReturnType>(
         "/admin/carts",
         {
-          params: { page, limit, search, startDate, endDate },
+          params: {
+            page,
+            limit,
+            search,
+            startDate,
+            endDate,
+            ...(cartStatus ? { status: cartStatus } : {}),
+          },
         }
       );
+
       if (!response.success) {
         const errorResponse = response as ApiError;
         throw new Error(errorResponse.error || "Failed to fetch carts");
@@ -50,30 +86,6 @@ const AdminCartsPage = () => {
     return <GlobalLoadingOverlay />;
   }
 
-  if (data && data.carts.length === 0 && hasActiveFilters) {
-    return (
-      <Stack gap={"lg"}>
-        <Group justify="space-between" align="center">
-          <Group>
-            <Title order={3}>Kullanıcı Sepetleri</Title>
-          </Group>
-          <Group gap={"xs"}>
-            <CustomDateFilters />
-            <CustomSearchInput />
-          </Group>
-        </Group>
-        <Stack align="center" gap="md" py="xl">
-          <Text size="lg" c="dimmed">
-            Arama kriterlerinize uygun sepet bulunamadı.
-          </Text>
-          <Button onClick={clearFilters} variant="light">
-            Parametreleri Temizle
-          </Button>
-        </Stack>
-      </Stack>
-    );
-  }
-
   if (data && data.carts.length === 0 && !hasActiveFilters) {
     return (
       <Stack gap={"lg"}>
@@ -82,6 +94,29 @@ const AdminCartsPage = () => {
             <Title order={3}>Kullanıcı Sepetleri</Title>
           </Group>
           <Group gap={"xs"}>
+            <Select
+              value={status ? getCartStatusByValue(status) : null}
+              onChange={(e) => {
+                const params = new URLSearchParams(searchParams.toString());
+                if (e === null) {
+                  params.delete("status");
+                  replace(`?${params.toString()}`);
+                  return;
+                }
+
+                params.set(
+                  "status",
+                  getCartStatusSortValue(e as $Enums.CartStatus).toString()
+                );
+
+                replace(`?${params.toString()}`);
+              }}
+              placeholder="Duruma Göre Filtrele"
+              data={Object.values($Enums.CartStatus).map((status) => ({
+                label: getCartStatusSelectLabel(status),
+                value: status,
+              }))}
+            />
             <CustomDateFilters />
             <CustomSearchInput />
           </Group>
@@ -95,6 +130,53 @@ const AdminCartsPage = () => {
     );
   }
 
+  if (data && data.carts.length === 0 && hasActiveFilters) {
+    return (
+      <Stack gap={"lg"}>
+        <Group justify="space-between" align="center">
+          <Group>
+            <Title order={3}>Kullanıcı Sepetleri</Title>
+          </Group>
+          <Group gap={"xs"}>
+            <Select
+              value={status ? getCartStatusByValue(status) : null}
+              onChange={(e) => {
+                const params = new URLSearchParams(searchParams.toString());
+                if (e === null) {
+                  params.delete("status");
+                  replace(`?${params.toString()}`);
+                  return;
+                }
+
+                params.set(
+                  "status",
+                  getCartStatusSortValue(e as $Enums.CartStatus).toString()
+                );
+
+                replace(`?${params.toString()}`);
+              }}
+              placeholder="Duruma Göre Filtrele"
+              data={Object.values($Enums.CartStatus).map((status) => ({
+                label: getCartStatusSelectLabel(status),
+                value: status,
+              }))}
+            />
+            <CustomDateFilters />
+            <CustomSearchInput />
+          </Group>
+        </Group>
+        <Stack align="center" gap="md" py="xl">
+          <Text size="lg" c="dimmed">
+            Seçtiğiniz parametrelere uygun sepet bulunamadı.
+          </Text>
+          <Button onClick={clearFilters} variant="light">
+            Filtreleri Temizle
+          </Button>
+        </Stack>
+      </Stack>
+    );
+  }
+
   return (
     <Stack gap={"lg"}>
       <Group justify="space-between" align="center">
@@ -102,13 +184,42 @@ const AdminCartsPage = () => {
           <Title order={3}>Kullanıcı Sepetleri</Title>
         </Group>
         <Group gap={"xs"}>
+          <Select
+            value={status ? getCartStatusByValue(status) : null}
+            onChange={(e) => {
+              const params = new URLSearchParams(searchParams.toString());
+              if (e === null) {
+                params.delete("status");
+                replace(`?${params.toString()}`);
+                return;
+              }
+
+              params.set(
+                "status",
+                getCartStatusSortValue(e as $Enums.CartStatus).toString()
+              );
+
+              replace(`?${params.toString()}`);
+            }}
+            placeholder="Duruma Göre Filtrele"
+            clearable
+            data={Object.values($Enums.CartStatus).map((status) => ({
+              label: getCartStatusSelectLabel(status),
+              value: status,
+            }))}
+          />
           <CustomDateFilters />
           <CustomSearchInput />
         </Group>
       </Group>
 
       <Table.ScrollContainer minWidth={800}>
-        <Table verticalSpacing={"lg"}>
+        <Table
+          verticalSpacing={"xs"}
+          highlightOnHover
+          highlightOnHoverColor="admin.0"
+          className="cursor-pointer"
+        >
           <Table.Thead>
             <Table.Tr>
               <Table.Th>Kullanıcı</Table.Th>
@@ -120,12 +231,17 @@ const AdminCartsPage = () => {
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
-            {data?.carts.map((cart) => {
+            {data?.carts.map((cart, index) => {
               const label = getCartStatusLabel(cart.status);
               const color = getCartStatusColor(cart.status);
 
               return (
-                <Table.Tr key={cart.id}>
+                <Table.Tr
+                  key={cart.id}
+                  onClick={() => {
+                    push(`/admin/carts/${cart.id}` as Route);
+                  }}
+                >
                   <Table.Td>
                     {cart.user?.name} {cart.user?.surname}
                   </Table.Td>
@@ -135,7 +251,9 @@ const AdminCartsPage = () => {
                   <Table.Td>
                     <Badge color={color}>{label}</Badge>
                   </Table.Td>
-                  <Table.Td>{new Date().toLocaleDateString("tr-TR")}</Table.Td>
+                  <Table.Td>
+                    {DateFormatter.withTime(cart.createdAt, cart.locale)}
+                  </Table.Td>
                 </Table.Tr>
               );
             })}

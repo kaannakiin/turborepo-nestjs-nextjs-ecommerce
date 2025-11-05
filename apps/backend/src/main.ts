@@ -54,7 +54,11 @@ async function bootstrap() {
         'User-Agent',
         'x-goog-api-key',
         'X-Request-Channel',
+        'Cache-Control',
+        'Pragma',
+        'Expires',
       ],
+      exposedHeaders: ['Cache-Control', 'Pragma', 'Expires'],
 
       credentials: true,
       maxAge: 86400,

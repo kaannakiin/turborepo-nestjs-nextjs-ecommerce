@@ -19,7 +19,8 @@ import { PaymentsModule } from './payments/payments.module';
 import { OrdersModule } from './orders/orders.module';
 import { SharedModule } from './common/services/shared.module';
 import { PrismaLoggerModule } from './prisma-logger/prisma-logger.module';
-import { EventEmitterModule } from '@nestjs/event-emitter';
+import { PrismaService } from './prisma/prisma.service';
+import { PrismaClient } from '@repo/database';
 @Module({
   imports: [
     PrismaModule,
@@ -50,10 +51,6 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     PaymentsModule,
     OrdersModule,
     PrismaLoggerModule,
-    EventEmitterModule.forRoot({
-      global: true,
-      verboseMemoryLeak: true,
-    }),
     // ThrottlerModule.forRootAsync({
     //   imports: [ConfigModule],
     //   inject: [ConfigService],
@@ -112,11 +109,11 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     // }),
   ],
   controllers: [],
-  // providers: [
-  //   {
-  //     provide: APP_GUARD,
-  //     useClass: ThrottlerGuard,
-  //   },
-  // ],
+  providers: [
+    //   {
+    //     provide: APP_GUARD,
+    //     useClass: ThrottlerGuard,
+    //   },
+  ],
 })
 export class AppModule {}

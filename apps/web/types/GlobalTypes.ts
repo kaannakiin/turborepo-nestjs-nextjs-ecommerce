@@ -8,5 +8,5 @@ export type SearchParams = Promise<{
 export interface NavbarButtonType {
   label: string;
   icon: ReactNode | null;
-  sub: (Omit<NavbarButtonType, "sub"> & { href: string })[];
+  sub: (Omit<NavbarButtonType, "sub"> & { href: string; hidden: boolean })[];
 }

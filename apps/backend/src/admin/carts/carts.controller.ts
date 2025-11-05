@@ -41,5 +41,7 @@ export class CartsController {
   }
 
   @Get('/:cartId')
-  async getCartById(@Param('cartId') cartId: string) {}
+  async getCartById(@Param('cartId') cartId: string) {
+    return this.cartsService.getCartForAdmin(cartId);
+  }
 }

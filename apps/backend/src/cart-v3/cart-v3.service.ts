@@ -40,7 +40,7 @@ export class CartV3Service {
   private readonly logger = new Logger(CartV3Service.name);
 
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly prismaService: PrismaService,
     private readonly shippingService: ShippingService,
     private readonly localeService: LocaleService,
     private readonly prismaLoggerService: PrismaLoggerService,
@@ -54,7 +54,7 @@ export class CartV3Service {
     success: boolean;
     message: string;
   }> {
-    const cart = await this.prisma.cart.findUnique({
+    const cart = await this.prismaService.cart.findUnique({
       where: {
         id: cartId,
       },
@@ -64,7 +64,7 @@ export class CartV3Service {
       return { success: false, message: 'Sepet bulunamadı' };
     }
 
-    const address = await this.prisma.addressSchema.findUnique({
+    const address = await this.prismaService.addressSchema.findUnique({
       where: {
         id: addressId,
       },
@@ -88,7 +88,7 @@ export class CartV3Service {
       };
     }
 
-    await this.prisma.$transaction(async (prisma) => {
+    await this.prismaService.$transaction(async (prisma) => {
       await prisma.cart.update({
         where: { id: cart.id },
         data: {
@@ -120,7 +120,7 @@ export class CartV3Service {
     message: string;
   }> {
     try {
-      await this.prisma.$transaction(async (prisma) => {
+      await this.prismaService.$transaction(async (prisma) => {
         const cart = await prisma.cart.findUnique({
           where: { id: cartId },
         });
@@ -217,7 +217,7 @@ export class CartV3Service {
         message: 'Geçersiz kargo kuralı',
       };
     }
-    await this.prisma.cart.update({
+    await this.prismaService.cart.update({
       where: { id: cartId },
       data: { cargoRuleId },
     });
@@ -264,7 +264,7 @@ export class CartV3Service {
     result: boolean,
     message: string,
   ) {
-    return this.prisma.cartPaymentCheckAttempts.create({
+    return this.prismaService.cartPaymentCheckAttempts.create({
       data: {
         cartId,
         isSuccess: result,
@@ -277,7 +277,7 @@ export class CartV3Service {
     cartId: string,
   ): Promise<GetCartForPaymentReturnType> {
     try {
-      const cart = (await this.prisma.cart.findUnique({
+      const cart = (await this.prismaService.cart.findUnique({
         where: { id: cartId },
         include: GetCartForPaymentIncludeCartType,
       })) as CartForPayment;
@@ -451,7 +451,7 @@ export class CartV3Service {
   async getCartForClientCheckout(
     cartId: string,
   ): Promise<GetCartClientCheckoutReturnType> {
-    const cart = await this.prisma.cart.findUnique({
+    const cart = await this.prismaService.cart.findUnique({
       where: {
         id: cartId,
       },
@@ -648,7 +648,7 @@ export class CartV3Service {
     productId: string;
     variantId?: string;
   }) {
-    return this.prisma.product.findUnique({
+    return this.prismaService.product.findUnique({
       where: {
         id: productId,
       },
@@ -679,7 +679,7 @@ export class CartV3Service {
     cartId: string,
     user: User | null,
   ): Promise<{ success: boolean; cart?: CartV3 }> {
-    const cart = await this.prisma.cart.findFirst({
+    const cart = await this.prismaService.cart.findFirst({
       where: {
         status: 'ACTIVE',
         id: cartId,
@@ -723,7 +723,7 @@ export class CartV3Service {
       }
 
       if (!cartId) {
-        const newCart = await this.prisma.cart.create({
+        const newCart = await this.prismaService.cart.create({
           data: {
             userId: user ? user.id : null,
             locale,
@@ -771,11 +771,11 @@ export class CartV3Service {
         };
       }
 
-      const cart = await this.prisma.cart.findUnique({
+      const cart = await this.prismaService.cart.findUnique({
         where: { id: cartId, ...(user && { userId: user.id }) },
       });
 
-      const existingCartItem = await this.prisma.cartItem.findUnique({
+      const existingCartItem = await this.prismaService.cartItem.findUnique({
         where: {
           cartId_productId_variantId: {
             cartId: cart.id,
@@ -785,7 +785,7 @@ export class CartV3Service {
         },
       });
 
-      const newCart = await this.prisma.cart.update({
+      const newCart = await this.prismaService.cart.update({
         where: {
           id: cart.id,
           ...(user ? { userId: user.id } : {}),
@@ -860,7 +860,7 @@ export class CartV3Service {
     try {
       const { cartId, productId, variantId } = data;
 
-      const existingItem = await this.prisma.cartItem.findUnique({
+      const existingItem = await this.prismaService.cartItem.findUnique({
         where: {
           cartId_productId_variantId: {
             cartId: cartId,
@@ -879,7 +879,7 @@ export class CartV3Service {
         };
       }
 
-      const newCart = await this.prisma.cart.update({
+      const newCart = await this.prismaService.cart.update({
         where: {
           id: cartId,
         },
@@ -939,7 +939,7 @@ export class CartV3Service {
       const { cartId, productId, variantId } = data;
       const locale = this.localeService.getLocale();
 
-      const existingItem = await this.prisma.cartItem.findUnique({
+      const existingItem = await this.prismaService.cartItem.findUnique({
         where: {
           cartId_productId_variantId: {
             cartId: cartId,
@@ -962,7 +962,7 @@ export class CartV3Service {
       let newCart: CartWithRelations;
 
       if (existingItem.quantity > 1) {
-        newCart = await this.prisma.cart.update({
+        newCart = await this.prismaService.cart.update({
           where: { id: cartId },
           data: {
             items: {
@@ -993,7 +993,7 @@ export class CartV3Service {
           newQty: updatedItem?.quantity || existingItem.quantity - 1,
         });
       } else {
-        newCart = await this.prisma.cart.update({
+        newCart = await this.prismaService.cart.update({
           where: { id: cartId },
           data: {
             items: {
@@ -1045,7 +1045,7 @@ export class CartV3Service {
     try {
       const { cartId, productId, variantId } = data;
 
-      const existingItem = await this.prisma.cartItem.findUnique({
+      const existingItem = await this.prismaService.cartItem.findUnique({
         where: {
           cartId_productId_variantId: {
             cartId: cartId,
@@ -1065,7 +1065,7 @@ export class CartV3Service {
         };
       }
 
-      const newCart = await this.prisma.cart.update({
+      const newCart = await this.prismaService.cart.update({
         where: {
           id: cartId,
         },
@@ -1113,7 +1113,7 @@ export class CartV3Service {
 
   async clearCart(cartId: string): Promise<CartActionResponse> {
     try {
-      const clearedCart = await this.prisma.cart.update({
+      const clearedCart = await this.prismaService.cart.update({
         where: {
           id: cartId,
         },
@@ -1156,7 +1156,7 @@ export class CartV3Service {
       const currentLocale = this.localeService.getLocale();
       const targetCurrency = getDefaultCurrencyForLocale(currentLocale);
 
-      const userCart = await this.prisma.cart.findFirst({
+      const userCart = await this.prismaService.cart.findFirst({
         where: {
           userId: user.id,
           status: 'ACTIVE',
@@ -1169,7 +1169,7 @@ export class CartV3Service {
         },
       });
 
-      const guestCart = await this.prisma.cart.findUnique({
+      const guestCart = await this.prismaService.cart.findUnique({
         where: {
           id: mergedCartId,
         },
@@ -1207,7 +1207,9 @@ export class CartV3Service {
       }
 
       if (guestCart.items.length === 0) {
-        await this.prisma.cart.delete({ where: { id: guestCart.id } });
+        await this.prismaService.cart.delete({
+          where: { id: guestCart.id },
+        });
         if (userCart) {
           return {
             success: true,
@@ -1218,7 +1220,7 @@ export class CartV3Service {
       }
 
       if (!userCart) {
-        const updatedCart = await this.prisma.cart.update({
+        const updatedCart = await this.prismaService.cart.update({
           where: { id: guestCart.id },
           data: {
             userId: user.id,
@@ -1247,7 +1249,7 @@ export class CartV3Service {
 
       const guestItemsCount = guestCart.items.length;
 
-      await this.prisma.cart.update({
+      await this.prismaService.cart.update({
         where: { id: userCart.id },
         data: {
           locale: currentLocale,
@@ -1258,7 +1260,7 @@ export class CartV3Service {
       userCart.locale = currentLocale;
       userCart.currency = targetCurrency;
 
-      await this.prisma.$transaction(async (tx) => {
+      await this.prismaService.$transaction(async (tx) => {
         if (guestCart.currency !== userCart.currency) {
           await tx.cart.update({
             where: { id: guestCart.id },
@@ -1308,7 +1310,7 @@ export class CartV3Service {
         mergedItemsCount: guestItemsCount,
       });
 
-      const finalMergedCart = await this.prisma.cart.findUnique({
+      const finalMergedCart = await this.prismaService.cart.findUnique({
         where: { id: userCart.id },
         include: { items: cartItemIncludeForCart },
       });
@@ -1526,7 +1528,7 @@ export class CartV3Service {
         contextData.paymentAmount = paymentAmount;
       if (failureReason) contextData.failureReason = failureReason;
 
-      await this.prisma.cartActivityLog.create({
+      await this.prismaService.cartActivityLog.create({
         data: {
           cartId,
           cartItemId,

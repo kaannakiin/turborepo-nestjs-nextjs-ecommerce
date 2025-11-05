@@ -16,7 +16,7 @@ interface getUsersParams {
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prismaService: PrismaService) {}
 
   async getUsers(params: getUsersParams): Promise<GetUsersQueriesReturnType> {
     const whereClause: Prisma.UserWhereInput = {
@@ -82,7 +82,7 @@ export class UsersService {
     }
 
     const [users, total] = await Promise.all([
-      this.prisma.user.findMany({
+      this.prismaService.user.findMany({
         where: whereClause,
         orderBy,
         take,
@@ -98,7 +98,7 @@ export class UsersService {
           updatedAt: true,
         },
       }),
-      this.prisma.user.count({
+      this.prismaService.user.count({
         where: whereClause,
       }),
     ]);
@@ -116,7 +116,7 @@ export class UsersService {
   }
 
   async getUsersIdAndName(): Promise<UserIdAndName[]> {
-    const users = await this.prisma.user.findMany({
+    const users = await this.prismaService.user.findMany({
       orderBy: {
         createdAt: 'desc',
       },
@@ -133,7 +133,7 @@ export class UsersService {
   }
 
   async getUserInfos(): Promise<AllUsersReturnType[]> {
-    const user = await this.prisma.user.findMany({
+    const user = await this.prismaService.user.findMany({
       select: {
         id: true,
         email: true,

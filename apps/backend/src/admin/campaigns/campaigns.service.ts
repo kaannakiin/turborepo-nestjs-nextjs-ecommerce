@@ -11,7 +11,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class CampaignsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
   private getOffersCreateManyPayload(offers: UppSellOfferZodType[]) {
     return {
@@ -63,7 +63,7 @@ export class CampaignsService {
       const offersPayload = this.getOffersCreateManyPayload(offers);
 
       if (uniqueId) {
-        const campaign = await this.prisma.campaign.findUnique({
+        const campaign = await this.prismaService.campaign.findUnique({
           where: { id: uniqueId },
         });
 
@@ -156,7 +156,7 @@ export class CampaignsService {
           };
         }
 
-        await this.prisma.campaign.update({
+        await this.prismaService.campaign.update({
           where: { id: uniqueId },
           data: updateData,
         });
@@ -224,7 +224,7 @@ export class CampaignsService {
           };
         }
 
-        await this.prisma.campaign.create({
+        await this.prismaService.campaign.create({
           data: createData,
         });
 
@@ -243,7 +243,7 @@ export class CampaignsService {
     id: string,
   ): Promise<{ success: boolean; data?: CampaignZodType; message?: string }> {
     try {
-      const campaign = await this.prisma.campaign.findUnique({
+      const campaign = await this.prismaService.campaign.findUnique({
         where: { id },
         include: {
           offers: {
@@ -266,13 +266,13 @@ export class CampaignsService {
       }
       if (campaign.campaignType === 'CROSS_SELLING') {
         const conditionProducts =
-          await this.prisma.campaignConditionProduct.findMany({
+          await this.prismaService.campaignConditionProduct.findMany({
             where: {
               campaignId: campaign.id,
             },
           });
         const conditionVariants =
-          await this.prisma.campaignConditionVariant.findMany({
+          await this.prismaService.campaignConditionVariant.findMany({
             where: {
               campaignId: campaign.id,
             },
@@ -322,20 +322,18 @@ export class CampaignsService {
         };
       }
 
-      const buyableProducts = await this.prisma.campaignBuyableProduct.findMany(
-        {
+      const buyableProducts =
+        await this.prismaService.campaignBuyableProduct.findMany({
           where: {
             campaignId: campaign.id,
           },
-        },
-      );
-      const buyableVariants = await this.prisma.campaignBuyableVariant.findMany(
-        {
+        });
+      const buyableVariants =
+        await this.prismaService.campaignBuyableVariant.findMany({
           where: {
             campaignId: campaign.id,
           },
-        },
-      );
+        });
 
       return {
         success: true,
@@ -403,7 +401,7 @@ export class CampaignsService {
 
     try {
       const [campaigns, totalCount] = await Promise.all([
-        await this.prisma.campaign.findMany({
+        await this.prismaService.campaign.findMany({
           where,
           take,
           skip,
@@ -419,7 +417,7 @@ export class CampaignsService {
           },
         }),
 
-        await this.prisma.campaign.count({
+        await this.prismaService.campaign.count({
           where,
         }),
       ]);

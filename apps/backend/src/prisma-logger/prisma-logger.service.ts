@@ -6,7 +6,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class PrismaLoggerService {
   private readonly logger = new Logger(PrismaLoggerService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private prismaService: PrismaService) {}
 
   async logError(
     error: Error,
@@ -14,7 +14,7 @@ export class PrismaLoggerService {
     meta: Record<string, any> = {},
   ) {
     try {
-      await this.prisma.errorLog.create({
+      await this.prismaService.errorLog.create({
         data: {
           message: error.message,
           stack: error.stack,
