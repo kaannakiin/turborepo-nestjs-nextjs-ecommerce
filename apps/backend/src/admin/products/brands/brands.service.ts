@@ -19,20 +19,20 @@ import { PrismaService } from 'src/prisma/prisma.service';
 @Injectable()
 export class BrandsService {
   constructor(
-    private prisma: PrismaService,
+    private prismaService: PrismaService,
     private minio: MinioService,
   ) {}
 
   async createOrUpdateBrand(data: Omit<Brand, 'image'>) {
     try {
-      const brand = await this.prisma.brand.findUnique({
+      const brand = await this.prismaService.brand.findUnique({
         where: {
           id: data.uniqueId,
         },
       });
 
       if (!brand) {
-        await this.prisma.brand.create({
+        await this.prismaService.brand.create({
           data: {
             id: data.uniqueId,
             translations: {
@@ -61,7 +61,7 @@ export class BrandsService {
           message: 'Marka başarıyla oluşturuldu',
         };
       } else {
-        await this.prisma.brand.update({
+        await this.prismaService.brand.update({
           where: {
             id: data.uniqueId,
           },
@@ -121,7 +121,7 @@ export class BrandsService {
   }
 
   async updateBrandImage(file: Express.Multer.File, uniqueId: Cuid2ZodType) {
-    const brand = await this.prisma.brand.findUnique({
+    const brand = await this.prismaService.brand.findUnique({
       where: { id: uniqueId },
       include: { image: true },
     });
@@ -137,7 +137,7 @@ export class BrandsService {
           'Mevcut marka resmi silinirken bir hata oluştu',
         );
       }
-      await this.prisma.asset.delete({
+      await this.prismaService.asset.delete({
         where: { id: brand.image.id },
       });
     }
@@ -150,7 +150,7 @@ export class BrandsService {
         'Marka resmi yüklenirken bir hata oluştu',
       );
     }
-    const asset = await this.prisma.asset.create({
+    const asset = await this.prismaService.asset.create({
       data: {
         url: uploadFile.data.url,
         type: 'IMAGE',
@@ -181,7 +181,7 @@ export class BrandsService {
       }),
     };
 
-    return this.prisma.brand.findMany({
+    return this.prismaService.brand.findMany({
       where,
       include: {
         translations: {
@@ -233,13 +233,13 @@ export class BrandsService {
       }),
     };
 
-    return this.prisma.brand.count({ where });
+    return this.prismaService.brand.count({ where });
   }
 
   async deleteBrand(id: Cuid2ZodType) {
     try {
       // Transaction ile tüm işlemleri güvenli hale getir
-      return await this.prisma.$transaction(async (prisma) => {
+      return await this.prismaService.$transaction(async (prisma) => {
         const brand = await prisma.brand.findUnique({
           where: { id },
           include: {
@@ -332,7 +332,7 @@ export class BrandsService {
   }
 
   async getBrand(id: Cuid2ZodType): Promise<Brand | null> {
-    const brand = await this.prisma.brand.findUnique({
+    const brand = await this.prismaService.brand.findUnique({
       where: { id },
       include: {
         image: {
@@ -380,7 +380,7 @@ export class BrandsService {
     if (!url) {
       throw new NotFoundException("Resim URL'si sağlanmadı");
     }
-    const asset = await this.prisma.asset.findUnique({
+    const asset = await this.prismaService.asset.findUnique({
       where: { url },
       include: { brand: true },
     });
@@ -396,7 +396,7 @@ export class BrandsService {
         'Resim silinirken bir hata oluştu',
       );
     }
-    await this.prisma.asset.delete({
+    await this.prismaService.asset.delete({
       where: { id: asset.id },
     });
     return {
@@ -407,7 +407,7 @@ export class BrandsService {
 
   async getAllParentBrands(currentBrandId?: Cuid2ZodType) {
     // Prisma ile recursive CTE kullanarak hierarchical query
-    const result = await this.prisma.$queryRaw<
+    const result = await this.prismaService.$queryRaw<
       Array<{
         id: string;
         level: number;
@@ -454,7 +454,7 @@ export class BrandsService {
     }));
   }
   async getAllBrandsWithoutQuery() {
-    return this.prisma.brand.findMany({
+    return this.prismaService.brand.findMany({
       select: {
         id: true,
         translations: {
@@ -467,7 +467,7 @@ export class BrandsService {
     });
   }
   async getAllBrandsOnlyIdAndName(): Promise<BrandIdAndName[]> {
-    const brands = await this.prisma.brand.findMany({
+    const brands = await this.prismaService.brand.findMany({
       select: {
         id: true,
         translations: {
@@ -491,7 +491,7 @@ export class BrandsService {
       BrandIdAndName & { image: { url: string; type: $Enums.AssetType } | null }
     >
   > {
-    const brands = await this.prisma.brand.findMany({
+    const brands = await this.prismaService.brand.findMany({
       select: {
         id: true,
         image: {
@@ -522,7 +522,7 @@ export class BrandsService {
 
   async getAllBrandsAndItsSubs(): Promise<DiscountItem[]> {
     // 1. Adım: Veritabanından tüm markaları istenen çeviri mantığıyla çek
-    const flatBrands = await this.prisma.$queryRaw<FlatItem[]>`
+    const flatBrands = await this.prismaService.$queryRaw<FlatItem[]>`
       WITH RECURSIVE BrandHierarchy AS (
         -- Anchor
         SELECT id, "parentBrandId" FROM "Brand" WHERE "parentBrandId" IS NULL

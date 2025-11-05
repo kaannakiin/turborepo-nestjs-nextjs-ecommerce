@@ -28,8 +28,7 @@ import CustomImage from "./CustomImage";
 
 const ShoppingBagDrawerV2 = () => {
   const [opened, { close, toggle }] = useDisclosure();
-  const { cart, decreaseItemQuantity, increaseItemQuantity, removeItem } =
-    useCartV3();
+  const { cart, decreaseItem, increaseItem, removeItem } = useCartV3();
   const isEmpty = !cart || cart.items.length === 0;
   const { media } = useTheme();
   const { push } = useRouter();
@@ -204,15 +203,15 @@ const ShoppingBagDrawerV2 = () => {
                               >
                                 <ActionIcon
                                   variant="transparent"
-                                  onClick={async (e) => {
+                                  onClick={(e) => {
                                     e.stopPropagation();
                                     if (item.quantity > 1) {
-                                      await decreaseItemQuantity(
+                                      decreaseItem(
                                         item.productId,
                                         item.variantId || undefined
                                       );
                                     } else {
-                                      await removeItem(
+                                      removeItem(
                                         item.productId,
                                         item.variantId || undefined
                                       );
@@ -233,9 +232,9 @@ const ShoppingBagDrawerV2 = () => {
                                 <ActionIcon
                                   variant="transparent"
                                   size={"md"}
-                                  onClick={async (e) => {
+                                  onClick={(e) => {
                                     e.stopPropagation();
-                                    await increaseItemQuantity(
+                                    increaseItem(
                                       item.productId,
                                       item.variantId || undefined
                                     );

@@ -13,7 +13,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class CategoriesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
   /**
    * Belirtilen bir kategorinin tüm üst ebeveynlerini (breadcrumb) ve tüm alt kategorilerini (çocukları, torunları vb.)
@@ -82,7 +82,7 @@ export class CategoriesService {
 
     try {
       const results =
-        await this.prisma.$queryRaw<CategoryHierarchyNode[]>(query);
+        await this.prismaService.$queryRaw<CategoryHierarchyNode[]>(query);
 
       const parentCategories: CategoryHierarchyNode[] = [];
       const childrenCategories: CategoryHierarchyNode[] = [];
@@ -115,7 +115,7 @@ export class CategoriesService {
     slug: string,
     locale: $Enums.Locale = 'TR',
   ): Promise<CategoryPagePreparePageReturnData> {
-    const category = await this.prisma.categoryTranslation.findUnique({
+    const category = await this.prismaService.categoryTranslation.findUnique({
       where: {
         locale_slug: {
           locale,
@@ -161,7 +161,7 @@ export class CategoriesService {
       category.categoryId,
     ];
 
-    const variantGroup = await this.prisma.variantGroup.findMany({
+    const variantGroup = await this.prismaService.variantGroup.findMany({
       where: {
         productVariantGroups: {
           some: {
@@ -240,7 +240,7 @@ export class CategoriesService {
       },
     });
 
-    const brands = await this.prisma.brand.findMany({
+    const brands = await this.prismaService.brand.findMany({
       where: {
         products: {
           some: {
@@ -416,9 +416,9 @@ export class CategoriesService {
       SELECT COUNT(*)::int FROM (${baseQuery}) AS "final_products"
     `;
 
-    const [products, countResult] = await this.prisma.$transaction([
-      this.prisma.$queryRaw<ProductUnifiedViewData[]>(productsQuery),
-      this.prisma.$queryRaw<{ count: number }[]>(countQuery),
+    const [products, countResult] = await this.prismaService.$transaction([
+      this.prismaService.$queryRaw<ProductUnifiedViewData[]>(productsQuery),
+      this.prismaService.$queryRaw<{ count: number }[]>(countQuery),
     ]);
 
     const totalCount = Number(countResult[0]?.count || 0);

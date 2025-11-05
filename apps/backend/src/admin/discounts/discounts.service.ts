@@ -15,14 +15,9 @@ import {
 } from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
 
-type TxClient = Omit<
-  Prisma.TransactionClient,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use'
->;
-
 @Injectable()
 export class DiscountsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
   async upgradeOrCreateDiscount(
     body: MainDiscount,
@@ -30,7 +25,7 @@ export class DiscountsService {
     const { uniqueId } = body;
 
     try {
-      const result = await this.prisma.$transaction(async (tx) => {
+      const result = await this.prismaService.$transaction(async (tx) => {
         if (uniqueId) {
           const existing = await tx.discount.findUnique({
             where: { id: uniqueId },
@@ -92,7 +87,10 @@ export class DiscountsService {
     }
   }
 
-  private async _createDiscountInTransaction(tx: TxClient, body: MainDiscount) {
+  private async _createDiscountInTransaction(
+    tx: Prisma.TransactionClient,
+    body: MainDiscount,
+  ) {
     const commonData = this._getCommonAndTypeSpecificData(body);
 
     const couponsData: Prisma.CouponCreateNestedManyWithoutDiscountInput = {
@@ -194,7 +192,7 @@ export class DiscountsService {
   }
 
   private async _updateDiscountInTransaction(
-    tx: TxClient,
+    tx: Prisma.TransactionClient,
     discountId: string,
     body: MainDiscount,
     existingCoupons: Array<{ code: string; id: string; usageCount: number }>,
@@ -412,8 +410,8 @@ export class DiscountsService {
         : {}),
     };
 
-    const [discounts, totalCount] = await this.prisma.$transaction([
-      this.prisma.discount.findMany({
+    const [discounts, totalCount] = await this.prismaService.$transaction([
+      this.prismaService.discount.findMany({
         where: whereClause,
         skip: skip,
         take,
@@ -430,7 +428,7 @@ export class DiscountsService {
           },
         },
       }),
-      this.prisma.discount.count({ where: whereClause }),
+      this.prismaService.discount.count({ where: whereClause }),
     ]);
     return {
       success: true,
@@ -446,7 +444,7 @@ export class DiscountsService {
   }
 
   async getDiscountBySlug(slug: string): Promise<MainDiscount> {
-    const discount = await this.prisma.discount.findUnique({
+    const discount = await this.prismaService.discount.findUnique({
       where: { id: slug },
       include: {
         tiers: true,

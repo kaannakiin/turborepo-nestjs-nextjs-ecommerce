@@ -8,10 +8,10 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class GoogleCategoriesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prismaService: PrismaService) {}
 
   async getTaxonomy(): Promise<TaxonomyCategoryWithChildren[]> {
-    const categories = await this.prisma.taxonomyCategory.findMany({
+    const categories = await this.prismaService.taxonomyCategory.findMany({
       where: { isActive: true },
       select: {
         id: true,
@@ -67,7 +67,7 @@ export class GoogleCategoriesService {
           }),
     };
 
-    return this.prisma.taxonomyCategory.findMany({
+    return this.prismaService.taxonomyCategory.findMany({
       where,
       select: {
         id: true,
@@ -92,7 +92,7 @@ export class GoogleCategoriesService {
     });
   }
   async getParentId(id: string): Promise<{ parentId: string | null }> {
-    const category = await this.prisma.taxonomyCategory.findUnique({
+    const category = await this.prismaService.taxonomyCategory.findUnique({
       where: { id },
       select: { parentId: true },
     });

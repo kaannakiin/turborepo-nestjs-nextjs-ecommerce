@@ -11,25 +11,25 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class ShippingService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prismaService: PrismaService) {}
 
   async createOrUpdateCargoZone(body: CargoZoneType) {
-    let cargoZone = await this.prisma.cargoZone.findUnique({
+    let cargoZone = await this.prismaService.cargoZone.findUnique({
       where: { id: body.uniqueId },
     });
 
     const cargoZoneExists = !!cargoZone;
 
     if (!cargoZone) {
-      cargoZone = await this.prisma.cargoZone.create({
+      cargoZone = await this.prismaService.cargoZone.create({
         data: { id: body.uniqueId },
       });
     } else {
-      await this.prisma.location.deleteMany({
+      await this.prismaService.location.deleteMany({
         where: { cargoZoneId: cargoZone.id },
       });
 
-      await this.prisma.cargoRule.deleteMany({
+      await this.prismaService.cargoRule.deleteMany({
         where: { cargoZoneId: cargoZone.id },
       });
     }
@@ -64,7 +64,7 @@ export class ShippingService {
     }
 
     if (locationsToCreate.length > 0) {
-      await this.prisma.location.createMany({
+      await this.prismaService.location.createMany({
         data: locationsToCreate,
       });
     }
@@ -96,7 +96,7 @@ export class ShippingService {
     }
 
     if (rulesToCreate.length > 0) {
-      await this.prisma.cargoRule.createMany({
+      await this.prismaService.cargoRule.createMany({
         data: rulesToCreate,
       });
     }
@@ -109,7 +109,7 @@ export class ShippingService {
   }
 
   async getAllCargoZones() {
-    const cargoZones = await this.prisma.cargoZone.findMany({
+    const cargoZones = await this.prismaService.cargoZone.findMany({
       include: {
         locations: {
           include: {
@@ -135,7 +135,7 @@ export class ShippingService {
   async getCargoZone(
     id: string,
   ): Promise<CargoZoneType | { success: false; message: string }> {
-    const cargoZone = await this.prisma.cargoZone.findUnique({
+    const cargoZone = await this.prismaService.cargoZone.findUnique({
       where: { id },
       include: {
         locations: {
@@ -222,7 +222,7 @@ export class ShippingService {
   ): Promise<{
     rules: CargoRuleWithDetails[];
   } | null> {
-    const locations = await this.prisma.location.findMany({
+    const locations = await this.prismaService.location.findMany({
       where: {
         countryId,
       },
@@ -313,7 +313,7 @@ export class ShippingService {
   async getAvailableShippingMethods(
     cartId: string,
   ): Promise<ShippingMethodsResponse> {
-    const cart = await this.prisma.cart.findUnique({
+    const cart = await this.prismaService.cart.findUnique({
       where: { id: cartId },
       include: {
         shippingAddress: {

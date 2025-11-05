@@ -28,18 +28,12 @@ import CustomImage from "../../../components/CustomImage";
 import ProductPriceFormatter from "../../components/ProductPriceFormatter";
 
 const ClientCartPage = () => {
-  const {
-    cart,
-    removeItem,
-    increaseItemQuantity,
-    decreaseItemQuantity,
-    isCartLoading,
-  } = useCartV3();
+  const { cart, removeItem, increaseItem, decreaseItem, isCartLoading } =
+    useCartV3();
   const { push } = useRouter();
   const isMobile = useMediaQuery("(max-width: 768px)");
   const isTablet = useMediaQuery("(max-width: 1024px)");
 
-  // İlk yükleme için loading - cart yoksa ve loading ise
   const isInitialLoading = isCartLoading && !cart;
 
   if (isInitialLoading) {
@@ -141,15 +135,15 @@ const ClientCartPage = () => {
                                   <ActionIcon
                                     variant="transparent"
                                     size="lg"
-                                    onClick={async () => {
+                                    onClick={() => {
                                       if (item.quantity > 0) {
                                         if (item.quantity === 1) {
-                                          await removeItem(
+                                          removeItem(
                                             item.productId,
                                             item.variantId || undefined
                                           );
                                         } else {
-                                          await decreaseItemQuantity(
+                                          decreaseItem(
                                             item.productId,
                                             item.variantId || undefined
                                           );
@@ -178,8 +172,8 @@ const ClientCartPage = () => {
                                   <ActionIcon
                                     variant="transparent"
                                     size="lg"
-                                    onClick={async () => {
-                                      await increaseItemQuantity(
+                                    onClick={() => {
+                                      increaseItem(
                                         item.productId,
                                         item.variantId || undefined
                                       );
@@ -282,15 +276,15 @@ const ClientCartPage = () => {
                               <ActionIcon
                                 variant="transparent"
                                 size="lg"
-                                onClick={async () => {
+                                onClick={() => {
                                   if (item.quantity > 0) {
                                     if (item.quantity === 1) {
-                                      await removeItem(
+                                      removeItem(
                                         item.productId,
                                         item.variantId || undefined
                                       );
                                     } else {
-                                      await decreaseItemQuantity(
+                                      decreaseItem(
                                         item.productId,
                                         item.variantId || undefined
                                       );
@@ -317,8 +311,8 @@ const ClientCartPage = () => {
                               <ActionIcon
                                 variant="transparent"
                                 size="lg"
-                                onClick={async () => {
-                                  await increaseItemQuantity(
+                                onClick={() => {
+                                  increaseItem(
                                     item.productId,
                                     item.variantId || undefined
                                   );

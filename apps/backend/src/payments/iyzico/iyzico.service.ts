@@ -1,12 +1,6 @@
 import { BadRequestException, Global, Injectable } from '@nestjs/common';
-import { Prisma } from '@repo/database';
-import {
-  BasePaymentSuccessData,
-  GetCartForPaymentReturnType,
-  SignatureValidationData,
-} from '@repo/types';
+import { SignatureValidationData } from '@repo/types';
 import { createHmac } from 'crypto';
-import { PrismaService } from 'src/prisma/prisma.service';
 
 type ValidateSignature =
   | '3ds-initialize'
@@ -24,7 +18,7 @@ type ValidateSignature =
 @Global()
 @Injectable()
 export class IyzicoService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor() {}
   private readonly separator = ':';
 
   private async createIyzicoHeaders(

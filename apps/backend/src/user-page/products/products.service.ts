@@ -14,7 +14,7 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class ProductsService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly prismaService: PrismaService,
     private readonly adminProductService: AdminProductService,
     private readonly configService: ConfigService,
   ) {}
@@ -23,14 +23,15 @@ export class ProductsService {
     slug: string,
     locale: $Enums.Locale,
   ): Promise<GetProductPageReturnType> {
-    const productTranslation = await this.prisma.productTranslation.findUnique({
-      where: {
-        locale_slug: {
-          locale,
-          slug,
+    const productTranslation =
+      await this.prismaService.productTranslation.findUnique({
+        where: {
+          locale_slug: {
+            locale,
+            slug,
+          },
         },
-      },
-    });
+      });
     if (!productTranslation) {
       return {
         success: false,
@@ -39,7 +40,7 @@ export class ProductsService {
       };
     }
 
-    const mainProduct = await this.prisma.product.findUnique({
+    const mainProduct = await this.prismaService.product.findUnique({
       where: {
         id: productTranslation.productId,
       },
@@ -284,7 +285,7 @@ export class ProductsService {
 
   async getProductSimilar(productId: string) {
     // Ana ürünün bilgilerini al
-    const product = await this.prisma.product.findUnique({
+    const product = await this.prismaService.product.findUnique({
       where: { id: productId },
       include: {
         categories: {
@@ -307,7 +308,7 @@ export class ProductsService {
     > = [];
 
     if (product.brandId) {
-      const brandProducts = await this.prisma.product.findMany({
+      const brandProducts = await this.prismaService.product.findMany({
         where: {
           AND: [
             { brandId: product.brandId },
@@ -528,7 +529,7 @@ export class ProductsService {
     if (categoryIds.length > 0) {
       const currentProductIds = similarProducts.map((p) => p.id);
 
-      const categoryProducts = await this.prisma.product.findMany({
+      const categoryProducts = await this.prismaService.product.findMany({
         where: {
           AND: [
             {
@@ -755,7 +756,7 @@ export class ProductsService {
     if (similarProducts.length < 10 && product.taxonomyCategoryId) {
       const currentProductIds = similarProducts.map((p) => p.id);
 
-      const taxonomyProducts = await this.prisma.product.findMany({
+      const taxonomyProducts = await this.prismaService.product.findMany({
         where: {
           AND: [
             { taxonomyCategoryId: product.taxonomyCategoryId },
@@ -976,7 +977,7 @@ export class ProductsService {
     if (similarProducts.length < 12) {
       const currentProductIds = similarProducts.map((p) => p.id);
 
-      const randomProducts = await this.prisma.product.findMany({
+      const randomProducts = await this.prismaService.product.findMany({
         where: {
           AND: [
             { NOT: { id: { in: [...currentProductIds, productId] } } },
@@ -1217,7 +1218,7 @@ export class ProductsService {
     const uniqueProductIds = [...new Set(items.map((item) => item.productId))];
     const requestedVariantIds = variantItems.map((item) => item.variantId);
 
-    const products = await this.prisma.product.findMany({
+    const products = await this.prismaService.product.findMany({
       where: {
         id: {
           in: uniqueProductIds, // ✅ Sadece unique product ID'leri kullan
@@ -1362,7 +1363,7 @@ export class ProductsService {
       ],
     };
 
-    const products = await this.prisma.product.findMany({
+    const products = await this.prismaService.product.findMany({
       where: visibleProductWhere,
       select: {
         id: true,
@@ -1422,7 +1423,7 @@ export class ProductsService {
       },
     });
 
-    const leafCategories = await this.prisma.category.findMany({
+    const leafCategories = await this.prismaService.category.findMany({
       where: {
         products: {
           some: {
@@ -1435,7 +1436,9 @@ export class ProductsService {
     const leafCategoryIds = leafCategories.map((c) => c.id);
     let allVisibleCategoryIds: string[] = [];
     if (leafCategoryIds.length > 0) {
-      const ancestorCategories = await this.prisma.$queryRaw<[{ id: string }]>`
+      const ancestorCategories = await this.prismaService.$queryRaw<
+        [{ id: string }]
+      >`
         WITH RECURSIVE Ancestors AS (
           SELECT id, "parentCategoryId"
           FROM "Category"
@@ -1452,7 +1455,7 @@ export class ProductsService {
       allVisibleCategoryIds = ancestorCategories.map((c) => c.id);
     }
 
-    const categories = await this.prisma.category.findMany({
+    const categories = await this.prismaService.category.findMany({
       where: {
         id: { in: allVisibleCategoryIds },
       },
@@ -1465,7 +1468,7 @@ export class ProductsService {
       },
     });
 
-    const leafBrands = await this.prisma.brand.findMany({
+    const leafBrands = await this.prismaService.brand.findMany({
       where: {
         products: {
           some: visibleProductWhere,
@@ -1477,7 +1480,9 @@ export class ProductsService {
 
     let allVisibleBrandIds: string[] = [];
     if (leafBrandIds.length > 0) {
-      const ancestorBrands = await this.prisma.$queryRaw<[{ id: string }]>`
+      const ancestorBrands = await this.prismaService.$queryRaw<
+        [{ id: string }]
+      >`
         WITH RECURSIVE Ancestors AS (
           SELECT id, "parentBrandId"
           FROM "Brand"
@@ -1494,7 +1499,7 @@ export class ProductsService {
       allVisibleBrandIds = ancestorBrands.map((b) => b.id);
     }
 
-    const brands = await this.prisma.brand.findMany({
+    const brands = await this.prismaService.brand.findMany({
       where: {
         id: { in: allVisibleBrandIds },
       },

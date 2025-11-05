@@ -10,7 +10,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
   async getOrders({
     page,
@@ -76,7 +76,7 @@ export class OrdersService {
       };
 
       const [orders, total] = await Promise.all([
-        this.prisma.orderSchema.findMany({
+        this.prismaService.orderSchema.findMany({
           where: orderWhere,
           take,
           skip,
@@ -98,7 +98,7 @@ export class OrdersService {
             transactions: true,
           },
         }),
-        this.prisma.orderSchema.count({
+        this.prismaService.orderSchema.count({
           where: orderWhere,
         }),
       ]);
@@ -154,7 +154,7 @@ export class OrdersService {
     orderNumber: string,
   ): Promise<AdminGetOrderReturnType> {
     try {
-      const order = await this.prisma.orderSchema.findUnique({
+      const order = await this.prismaService.orderSchema.findUnique({
         where: {
           orderNumber,
         },
@@ -184,6 +184,7 @@ export class OrdersService {
           message: 'Sipariş bulunamadı.',
         };
       }
+
       return {
         success: true,
         message: 'Sipariş başarıyla alındı.',

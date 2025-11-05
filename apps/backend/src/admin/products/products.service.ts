@@ -23,12 +23,12 @@ import { PrismaService } from 'src/prisma/prisma.service';
 @Injectable()
 export class ProductsService {
   constructor(
-    private prisma: PrismaService,
+    private prismaService: PrismaService,
     private minioClient: MinioService,
   ) {}
 
   async getVariants() {
-    return this.prisma.variantGroup.findMany({
+    return this.prismaService.variantGroup.findMany({
       include: {
         translations: true,
         options: {
@@ -41,7 +41,7 @@ export class ProductsService {
     });
   }
   async deleteVariantOptionAsset(url: string) {
-    const assetExists = await this.prisma.asset.findUnique({
+    const assetExists = await this.prismaService.asset.findUnique({
       where: {
         url,
       },
@@ -55,7 +55,7 @@ export class ProductsService {
         'Resim silinirken bir hata oluştu',
       );
     }
-    await this.prisma.asset.delete({
+    await this.prismaService.asset.delete({
       where: {
         url,
       },
@@ -66,7 +66,7 @@ export class ProductsService {
   async createOrUpdateVariants(data: VariantGroupZodType) {
     try {
       const { options, translations, type, uniqueId } = data;
-      const variantGroup = await this.prisma.variantGroup.findUnique({
+      const variantGroup = await this.prismaService.variantGroup.findUnique({
         where: { id: uniqueId },
       });
 
@@ -95,7 +95,7 @@ export class ProductsService {
       type: VariantGroupZodType['type'];
     },
   ) {
-    return this.prisma.$transaction(async (prisma) => {
+    return this.prismaService.$transaction(async (prisma) => {
       // Variant group'u güncelle
       await prisma.variantGroup.update({
         where: { id: uniqueId },
@@ -184,7 +184,7 @@ export class ProductsService {
     translations: VariantGroupZodType['translations'];
     type: VariantGroupZodType['type'];
   }) {
-    return this.prisma.$transaction(async (prisma) => {
+    return this.prismaService.$transaction(async (prisma) => {
       // Variant group'u oluştur
       const variantGroup = await prisma.variantGroup.create({
         data: {
@@ -278,9 +278,9 @@ export class ProductsService {
         googleTaxonomyId,
         ...productData
       } = data;
-      return this.prisma.$transaction(
+      return this.prismaService.$transaction(
         async (prisma) => {
-          let product = await this.prisma.product.findUnique({
+          let product = await this.prismaService.product.findUnique({
             where: {
               id: productData.uniqueId,
             },
@@ -934,7 +934,7 @@ export class ProductsService {
   }
 
   async getProductVariant(id: string): Promise<VariantProductZodType | null> {
-    const product = await this.prisma.product.findUnique({
+    const product = await this.prismaService.product.findUnique({
       where: { id },
       include: {
         assets: {
@@ -1176,7 +1176,7 @@ export class ProductsService {
       throw new BadRequestException('Dosya sayısı ile order sayısı eşleşmiyor');
     }
 
-    const dbProduct = await this.prisma.product.findUnique({
+    const dbProduct = await this.prismaService.product.findUnique({
       where: { id: productId },
       include: {
         assets: {
@@ -1219,7 +1219,7 @@ export class ProductsService {
     }
 
     try {
-      await this.prisma.$transaction(async (tx) => {
+      await this.prismaService.$transaction(async (tx) => {
         for (const [index, upload] of successfulUploads.entries()) {
           const newAsset = await tx.asset.create({
             data: {
@@ -1258,7 +1258,7 @@ export class ProductsService {
       throw new BadRequestException('Görsel URLsi belirtilmedi.');
     }
 
-    const asset = await this.prisma.asset.findUnique({
+    const asset = await this.prismaService.asset.findUnique({
       where: { url: imageUrl },
     });
 
@@ -1268,19 +1268,20 @@ export class ProductsService {
       );
     }
 
-    const productAssetToDelete = await this.prisma.productAsset.findFirst({
-      where: { assetId: asset.id },
-    });
+    const productAssetToDelete =
+      await this.prismaService.productAsset.findFirst({
+        where: { assetId: asset.id },
+      });
 
     if (!productAssetToDelete || !productAssetToDelete.productId) {
       await this.minioClient.deleteAsset(imageUrl);
 
       if (productAssetToDelete) {
-        await this.prisma.productAsset.delete({
+        await this.prismaService.productAsset.delete({
           where: { id: productAssetToDelete.id },
         });
       } else {
-        await this.prisma.asset.delete({
+        await this.prismaService.asset.delete({
           where: { url: imageUrl },
         });
       }
@@ -1301,7 +1302,7 @@ export class ProductsService {
         );
       }
 
-      await this.prisma.$transaction(async (tx) => {
+      await this.prismaService.$transaction(async (tx) => {
         // 1. Silinecek asset'in order'ını al
         const deletedOrder = productAssetToDelete.order;
 
@@ -1370,16 +1371,17 @@ export class ProductsService {
     }
 
     // Kombinasyonun var olup olmadığını ve en son resmin sırasını kontrol et
-    const combination = await this.prisma.productVariantCombination.findUnique({
-      where: { id: combinationId },
-      include: {
-        assets: {
-          select: { order: true },
-          orderBy: { order: 'desc' },
-          take: 1,
+    const combination =
+      await this.prismaService.productVariantCombination.findUnique({
+        where: { id: combinationId },
+        include: {
+          assets: {
+            select: { order: true },
+            orderBy: { order: 'desc' },
+            take: 1,
+          },
         },
-      },
-    });
+      });
 
     if (!combination) {
       throw new NotFoundException('Varyant kombinasyonu bulunamadı');
@@ -1410,7 +1412,7 @@ export class ProductsService {
     const lastOrder = combination.assets[0]?.order ?? -1;
 
     try {
-      await this.prisma.$transaction(async (tx) => {
+      await this.prismaService.$transaction(async (tx) => {
         for (const [index, upload] of successfulUploads.entries()) {
           // 1. Yeni Asset'i oluştur
           const newAsset = await tx.asset.create({
@@ -1448,7 +1450,7 @@ export class ProductsService {
       throw new BadRequestException('Görsel URLsi belirtilmedi.');
     }
 
-    const asset = await this.prisma.asset.findUnique({
+    const asset = await this.prismaService.asset.findUnique({
       where: { url: imageUrl },
     });
 
@@ -1458,9 +1460,10 @@ export class ProductsService {
       );
     }
 
-    const productAssetToDelete = await this.prisma.productAsset.findFirst({
-      where: { assetId: asset.id },
-    });
+    const productAssetToDelete =
+      await this.prismaService.productAsset.findFirst({
+        where: { assetId: asset.id },
+      });
 
     // Asset'in bir varyant kombinasyonuna bağlı olup olmadığını kontrol et
     if (!productAssetToDelete || !productAssetToDelete.combinationId) {
@@ -1481,7 +1484,7 @@ export class ProductsService {
       }
 
       // 2. Veritabanı işlemlerini transaction içinde yap
-      await this.prisma.$transaction(async (tx) => {
+      await this.prismaService.$transaction(async (tx) => {
         // a. İlgili ProductAsset ve ilişkili Asset'i sil
         await tx.productAsset.delete({
           where: { id: productAssetToDelete.id },
@@ -1543,7 +1546,7 @@ export class ProductsService {
     } = data;
 
     try {
-      const existingProduct = await this.prisma.product.findUnique({
+      const existingProduct = await this.prismaService.product.findUnique({
         where: { id: uniqueId },
         include: {
           variantCombinations: true,
@@ -1582,13 +1585,13 @@ export class ProductsService {
 
         // Oluşturulan kodların benzersizliğini kontrol et
         const [skuCheck, barcodeCheck] = await Promise.all([
-          this.prisma.product.findFirst({
+          this.prismaService.product.findFirst({
             where: {
               sku: finalSku,
               id: { not: uniqueId },
             },
           }),
-          this.prisma.product.findFirst({
+          this.prismaService.product.findFirst({
             where: {
               barcode: finalBarcode,
               id: { not: uniqueId },
@@ -1610,13 +1613,13 @@ export class ProductsService {
       } else {
         // Manuel girilen SKU ve barcode'ların benzersizliğini kontrol et
         const [skuCheck, barcodeCheck] = await Promise.all([
-          this.prisma.product.findFirst({
+          this.prismaService.product.findFirst({
             where: {
               sku: finalSku,
               id: { not: uniqueId },
             },
           }),
-          this.prisma.product.findFirst({
+          this.prismaService.product.findFirst({
             where: {
               barcode: finalBarcode,
               id: { not: uniqueId },
@@ -1637,7 +1640,7 @@ export class ProductsService {
         }
       }
 
-      return await this.prisma.$transaction(async (tx) => {
+      return await this.prismaService.$transaction(async (tx) => {
         await tx.product.upsert({
           where: { id: uniqueId },
           update: {
@@ -1830,7 +1833,7 @@ export class ProductsService {
   }
 
   async getBasicProduct(id: Cuid2ZodType): Promise<BaseProductZodType> {
-    const product = await this.prisma.product.findUnique({
+    const product = await this.prismaService.product.findUnique({
       where: { id, isVariant: false },
       include: {
         assets: {
@@ -1959,7 +1962,7 @@ export class ProductsService {
     };
 
     const [products, totalCount] = await Promise.all([
-      this.prisma.product.findMany({
+      this.prismaService.product.findMany({
         where,
         skip,
         take: limit,
@@ -2021,7 +2024,7 @@ export class ProductsService {
           },
         },
       }),
-      this.prisma.product.count({ where }),
+      this.prismaService.product.count({ where }),
     ]);
 
     return {
@@ -2099,7 +2102,7 @@ export class ProductsService {
   async getProductsForSelection(): Promise<{
     products: { id: string; name: string }[];
   }> {
-    const products = await this.prisma.product.findMany({
+    const products = await this.prismaService.product.findMany({
       include: {
         translations: {
           select: {
@@ -2121,7 +2124,7 @@ export class ProductsService {
   }
 
   async uploadVariantOptionAsset(file: Express.Multer.File, uniqueId: string) {
-    const variantOption = await this.prisma.variantOption.findUnique({
+    const variantOption = await this.prismaService.variantOption.findUnique({
       where: {
         id: uniqueId,
       },
@@ -2139,7 +2142,7 @@ export class ProductsService {
     if (variantOption.asset) {
       // Mevcut görseli sil
       await this.minioClient.deleteAsset(variantOption.asset.url);
-      await this.prisma.asset.delete({
+      await this.prismaService.asset.delete({
         where: { url: variantOption.asset.url },
       });
     }
@@ -2152,13 +2155,13 @@ export class ProductsService {
     if (!uploadResult.success || !uploadResult.data) {
       throw new InternalServerErrorException('Dosya yüklenemedi');
     }
-    const newAsset = await this.prisma.asset.create({
+    const newAsset = await this.prismaService.asset.create({
       data: {
         url: uploadResult.data.url,
         type: uploadResult.data.type,
       },
     });
-    await this.prisma.variantOption.update({
+    await this.prismaService.variantOption.update({
       where: { id: uniqueId },
       data: {
         assetId: newAsset.id,
@@ -2428,7 +2431,7 @@ export class ProductsService {
         : { active: true }),
     };
 
-    const products = await this.prisma.product.findMany({
+    const products = await this.prismaService.product.findMany({
       where,
       orderBy: {
         createdAt: 'desc',
@@ -2531,7 +2534,7 @@ export class ProductsService {
           }),
     }));
 
-    const products = await this.prisma.product.findMany({
+    const products = await this.prismaService.product.findMany({
       where: {
         active: true,
         OR: orConditions,
@@ -2621,7 +2624,7 @@ export class ProductsService {
       image: { url: string; type: $Enums.AssetType } | null;
     }>
   > {
-    const products = await this.prisma.product.findMany({
+    const products = await this.prismaService.product.findMany({
       where: {
         OR: [
           {
@@ -2679,7 +2682,7 @@ export class ProductsService {
   }
 
   async getAllProductsAndItsSubs(): Promise<DiscountItem[]> {
-    const products = await this.prisma.product.findMany({
+    const products = await this.prismaService.product.findMany({
       select: {
         id: true,
         translations: true,
@@ -2873,7 +2876,7 @@ export class ProductsService {
       };
 
       const [products, totalCount] = await Promise.all([
-        this.prisma.product.findMany({
+        this.prismaService.product.findMany({
           where: productWhere,
           orderBy: { createdAt: 'desc' },
           take: 20,
@@ -2927,7 +2930,7 @@ export class ProductsService {
             },
           },
         }),
-        this.prisma.product.count({ where: productWhere }),
+        this.prismaService.product.count({ where: productWhere }),
       ]);
 
       return {
@@ -2952,7 +2955,7 @@ export class ProductsService {
         ],
       };
 
-      const selectedProducts = await this.prisma.product.findMany({
+      const selectedProducts = await this.prismaService.product.findMany({
         where: selectedProductsWhere, // <-- Güncellenmiş 'where' koşulu kullanıldı
         orderBy: { createdAt: 'desc' },
         include: {
@@ -3010,7 +3013,7 @@ export class ProductsService {
       // Kalan slot varsa, seçili olmayanlardan ekle
       let otherProducts: any[] = [];
       if (remainingCount > 0) {
-        otherProducts = await this.prisma.product.findMany({
+        otherProducts = await this.prismaService.product.findMany({
           where: {
             id: { notIn: selectedProductIds },
           },
@@ -3066,7 +3069,7 @@ export class ProductsService {
         });
       }
 
-      const totalCount = await this.prisma.product.count();
+      const totalCount = await this.prismaService.product.count();
 
       // Seçili ürünler önce, sonra diğerleri
       const allProducts = [...selectedProducts, ...otherProducts];
@@ -3078,7 +3081,7 @@ export class ProductsService {
     }
 
     const [products, totalCount] = await Promise.all([
-      this.prisma.product.findMany({
+      this.prismaService.product.findMany({
         orderBy: { createdAt: 'desc' },
         take: 20,
         skip,
@@ -3130,7 +3133,7 @@ export class ProductsService {
           },
         },
       }),
-      this.prisma.product.count(),
+      this.prismaService.product.count(),
     ]);
 
     return {
@@ -3239,58 +3242,60 @@ export class ProductsService {
     isVariant: boolean,
   ): Promise<UpSellProductReturnType> {
     if (isVariant) {
-      const variant = await this.prisma.productVariantCombination.findUnique({
-        where: {
-          id,
-          active: true,
-          product: { active: true },
-          stock: { gt: 0 },
-        },
-        include: {
-          assets: {
-            take: 1,
-            orderBy: {
-              order: 'asc',
-            },
-            select: {
-              asset: {
-                select: {
-                  url: true,
-                  type: true,
+      const variant =
+        await this.prismaService.productVariantCombination.findUnique({
+          where: {
+            id,
+            active: true,
+            product: { active: true },
+            stock: { gt: 0 },
+          },
+          include: {
+            assets: {
+              take: 1,
+              orderBy: {
+                order: 'asc',
+              },
+              select: {
+                asset: {
+                  select: {
+                    url: true,
+                    type: true,
+                  },
                 },
               },
             },
-          },
-          options: {
-            orderBy: [
-              {
+            options: {
+              orderBy: [
+                {
+                  productVariantOption: {
+                    productVariantGroup: { order: 'asc' },
+                  },
+                },
+                {
+                  productVariantOption: { order: 'asc' },
+                },
+              ],
+              select: {
                 productVariantOption: {
-                  productVariantGroup: { order: 'asc' },
-                },
-              },
-              {
-                productVariantOption: { order: 'asc' },
-              },
-            ],
-            select: {
-              productVariantOption: {
-                select: {
-                  variantOption: {
-                    select: {
-                      asset: {
-                        select: {
-                          url: true,
-                          type: true,
+                  select: {
+                    variantOption: {
+                      select: {
+                        asset: {
+                          select: {
+                            url: true,
+                            type: true,
+                          },
                         },
-                      },
-                      id: true,
-                      hexValue: true,
-                      translations: true,
-                      variantGroup: {
-                        select: {
-                          id: true,
-                          translations: true,
-                          type: true,
+                        id: true,
+                        hexValue: true,
+                        translations: true,
+                        variantGroup: {
+                          select: {
+                            id: true,
+                            translations: true,
+                            type: true,
+                          },
                         },
                       },
                     },
@@ -3298,29 +3303,28 @@ export class ProductsService {
                 },
               },
             },
-          },
-          prices: true,
-          product: {
-            select: {
-              translations: true,
-              assets: {
-                take: 1,
-                orderBy: {
-                  order: 'asc',
-                },
-                select: {
-                  asset: {
-                    select: {
-                      url: true,
-                      type: true,
+            prices: true,
+            product: {
+              select: {
+                translations: true,
+                assets: {
+                  take: 1,
+                  orderBy: {
+                    order: 'asc',
+                  },
+                  select: {
+                    asset: {
+                      select: {
+                        url: true,
+                        type: true,
+                      },
                     },
                   },
                 },
               },
             },
           },
-        },
-      });
+        });
 
       if (!variant) {
         return {
@@ -3394,7 +3398,7 @@ export class ProductsService {
       };
     }
 
-    const product = await this.prisma.product.findUnique({
+    const product = await this.prismaService.product.findUnique({
       where: {
         id,
         active: true,

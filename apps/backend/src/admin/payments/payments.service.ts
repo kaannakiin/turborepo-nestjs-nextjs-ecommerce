@@ -10,7 +10,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class PaymentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService) {}
   async createPaymentMethod(data: PaymentMethodType): Promise<{
     success: boolean;
     message: string;
@@ -29,11 +29,12 @@ export class PaymentsService {
     methodType: $Enums.PaymentProvider,
   ): Promise<GetPaymentMethodResponseType> {
     try {
-      const paymentMethod = await this.prisma.storePaymentProvider.findUnique({
-        where: {
-          provider: methodType,
-        },
-      });
+      const paymentMethod =
+        await this.prismaService.storePaymentProvider.findUnique({
+          where: {
+            provider: methodType,
+          },
+        });
       if (!paymentMethod) {
         return {
           success: false,
@@ -56,7 +57,7 @@ export class PaymentsService {
   private async processPaytrPaymentMethod(data: PayTRPaymentMethodType) {
     try {
       const { type, isActive, isTestMode, ...rest } = data;
-      await this.prisma.storePaymentProvider.upsert({
+      await this.prismaService.storePaymentProvider.upsert({
         where: {
           provider: 'PAYTR',
         },
@@ -88,7 +89,7 @@ export class PaymentsService {
   private async processIyzicoPaymentMethod(data: IyzicoPaymentMethodType) {
     try {
       const { type, isActive, isTestMode, ...rest } = data;
-      await this.prisma.storePaymentProvider.upsert({
+      await this.prismaService.storePaymentProvider.upsert({
         where: {
           provider: 'IYZICO',
         },
@@ -147,7 +148,8 @@ export class PaymentsService {
   }
 
   async getPaymentMethods(): Promise<PaymentMethodType[]> {
-    const paymentMethods = await this.prisma.storePaymentProvider.findMany();
+    const paymentMethods =
+      await this.prismaService.storePaymentProvider.findMany();
     return paymentMethods.map((method) => this.processPaymentProvider(method));
   }
 }

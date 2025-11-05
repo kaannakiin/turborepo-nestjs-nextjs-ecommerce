@@ -6,6 +6,29 @@ const authRoutes = ["/auth"];
 const adminRoutes = ["/api/admin", "/admin"];
 const userRoutes = ["/dashboard", "/profile", "/api/user"];
 
+const clearCookies = (response: NextResponse) => {
+  // response.cookies.set("token", "", { expires: new Date(0), path: "/" });
+  // response.cookies.set("refresh_token", "", {
+  //   expires: new Date(0),
+  //   path: "/",
+  // });
+  return response;
+};
+
+const createRedirectWithCookies = (
+  url: string,
+  req: NextRequest,
+  newCookies: Cookie[]
+) => {
+  const response = NextResponse.redirect(new URL(url, req.url));
+  return setNewCookiesToResponse(response, newCookies);
+};
+
+const createClearRedirect = (url: string, req: NextRequest) => {
+  const response = NextResponse.redirect(new URL(url, req.url));
+  return clearCookies(response);
+};
+
 const setCookieFromParsed = (response: NextResponse, cookie: Cookie) => {
   response.cookies.set(cookie.name, cookie.value, {
     httpOnly: cookie.httpOnly ?? true,
@@ -28,16 +51,6 @@ const setNewCookiesToResponse = (
   return response;
 };
 
-const createRedirectResponse = (
-  url: string,
-  req: NextRequest,
-  newCookies: Cookie[]
-) => {
-  const response = NextResponse.redirect(new URL(url, req.url));
-
-  return setNewCookiesToResponse(response, newCookies);
-};
-
 const isAuthRoute = (path: string) =>
   authRoutes.some((route) => path.startsWith(route));
 
@@ -54,26 +67,18 @@ const isAdminOrOwner = (role: string) => role === "ADMIN" || role === "OWNER";
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const token = req.cookies.get("token")?.value || null;
+  let refreshToken = req.cookies.get("refresh_token")?.value || null;
 
   if (!isProtectedRoute(pathname) && !isAuthRoute(pathname)) {
     return NextResponse.next();
   }
 
-  const token = req.cookies.get("token")?.value || null;
-  const refreshToken = req.cookies.get("refresh_token")?.value || null;
+  let currentToken = token;
   const newCookies: Cookie[] = [];
-  let shouldClearCookies = false;
+  let shouldClear = false;
 
-  if (!token && !refreshToken && isProtectedRoute(pathname)) {
-    return createRedirectResponse(
-      `/auth?redirectUri=${encodeURIComponent(pathname)}`,
-      req,
-      []
-    );
-  }
-
-  // Token refresh logic - sadece token yoksa ama refresh token varsa
-  if (!token && refreshToken) {
+  if (!currentToken && refreshToken) {
     try {
       const refreshReq = await fetch(
         `${process.env.BACKEND_URL}/auth/refresh`,
@@ -92,7 +97,6 @@ export async function proxy(req: NextRequest) {
           const splittedSetCookies = splitCookiesString(setCookies);
           if (splittedSetCookies) {
             const parsedCookies = parse(splittedSetCookies);
-
             parsedCookies.forEach((cookie) => {
               if (
                 (cookie.name === "token" || cookie.name === "refresh_token") &&
@@ -101,82 +105,80 @@ export async function proxy(req: NextRequest) {
                 newCookies.push(cookie);
               }
             });
+
+            currentToken =
+              newCookies.find((c) => c.name === "token")?.value || null;
+            refreshToken =
+              newCookies.find((c) => c.name === "refresh_token")?.value || null;
           }
         }
       } else {
-        shouldClearCookies = true;
+        shouldClear = true;
       }
     } catch {
-      shouldClearCookies = true;
+      shouldClear = true;
     }
   }
 
-  const currentToken =
-    newCookies.find((c) => c.name === "token")?.value || token;
+  if (isAuthRoute(pathname)) {
+    if (shouldClear) {
+      return clearCookies(NextResponse.next());
+    }
+    if (currentToken) {
+      return createRedirectWithCookies("/dashboard", req, newCookies);
+    }
 
-  // Cookie temizliği gerekiyorsa ve protected route'daysa
-  if (shouldClearCookies && isProtectedRoute(pathname)) {
-    return createRedirectResponse(
+    return NextResponse.next();
+  }
+
+  if (!currentToken || shouldClear) {
+    if (isAdminRoute(pathname)) {
+      return createClearRedirect("/", req);
+    }
+
+    return createClearRedirect(
       `/auth?redirectUri=${encodeURIComponent(pathname)}`,
-      req,
-      []
+      req
     );
   }
 
-  // Cookie temizliği gerekiyorsa ve auth route'daysa
-  if (shouldClearCookies && isAuthRoute(pathname)) {
-    const response = NextResponse.next();
-    return setNewCookiesToResponse(response, []);
-  }
-
-  // Auth route kontrolü - token varsa dashboard'a yönlendir
-  if (currentToken && isAuthRoute(pathname)) {
-    return createRedirectResponse("/dashboard", req, newCookies);
-  }
-
-  // Protected route'a gidiyorsa ve token varsa payload kontrolü yap
-  if (currentToken && isProtectedRoute(pathname)) {
-    let tokenPayload: TokenPayload | null = null;
-
-    try {
-      const meReq = await fetch(`${process.env.BACKEND_URL}/auth/me`, {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          Cookie: `token=${currentToken}`,
-        },
-      });
-
-      if (meReq.ok) {
-        tokenPayload = (await meReq.json()) as TokenPayload;
-      } else if (meReq.status === 401) {
-        // Token geçersiz
-        return createRedirectResponse(
-          `/auth?redirectUri=${encodeURIComponent(pathname)}`,
-          req,
-          []
-        );
+  try {
+    const meReq = await fetch(`${process.env.BACKEND_URL}/auth/me`, {
+      method: "GET",
+      credentials: "include",
+      headers: { Cookie: `token=${currentToken}` },
+      cache: "no-store",
+    });
+    if (meReq.ok) {
+      const tokenPayload = (await meReq.json()) as TokenPayload;
+      if (isAdminRoute(pathname) && !isAdminOrOwner(tokenPayload.role)) {
+        return createRedirectWithCookies("/", req, newCookies);
       }
-    } catch {
-      // Network hatası - kullanıcıyı login'e yönlendir
-      return createRedirectResponse(
+      const response = NextResponse.next();
+
+      return setNewCookiesToResponse(response, newCookies);
+    }
+
+    if (meReq.status === 401) {
+      if (isAdminRoute(pathname)) {
+        return createClearRedirect("/", req);
+      }
+      return createClearRedirect(
         `/auth?redirectUri=${encodeURIComponent(pathname)}`,
-        req,
-        []
+        req
       );
     }
 
-    // Admin route kontrolü
+    throw new Error(`Auth/me failed with status ${meReq.status}`);
+  } catch (error) {
     if (isAdminRoute(pathname)) {
-      if (!tokenPayload?.role || !isAdminOrOwner(tokenPayload.role)) {
-        return createRedirectResponse("/", req, newCookies);
-      }
+      return createClearRedirect("/", req);
     }
+    return createClearRedirect(
+      `/auth?redirectUri=${encodeURIComponent(pathname)}`,
+      req
+    );
   }
-
-  // Normal response
-  const response = NextResponse.next();
-  return setNewCookiesToResponse(response, newCookies);
 }
 
 export const config = {

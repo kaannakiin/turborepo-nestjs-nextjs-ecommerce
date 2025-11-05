@@ -25,11 +25,14 @@ export class AuthService {
   }
 
   async validateUser(username: string, password: string) {
-    const user = await this.userService.findFirst({
-      where: {
-        OR: [{ email: username }, { phone: username }],
-      },
-    });
+    const users: User[] = await this.prismaService.$queryRaw<User[]>`
+      SELECT * FROM "User" 
+      WHERE "email" = ${username} OR "phone" = ${username}
+      LIMIT 1
+    `;
+
+    const user = users[0];
+
     if (!user || !user.password) {
       return null;
     }
@@ -42,7 +45,7 @@ export class AuthService {
   }
 
   async register(data: RegisterSchemaType) {
-    const isUserExists = await this.userService.findUnique({
+    const isUserExists = await this.prismaService.user.findUnique({
       where: {
         ...(data.email
           ? { email: data.email }
@@ -63,7 +66,7 @@ export class AuthService {
     try {
       const hashedPassword = await hash(data.password);
 
-      await this.userService.createUser({
+      await this.prismaService.user.create({
         data: {
           name: this.capitalize(data.name.trim()),
           surname: this.capitalize(data.surname.trim()),

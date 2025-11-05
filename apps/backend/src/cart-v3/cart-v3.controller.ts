@@ -22,11 +22,13 @@ import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import { CartV3Service } from './cart-v3.service';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
-@Controller('cart-v3')
+@Controller('cart')
 export class CartV3Controller {
   constructor(private readonly cartV3Service: CartV3Service) {}
 
+  @HttpCode(HttpStatus.OK)
   @Post('add-item')
   @UseGuards(OptionalJwtAuthGuard)
   async addItemToCart(
@@ -37,13 +39,14 @@ export class CartV3Controller {
     return this.cartV3Service.addItemToCart(data, user);
   }
 
+  @HttpCode(HttpStatus.OK)
   @Get(':cartId')
   @UseGuards(OptionalJwtAuthGuard)
   async getCartById(
     @Param('cartId') cartId: string,
     @CurrentUser() user: User | null,
   ) {
-    return this.cartV3Service.getCartForClient(user ? user.id : null, cartId);
+    return this.cartV3Service.getCartForMainClient(cartId, user);
   }
 
   @HttpCode(HttpStatus.OK)
@@ -54,11 +57,7 @@ export class CartV3Controller {
     data: DecraseOrIncreaseCartItemReqBodyV3Type,
     @CurrentUser() user: User | null,
   ) {
-    return this.cartV3Service.decreaseItemQuantity({
-      cartId: data.cartId,
-      data,
-      userId: user ? user.id : null,
-    });
+    return this.cartV3Service.decreaseCartItemQuantity(data, user);
   }
 
   @HttpCode(HttpStatus.OK)
@@ -69,21 +68,13 @@ export class CartV3Controller {
     data: DecraseOrIncreaseCartItemReqBodyV3Type,
     @CurrentUser() user: User | null,
   ) {
-    return this.cartV3Service.increaseItemQuantity({
-      cartId: data.cartId,
-      data,
-      userId: user ? user.id : null,
-    });
+    return this.cartV3Service.increaseCartItemQuantity(data, user);
   }
 
   @HttpCode(HttpStatus.OK)
   @Post('clear-cart/:cartId')
-  @UseGuards(OptionalJwtAuthGuard)
-  async clearCart(
-    @Param('cartId') cartId: string,
-    @CurrentUser() user: User | null,
-  ) {
-    return this.cartV3Service.clearCart(cartId, user ? user.id : null);
+  async clearCart(@Param('cartId') cartId: string) {
+    return this.cartV3Service.clearCart(cartId);
   }
 
   @HttpCode(HttpStatus.OK)
@@ -94,7 +85,7 @@ export class CartV3Controller {
     data: DecraseOrIncreaseCartItemReqBodyV3Type,
     @CurrentUser() user: User | null,
   ) {
-    return this.cartV3Service.removeItem(user ? user.id : null, data);
+    return this.cartV3Service.removeItemFromCart(data, user);
   }
 
   @Get('get-user-cart-info-for-checkout/:cartId')
@@ -129,5 +120,14 @@ export class CartV3Controller {
     @Body() body: { cartId: string; cargoRuleId: string },
   ) {
     return this.cartV3Service.setCartCargoRule(body.cartId, body.cargoRuleId);
+  }
+
+  @Get('merge-carts/:cartId')
+  @UseGuards(JwtAuthGuard)
+  async mergeCarts(
+    @Param('cartId') mergedCartId: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.cartV3Service.mergeCarts(mergedCartId, user);
   }
 }

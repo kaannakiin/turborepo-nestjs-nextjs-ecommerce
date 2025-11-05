@@ -9,7 +9,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
   async createOrUpdateOrderForPayment(
     data: GetCartForPaymentReturnType['data'],
@@ -24,7 +24,7 @@ export class OrdersService {
     message: string;
     order?: GetOrderByIdForPaymentReturnData;
   }> {
-    return await this.prisma.$transaction(
+    return await this.prismaService.$transaction(
       async (tx) => {
         const {
           cart,
@@ -223,7 +223,7 @@ export class OrdersService {
   }
 
   async orderUpdate(args: Prisma.OrderSchemaUpdateArgs) {
-    return this.prisma.orderSchema.update(args);
+    return this.prismaService.orderSchema.update(args);
   }
 
   private async getTodayOrdersCount(
@@ -260,7 +260,7 @@ export class OrdersService {
   async getOrderByIdForPayment(
     orderId: string,
   ): Promise<GetOrderByIdForPaymentReturnData | null> {
-    return await this.prisma.orderSchema.findUnique({
+    return await this.prismaService.orderSchema.findUnique({
       where: { id: orderId },
       include: {
         itemsSchema: {

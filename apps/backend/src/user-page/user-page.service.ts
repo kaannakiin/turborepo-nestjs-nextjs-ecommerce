@@ -5,12 +5,12 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class UserPageService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
   async getHeaderCategoiresData(): Promise<CategoryHeaderData[]> {
     try {
       // Parent kategorisi olmayan kategorileri al
-      const parentCategories = await this.prisma.category.findMany({
+      const parentCategories = await this.prismaService.category.findMany({
         where: {
           parentCategoryId: null, // Parent kategorisi yok
           products: {
@@ -97,7 +97,7 @@ export class UserPageService {
       const getAllChildCategories = async (
         parentId: string,
       ): Promise<any[]> => {
-        const childCategories = await this.prisma.category.findMany({
+        const childCategories = await this.prismaService.category.findMany({
           where: {
             parentCategoryId: parentId,
             products: {

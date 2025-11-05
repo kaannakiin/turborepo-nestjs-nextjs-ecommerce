@@ -18,7 +18,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 @Injectable()
 export class ThemeService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly prismaService: PrismaService,
     private readonly minio: MinioService,
   ) {}
   async deleteMultipleSliders(uniqueIds: string[]) {
@@ -34,7 +34,7 @@ export class ThemeService {
 
     for (const uniqueId of uniqueIds) {
       try {
-        const slider = await this.prisma.sliderItemSchema.findUnique({
+        const slider = await this.prismaService.sliderItemSchema.findUnique({
           where: { id: uniqueId },
           select: {
             order: true,
@@ -50,7 +50,7 @@ export class ThemeService {
         // Desktop asset'i sil
         if (slider.desktopAsset?.url) {
           await this.minio.deleteAsset(slider.desktopAsset.url);
-          await this.prisma.asset
+          await this.prismaService.asset
             .delete({
               where: { url: slider.desktopAsset.url },
             })
@@ -60,7 +60,7 @@ export class ThemeService {
         // Mobile asset'i sil
         if (slider.mobileAsset?.url) {
           await this.minio.deleteAsset(slider.mobileAsset.url);
-          await this.prisma.asset
+          await this.prismaService.asset
             .delete({
               where: { url: slider.mobileAsset.url },
             })
@@ -68,7 +68,7 @@ export class ThemeService {
         }
 
         // Slider item'ı sil
-        await this.prisma.sliderItemSchema.delete({
+        await this.prismaService.sliderItemSchema.delete({
           where: { id: uniqueId },
         });
 
@@ -96,7 +96,7 @@ export class ThemeService {
   }) {
     const { uniqueId, order, customLink, desktopAsset, mobileAsset } = data;
 
-    let sliders = await this.prisma.sliderSettings.findFirst({
+    let sliders = await this.prismaService.sliderSettings.findFirst({
       include: {
         items: {
           select: {
@@ -108,7 +108,7 @@ export class ThemeService {
     });
 
     if (!sliders) {
-      sliders = await this.prisma.sliderSettings.create({
+      sliders = await this.prismaService.sliderSettings.create({
         data: {
           autoPlayInterval: 5000,
           isAutoPlay: true,
@@ -168,7 +168,7 @@ export class ThemeService {
         type: uploadedMobileAsset.data.type,
       };
     }
-    await this.prisma.sliderItemSchema.upsert({
+    await this.prismaService.sliderItemSchema.upsert({
       where: { id: uniqueId },
       create: {
         id: uniqueId,
@@ -225,7 +225,7 @@ export class ThemeService {
   }
 
   async getSliders(): Promise<LayoutComponentType> {
-    const sliders = await this.prisma.sliderSettings.findFirst({
+    const sliders = await this.prismaService.sliderSettings.findFirst({
       include: {
         items: {
           orderBy: {
@@ -251,7 +251,7 @@ export class ThemeService {
     }
     for (const item of sliders.items) {
       if (!item.desktopAsset && !item.mobileAsset) {
-        await this.prisma.sliderItemSchema.delete({
+        await this.prismaService.sliderItemSchema.delete({
           where: { id: item.id },
         });
       }
@@ -285,7 +285,7 @@ export class ThemeService {
   }
 
   async deleteSlider(uniqueId: string, type: 'MOBILE' | 'DESKTOP') {
-    const slider = await this.prisma.sliderItemSchema.findUnique({
+    const slider = await this.prismaService.sliderItemSchema.findUnique({
       where: { id: uniqueId },
       select: {
         order: true,
@@ -299,13 +299,13 @@ export class ThemeService {
 
     if (type === 'DESKTOP' && slider.desktopAsset) {
       await this.minio.deleteAsset(slider.desktopAsset.url);
-      await this.prisma.sliderItemSchema.update({
+      await this.prismaService.sliderItemSchema.update({
         where: { id: uniqueId },
         data: {
           desktopAsset: { disconnect: true },
         },
       });
-      await this.prisma.asset.delete({
+      await this.prismaService.asset.delete({
         where: { url: slider.desktopAsset.url },
       });
       return {
@@ -316,13 +316,13 @@ export class ThemeService {
 
     if (type === 'MOBILE' && slider.mobileAsset) {
       await this.minio.deleteAsset(slider.mobileAsset.url);
-      await this.prisma.sliderItemSchema.update({
+      await this.prismaService.sliderItemSchema.update({
         where: { id: uniqueId },
         data: {
           mobileAsset: { disconnect: true },
         },
       });
-      await this.prisma.asset.delete({
+      await this.prismaService.asset.delete({
         where: { url: slider.mobileAsset.url },
       });
       return {
@@ -340,7 +340,7 @@ export class ThemeService {
   }
 
   private updateSliderOrders(deletedOrder: number): void {
-    this.prisma.sliderItemSchema
+    this.prismaService.sliderItemSchema
       .updateMany({
         where: {
           order: {
@@ -363,7 +363,7 @@ export class ThemeService {
     footer?: MainPageComponentsType['footer'],
   ) {
     if (footer) {
-      this.prisma.$transaction(async (tx) => {
+      this.prismaService.$transaction(async (tx) => {
         // Önce mevcut footer'ı bul veya oluştur
         let existingFooter = await tx.footer.findFirst();
 
@@ -429,7 +429,7 @@ export class ThemeService {
         }
       });
     }
-    return this.prisma.$transaction(
+    return this.prismaService.$transaction(
       async (tx) => {
         let layout = await tx.layout.findFirst();
 
@@ -584,7 +584,7 @@ export class ThemeService {
     components: MainPageComponentsType['components'];
     footer: MainPageComponentsType['footer'] | null;
   }> {
-    const layout = await this.prisma.layout.findFirst({
+    const layout = await this.prismaService.layout.findFirst({
       include: {
         components: {
           orderBy: { order: 'asc' },
@@ -624,7 +624,7 @@ export class ThemeService {
       },
     });
 
-    const sliders = await this.prisma.sliderSettings.findFirst({
+    const sliders = await this.prismaService.sliderSettings.findFirst({
       include: {
         items: {
           orderBy: {
@@ -772,7 +772,7 @@ export class ThemeService {
   async getFooter(): Promise<{
     footer: MainPageComponentsType['footer'] | null;
   }> {
-    const footer = await this.prisma.footer.findFirst({
+    const footer = await this.prismaService.footer.findFirst({
       include: {
         linkGroups: {
           orderBy: {

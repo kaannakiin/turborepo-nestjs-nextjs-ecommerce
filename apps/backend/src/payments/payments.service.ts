@@ -34,7 +34,7 @@ export class PaymentsService {
   constructor(
     private readonly cartService: CartV3Service,
     private readonly configService: ConfigService,
-    private readonly prisma: PrismaService,
+    private readonly prismaService: PrismaService,
     private readonly iyzicoService: IyzicoService,
     private readonly orderService: OrdersService,
   ) {
@@ -74,7 +74,7 @@ export class PaymentsService {
     return Math.round(priceInTl * 100);
   }
   private async getPaymentProvdider(type: $Enums.PaymentProvider) {
-    const provider = await this.prisma.storePaymentProvider.findUnique({
+    const provider = await this.prismaService.storePaymentProvider.findUnique({
       where: {
         provider: type,
       },
@@ -86,7 +86,9 @@ export class PaymentsService {
     message: string;
     provider?: IyzicoPaymentMethodType | PayTRPaymentMethodType;
   }> {
-    const providers = await this.prisma.storePaymentProvider.findMany({});
+    const providers = await this.prismaService.storePaymentProvider.findMany(
+      {},
+    );
 
     if (!providers || providers.length === 0) {
       return {
@@ -402,7 +404,7 @@ export class PaymentsService {
         );
 
         if (threeDSreq.conversationId !== paymentConversationId) {
-          await this.prisma.orderTransactionSchema.create({
+          await this.prismaService.orderTransactionSchema.create({
             data: {
               orderId: orderResponse.order.id,
               amount: orderResponse.order.totalFinalPrice,
@@ -427,7 +429,7 @@ export class PaymentsService {
         }
 
         if (threeDSreq.status === 'failure') {
-          await this.prisma.orderTransactionSchema.create({
+          await this.prismaService.orderTransactionSchema.create({
             data: {
               orderId: orderResponse.order.id,
               amount: orderResponse.order.totalFinalPrice,
@@ -463,7 +465,7 @@ export class PaymentsService {
           iyzicoSecretKey,
         );
         if (!isValidSignature) {
-          await this.prisma.orderTransactionSchema.create({
+          await this.prismaService.orderTransactionSchema.create({
             data: {
               orderId: orderResponse.order.id,
               amount: orderResponse.order.totalFinalPrice,
@@ -508,7 +510,7 @@ export class PaymentsService {
       );
 
       if (nonThreeDSeq.conversationId !== paymentConversationId) {
-        await this.prisma.orderTransactionSchema.create({
+        await this.prismaService.orderTransactionSchema.create({
           data: {
             orderId: orderResponse.order.id,
             amount: orderResponse.order.totalFinalPrice,
@@ -533,7 +535,7 @@ export class PaymentsService {
       }
 
       if (nonThreeDSeq.status === 'failure') {
-        await this.prisma.orderTransactionSchema.create({
+        await this.prismaService.orderTransactionSchema.create({
           data: {
             orderId: orderResponse.order.id,
             amount: orderResponse.order.totalFinalPrice,
@@ -574,7 +576,7 @@ export class PaymentsService {
       );
 
       if (!isValidSignature) {
-        await this.prisma.orderTransactionSchema.create({
+        await this.prismaService.orderTransactionSchema.create({
           data: {
             orderId: orderResponse.order.id,
             amount: orderResponse.order.totalFinalPrice,
@@ -602,7 +604,7 @@ export class PaymentsService {
       }
 
       if (nonThreeDSeq.status === 'success') {
-        await this.prisma.$transaction(async (tx) => {
+        await this.prismaService.$transaction(async (tx) => {
           await tx.orderSchema.update({
             where: {
               id: orderResponse.order.id,
@@ -742,7 +744,7 @@ export class PaymentsService {
     }
 
     if (!data) {
-      await this.prisma.orderTransactionSchema.create({
+      await this.prismaService.orderTransactionSchema.create({
         data: {
           orderId: order.id,
           amount: order.totalFinalPrice,
@@ -758,7 +760,7 @@ export class PaymentsService {
     }
 
     if (data.mdStatus && data.mdStatus !== '1') {
-      await this.prisma.orderTransactionSchema.create({
+      await this.prismaService.orderTransactionSchema.create({
         data: {
           orderId: order.id,
           amount: order.totalFinalPrice,
@@ -780,7 +782,7 @@ export class PaymentsService {
     const iyzicoProviderConfig = await this.getPaymentProvdider('IYZICO');
 
     if (!iyzicoProviderConfig) {
-      await this.prisma.orderTransactionSchema.create({
+      await this.prismaService.orderTransactionSchema.create({
         data: {
           orderId: order.id,
           amount: order.totalFinalPrice,
@@ -818,7 +820,7 @@ export class PaymentsService {
     );
 
     if (!isValidSignature) {
-      await this.prisma.orderTransactionSchema.create({
+      await this.prismaService.orderTransactionSchema.create({
         data: {
           orderId: order.id,
           amount: order.totalFinalPrice,
@@ -856,7 +858,7 @@ export class PaymentsService {
     );
 
     if (paymentResult.conversationId !== conversationId) {
-      await this.prisma.orderTransactionSchema.create({
+      await this.prismaService.orderTransactionSchema.create({
         data: {
           orderId: order.id,
           amount: order.totalFinalPrice,
@@ -876,7 +878,7 @@ export class PaymentsService {
     }
 
     if (paymentResult.status === 'failure') {
-      await this.prisma.orderTransactionSchema.create({
+      await this.prismaService.orderTransactionSchema.create({
         data: {
           orderId: order.id,
           amount: order.totalFinalPrice,
@@ -896,7 +898,7 @@ export class PaymentsService {
       );
     }
 
-    await this.prisma.$transaction(async (tx) => {
+    await this.prismaService.$transaction(async (tx) => {
       await tx.orderSchema.update({
         where: {
           id: order.id,

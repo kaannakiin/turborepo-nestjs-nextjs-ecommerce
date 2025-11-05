@@ -1,20 +1,13 @@
 "use client";
 import { Carousel } from "@mantine/carousel";
-import {
-  AspectRatio,
-  Box,
-  Image,
-  Modal,
-  SimpleGrid,
-  Stack,
-} from "@mantine/core";
+import { AspectRatio, Image, Modal, SimpleGrid, Stack } from "@mantine/core";
 import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { $Enums } from "@repo/database";
+import { IconX } from "@tabler/icons-react";
 import Fade from "embla-carousel-fade";
 import { useState } from "react";
 import CustomImage from "../../../components/CustomImage";
 import styles from "./Carousel.module.css";
-import { IconX } from "@tabler/icons-react";
 interface ProductAssetViewerProps {
   assets: { url: string; type: $Enums.AssetType }[];
 }
@@ -55,23 +48,25 @@ const ProductAssetViewer = ({ assets }: ProductAssetViewerProps) => {
           >
             {assets.map((asset, index) => (
               <Carousel.Slide key={index}>
-                <div className="w-full h-full">
+                <AspectRatio ratio={1} pos={"relative"}>
                   <CustomImage
                     src={asset.url}
                     alt={`Product image ${index + 1}`}
                   />
-                </div>
+                </AspectRatio>
               </Carousel.Slide>
             ))}
           </Carousel>
         ) : (
           <Stack gap="md">
             <div className="cursor-pointer" onClick={() => handleImageClick(0)}>
-              <CustomImage
-                src={assets[0].url}
-                className="rounded-lg"
-                alt="Main product image"
-              />
+              <AspectRatio ratio={1} pos={"relative"}>
+                <CustomImage
+                  src={assets[0].url}
+                  className="rounded-lg"
+                  alt="Main product image"
+                />
+              </AspectRatio>
             </div>
             {assets.length > 1 && (
               <SimpleGrid cols={2} spacing="xl">

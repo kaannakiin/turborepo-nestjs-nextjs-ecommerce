@@ -1,16 +1,21 @@
 "use client";
 
 import { LOCALE_CART_COOKIE } from "@lib/constants";
-import fetchWrapper from "@lib/fetchWrapper";
-import { useLocalStorage } from "@mantine/hooks";
+import fetchWrapper, { ApiError } from "@lib/fetchWrapper";
 import { createId, useMutation, useQuery } from "@repo/shared";
 import {
-  CartActionResponseV3,
+  CartActionResponse,
   CartItemV3,
   CartV3,
   CartV3ContextType,
 } from "@repo/types";
-import { createContext, useContext } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 const helperCart = (
   items: CartItemV3[]
@@ -19,22 +24,23 @@ const helperCart = (
   totalDiscount: number;
   totalItems: number;
 } => {
-  const totalPrice = items.reduce(
-    (acc, item) => acc + item.price * item.quantity,
-    0
+  const { totalPrice, totalDiscount } = items.reduce(
+    (acc, item) => {
+      const finalPrice = item.discountedPrice ?? item.price;
+      const discountAmount = item.discountedPrice
+        ? (item.price - item.discountedPrice) * item.quantity
+        : 0;
+
+      acc.totalPrice += finalPrice * item.quantity;
+      acc.totalDiscount += discountAmount;
+      return acc;
+    },
+    { totalPrice: 0, totalDiscount: 0 }
   );
 
-  const totalDiscount = items.reduce((acc, item) => {
-    if (item.discountedPrice) {
-      return acc + (item.price - item.discountedPrice) * item.quantity;
-    }
-    return acc;
-  }, 0);
-
-  const totalItems: number = items.length;
   return {
     totalDiscount,
-    totalItems,
+    totalItems: items.length,
     totalPrice,
   };
 };
@@ -50,43 +56,69 @@ export const CartContextV3 =
       | "decreaseItemQuantity"
       | "removeItem"
       | "clearCart"
+      | "mergeCarts"
     >
   >(null);
 
 export function CartProviderV3({ children }: { children: React.ReactNode }) {
-  const [cartId, setCartId] = useLocalStorage<string | null>({
-    key: LOCALE_CART_COOKIE,
-    defaultValue: null,
-  });
+  const [cartId, setCartId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const storedCartId = localStorage.getItem(LOCALE_CART_COOKIE);
+    if (storedCartId) {
+      setCartId(storedCartId);
+    }
+  }, []);
+
+  const setCartIdAndPersist = useCallback((newId: string | null) => {
+    setCartId(newId);
+    if (newId) {
+      localStorage.setItem(LOCALE_CART_COOKIE, newId);
+    } else {
+      localStorage.removeItem(LOCALE_CART_COOKIE);
+    }
+  }, []);
 
   const {
     data: cart,
     isLoading,
     isFetching,
     isPending,
+    isError,
+    error,
   } = useQuery({
-    queryKey: ["cart-v3", cartId],
+    queryKey: ["cart", cartId],
     queryFn: async () => {
-      if (!cartId) return null;
-
+      if (!cartId) return null; // 'cartId' state'i 'null' ise istek atma
       const res = await fetchWrapper.get<{ success: boolean; cart?: CartV3 }>(
-        `/cart-v3/${cartId}`
+        `/cart/${cartId}`
       );
       if (!res.success) {
-        console.error("Failed to fetch cart:");
-        localStorage.removeItem(LOCALE_CART_COOKIE);
-        throw new Error("Failed to fetch cart");
+        throw new Error("NetworkError: Failed to fetch cart");
       }
       if (!res.data.success || !res.data.cart) {
-        localStorage.removeItem(LOCALE_CART_COOKIE);
-        throw new Error("No cart data found");
+        throw new Error("NotFound: No cart data found from API");
       }
       return res.data.cart;
     },
-
     enabled: !!cartId,
     staleTime: 5 * 60 * 1000,
+    retry: (failureCount, error) => {
+      if (error.message.includes("No cart data found")) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
+
+  useEffect(() => {
+    if (isError && error?.message.includes("NotFound")) {
+      console.warn(
+        "Cart query returned 404 (NotFound), clearing invalid cartId."
+      );
+      setCartIdAndPersist(null);
+    }
+  }, [isError, error, setCartIdAndPersist]);
 
   const isCartLoading = isLoading || isFetching || isPending;
 
@@ -96,8 +128,8 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
         throw new Error("Cart not found. Please add item first.");
       }
 
-      const updateRes = await fetchWrapper.post<CartActionResponseV3>(
-        "/cart-v3/increase-item",
+      const updateRes = await fetchWrapper.post<CartActionResponse>(
+        "/cart/increase-item",
         {
           ...params,
           cartId,
@@ -121,15 +153,15 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
       params,
       context
     ): Promise<{ previousCart: CartV3 | null }> => {
-      await context.client.cancelQueries({ queryKey: ["cart-v3", cartId] });
+      await context.client.cancelQueries({ queryKey: ["cart", cartId] });
 
       const previousCart = context.client.getQueryData<CartV3>([
-        "cart-v3",
+        "cart",
         cartId,
       ]);
 
       context.client.setQueryData(
-        ["cart-v3", cartId],
+        ["cart", cartId],
         (old: CartV3 | null): CartV3 | null => {
           if (!old) {
             throw new Error("Cart not found");
@@ -168,32 +200,26 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
 
       return { previousCart: previousCart || null };
     },
-
     onError: (err, variables, onMutateResult, context) => {
       if (onMutateResult?.previousCart) {
         context.client.setQueryData(
-          ["cart-v3", cartId],
+          ["cart", cartId],
           onMutateResult.previousCart
         );
       }
     },
-
-    // ✅ onSuccess'te sunucudan gelen veriyi direkt cache'e set et
     onSuccess: (data, variables, onMutateResult, context) => {
       const newCartId = data.cartId;
       if (newCartId) {
-        context.client.setQueryData(["cart-v3", newCartId], data);
+        context.client.setQueryData(["cart", newCartId], data);
       }
     },
-
-    // ❌ onSettled'ı kaldır veya sadece background refetch yap
-    // İsterseniz hiç refetch yapmayabilirsiniz çünkü optimistic + onSuccess yeterli
   });
 
   const decreaseItemQuantity = useMutation({
     mutationFn: async (params: { productId: string; variantId?: string }) => {
-      const updateRes = await fetchWrapper.post<CartActionResponseV3>(
-        "/cart-v3/decrease-item",
+      const updateRes = await fetchWrapper.post<CartActionResponse>(
+        "/cart/decrease-item",
         {
           ...params,
           cartId,
@@ -214,15 +240,15 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
     },
 
     onMutate: async (params, context) => {
-      await context.client.cancelQueries({ queryKey: ["cart-v3", cartId] });
+      await context.client.cancelQueries({ queryKey: ["cart", cartId] });
 
       const previousCart = context.client.getQueryData<CartV3>([
-        "cart-v3",
+        "cart",
         cartId,
       ]);
 
       context.client.setQueryData(
-        ["cart-v3", cartId],
+        ["cart", cartId],
         (old: CartV3 | undefined): CartV3 => {
           if (!old) {
             throw new Error("Cart not found");
@@ -281,24 +307,23 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
     onError: (err, variables, onMutateResult, context) => {
       if (onMutateResult?.previousCart) {
         context.client.setQueryData(
-          ["cart-v3", cartId],
+          ["cart", cartId],
           onMutateResult.previousCart
         );
       }
     },
-
     onSuccess: (data, variables, onMutateResult, context) => {
       const newCartId = data.cartId;
       if (newCartId) {
-        context.client.setQueryData(["cart-v3", newCartId], data);
+        context.client.setQueryData(["cart", newCartId], data);
       }
     },
   });
 
   const removeItem = useMutation({
     mutationFn: async (params: { productId: string; variantId?: string }) => {
-      const updateRes = await fetchWrapper.post<CartActionResponseV3>(
-        "/cart-v3/remove-item",
+      const updateRes = await fetchWrapper.post<CartActionResponse>(
+        "/cart/remove-item",
         {
           ...params,
           cartId,
@@ -316,13 +341,13 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
     },
 
     onMutate: async (params, context) => {
-      await context.client.cancelQueries({ queryKey: ["cart-v3", cartId] });
+      await context.client.cancelQueries({ queryKey: ["cart", cartId] });
       const previousCart = context.client.getQueryData<CartV3>([
-        "cart-v3",
+        "cart",
         cartId,
       ]);
       context.client.setQueryData(
-        ["cart-v3", cartId],
+        ["cart", cartId],
         (old: CartV3 | undefined): CartV3 => {
           if (!old) {
             throw new Error("Cart not found");
@@ -355,24 +380,23 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
     onError: (err, variables, onMutateResult, context) => {
       if (onMutateResult?.previousCart) {
         context.client.setQueryData(
-          ["cart-v3", cartId],
+          ["cart", cartId],
           onMutateResult.previousCart
         );
       }
     },
-
     onSuccess: (data, variables, onMutateResult, context) => {
       const newCartId = data.cartId;
       if (newCartId) {
-        context.client.setQueryData(["cart-v3", newCartId], data);
+        context.client.setQueryData(["cart", newCartId], data);
       }
     },
   });
 
   const addNewItem = useMutation({
     mutationFn: async (params: CartItemV3) => {
-      const updateRes = await fetchWrapper.post<CartActionResponseV3>(
-        "/cart-v3/add-item",
+      const updateRes = await fetchWrapper.post<CartActionResponse>(
+        "/cart/add-item",
         {
           ...params,
           cartId,
@@ -384,23 +408,24 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
       if (!updateRes.data.success || !updateRes.data.newCart) {
         throw new Error(updateRes.data.message || "Failed to add item to cart");
       }
+
       if (!cartId && updateRes.data.newCart.cartId) {
-        setCartId(updateRes.data.newCart.cartId);
+        setCartIdAndPersist(updateRes.data.newCart.cartId);
       }
 
       return updateRes.data.newCart;
     },
 
     onMutate: async (params, context) => {
-      await context.client.cancelQueries({ queryKey: ["cart-v3", cartId] });
+      await context.client.cancelQueries({ queryKey: ["cart", cartId] });
 
       const previousCart = context.client.getQueryData<CartV3>([
-        "cart-v3",
+        "cart",
         cartId,
       ]);
 
       context.client.setQueryData(
-        ["cart-v3", cartId],
+        ["cart", cartId],
         (old: CartV3 | undefined): CartV3 => {
           if (!old || !old.items || old.items.length === 0) {
             const newCart: CartV3 = {
@@ -466,7 +491,7 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
     onError: (err, newTodo, onMutateResult, context) => {
       if (onMutateResult?.previousCart) {
         context.client.setQueryData(
-          ["cart-v3", cartId],
+          ["cart", cartId],
           onMutateResult.previousCart
         );
       }
@@ -479,22 +504,23 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
       if (newCartId && oldCartId !== newCartId) {
         if (oldCartId) {
           context.client.removeQueries({
-            queryKey: ["cart-v3", oldCartId],
+            queryKey: ["cart", oldCartId],
           });
         }
-        setCartId(newCartId);
+
+        setCartIdAndPersist(newCartId);
       }
 
       if (newCartId) {
-        context.client.setQueryData(["cart-v3", newCartId], data);
+        context.client.setQueryData(["cart", newCartId], data);
       }
     },
   });
 
   const clearCart = useMutation({
     mutationFn: async (cartId: string) => {
-      const updateRes = await fetchWrapper.post<CartActionResponseV3>(
-        `/cart-v3/clear-cart/${cartId}`
+      const updateRes = await fetchWrapper.post<CartActionResponse>(
+        `/cart/clear-cart/${cartId}`
       );
       if (!updateRes.success) {
         throw new Error("Failed to clear cart");
@@ -505,13 +531,13 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
       return updateRes.data.newCart;
     },
     onMutate: async (cartId, context) => {
-      await context.client.cancelQueries({ queryKey: ["cart-v3", cartId] });
+      await context.client.cancelQueries({ queryKey: ["cart", cartId] });
       const previousCart = context.client.getQueryData<CartV3>([
-        "cart-v3",
+        "cart",
         cartId,
       ]);
       context.client.setQueryData(
-        ["cart-v3", cartId],
+        ["cart", cartId],
         (old: CartV3 | undefined): null => {
           if (!old) {
             throw new Error("Cart not found");
@@ -524,7 +550,7 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
     onError: (err, variables, onMutateResult, context) => {
       if (onMutateResult?.previousCart) {
         context.client.setQueryData(
-          ["cart-v3", cartId],
+          ["cart", cartId],
           onMutateResult.previousCart
         );
       }
@@ -535,122 +561,64 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
       if (newCartId && oldCartId !== newCartId) {
         if (oldCartId) {
           context.client.removeQueries({
-            queryKey: ["cart-v3", oldCartId],
+            queryKey: ["cart", oldCartId],
           });
         }
       }
       if (newCartId) {
-        context.client.setQueryData(["cart-v3", newCartId], data);
+        context.client.setQueryData(["cart", newCartId], data);
       }
-      setCartId(null);
+
+      setCartIdAndPersist(null);
+    },
+  });
+
+  const mergeCarts = useMutation({
+    mutationFn: async (sourceCartId: string) => {
+      const mergeRes = await fetchWrapper.get<CartActionResponse>(
+        `/cart/merge-carts/${sourceCartId}`
+      );
+      if (!mergeRes.success) {
+        const errorRes = mergeRes as ApiError;
+        throw new Error(
+          `Failed to merge carts: ${errorRes.error || "Unknown error"}`
+        );
+      }
+      if (!mergeRes.data.success || !mergeRes.data.newCart) {
+        throw new Error(mergeRes.data.message || "Failed to merge carts");
+      }
+      return mergeRes.data.newCart;
+    },
+
+    onError: (error) => {
+      console.error("Cart merge failed:", error.message);
+    },
+
+    onSuccess: (newCart, sourceCartId, onMutateResult, context) => {
+      const newCartId = newCart.cartId;
+      if (newCartId && sourceCartId !== newCartId) {
+        setCartIdAndPersist(newCartId);
+        context.client.removeQueries({
+          queryKey: ["cart", sourceCartId],
+        });
+        context.client.setQueryData(["cart", newCartId], newCart);
+      } else if (newCartId) {
+        context.client.setQueryData(["cart", newCartId], newCart);
+      }
     },
   });
 
   return (
     <CartContextV3.Provider
       value={{
-        addNewItem: async (params) => {
-          if (addNewItem.isPending) {
-            return {
-              success: false,
-              message: "Another add operation in progress",
-            };
-          }
-          try {
-            const result = await addNewItem.mutateAsync(params);
-            return { success: true, newCart: result };
-          } catch (error) {
-            return {
-              success: false,
-              message: error instanceof Error ? error.message : "Unknown error",
-            };
-          }
-        },
-        increaseItemQuantity: async (
-          productId: string,
-          variantId?: string
-        ): Promise<CartActionResponseV3> => {
-          if (increaseItemQuantity.isPending) {
-            return {
-              success: false,
-              message: "Another increase operation in progress",
-            };
-          }
-          try {
-            const result = await increaseItemQuantity.mutateAsync({
-              productId,
-              variantId,
-            });
-            return { success: true, newCart: result };
-          } catch (error) {
-            return {
-              success: false,
-              message: error instanceof Error ? error.message : "Unknown error",
-            };
-          }
-        },
-        decreaseItemQuantity: async (
-          productId: string,
-          variantId?: string
-        ): Promise<CartActionResponseV3> => {
-          try {
-            const result = await decreaseItemQuantity.mutateAsync({
-              productId,
-              variantId,
-            });
-            return { success: true, newCart: result };
-          } catch (error) {
-            return {
-              success: false,
-              message: error instanceof Error ? error.message : "Unknown error",
-            };
-          }
-        },
-        removeItem: async (
-          productId: string,
-          variantId?: string
-        ): Promise<CartActionResponseV3> => {
-          if (removeItem.isPending) {
-            return {
-              success: false,
-              message: "Another remove operation in progress",
-            };
-          }
-          try {
-            const result = await removeItem.mutateAsync({
-              productId,
-              variantId,
-            });
-            return { success: true, newCart: result };
-          } catch (error) {
-            return {
-              success: false,
-              message: error instanceof Error ? error.message : "Unknown error",
-            };
-          }
-        },
-        clearCart: async (): Promise<CartActionResponseV3> => {
-          if (!cartId) {
-            return { success: false, message: "No cart to clear" };
-          }
-          if (clearCart.isPending) {
-            return {
-              success: false,
-              message: "Another clear operation in progress",
-            };
-          }
-          try {
-            const result = await clearCart.mutateAsync(cartId);
-            return { success: true, newCart: result };
-          } catch (error) {
-            return {
-              success: false,
-              message: error instanceof Error ? error.message : "Unknown error",
-            };
-          }
-        },
-        isCartLoading,
         cart,
+        isCartLoading,
+        addNewItem,
+        increaseItemQuantity,
+        decreaseItemQuantity,
+        removeItem,
+        clearCart,
+        mergeCarts,
       }}
     >
       {children}
@@ -661,7 +629,53 @@ export function CartProviderV3({ children }: { children: React.ReactNode }) {
 export function useCartV3() {
   const context = useContext(CartContextV3);
   if (!context) {
-    throw new Error("useCartV3 must be used within a CartProviderV2");
+    throw new Error("useCartV3 must be used within a CartProviderV3");
   }
-  return context;
+
+  const {
+    cart,
+    isCartLoading,
+    addNewItem,
+    increaseItemQuantity,
+    decreaseItemQuantity,
+    removeItem,
+    clearCart,
+  } = context;
+
+  return {
+    cart,
+    isCartLoading,
+    addNewItem: (params: CartItemV3) => {
+      addNewItem.mutate(params);
+    },
+    increaseItem: (productId: string, variantId?: string) => {
+      increaseItemQuantity.mutate({ productId, variantId });
+    },
+    decreaseItem: (productId: string, variantId?: string) => {
+      decreaseItemQuantity.mutate({ productId, variantId });
+    },
+    removeItem: (productId: string, variantId?: string) => {
+      removeItem.mutate({ productId, variantId });
+    },
+
+    clearCart: () => {
+      if (cart?.cartId) {
+        clearCart.mutate(cart.cartId);
+      }
+    },
+
+    isAddingItem: addNewItem.isPending,
+    isIncreasingItem: increaseItemQuantity.isPending,
+    isDecreasingItem: decreaseItemQuantity.isPending,
+    isRemovingItem: removeItem.isPending,
+
+    isClearingCart: clearCart.isPending,
+
+    isCartUpdating:
+      addNewItem.isPending ||
+      increaseItemQuantity.isPending ||
+      decreaseItemQuantity.isPending ||
+      removeItem.isPending ||
+      clearCart.isPending,
+  };
 }

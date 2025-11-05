@@ -18,14 +18,14 @@ import { PrismaService } from 'src/prisma/prisma.service';
 @Injectable()
 export class CategoriesService {
   constructor(
-    private prisma: PrismaService,
+    private prismaService: PrismaService,
     private minio: MinioService,
   ) {}
 
   async createOrUpdateCategory(data: Omit<Category, 'image'>) {
     const { uniqueId, translations, parentId } = data;
     try {
-      const result = await this.prisma.$transaction(async (prisma) => {
+      const result = await this.prismaService.$transaction(async (prisma) => {
         const existingCategory = await prisma.category.findUnique({
           where: { id: uniqueId },
         });
@@ -87,7 +87,7 @@ export class CategoriesService {
   }
 
   async updateCategoryImage(file: Express.Multer.File, uniqueId: Cuid2ZodType) {
-    const category = await this.prisma.category.findUnique({
+    const category = await this.prismaService.category.findUnique({
       where: { id: uniqueId },
       include: { image: true },
     });
@@ -103,7 +103,7 @@ export class CategoriesService {
           'Mevcut marka resmi silinirken bir hata oluştu',
         );
       }
-      await this.prisma.asset.delete({
+      await this.prismaService.asset.delete({
         where: { id: category.image.id },
       });
     }
@@ -118,7 +118,7 @@ export class CategoriesService {
         'Marka resmi yüklenirken bir hata oluştu',
       );
     }
-    const asset = await this.prisma.asset.create({
+    const asset = await this.prismaService.asset.create({
       data: {
         url: uploadFile.data.url,
         type: 'IMAGE',
@@ -134,7 +134,7 @@ export class CategoriesService {
   }
 
   async getCategoryById(id: Cuid2ZodType): Promise<Category> {
-    const category = await this.prisma.category.findUnique({
+    const category = await this.prismaService.category.findUnique({
       where: { id },
       include: {
         translations: true,
@@ -158,7 +158,7 @@ export class CategoriesService {
     if (!url) {
       throw new NotFoundException("Resim URL'si sağlanmadı");
     }
-    const asset = await this.prisma.asset.findUnique({
+    const asset = await this.prismaService.asset.findUnique({
       where: { url },
       include: { category: true },
     });
@@ -174,7 +174,7 @@ export class CategoriesService {
         'Resim silinirken bir hata oluştu',
       );
     }
-    await this.prisma.asset.delete({
+    await this.prismaService.asset.delete({
       where: { id: asset.id },
     });
     return {
@@ -199,7 +199,7 @@ export class CategoriesService {
       }),
     };
 
-    return this.prisma.category.findMany({
+    return this.prismaService.category.findMany({
       where,
       include: {
         translations: {
@@ -251,12 +251,12 @@ export class CategoriesService {
       }),
     };
 
-    return this.prisma.category.count({ where });
+    return this.prismaService.category.count({ where });
   }
 
   async deleteCategory(id: Cuid2ZodType) {
     try {
-      return await this.prisma.$transaction(async (prisma) => {
+      return await this.prismaService.$transaction(async (prisma) => {
         const category = await prisma.category.findUnique({
           where: { id },
           include: {
@@ -346,7 +346,7 @@ export class CategoriesService {
 
   async getAllParentCategories(currentCategoryId?: Cuid2ZodType) {
     // Prisma ile recursive CTE kullanarak hierarchical query
-    const result = await this.prisma.$queryRaw<
+    const result = await this.prismaService.$queryRaw<
       Array<{
         id: string;
         level: number;
@@ -394,7 +394,7 @@ export class CategoriesService {
   }
 
   async getAllCategoriesWithoutQuery() {
-    return this.prisma.category.findMany({
+    return this.prismaService.category.findMany({
       select: {
         translations: {
           select: {
@@ -408,7 +408,7 @@ export class CategoriesService {
     });
   }
   async getAllCategoriesOnlyIdAndName(): Promise<CategoryIdAndName[]> {
-    const categories = await this.prisma.category.findMany({
+    const categories = await this.prismaService.category.findMany({
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -435,7 +435,7 @@ export class CategoriesService {
       }
     >
   > {
-    const categories = await this.prisma.category.findMany({
+    const categories = await this.prismaService.category.findMany({
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -466,7 +466,7 @@ export class CategoriesService {
   }
 
   async getAllCategoryAndItsSubs(): Promise<DiscountItem[]> {
-    const flatCategories = await this.prisma.$queryRaw<FlatItem[]>`
+    const flatCategories = await this.prismaService.$queryRaw<FlatItem[]>`
     WITH RECURSIVE CategoryHierarchy AS (
       -- Root kategorileri getir
       SELECT c.id, c."parentCategoryId"

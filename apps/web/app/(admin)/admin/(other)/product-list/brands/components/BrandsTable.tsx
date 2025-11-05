@@ -160,7 +160,6 @@ const BrandsTable = () => {
             >
               Yeni Marka Ekle
             </Button>
-            s
             <CustomSearchInput />
           </Group>
         </Group>

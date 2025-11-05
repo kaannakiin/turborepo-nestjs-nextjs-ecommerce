@@ -1,5 +1,4 @@
 "use client";
-
 import { Group } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { IconCalendar } from "@tabler/icons-react";
@@ -20,29 +19,48 @@ const CustomDateFilters = ({
   const startDate = searchParams.get(startKey) || null;
   const endDate = searchParams.get(endKey) || null;
 
-  const handleStartDateChange = (value: string | null) => {
+  // String'i YYYY-MM-DD formatına çevir
+  const formatDateToString = (
+    dateValue: string | Date | null
+  ): string | null => {
+    if (!dateValue) return null;
+
+    const date =
+      typeof dateValue === "string" ? new Date(dateValue) : dateValue;
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const handleStartDateChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
-
     if (value) {
-      params.set(startKey, value);
+      const dateString = formatDateToString(value);
+      if (dateString) {
+        params.set(startKey, dateString);
 
-      if (endDate && new Date(value) > new Date(endDate)) {
-        params.delete(endKey);
+        if (endDate && new Date(dateString) > new Date(endDate)) {
+          params.delete(endKey);
+        }
       }
     } else {
       params.delete(startKey);
     }
-
     params.set("page", "1");
     replace(`?${params.toString()}`);
   };
 
-  const handleEndDateChange = (value: string | null) => {
+  const handleEndDateChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (value) {
-      params.set(endKey, value);
-      if (startDate && new Date(value) < new Date(startDate)) {
-        params.delete(startKey);
+      const dateString = formatDateToString(value);
+      if (dateString) {
+        params.set(endKey, dateString);
+
+        if (startDate && new Date(dateString) < new Date(startDate)) {
+          params.delete(startKey);
+        }
       }
     } else {
       params.delete(endKey);
@@ -53,16 +71,12 @@ const CustomDateFilters = ({
 
   const getMaxDateForStart = () => {
     if (!endDate) return undefined;
-    const date = new Date(endDate);
-    date.setDate(date.getDate() - 1);
-    return date;
+    return new Date(endDate);
   };
 
   const getMinDateForEnd = () => {
     if (!startDate) return undefined;
-    const date = new Date(startDate);
-    date.setDate(date.getDate() + 1);
-    return date;
+    return new Date(startDate);
   };
 
   return (
@@ -75,6 +89,7 @@ const CustomDateFilters = ({
         value={startDate ? new Date(startDate) : null}
         onChange={handleStartDateChange}
         maxDate={getMaxDateForStart()}
+        valueFormat="DD/MM/YYYY"
       />
       <DatePickerInput
         placeholder="Bitiş Tarihi"
@@ -84,6 +99,7 @@ const CustomDateFilters = ({
         value={endDate ? new Date(endDate) : null}
         onChange={handleEndDateChange}
         minDate={getMinDateForEnd()}
+        valueFormat="DD/MM/YYYY"
       />
     </Group>
   );

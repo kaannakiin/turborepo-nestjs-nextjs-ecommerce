@@ -1,4 +1,5 @@
 import { $Enums, Prisma } from "@repo/database";
+import { UseMutationResult } from "@repo/shared";
 import * as z from "zod";
 
 export type CartItemV3 = {
@@ -48,100 +49,30 @@ export type CartV3 = {
   userId?: string;
 };
 
-export type CartActionResponseV3 = {
+export type CartActionResponse = {
   success: boolean;
   message?: string;
   newCart?: CartV3;
 };
 
+type CartItemParams = { productId: string; variantId?: string };
+type UpdateQtyParams = {
+  productId: string;
+  quantity: number;
+  variantId?: string;
+};
+
 export type CartV3ContextType = {
-  /** Mevcut sepet verisi */
-  cart: CartV3;
-  /** Sepet işlemlerinin yüklenme durumu */
+  cart: CartV3 | null | undefined;
   isCartLoading: boolean;
-  /**
-   * Sepeti yeniler ve güncel sepet verisini getirir
-   * @returns Başarı durumu ve güncellenmiş sepet bilgisi
-   */
-  refreshCart: () => Promise<{
-    success: boolean;
-    message?: string;
-    newCart?: CartV3;
-  }>;
-
-  /**
-   * Sepete yeni bir ürün ekler
-   * @param params - Eklenecek ürün bilgileri
-   * @returns Sepet işlem sonucu
-   * @remarks Yalnızca bir ürün ilk kez sepete eklendiğinde çağırılmalıdır. Miktarı artırmak için `increaseItemQuantity` kullanın.
-   */
-  addNewItem: (params: CartItemV3) => Promise<CartActionResponseV3>;
-
-  /**
-   * Bir ürünü sepetten tamamen kaldırır
-   * @param productId - Kaldırılacak ürünün ID'si
-   * @param variantId - Ürün varyantının ID'si (opsiyonel)
-   * @returns Sepet işlem sonucu
-   */
-  removeItem: (
-    productId: string,
-    variantId?: string
-  ) => Promise<CartActionResponseV3>;
-
-  /**
-   * Sepetteki bir ürünün miktarını belirtilen değere günceller
-   * @param productId - Güncellenecek ürünün ID'si
-   * @param quantity - Yeni miktar değeri
-   * @param variantId - Ürün varyantının ID'si (opsiyonel)
-   * @returns Sepet işlem sonucu
-   */
-  updateItemQuantity: (
-    productId: string,
-    quantity: number,
-    variantId?: string
-  ) => Promise<CartActionResponseV3>;
-
-  /**
-   * Sepetteki bir ürünün miktarını 1 azaltır
-   * @param productId - Azaltılacak ürünün ID'si
-   * @param variantId - Ürün varyantının ID'si (opsiyonel)
-   * @returns Sepet işlem sonucu
-   */
-  decreaseItemQuantity: (
-    productId: string,
-    variantId?: string
-  ) => Promise<CartActionResponseV3>;
-
-  /**
-   * Sepetteki bir ürünün miktarını 1 artırır
-   * @param productId - Artırılacak ürünün ID'si
-   * @param variantId - Ürün varyantının ID'si (opsiyonel)
-   * @returns Sepet işlem sonucu
-   */
-  increaseItemQuantity: (
-    productId: string,
-    variantId?: string
-  ) => Promise<CartActionResponseV3>;
-
-  /**
-   * Eski bir sepeti mevcut sepetle birleştirir
-   * @param oldCartId - Birleştirilecek eski sepetin ID'si
-   * @returns Sepet işlem sonucu
-   */
-  mergeCarts: (oldCartId: string) => Promise<CartActionResponseV3>;
-
-  /**
-   * Sepetteki tüm ürünleri temizler
-   * @returns Sepet işlem sonucu
-   */
-  clearCart: () => Promise<CartActionResponseV3>;
-
-  /**
-   * Sipariş için not ekler veya günceller
-   * @param note - Sipariş notu
-   * @returns Sepet işlem sonucu
-   */
-  setOrderNote: (note: string) => Promise<CartActionResponseV3>;
+  addNewItem: UseMutationResult<CartV3, Error, CartItemV3>;
+  increaseItemQuantity: UseMutationResult<CartV3, Error, CartItemParams>;
+  decreaseItemQuantity: UseMutationResult<CartV3, Error, CartItemParams>;
+  removeItem: UseMutationResult<CartV3, Error, CartItemParams>;
+  updateItemQuantity: UseMutationResult<CartV3, Error, UpdateQtyParams>;
+  clearCart: UseMutationResult<CartV3, Error, string>;
+  mergeCarts: UseMutationResult<CartV3, Error, string>;
+  setOrderNote: UseMutationResult<CartV3, Error, string>;
 };
 
 export const AddCartReqBodyV3Schema = z.object({
@@ -152,16 +83,15 @@ export const AddCartReqBodyV3Schema = z.object({
     .cuid2({
       error: "Geçersiz varyant kimliği",
     })
-    .optional()
-    .nullable(),
+    .nullish(),
   cartId: z
     .cuid2({
       error: "Geçersiz sepet kimliği",
     })
-    .optional()
-    .nullable(),
+    .nullish(),
   whereAdded: z.enum($Enums.WhereAdded),
 });
+
 export type AddCartReqBodyV3Type = z.infer<typeof AddCartReqBodyV3Schema>;
 
 export const DecraseOrIncreaseCartItemReqBodyV3Schema = z.object({
@@ -183,106 +113,157 @@ export type DecraseOrIncreaseCartItemReqBodyV3Type = z.infer<
   typeof DecraseOrIncreaseCartItemReqBodyV3Schema
 >;
 
-export type CartItemWithRelations = Prisma.CartItemGetPayload<{
+export const productAssetSelect = {
+  orderBy: {
+    order: "asc",
+  },
+  where: {
+    asset: { type: "IMAGE" },
+  },
+  take: 1,
+  select: {
+    asset: { select: { url: true, type: true } },
+  },
+} as const satisfies Prisma.ProductInclude["assets"];
+
+export const productPriceSelect = {
+  select: {
+    price: true,
+    currency: true,
+    discountedPrice: true,
+  },
+} as const satisfies Prisma.ProductInclude["prices"];
+
+export const productVariantOptionsSelect = {
+  orderBy: [
+    {
+      productVariantOption: {
+        productVariantGroup: {
+          order: "asc",
+        },
+      },
+    },
+    {
+      productVariantOption: {
+        order: "asc",
+      },
+    },
+  ],
+  select: {
+    productVariantOption: {
+      select: {
+        productVariantGroup: {
+          select: {
+            renderVisibleType: true,
+          },
+        },
+        variantOption: {
+          select: {
+            id: true,
+            translations: {
+              select: { locale: true, name: true, slug: true },
+            },
+            asset: {
+              select: { url: true, type: true },
+            },
+            hexValue: true,
+            variantGroup: {
+              select: {
+                id: true,
+                translations: {
+                  select: { locale: true, name: true, slug: true },
+                },
+                type: true,
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+} as const satisfies Prisma.ProductVariantCombinationInclude["options"];
+
+export const addressSelectForCart = {
+  include: {
+    city: {
+      select: {
+        id: true,
+        name: true,
+      },
+    },
+    district: {
+      select: {
+        name: true,
+        id: true,
+      },
+    },
+    country: {
+      select: {
+        id: true,
+        name: true,
+        translations: true,
+        emoji: true,
+      },
+    },
+    state: {
+      select: {
+        id: true,
+        name: true,
+      },
+    },
+  },
+} as const satisfies Prisma.CartInclude["shippingAddress"];
+export const cargoRuleSelectForCart = {
+  select: {
+    id: true,
+    currency: true,
+    name: true,
+    price: true,
+    ruleType: true,
+  },
+} as const satisfies Prisma.CartInclude["cargoRule"];
+
+export const cartItemIncludeForCart = {
+  where: {
+    quantity: { gt: 0 },
+    isVisible: true,
+    deletedAt: null,
+    visibleCause: null,
+  },
+  orderBy: {
+    createdAt: "asc",
+  },
   include: {
     product: {
       include: {
-        categories: {
-          select: {
-            category: {
-              select: {
-                id: true;
-                translations: true;
-                image: { select: { url: true; type: true } };
-              };
-            };
-          };
-        };
-        translations: true;
-        prices: true;
-        brand: {
-          select: {
-            id: true;
-            translations: true;
-            image: { select: { url: true; type: true } };
-          };
-        };
-        assets: {
-          select: {
-            asset: {
-              select: {
-                url: true;
-                type: true;
-              };
-            };
-          };
-        };
-      };
-    };
+        assets: productAssetSelect,
+        prices: productPriceSelect,
+        translations: true,
+      },
+    },
     variant: {
       include: {
-        assets: {
-          select: { asset: { select: { url: true; type: true } } };
-        };
-        options: {
-          include: {
-            productVariantOption: {
-              include: {
-                variantOption: {
-                  select: {
-                    id: true;
-                    asset: { select: { url: true; type: true } };
-                    hexValue: true;
-                    translations: true;
-                    variantGroup: {
-                      select: {
-                        id: true;
-                        translations: true;
-                        type: true;
-                      };
-                    };
-                  };
-                };
-              };
-            };
-          };
-        };
-        prices: true;
-        translations: true;
-        product: {
-          include: {
-            categories: {
-              select: {
-                category: {
-                  select: {
-                    id: true;
-                    translations: true;
-                    image: { select: { url: true; type: true } };
-                  };
-                };
-              };
-            };
-            translations: true;
-            brand: {
-              select: {
-                id: true;
-                translations: true;
-                image: { select: { url: true; type: true } };
-              };
-            };
-            assets: {
-              select: {
-                asset: {
-                  select: {
-                    url: true;
-                    type: true;
-                  };
-                };
-              };
-            };
-          };
-        };
-      };
-    };
+        assets: productAssetSelect,
+        prices: productPriceSelect,
+        translations: true,
+        options: productVariantOptionsSelect,
+      },
+    },
+  },
+} as const satisfies Prisma.CartInclude["items"];
+
+export type CartWithRelations = Prisma.CartGetPayload<{
+  include: {
+    items: typeof cartItemIncludeForCart;
+  };
+}>;
+
+export type CartWithRelationForCheckoutPage = Prisma.CartGetPayload<{
+  include: {
+    items: typeof cartItemIncludeForCart;
+    billingAddress: typeof addressSelectForCart;
+    shippingAddress: typeof addressSelectForCart;
+    cargoRule: typeof cargoRuleSelectForCart;
+    user: true;
   };
 }>;
