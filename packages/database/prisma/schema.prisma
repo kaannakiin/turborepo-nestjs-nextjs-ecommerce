@@ -766,23 +766,23 @@ enum ActorType {
 }
 
 model Cart {
-  id                       String                    @id @default(cuid())
-  status                   CartStatus                @default(ACTIVE)
-  currency                 Currency                  @default(TRY)
-  locale                   Locale                    @default(TR)
+  id                       String                     @id @default(cuid())
+  status                   CartStatus                 @default(ACTIVE)
+  currency                 Currency                   @default(TRY)
+  locale                   Locale                     @default(TR)
   shippingAddressId        String?
   billingAddressId         String?
   cargoRuleId              String?
   userId                   String?
-  createdAt                DateTime                  @default(now())
-  updatedAt                DateTime                  @updatedAt
-  billingAddress           AddressSchema?            @relation("CartBillingAddress", fields: [billingAddressId], references: [id])
-  cargoRule                CargoRule?                @relation(fields: [cargoRuleId], references: [id])
-  shippingAddress          AddressSchema?            @relation("CartShippingAddress", fields: [shippingAddressId], references: [id])
-  user                     User?                     @relation(fields: [userId], references: [id])
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
+  billingAddress           AddressSchema?             @relation("CartBillingAddress", fields: [billingAddressId], references: [id])
+  cargoRule                CargoRule?                 @relation(fields: [cargoRuleId], references: [id])
+  shippingAddress          AddressSchema?             @relation("CartShippingAddress", fields: [shippingAddressId], references: [id])
+  user                     User?                      @relation(fields: [userId], references: [id])
   items                    CartItem[]
   orderAttempts            OrderSchema[]
-  cartPaymentCheckAttempts CartPaymentCheckAttempts?
+  cartPaymentCheckAttempts CartPaymentCheckAttempts[]
   cartActivityLogs         CartActivityLog[]
 }
 
