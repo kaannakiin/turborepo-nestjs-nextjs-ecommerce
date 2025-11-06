@@ -3,6 +3,7 @@ import { $Enums } from '@repo/database';
 import {
   CartWhereInput,
   GetAllCartsReturnType,
+  GetCartForAdminReturnType,
   productAssetSelect,
   productPriceSelect,
   productVariantOptionsSelect,
@@ -108,42 +109,57 @@ export class CartsService {
     }
   }
 
-  async getCartForAdmin(cartId: string) {
-    const cart = await this.prismaService.cart.findUnique({
-      where: { id: cartId },
-      include: {
-        user: true,
-        cartActivityLogs: {
-          orderBy: {
-            createdAt: 'desc',
-          },
-        },
-        cartPaymentCheckAttempts: {},
-        items: {
-          include: {
-            product: {
-              include: {
-                assets: productAssetSelect,
-                prices: productPriceSelect,
-                translations: true,
-              },
-            },
-            variant: {
-              include: {
-                assets: productAssetSelect,
-                prices: productPriceSelect,
-                translations: true,
-                options: productVariantOptionsSelect,
-              },
-            },
-            logs: {
-              orderBy: {
-                createdAt: 'desc',
-              },
+  async getCartForAdmin(cartId: string): Promise<GetCartForAdminReturnType> {
+    try {
+      const cart = await this.prismaService.cart.findUnique({
+        where: { id: cartId },
+        include: {
+          user: true,
+          cartActivityLogs: {
+            orderBy: {
+              createdAt: 'desc',
             },
           },
+          cartPaymentCheckAttempts: true,
+          orderAttempts: true,
+          items: {
+            include: {
+              product: {
+                include: {
+                  assets: productAssetSelect,
+                  prices: productPriceSelect,
+                  translations: true,
+                },
+              },
+              variant: {
+                include: {
+                  assets: productAssetSelect,
+                  prices: productPriceSelect,
+                  translations: true,
+                  options: productVariantOptionsSelect,
+                },
+              },
+              logs: {
+                orderBy: {
+                  createdAt: 'desc',
+                },
+              },
+            },
+          },
         },
-      },
-    });
+      });
+      return {
+        success: true,
+        message: 'Sepet başarıyla getirildi.',
+        cart,
+      };
+    } catch (error) {
+      console.error(error);
+      return {
+        success: false,
+        message: 'Sepet getirilirken bir hata oluştu.',
+        cart: null,
+      };
+    }
   }
 }
