@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Box,
   Button,
   Grid,
   Group,
@@ -43,6 +44,7 @@ import { $Enums } from "@repo/database";
 import ProductDropzone from "../../../components/ProductDropzone";
 import GoogleTaxonomySelectV2 from "../../../create-variant/components/GoogleTaxonomySelectV2";
 import ProductPriceNumberInput from "../../../create-variant/components/ProductPriceNumberInput";
+import TaxonomySelect from "@/(admin)/admin/(other)/components/TaxonomySelect";
 
 const GlobalTextEditor = dynamic(
   () => import("../../../../../../../components/GlobalTextEditor"),
@@ -615,10 +617,12 @@ const BasicProductForm = ({
           control={control}
           name="googleTaxonomyId"
           render={({ field, fieldState }) => (
-            <GoogleTaxonomySelectV2
-              {...field}
-              error={fieldState.error?.message}
-            />
+            <Box>
+              <TaxonomySelect field={{ ...field }} />
+              {fieldState?.error?.message && (
+                <InputError>{fieldState.error?.message}</InputError>
+              )}
+            </Box>
           )}
         />
       </SimpleGrid>

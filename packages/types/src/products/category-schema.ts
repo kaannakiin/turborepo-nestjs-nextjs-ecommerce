@@ -259,3 +259,26 @@ export type GetCategoryProductsResponse = {
     hasPreviousPage?: boolean;
   };
 };
+
+export type NewTaxonomyCategory = {
+  success: boolean;
+  categories?: Prisma.TaxonomyCategoryGetPayload<{
+    select: {
+      id: true;
+      pathNames: true;
+      originalName: true;
+      _count: {
+        select: {
+          children: true;
+        };
+      };
+    };
+  }>[];
+};
+
+export interface SimplifiedTaxonomyCategory {
+  id: string;
+  name: string;
+  hasChildren: boolean;
+  parentId: string | null;
+}

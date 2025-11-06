@@ -17,7 +17,7 @@ import {
   Title,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { Control, Controller, UseFormSetValue } from "@repo/shared";
+import { Control, Controller, UseFormSetValue, useWatch } from "@repo/shared";
 import { VariantProductZodType } from "@repo/types";
 import dynamic from "next/dynamic";
 import ProductPriceNumberInput from "./ProductPriceNumberInput";
@@ -47,10 +47,15 @@ const CombinatedVariantsFormDrawer = ({
     onClose();
   };
   const existingImages =
-    control._getWatch(`combinatedVariants.${selectedIndex}.existingImages`) ||
-    [];
+    useWatch({
+      control,
+      name: `combinatedVariants.${selectedIndex}.existingImages`,
+    }) || [];
   const images =
-    control._getWatch(`combinatedVariants.${selectedIndex}.images`) || [];
+    useWatch({
+      control,
+      name: `combinatedVariants.${selectedIndex}.images`,
+    }) || [];
 
   const currentImageCount =
     (images?.length || 0) + (existingImages?.length || 0);

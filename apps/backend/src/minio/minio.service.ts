@@ -60,9 +60,6 @@ export class MinioService {
     return `${nameWithoutExt}_${uuid}${finalSuffix}.${extension}`;
   }
 
-  /**
-   * Bucket'ın herkese açık okuma politikasına sahip olduğundan emin olur.
-   */
   private async ensurePublicReadOnlyPolicy(bucketName: string): Promise<void> {
     const policy = {
       Version: '2012-10-17',
@@ -91,14 +88,12 @@ export class MinioService {
     }
   }
 
-  // GÜNCELLENMİŞ FONKSİYON
   private async uploadToMinio(
     bucketName: string,
     fileName: string,
     buffer: Buffer,
     contentType: string,
   ): Promise<string> {
-    // DEĞİŞİKLİK 1: Fonksiyon içinde tekrar client oluşturmak yerine constructor'daki client'ı kullan
     const bucketExists = await this.minioClient.bucketExists(bucketName);
     if (!bucketExists) {
       try {
@@ -251,12 +246,10 @@ export class MinioService {
             isNeedThumbnail,
           );
 
-          // ÖNCE base dosya adını oluştur (bir kere)
           const baseFileName = this.generateFileName(file.originalname).split(
             '.',
           )[0];
 
-          // Ana resim
           const mainFileName = `${baseFileName}.webp`;
           processedAsset.url = await this.uploadToMinio(
             bucketName,
@@ -265,7 +258,6 @@ export class MinioService {
             processed.main.contentType,
           );
 
-          // OG resmi (aynı base isimle)
           if (processed.og) {
             const ogFileName = `${baseFileName}-og.jpg`;
             processedAsset.ogUrl = await this.uploadToMinio(
@@ -276,7 +268,6 @@ export class MinioService {
             );
           }
 
-          // Thumbnail (aynı base isimle)
           if (processed.thumbnail) {
             const thumbnailFileName = `${baseFileName}-thumbnail.webp`;
             processedAsset.thumbnailUrl = await this.uploadToMinio(
@@ -296,7 +287,6 @@ export class MinioService {
             '.',
           )[0];
 
-          // Ana video
           const mainFileName = `${baseFileName}.webm`;
           processedAsset.url = await this.uploadToMinio(
             bucketName,
@@ -305,7 +295,6 @@ export class MinioService {
             processed.main.contentType,
           );
 
-          // Thumbnail (aynı base isimle)
           if (processed.thumbnail) {
             const thumbnailFileName = `${baseFileName}-thumbnail.webp`;
             processedAsset.thumbnailUrl = await this.uploadToMinio(
@@ -366,7 +355,6 @@ export class MinioService {
     try {
       const MINIO_ENDPOINT = this.config.getOrThrow<string>('MINIO_ENDPOINT');
 
-      // 1. URL'nin bizim endpoint'imizle başlayıp başlamadığını kontrol et
       if (!fileUrl.startsWith(MINIO_ENDPOINT)) {
         this.logger.error(
           `URL ${fileUrl} does not match configured MINIO_ENDPOINT.`,
@@ -376,10 +364,8 @@ export class MinioService {
         );
       }
 
-      // 2. Endpoint'i ve başındaki slash'ı URL'den kaldırarak yolu elde et
-      const path = new URL(fileUrl).pathname.substring(1); // baştaki '/' kaldırılır
+      const path = new URL(fileUrl).pathname.substring(1);
 
-      // 3. Yoldan bucket adını ve nesne adını ayır
       const firstSlashIndex = path.indexOf('/');
       if (firstSlashIndex === -1) {
         throw new BadRequestException(
@@ -396,7 +382,6 @@ export class MinioService {
         );
       }
 
-      // 4. MinIO'dan nesneyi sil
       await this.minioClient.removeObject(bucketName, objectName);
 
       this.logger.log(

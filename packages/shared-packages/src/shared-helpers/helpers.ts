@@ -560,6 +560,33 @@ export const getDefaultCurrencyForLocale = (
 
   return mapping[locale] || "TRY";
 };
+
+const currencyConfigs: Record<
+  $Enums.Currency,
+  { symbol: string; label: string }
+> = {
+  TRY: { symbol: "₺", label: "Türk Lirası" },
+  EUR: { symbol: "€", label: "Euro" },
+  USD: { symbol: "$", label: "ABD Doları" },
+  GBP: { symbol: "£", label: "İngiliz Sterlini" },
+};
+
+export function getCurrencySymbol(currency: $Enums.Currency): string {
+  return currencyConfigs[currency]?.symbol || "";
+}
+
+export function getCurrencyLabel(currency: $Enums.Currency): string {
+  return currencyConfigs[currency]?.label || "Bilinmeyen";
+}
+
+export function getCurrencyFullLabel(currency: $Enums.Currency): string {
+  const config = currencyConfigs[currency];
+  if (config) {
+    return `${config.label} (${config.symbol})`;
+  }
+  return "Bilinmeyen";
+}
+
 const WhereAddedOptions: Record<
   $Enums.WhereAdded,
   { label: string; messageLabel: string }
@@ -580,25 +607,66 @@ export function getWhereAddedMessageLabel(where: $Enums.WhereAdded): string {
   return WhereAddedOptions[where]?.messageLabel || "Bilinmeyen";
 }
 
-const cartActivityOptions: Record<$Enums.CartActivityType, { label: string }> =
-  {
-    BILLING_ADDRESS_SET: { label: "Fatura adresi ayarlandı" },
-    SHIPPING_ADDRESS_SET: { label: "Teslimat adresi ayarlandı" },
-    ITEM_ADDED: { label: "Ürün sepete eklendi" },
-    ITEM_REMOVED: { label: "Ürün sepetten çıkarıldı" },
-    ITEM_QUANTITY_CHANGED: { label: "Ürün miktarı güncellendi" },
-    CART_MERGED: { label: "Sepet birleştirildi" },
-    CART_CREATED: { label: "Yeni sepet oluşturuldu" },
-    CART_STATUS_CHANGED: { label: "Sepet durumu değiştirildi" },
-    ITEM_VISIBILITY_CHANGED: { label: "Ürün görünürlüğü değiştirildi" },
-    PAYMENT_ATTEMPT_FAILED: { label: "Ödeme denemesi başarısız oldu" },
-    PAYMENT_ATTEMPT_SUCCESS: { label: "Ödeme denemesi başarılı oldu" },
-  };
+const cartActivityOptions: Record<
+  $Enums.CartActivityType,
+  { label: string; color: string }
+> = {
+  BILLING_ADDRESS_SET: {
+    label: "Fatura adresi ayarlandı",
+    color: "grape", // mor ton
+  },
+  SHIPPING_ADDRESS_SET: {
+    label: "Teslimat adresi ayarlandı",
+    color: "indigo", // mavi-mor arası
+  },
+  ITEM_ADDED: {
+    label: "Ürün sepete eklendi",
+    color: "teal", // yeşilimsi mavi
+  },
+  ITEM_REMOVED: {
+    label: "Ürün sepetten çıkarıldı",
+    color: "red",
+  },
+  ITEM_QUANTITY_CHANGED: {
+    label: "Ürün miktarı güncellendi",
+    color: "yellow",
+  },
+  CART_MERGED: {
+    label: "Sepet birleştirildi",
+    color: "cyan", // açık mavi
+  },
+  CART_CREATED: {
+    label: "Yeni sepet oluşturuldu",
+    color: "blue",
+  },
+  CART_STATUS_CHANGED: {
+    label: "Sepet durumu değiştirildi",
+    color: "orange",
+  },
+  ITEM_VISIBILITY_CHANGED: {
+    label: "Ürün görünürlüğü değiştirildi",
+    color: "pink",
+  },
+  PAYMENT_ATTEMPT_FAILED: {
+    label: "Ödeme denemesi başarısız oldu",
+    color: "rose",
+  },
+  PAYMENT_ATTEMPT_SUCCESS: {
+    label: "Ödeme denemesi başarılı oldu",
+    color: "green",
+  },
+};
 
 export function getCartActivityLabel(
   activityType: $Enums.CartActivityType
 ): string {
   return cartActivityOptions[activityType]?.label || "Bilinmeyen";
+}
+
+export function getCartActivityColor(
+  activityType: $Enums.CartActivityType
+): string {
+  return cartActivityOptions[activityType]?.color || "gray";
 }
 
 const actorTypeConfigs: Record<
@@ -655,4 +723,16 @@ export function getCartStatusByValue(value: number): $Enums.CartStatus | null {
     ([_, config]) => config.sortValue === value
   );
   return (entry?.[0] as $Enums.CartStatus) || null;
+}
+
+const visibleCauseConfigs: Record<$Enums.inVisibleCause, { label: string }> = {
+  CURRENCY_MISMATCH: { label: "Para Birimi Uyuşmazlığı" },
+  OUT_OF_STOCK: { label: "Stokta Yok" },
+  DELETED: { label: "Silinmiş" },
+  DELETED_BY_ADMIN: { label: "Yönetici Tarafından Silinmiş" },
+  DELETED_BY_USER: { label: "Kullanıcı Tarafından Silinmiş" },
+  LOCALE_MISMATCH: { label: "Dil Uyuşmazlığı" },
+};
+export function getInvisibleCauseLabel(cause: $Enums.inVisibleCause): string {
+  return visibleCauseConfigs[cause]?.label || "Bilinmeyen";
 }
