@@ -1,4 +1,16 @@
 -- CreateEnum
+CREATE TYPE "VariantGroupRenderType" AS ENUM ('DROPDOWN', 'BADGE');
+
+-- CreateEnum
+CREATE TYPE "CampaignStatus" AS ENUM ('DRAFT', 'ACTIVE', 'SCHEDULED', 'ARCHIVED');
+
+-- CreateEnum
+CREATE TYPE "CampaignType" AS ENUM ('CROSS_SELLING', 'UP_SELLING');
+
+-- CreateEnum
+CREATE TYPE "CampaignOfferTargetPage" AS ENUM ('CHECKOUT_PAGE', 'POST_CHECKOUT', 'PRODUCT');
+
+-- CreateEnum
 CREATE TYPE "CartStatus" AS ENUM ('ACTIVE', 'ABANDONED', 'CONVERTED', 'MERGED');
 
 -- CreateEnum
@@ -35,28 +47,49 @@ CREATE TYPE "inVisibleCause" AS ENUM ('DELETED', 'DELETED_BY_USER', 'DELETED_BY_
 CREATE TYPE "RuleType" AS ENUM ('SalesPrice', 'ProductWeight');
 
 -- CreateEnum
-CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED');
+CREATE TYPE "PaymentProvider" AS ENUM ('IYZICO', 'PAYTR', 'STRIPE', 'PAYPAL', 'BANK_TRANSFER');
 
 -- CreateEnum
-CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'PAID', 'FAILED', 'REFUNDED', 'PARTIAL_REFUND');
+CREATE TYPE "DiscountType" AS ENUM ('PERCENTAGE', 'PERCENTAGE_GROW_QUANTITY', 'PERCENTAGE_GROW_PRICE', 'FIXED_AMOUNT', 'FIXED_AMOUNT_GROW_QUANTITY', 'FIXED_AMOUNT_GROW_PRICE', 'FREE_SHIPPING');
 
 -- CreateEnum
-CREATE TYPE "PaymentType" AS ENUM ('THREE_D_SECURE', 'NON_THREE_D_SECURE', 'BANK_TRANSFER');
+CREATE TYPE "AllowedDiscountedItemsBy" AS ENUM ('price', 'discounted_price');
 
 -- CreateEnum
-CREATE TYPE "PaymentProvider" AS ENUM ('IYZICO', 'PAYTR', 'STRIPE', 'PAYPAL');
+CREATE TYPE "FilterOperator" AS ENUM ('AND', 'OR');
 
 -- CreateEnum
-CREATE TYPE "PaymentRequestStatus" AS ENUM ('PENDING', 'WAITING_THREE_D_SECURE', 'THREE_D_SECURE_FAILED', 'THREE_D_SECURE_SUCCESS', 'PROCESSING', 'SUCCESS', 'FAILED', 'CANCELLED', 'REFUNDED', 'TIMEOUT');
-
--- CreateEnum
-CREATE TYPE "DiscountType" AS ENUM ('PERCENTAGE', 'FIXED_AMOUNT', 'FREE_SHIPPING', 'BUY_X_GET_Y');
+CREATE TYPE "DiscountConditionType" AS ENUM ('PRODUCT', 'CATEGORY', 'BRAND', 'VARIANT');
 
 -- CreateEnum
 CREATE TYPE "DiscountEffectType" AS ENUM ('AUTOMATIC', 'COUPON');
 
 -- CreateEnum
 CREATE TYPE "DiscountWhereVisible" AS ENUM ('PRODUCT_PAGE', 'CHECKOUT_PAGE', 'ALL');
+
+-- CreateEnum
+CREATE TYPE "CartActivityType" AS ENUM ('CART_CREATED', 'CART_MERGED', 'CART_STATUS_CHANGED', 'ITEM_ADDED', 'ITEM_REMOVED', 'ITEM_QUANTITY_CHANGED', 'ITEM_VISIBILITY_CHANGED', 'SHIPPING_ADDRESS_SET', 'BILLING_ADDRESS_SET', 'PAYMENT_ATTEMPT_FAILED', 'PAYMENT_ATTEMPT_SUCCESS');
+
+-- CreateEnum
+CREATE TYPE "ActorType" AS ENUM ('USER', 'ADMIN', 'SYSTEM');
+
+-- CreateEnum
+CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'CONFIRMED', 'PROCESSING', 'PARTIALLY_SHIPPED', 'SHIPPED', 'PARTIALLY_DELIVERED', 'DELIVERED', 'CANCELLED', 'PARTIALLY_REFUNDED', 'REFUNDED', 'COMPLETED');
+
+-- CreateEnum
+CREATE TYPE "OrderItemStatus" AS ENUM ('PENDING', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCEL_REQUESTED', 'CANCEL_REJECTED', 'CANCELLED', 'REFUND_REQUESTED', 'REFUND_REQUEST_ACCEPTED', 'REFUND_REJECTED', 'REFUNDED');
+
+-- CreateEnum
+CREATE TYPE "PaymentStatus" AS ENUM ('FAILED', 'PAID', 'PARTIALLY_PAID', 'PENDING');
+
+-- CreateEnum
+CREATE TYPE "PaymentType" AS ENUM ('APP_PAYMENT', 'BANK_REDIRECT', 'BUY_ONLINE_PAY_AT_STORE', 'CASH', 'CASH_ON_DELIVERY', 'CREDIT_CARD', 'CREDIT_CARD_ON_DELIVERY', 'DIRECT_DEBIT', 'GIFT_CARD', 'MONEY_ORDER', 'OTHER', 'PAY_LATER', 'SLICE_IT', 'WALLET');
+
+-- CreateEnum
+CREATE TYPE "ShipmentStatus" AS ENUM ('PENDING', 'IN_TRANSIT', 'DELIVERED', 'FAILED');
+
+-- CreateEnum
+CREATE TYPE "CardAssociation" AS ENUM ('VISA', 'MASTER_CARD', 'AMERICAN_EXPRESS', 'TROY', 'DISCOVER', 'DINERS_CLUB', 'JCB', 'UNIONPAY', 'MAESTRO', 'MIR', 'CUP', 'UNKNOWN');
 
 -- CreateTable
 CREATE TABLE "Asset" (
@@ -281,6 +314,39 @@ CREATE TABLE "ProductAsset" (
 );
 
 -- CreateTable
+CREATE TABLE "ProductTagTranslation" (
+    "id" TEXT NOT NULL,
+    "locale" "Locale" NOT NULL DEFAULT 'TR',
+    "name" TEXT NOT NULL,
+    "productTagId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ProductTagTranslation_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ProductTag" (
+    "id" TEXT NOT NULL,
+    "color" TEXT,
+    "icon" TEXT,
+    "priority" INTEGER,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ProductTag_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ProductTagOnProduct" (
+    "productId" TEXT NOT NULL,
+    "productTagId" TEXT NOT NULL,
+    "assignedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ProductTagOnProduct_pkey" PRIMARY KEY ("productId","productTagId")
+);
+
+-- CreateTable
 CREATE TABLE "Product" (
     "id" TEXT NOT NULL,
     "type" "ProductType" NOT NULL DEFAULT 'PHYSICAL',
@@ -306,6 +372,7 @@ CREATE TABLE "ProductVariantGroup" (
     "order" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "renderVisibleType" "VariantGroupRenderType" NOT NULL DEFAULT 'DROPDOWN',
 
     CONSTRAINT "ProductVariantGroup_pkey" PRIMARY KEY ("id")
 );
@@ -447,6 +514,20 @@ CREATE TABLE "CartItem" (
 );
 
 -- CreateTable
+CREATE TABLE "CartActivityLog" (
+    "id" TEXT NOT NULL,
+    "cartId" TEXT NOT NULL,
+    "cartItemId" TEXT,
+    "activityType" "CartActivityType" NOT NULL,
+    "actorType" "ActorType" NOT NULL DEFAULT 'USER',
+    "actorId" TEXT,
+    "details" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "CartActivityLog_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Cart" (
     "id" TEXT NOT NULL,
     "status" "CartStatus" NOT NULL DEFAULT 'ACTIVE',
@@ -460,6 +541,18 @@ CREATE TABLE "Cart" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Cart_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CartPaymentCheckAttempts" (
+    "id" TEXT NOT NULL,
+    "cartId" TEXT NOT NULL,
+    "message" TEXT,
+    "isSuccess" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "CartPaymentCheckAttempts_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -689,100 +782,316 @@ CREATE TABLE "CargoRule" (
 );
 
 -- CreateTable
-CREATE TABLE "OrderItem" (
+CREATE TABLE "Discount" (
     "id" TEXT NOT NULL,
-    "buyedPrice" DOUBLE PRECISION NOT NULL,
-    "originalPrice" DOUBLE PRECISION,
-    "quantity" INTEGER NOT NULL DEFAULT 1,
-    "totalPrice" DOUBLE PRECISION NOT NULL,
-    "buyedVariants" JSONB,
-    "productSnapshot" JSONB,
-    "transactionId" TEXT,
-    "productId" TEXT NOT NULL,
-    "variantId" TEXT,
-    "orderId" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "type" "DiscountType" NOT NULL,
+    "currencies" "Currency"[],
+    "startDate" TIMESTAMP(3),
+    "endDate" TIMESTAMP(3),
+    "isLimitPurchase" BOOLEAN NOT NULL DEFAULT false,
+    "minPurchaseAmount" DOUBLE PRECISION,
+    "maxPurchaseAmount" DOUBLE PRECISION,
+    "isLimitItemQuantity" BOOLEAN NOT NULL DEFAULT false,
+    "minItemQuantity" INTEGER,
+    "maxItemQuantity" INTEGER,
+    "allowDiscountedItems" BOOLEAN NOT NULL DEFAULT false,
+    "allowedDiscountedItemsBy" "AllowedDiscountedItemsBy",
+    "mergeOtherCampaigns" BOOLEAN NOT NULL DEFAULT false,
+    "isLimitTotalUsage" BOOLEAN NOT NULL DEFAULT false,
+    "totalUsageLimit" INTEGER,
+    "isLimitTotalUsagePerCustomer" BOOLEAN NOT NULL DEFAULT false,
+    "totalUsageLimitPerCustomer" INTEGER,
+    "discountValue" DOUBLE PRECISION,
+    "discountAmount" DOUBLE PRECISION,
+    "isAllCustomers" BOOLEAN NOT NULL DEFAULT true,
+    "isAllProducts" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "status" "CampaignStatus" NOT NULL DEFAULT 'DRAFT',
 
-    CONSTRAINT "OrderItem_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Discount_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Order" (
+CREATE TABLE "Coupon" (
     "id" TEXT NOT NULL,
-    "paymentId" TEXT NOT NULL,
-    "conversationId" TEXT,
+    "code" TEXT NOT NULL,
+    "discountId" TEXT NOT NULL,
+    "usageCount" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "isDelete" BOOLEAN NOT NULL DEFAULT false,
+
+    CONSTRAINT "Coupon_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "DiscountTier" (
+    "id" TEXT NOT NULL,
+    "discountId" TEXT NOT NULL,
+    "minQuantity" INTEGER,
+    "maxQuantity" INTEGER,
+    "minAmount" DOUBLE PRECISION,
+    "maxAmount" DOUBLE PRECISION,
+    "discountPercentage" DOUBLE PRECISION,
+    "discountAmount" DOUBLE PRECISION,
+
+    CONSTRAINT "DiscountTier_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "DiscountCustomer" (
+    "discountId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+
+    CONSTRAINT "DiscountCustomer_pkey" PRIMARY KEY ("discountId","userId")
+);
+
+-- CreateTable
+CREATE TABLE "DiscountConditionGroup" (
+    "id" TEXT NOT NULL,
+    "discountId" TEXT NOT NULL,
+    "operator" "FilterOperator" NOT NULL,
+    "type" "DiscountConditionType" NOT NULL DEFAULT 'PRODUCT',
+
+    CONSTRAINT "DiscountConditionGroup_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "DiscountProduct" (
+    "groupId" TEXT NOT NULL,
+    "productId" TEXT NOT NULL,
+
+    CONSTRAINT "DiscountProduct_pkey" PRIMARY KEY ("groupId","productId")
+);
+
+-- CreateTable
+CREATE TABLE "DiscountCategory" (
+    "groupId" TEXT NOT NULL,
+    "categoryId" TEXT NOT NULL,
+
+    CONSTRAINT "DiscountCategory_pkey" PRIMARY KEY ("groupId","categoryId")
+);
+
+-- CreateTable
+CREATE TABLE "DiscountBrand" (
+    "groupId" TEXT NOT NULL,
+    "brandId" TEXT NOT NULL,
+
+    CONSTRAINT "DiscountBrand_pkey" PRIMARY KEY ("groupId","brandId")
+);
+
+-- CreateTable
+CREATE TABLE "DiscountProductVariant" (
+    "groupId" TEXT NOT NULL,
+    "variantId" TEXT NOT NULL,
+
+    CONSTRAINT "DiscountProductVariant_pkey" PRIMARY KEY ("groupId","variantId")
+);
+
+-- CreateTable
+CREATE TABLE "DiscountUsage" (
+    "id" TEXT NOT NULL,
+    "discountId" TEXT NOT NULL,
+    "couponId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "orderId" TEXT NOT NULL,
+    "amount" DOUBLE PRECISION NOT NULL,
+    "usedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "DiscountUsage_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Campaign" (
+    "id" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "campaignType" "CampaignType" NOT NULL,
+    "validCurrencies" "Currency"[],
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "dates" JSONB NOT NULL,
+    "requirements" JSONB NOT NULL,
+    "conditionsIsAllProducts" BOOLEAN,
+    "campaignOfferType" "CampaignOfferTargetPage",
+    "status" "CampaignStatus" NOT NULL DEFAULT 'DRAFT',
+
+    CONSTRAINT "Campaign_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CampaignBuyableProduct" (
+    "campaignId" TEXT NOT NULL,
+    "productId" TEXT NOT NULL,
+
+    CONSTRAINT "CampaignBuyableProduct_pkey" PRIMARY KEY ("campaignId","productId")
+);
+
+-- CreateTable
+CREATE TABLE "CampaignBuyableVariant" (
+    "campaignId" TEXT NOT NULL,
+    "variantId" TEXT NOT NULL,
+
+    CONSTRAINT "CampaignBuyableVariant_pkey" PRIMARY KEY ("campaignId","variantId")
+);
+
+-- CreateTable
+CREATE TABLE "CampaignConditionProduct" (
+    "campaignId" TEXT NOT NULL,
+    "productId" TEXT NOT NULL,
+
+    CONSTRAINT "CampaignConditionProduct_pkey" PRIMARY KEY ("campaignId","productId")
+);
+
+-- CreateTable
+CREATE TABLE "CampaignConditionVariant" (
+    "campaignId" TEXT NOT NULL,
+    "variantId" TEXT NOT NULL,
+
+    CONSTRAINT "CampaignConditionVariant_pkey" PRIMARY KEY ("campaignId","variantId")
+);
+
+-- CreateTable
+CREATE TABLE "CampaignOffer" (
+    "id" TEXT NOT NULL,
+    "order" INTEGER NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "productId" TEXT,
+    "variantId" TEXT,
+    "discountType" "DiscountType" NOT NULL,
+    "discountValue" DOUBLE PRECISION NOT NULL,
+    "discountValueAppliedByPrice" "AllowedDiscountedItemsBy" NOT NULL,
+    "addCountDown" BOOLEAN NOT NULL,
+    "countDownMinute" INTEGER,
+    "showPrroductIfInCart" BOOLEAN NOT NULL DEFAULT false,
+    "campaignId" TEXT NOT NULL,
+
+    CONSTRAINT "CampaignOffer_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "StorePaymentProvider" (
+    "id" TEXT NOT NULL,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "options" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "isTestMode" BOOLEAN NOT NULL DEFAULT true,
+    "provider" "PaymentProvider" NOT NULL,
+
+    CONSTRAINT "StorePaymentProvider_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AssetLibrary" (
+    "id" TEXT NOT NULL,
+    "assetType" "AssetType" NOT NULL DEFAULT 'IMAGE',
+    "url" TEXT NOT NULL,
+    "altText" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "AssetLibrary_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "OrderItemSchema" (
+    "id" TEXT NOT NULL,
+    "buyedPrice" DECIMAL(65,30) NOT NULL,
+    "quantity" INTEGER NOT NULL DEFAULT 1,
+    "totalPrice" DECIMAL(65,30) NOT NULL,
+    "totalFinalPrice" DECIMAL(65,30) NOT NULL,
+    "discountAmount" DECIMAL(65,30),
+    "taxAmount" DECIMAL(65,30),
+    "productSnapshot" JSONB,
+    "variantSnapshot" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "status" "OrderItemStatus" NOT NULL DEFAULT 'PENDING',
+    "variantId" TEXT,
+    "productId" TEXT NOT NULL,
+    "orderId" TEXT NOT NULL,
+    "shipmentId" TEXT,
+
+    CONSTRAINT "OrderItemSchema_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "OrderSchema" (
+    "id" TEXT NOT NULL,
     "orderNumber" TEXT NOT NULL,
-    "orderStatus" "OrderStatus" NOT NULL DEFAULT 'PENDING',
-    "paymentStatus" "PaymentStatus" NOT NULL DEFAULT 'PENDING',
-    "paymentType" "PaymentType" NOT NULL DEFAULT 'THREE_D_SECURE',
+    "totalPrice" DECIMAL(65,30) NOT NULL,
+    "totalFinalPrice" DECIMAL(65,30) NOT NULL,
+    "discountAmount" DECIMAL(65,30),
+    "taxAmount" DECIMAL(65,30),
+    "shippingCost" DECIMAL(65,30),
     "currency" "Currency" NOT NULL DEFAULT 'TRY',
     "locale" "Locale" NOT NULL DEFAULT 'TR',
-    "subtotal" DOUBLE PRECISION NOT NULL,
-    "totalAmount" DOUBLE PRECISION NOT NULL,
-    "taxAmount" DOUBLE PRECISION,
-    "shippingCost" DOUBLE PRECISION,
-    "discountAmount" DOUBLE PRECISION,
-    "customerNotes" TEXT,
-    "adminNotes" TEXT,
-    "confirmedAt" TIMESTAMP(3),
-    "shippedAt" TIMESTAMP(3),
-    "deliveredAt" TIMESTAMP(3),
-    "cancelledAt" TIMESTAMP(3),
-    "cardType" TEXT,
-    "cardFamily" TEXT,
-    "cardAssociation" TEXT,
-    "binNumber" TEXT,
-    "lastFourDigits" TEXT,
-    "shippingAddress" JSONB,
-    "billingAddress" JSONB,
-    "userId" TEXT,
-    "cartId" TEXT,
+    "orderNote" TEXT,
+    "paymentProvider" "PaymentProvider" NOT NULL DEFAULT 'IYZICO',
+    "paymentStatus" "PaymentStatus" NOT NULL DEFAULT 'PENDING',
+    "orderStatus" "OrderStatus" NOT NULL DEFAULT 'PENDING',
+    "shippingAddressSnapshot" JSONB,
+    "billingAddressSnapshot" JSONB,
+    "cargoRuleSnapshot" JSONB,
+    "clientIp" TEXT,
+    "userAgent" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "cartId" TEXT,
+    "userId" TEXT,
+    "shippingAddressRecordId" TEXT,
+    "billingAddressRecordId" TEXT,
+    "cargoRuleId" TEXT,
 
-    CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "OrderSchema_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "PaymentRequestSchema" (
+CREATE TABLE "OrderTransactionSchema" (
     "id" TEXT NOT NULL,
-    "userId" TEXT,
-    "paymentProvider" "PaymentProvider" NOT NULL DEFAULT 'IYZICO',
-    "paymentStatus" "PaymentRequestStatus" NOT NULL DEFAULT 'WAITING_THREE_D_SECURE',
-    "cargoRuleId" TEXT,
-    "billingAddress" JSONB,
-    "shippingAddress" JSONB,
-    "transactionId" TEXT,
-    "paymentId" TEXT,
-    "conversationId" TEXT,
-    "amount" DECIMAL(10,2) NOT NULL,
-    "currency" "Currency" NOT NULL DEFAULT 'TRY',
-    "subtotal" DECIMAL(10,2),
-    "shippingCost" DECIMAL(10,2),
-    "discountAmount" DECIMAL(10,2),
-    "taxAmount" DECIMAL(10,2),
-    "cardType" TEXT,
-    "cardFamily" TEXT,
-    "cardAssociation" TEXT,
+    "orderId" TEXT NOT NULL,
+    "providerTransactionId" TEXT,
+    "amount" DECIMAL(65,30) NOT NULL,
+    "status" "PaymentStatus" NOT NULL,
+    "paymentType" "PaymentType" NOT NULL,
+    "provider" "PaymentProvider" NOT NULL,
     "binNumber" TEXT,
     "lastFourDigits" TEXT,
-    "installment" INTEGER NOT NULL DEFAULT 1,
-    "errorCode" TEXT,
-    "errorMessage" TEXT,
-    "errorGroup" TEXT,
-    "failureReason" TEXT,
-    "isReviewed" BOOLEAN NOT NULL DEFAULT false,
-    "reviewedAt" TIMESTAMP(3),
-    "reviewedBy" TEXT,
-    "adminNotes" TEXT,
-    "cartId" TEXT,
-    "orderId" TEXT,
+    "cardAssociation" "CardAssociation",
+    "cardFamilyName" TEXT,
+    "gatewayResponse" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "OrderTransactionSchema_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Shipment" (
+    "id" TEXT NOT NULL,
+    "orderId" TEXT NOT NULL,
+    "trackingCode" TEXT,
+    "shippingProvider" TEXT,
+    "status" "ShipmentStatus" NOT NULL DEFAULT 'PENDING',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "completedAt" TIMESTAMP(3),
 
-    CONSTRAINT "PaymentRequestSchema_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Shipment_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ErrorLog" (
+    "id" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "stack" TEXT,
+    "errorCode" TEXT,
+    "context" TEXT NOT NULL,
+    "meta" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ErrorLog_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -924,10 +1233,13 @@ CREATE INDEX "ProductAsset_productId_order_idx" ON "ProductAsset"("productId", "
 CREATE INDEX "ProductAsset_combinationId_order_idx" ON "ProductAsset"("combinationId", "order");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ProductAsset_productId_order_key" ON "ProductAsset"("productId", "order");
+CREATE UNIQUE INDEX "ProductTagTranslation_locale_productTagId_key" ON "ProductTagTranslation"("locale", "productTagId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ProductAsset_combinationId_order_key" ON "ProductAsset"("combinationId", "order");
+CREATE INDEX "ProductTagOnProduct_productId_idx" ON "ProductTagOnProduct"("productId");
+
+-- CreateIndex
+CREATE INDEX "ProductTagOnProduct_productTagId_idx" ON "ProductTagOnProduct"("productTagId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Product_sku_key" ON "Product"("sku");
@@ -1062,6 +1374,15 @@ CREATE INDEX "CartItem_cartId_productId_variantId_idx" ON "CartItem"("cartId", "
 CREATE UNIQUE INDEX "CartItem_cartId_productId_variantId_key" ON "CartItem"("cartId", "productId", "variantId");
 
 -- CreateIndex
+CREATE INDEX "CartActivityLog_cartId_createdAt_idx" ON "CartActivityLog"("cartId", "createdAt" DESC);
+
+-- CreateIndex
+CREATE INDEX "CartActivityLog_cartItemId_idx" ON "CartActivityLog"("cartItemId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "CartPaymentCheckAttempts_cartId_key" ON "CartPaymentCheckAttempts"("cartId");
+
+-- CreateIndex
 CREATE INDEX "SliderItemSchema_isActive_idx" ON "SliderItemSchema"("isActive");
 
 -- CreateIndex
@@ -1104,46 +1425,61 @@ CREATE UNIQUE INDEX "Location_cargoZoneId_countryId_key" ON "Location"("cargoZon
 CREATE INDEX "CargoRule_ruleType_idx" ON "CargoRule"("ruleType");
 
 -- CreateIndex
-CREATE INDEX "OrderItem_orderId_idx" ON "OrderItem"("orderId");
+CREATE INDEX "Discount_startDate_endDate_idx" ON "Discount"("startDate", "endDate");
 
 -- CreateIndex
-CREATE INDEX "OrderItem_productId_idx" ON "OrderItem"("productId");
+CREATE UNIQUE INDEX "Coupon_code_key" ON "Coupon"("code");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "OrderItem_orderId_productId_variantId_key" ON "OrderItem"("orderId", "productId", "variantId");
+CREATE INDEX "Coupon_code_idx" ON "Coupon"("code");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Order_paymentId_key" ON "Order"("paymentId");
+CREATE INDEX "Coupon_discountId_idx" ON "Coupon"("discountId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Order_orderNumber_key" ON "Order"("orderNumber");
+CREATE INDEX "DiscountTier_discountId_idx" ON "DiscountTier"("discountId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Order_cartId_key" ON "Order"("cartId");
+CREATE INDEX "DiscountConditionGroup_discountId_idx" ON "DiscountConditionGroup"("discountId");
 
 -- CreateIndex
-CREATE INDEX "Order_paymentId_orderNumber_paymentStatus_orderStatus_idx" ON "Order"("paymentId", "orderNumber", "paymentStatus", "orderStatus");
+CREATE UNIQUE INDEX "DiscountUsage_orderId_key" ON "DiscountUsage"("orderId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "PaymentRequestSchema_orderId_key" ON "PaymentRequestSchema"("orderId");
+CREATE INDEX "DiscountUsage_discountId_idx" ON "DiscountUsage"("discountId");
 
 -- CreateIndex
-CREATE INDEX "PaymentRequestSchema_cartId_idx" ON "PaymentRequestSchema"("cartId");
+CREATE INDEX "DiscountUsage_couponId_idx" ON "DiscountUsage"("couponId");
 
 -- CreateIndex
-CREATE INDEX "PaymentRequestSchema_orderId_idx" ON "PaymentRequestSchema"("orderId");
+CREATE INDEX "DiscountUsage_userId_idx" ON "DiscountUsage"("userId");
 
 -- CreateIndex
-CREATE INDEX "PaymentRequestSchema_paymentStatus_idx" ON "PaymentRequestSchema"("paymentStatus");
+CREATE INDEX "CampaignOffer_campaignId_idx" ON "CampaignOffer"("campaignId");
 
 -- CreateIndex
-CREATE INDEX "PaymentRequestSchema_userId_idx" ON "PaymentRequestSchema"("userId");
+CREATE INDEX "CampaignOffer_productId_idx" ON "CampaignOffer"("productId");
 
 -- CreateIndex
-CREATE INDEX "PaymentRequestSchema_createdAt_idx" ON "PaymentRequestSchema"("createdAt");
+CREATE INDEX "CampaignOffer_variantId_idx" ON "CampaignOffer"("variantId");
 
 -- CreateIndex
-CREATE INDEX "PaymentRequestSchema_paymentId_idx" ON "PaymentRequestSchema"("paymentId");
+CREATE UNIQUE INDEX "StorePaymentProvider_provider_key" ON "StorePaymentProvider"("provider");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "OrderItemSchema_orderId_productId_variantId_key" ON "OrderItemSchema"("orderId", "productId", "variantId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "OrderSchema_orderNumber_key" ON "OrderSchema"("orderNumber");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "OrderSchema_cartId_key" ON "OrderSchema"("cartId");
+
+-- CreateIndex
+CREATE INDEX "ErrorLog_context_idx" ON "ErrorLog"("context");
+
+-- CreateIndex
+CREATE INDEX "ErrorLog_createdAt_idx" ON "ErrorLog"("createdAt" DESC);
 
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_defaultAddressId_fkey" FOREIGN KEY ("defaultAddressId") REFERENCES "AddressSchema"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -1212,6 +1548,15 @@ ALTER TABLE "ProductAsset" ADD CONSTRAINT "ProductAsset_combinationId_fkey" FORE
 ALTER TABLE "ProductAsset" ADD CONSTRAINT "ProductAsset_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "ProductTagTranslation" ADD CONSTRAINT "ProductTagTranslation_productTagId_fkey" FOREIGN KEY ("productTagId") REFERENCES "ProductTag"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ProductTagOnProduct" ADD CONSTRAINT "ProductTagOnProduct_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ProductTagOnProduct" ADD CONSTRAINT "ProductTagOnProduct_productTagId_fkey" FOREIGN KEY ("productTagId") REFERENCES "ProductTag"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Product" ADD CONSTRAINT "Product_brandId_fkey" FOREIGN KEY ("brandId") REFERENCES "Brand"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -1263,6 +1608,12 @@ ALTER TABLE "CartItem" ADD CONSTRAINT "CartItem_productId_fkey" FOREIGN KEY ("pr
 ALTER TABLE "CartItem" ADD CONSTRAINT "CartItem_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "ProductVariantCombination"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "CartActivityLog" ADD CONSTRAINT "CartActivityLog_cartId_fkey" FOREIGN KEY ("cartId") REFERENCES "Cart"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CartActivityLog" ADD CONSTRAINT "CartActivityLog_cartItemId_fkey" FOREIGN KEY ("cartItemId") REFERENCES "CartItem"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Cart" ADD CONSTRAINT "Cart_billingAddressId_fkey" FOREIGN KEY ("billingAddressId") REFERENCES "AddressSchema"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -1273,6 +1624,9 @@ ALTER TABLE "Cart" ADD CONSTRAINT "Cart_shippingAddressId_fkey" FOREIGN KEY ("sh
 
 -- AddForeignKey
 ALTER TABLE "Cart" ADD CONSTRAINT "Cart_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CartPaymentCheckAttempts" ADD CONSTRAINT "CartPaymentCheckAttempts_cartId_fkey" FOREIGN KEY ("cartId") REFERENCES "Cart"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "FooterLinks" ADD CONSTRAINT "FooterLinks_brandId_fkey" FOREIGN KEY ("brandId") REFERENCES "Brand"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1353,28 +1707,115 @@ ALTER TABLE "Location" ADD CONSTRAINT "Location_countryId_fkey" FOREIGN KEY ("co
 ALTER TABLE "CargoRule" ADD CONSTRAINT "CargoRule_cargoZoneId_fkey" FOREIGN KEY ("cargoZoneId") REFERENCES "CargoZone"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Coupon" ADD CONSTRAINT "Coupon_discountId_fkey" FOREIGN KEY ("discountId") REFERENCES "Discount"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "DiscountTier" ADD CONSTRAINT "DiscountTier_discountId_fkey" FOREIGN KEY ("discountId") REFERENCES "Discount"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "ProductVariantCombination"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "DiscountCustomer" ADD CONSTRAINT "DiscountCustomer_discountId_fkey" FOREIGN KEY ("discountId") REFERENCES "Discount"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Order" ADD CONSTRAINT "Order_cartId_fkey" FOREIGN KEY ("cartId") REFERENCES "Cart"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "DiscountCustomer" ADD CONSTRAINT "DiscountCustomer_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Order" ADD CONSTRAINT "Order_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "DiscountConditionGroup" ADD CONSTRAINT "DiscountConditionGroup_discountId_fkey" FOREIGN KEY ("discountId") REFERENCES "Discount"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PaymentRequestSchema" ADD CONSTRAINT "PaymentRequestSchema_cargoRuleId_fkey" FOREIGN KEY ("cargoRuleId") REFERENCES "CargoRule"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "DiscountProduct" ADD CONSTRAINT "DiscountProduct_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "DiscountConditionGroup"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PaymentRequestSchema" ADD CONSTRAINT "PaymentRequestSchema_cartId_fkey" FOREIGN KEY ("cartId") REFERENCES "Cart"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "DiscountProduct" ADD CONSTRAINT "DiscountProduct_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PaymentRequestSchema" ADD CONSTRAINT "PaymentRequestSchema_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "DiscountCategory" ADD CONSTRAINT "DiscountCategory_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PaymentRequestSchema" ADD CONSTRAINT "PaymentRequestSchema_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "DiscountCategory" ADD CONSTRAINT "DiscountCategory_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "DiscountConditionGroup"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DiscountBrand" ADD CONSTRAINT "DiscountBrand_brandId_fkey" FOREIGN KEY ("brandId") REFERENCES "Brand"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DiscountBrand" ADD CONSTRAINT "DiscountBrand_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "DiscountConditionGroup"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DiscountProductVariant" ADD CONSTRAINT "DiscountProductVariant_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "DiscountConditionGroup"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DiscountProductVariant" ADD CONSTRAINT "DiscountProductVariant_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "ProductVariantCombination"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DiscountUsage" ADD CONSTRAINT "DiscountUsage_couponId_fkey" FOREIGN KEY ("couponId") REFERENCES "Coupon"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DiscountUsage" ADD CONSTRAINT "DiscountUsage_discountId_fkey" FOREIGN KEY ("discountId") REFERENCES "Discount"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DiscountUsage" ADD CONSTRAINT "DiscountUsage_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CampaignBuyableProduct" ADD CONSTRAINT "CampaignBuyableProduct_campaignId_fkey" FOREIGN KEY ("campaignId") REFERENCES "Campaign"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CampaignBuyableProduct" ADD CONSTRAINT "CampaignBuyableProduct_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CampaignBuyableVariant" ADD CONSTRAINT "CampaignBuyableVariant_campaignId_fkey" FOREIGN KEY ("campaignId") REFERENCES "Campaign"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CampaignBuyableVariant" ADD CONSTRAINT "CampaignBuyableVariant_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "ProductVariantCombination"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CampaignConditionProduct" ADD CONSTRAINT "CampaignConditionProduct_campaignId_fkey" FOREIGN KEY ("campaignId") REFERENCES "Campaign"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CampaignConditionProduct" ADD CONSTRAINT "CampaignConditionProduct_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CampaignConditionVariant" ADD CONSTRAINT "CampaignConditionVariant_campaignId_fkey" FOREIGN KEY ("campaignId") REFERENCES "Campaign"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CampaignConditionVariant" ADD CONSTRAINT "CampaignConditionVariant_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "ProductVariantCombination"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CampaignOffer" ADD CONSTRAINT "CampaignOffer_campaignId_fkey" FOREIGN KEY ("campaignId") REFERENCES "Campaign"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CampaignOffer" ADD CONSTRAINT "CampaignOffer_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CampaignOffer" ADD CONSTRAINT "CampaignOffer_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "ProductVariantCombination"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderItemSchema" ADD CONSTRAINT "OrderItemSchema_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "ProductVariantCombination"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderItemSchema" ADD CONSTRAINT "OrderItemSchema_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderItemSchema" ADD CONSTRAINT "OrderItemSchema_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "OrderSchema"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderItemSchema" ADD CONSTRAINT "OrderItemSchema_shipmentId_fkey" FOREIGN KEY ("shipmentId") REFERENCES "Shipment"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderSchema" ADD CONSTRAINT "OrderSchema_cartId_fkey" FOREIGN KEY ("cartId") REFERENCES "Cart"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderSchema" ADD CONSTRAINT "OrderSchema_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderSchema" ADD CONSTRAINT "OrderSchema_shippingAddressRecordId_fkey" FOREIGN KEY ("shippingAddressRecordId") REFERENCES "AddressSchema"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderSchema" ADD CONSTRAINT "OrderSchema_billingAddressRecordId_fkey" FOREIGN KEY ("billingAddressRecordId") REFERENCES "AddressSchema"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderSchema" ADD CONSTRAINT "OrderSchema_cargoRuleId_fkey" FOREIGN KEY ("cargoRuleId") REFERENCES "CargoRule"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderTransactionSchema" ADD CONSTRAINT "OrderTransactionSchema_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "OrderSchema"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Shipment" ADD CONSTRAINT "Shipment_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "OrderSchema"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

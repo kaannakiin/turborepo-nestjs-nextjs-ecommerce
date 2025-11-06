@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { $Enums } from '@repo/database';
-import { CartWhereInput, GetAllCartsReturnType } from '@repo/types';
+import {
+  CartWhereInput,
+  GetAllCartsReturnType,
+  productAssetSelect,
+  productPriceSelect,
+  productVariantOptionsSelect,
+} from '@repo/types';
 import { LocaleService } from 'src/common/services/locale.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -107,8 +113,35 @@ export class CartsService {
       where: { id: cartId },
       include: {
         user: true,
+        cartActivityLogs: {
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
+        cartPaymentCheckAttempts: {},
         items: {
-          include: {},
+          include: {
+            product: {
+              include: {
+                assets: productAssetSelect,
+                prices: productPriceSelect,
+                translations: true,
+              },
+            },
+            variant: {
+              include: {
+                assets: productAssetSelect,
+                prices: productPriceSelect,
+                translations: true,
+                options: productVariantOptionsSelect,
+              },
+            },
+            logs: {
+              orderBy: {
+                createdAt: 'desc',
+              },
+            },
+          },
         },
       },
     });
