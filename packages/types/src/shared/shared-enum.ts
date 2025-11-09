@@ -85,3 +85,28 @@ export const FontFamily = {
 } as const;
 
 export type FontFamily = (typeof FontFamily)[keyof typeof FontFamily];
+
+export const ThemeComponents = {
+  SLIDER: "SLIDER",
+  MARQUEE: "MARQUEE",
+} as const;
+
+export type ThemeComponents =
+  (typeof ThemeComponents)[keyof typeof ThemeComponents];
+
+export const AspectRatio = {
+  AUTO: "auto",
+  SQUARE: "1/1",
+  FOUR_BY_THREE: "4/3",
+  THREE_BY_FOUR: "3/4", // Portre (Instagram Story vb.)
+  SIXTEEN_BY_NINE: "16/9",
+  NINE_BY_SIXTEEN: "9/16", // Dikey Video (TikTok, Reels)
+  TWENTY_ONE_BY_NINE: "21/9", // Ultra-wide
+  TWO_BY_ONE: "2/1", // Panorama
+  THREE_BY_TWO: "3/2", // Klasik Fotoğraf
+  TWO_BY_THREE: "2/3", // Portre Fotoğraf
+  FIVE_BY_FOUR: "5/4", // Klasik Monitor
+  FOUR_BY_FIVE: "4/5", // Instagram Portre
+} as const;
+
+export type AspectRatio = (typeof AspectRatio)[keyof typeof AspectRatio];

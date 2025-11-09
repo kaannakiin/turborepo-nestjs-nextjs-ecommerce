@@ -1,6 +1,7 @@
 import { MantineColor, MantineColorsTuple } from "@mantine/core";
 import { $Enums } from "@repo/database";
 import {
+  AspectRatio,
   FontFamily,
   LocationType,
   MantineFontWeight,
@@ -870,3 +871,27 @@ const PaymentTypeConfigs: Record<
 export function getPaymentTypeLabel(type: $Enums.PaymentType): string {
   return PaymentTypeConfigs[type]?.label || "Bilinmeyen";
 }
+
+export const AspectRatioConfigs: Record<
+  AspectRatio,
+  {
+    label: string;
+  }
+> = {
+  auto: { label: "Otomatik" },
+  "1/1": { label: "1:1 (Kare - Instagram Post)" },
+  "4/3": { label: "4:3 (Klasik TV)" },
+  "3/4": { label: "3:4 (Dikey - Portre)" },
+  "16/9": { label: "16:9 (Geniş Ekran - YouTube)" },
+  "9/16": { label: "9:16 (Dikey Video - TikTok, Reels)" },
+  "21/9": { label: "21:9 (Ultra Geniş - Sinema)" },
+  "2/1": { label: "2:1 (Panorama)" },
+  "3/2": { label: "3:2 (DSLR Fotoğraf)" },
+  "2/3": { label: "2/3 (Portre Fotoğraf)" },
+  "5/4": { label: "5:4 (Klasik Monitor)" },
+  "4/5": { label: "4:5 (Instagram Portre)" },
+};
+
+export const getAspectRatioLabel = (ratio: AspectRatio): string => {
+  return AspectRatioConfigs[ratio]?.label || "Bilinmeyen";
+};

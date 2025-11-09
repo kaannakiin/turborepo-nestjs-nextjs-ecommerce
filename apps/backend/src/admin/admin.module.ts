@@ -9,6 +9,7 @@ import { CampaignsModule } from './campaigns/campaigns.module';
 import { PaymentsModule } from './payments/payments.module';
 import { OrdersModule } from './orders/orders.module';
 import { CartsModule } from './carts/carts.module';
+import { Themev2Module } from './themev2/themev2.module';
 
 @Module({
   controllers: [AdminController],
@@ -22,6 +23,7 @@ import { CartsModule } from './carts/carts.module';
     PaymentsModule,
     OrdersModule,
     CartsModule,
+    Themev2Module,
   ],
 })
 export class AdminModule {}

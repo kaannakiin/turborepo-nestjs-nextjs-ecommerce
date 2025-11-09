@@ -9,22 +9,17 @@ import {
 } from "@mantine/core";
 import { useDisclosure, useLocalStorage } from "@mantine/hooks";
 import { useForm, zodResolver } from "@repo/shared";
-import {
-  ThemeV2DefaultValues,
-  ThemeV2Schema,
-  ThemeV2SchemaType,
-} from "@repo/types";
+import { ThemeInputType, ThemeSchema, ThemeV2DefaultValues } from "@repo/types";
 import {
   IconDeviceImac,
   IconDeviceIpadHorizontal,
   IconDeviceMobile,
 } from "@tabler/icons-react";
-import Image from "next/image";
 import { ReactNode } from "react";
 import { Media, useTheme } from "../../(theme)/ThemeContexts/ThemeContext";
-import logo from "../../../../../public/logo.svg";
+import AsideFormsTable from "./components/AsideFormsTable";
+import NavbarComponentTable from "./components/NavbarComponentTable";
 
-// 1. ADIM: themeIcons array'ini güncelliyoruz
 const themeIcons: Array<{
   key: Media;
   icon: ReactNode;
@@ -34,19 +29,19 @@ const themeIcons: Array<{
   {
     icon: <IconDeviceImac />,
     key: "desktop",
-    label: "Desktop (Genişlik: Auto)",
+    label: "Masaüstü",
     width: "100%",
   },
   {
     icon: <IconDeviceIpadHorizontal />,
     key: "tablet",
-    label: "Tablet (Genişlik: 768px)",
+    label: "Tablet",
     width: "768px",
   },
   {
     icon: <IconDeviceMobile />,
     key: "mobile",
-    label: "Mobil (Genişlik: 375px)",
+    label: "Mobil",
     width: "375px",
   },
 ];
@@ -71,8 +66,8 @@ const ThemeV2Layout = ({ children }: { children: ReactNode }) => {
     control,
     handleSubmit,
     formState: { isSubmitting, errors },
-  } = useForm<ThemeV2SchemaType>({
-    resolver: zodResolver(ThemeV2Schema),
+  } = useForm<ThemeInputType>({
+    resolver: zodResolver(ThemeSchema),
     defaultValues: ThemeV2DefaultValues,
   });
 
@@ -101,19 +96,7 @@ const ThemeV2Layout = ({ children }: { children: ReactNode }) => {
         <Group h="100%" px="md" align="center" justify="space-between">
           <Group h="100%" align="center">
             <Burger opened={opened} onClick={toggle} size="sm" />
-
-            <div className="relative h-full">
-              <Image
-                src={logo}
-                alt="logo"
-                height={40}
-                width={0}
-                style={{ width: "auto", height: "100%" }}
-                className="object-contain"
-              />
-            </div>
           </Group>
-
           <Group
             gap={"xs"}
             align="center"
@@ -143,13 +126,7 @@ const ThemeV2Layout = ({ children }: { children: ReactNode }) => {
         </Group>
       </AppShell.Header>
       <AppShell.Navbar bg={"gray.0"}>
-        <AppShell.Section
-          p={"sm"}
-          className="border-b text-center font-bold text-lg"
-        >
-          Anasayfa
-          {/* BURAYA SELECT GELECEK SAYFA SEÇEBİLECEK */}
-        </AppShell.Section>
+        <NavbarComponentTable control={control} />
       </AppShell.Navbar>
       <AppShell.Main className="flex flex-col">
         <div
@@ -165,7 +142,7 @@ const ThemeV2Layout = ({ children }: { children: ReactNode }) => {
       </AppShell.Main>
 
       <AppShell.Aside bg={"gray.0"} p="md">
-        Aside
+        <AsideFormsTable control={control} />
       </AppShell.Aside>
       <AppShell.Footer p="md">Footer</AppShell.Footer>
     </AppShell>
