@@ -154,43 +154,80 @@ export const MarqueeComponentSchema = z.object({
         .object({
           itemId: z.cuid2(),
           text: z.string({ error: "Marquee metni zorunludur." }).nullish(),
-          link: z.url({ error: "Geçersiz link URL'si." }).nullish(),
+          link: z
+            .url({ error: "Geçersiz link URL'si." })
+            .startsWith("https://", {
+              error: "Link 'https://' ile başlamalıdır.",
+            })
+            .nullish(),
           image: FileSchema({
             type: ["IMAGE"],
             maxSize: 5 * 1024 * 1024,
           }).nullish(),
+
+          existingImage: z
+            .object({
+              url: z.url({ error: "Geçersiz URL" }),
+              type: z.enum($Enums.AssetType, {
+                error: "Geçerli bir değer seçiniz.",
+              }),
+            })
+            .nullish(), // <-- BURASI EKLENDİ
         })
-        .refine(
-          (item) => {
-            const hasText = item.text != null && item.text.trim() !== "";
-            const hasImage = item.image != null;
-            return hasText || hasImage;
-          },
-          {
-            error:
-              "Her marquee öğesi en az bir metin veya bir resim içermelidir.",
+        .check(({ value: item, issues }) => {
+          const hasText = item.text != null && item.text.trim() !== "";
+          const hasNewImage = item.image != null;
+          const hasExistingImage = item.existingImage != null;
+
+          // Kural A: Hem yeni resim hem de mevcut resim bir arada olamaz
+          if (hasNewImage && hasExistingImage) {
+            issues.push({
+              code: "custom",
+              message: "Hem yeni resim hem de mevcut resim seçilemez.",
+              path: ["image"], // Hatayı 'image' alanına ata
+              input: item.image,
+            });
+            issues.push({
+              code: "custom",
+              message: "Hem yeni resim hem de mevcut resim seçilemez.",
+              path: ["existingImage"], // Hatayı 'existingImage' alanına ata4
+              input: item.existingImage,
+            });
           }
-        )
+
+          // Kural B: En az biri dolu olmalı (Metin VEYA Yeni Resim VEYA Mevcut Resim)
+          if (!hasText && !hasNewImage && !hasExistingImage) {
+            issues.push({
+              code: "custom",
+              message: "Öğe, bir metin VEYA bir resim içermelidir.",
+              path: ["text"], // Hatayı 'text' alanına ata
+              input: item.text,
+            });
+          }
+        })
     )
-    .min(1, { error: "Marquee en az bir metin içermelidir." }),
-  backgroundColor: colorHex.nullish(),
-  textColor: colorHex.nullish(),
-  fontSize: z
-    .enum(MantineSize, { error: "Geçerli bir font boyutu seçiniz." })
-    .nullish(),
-  fontWeight: z
-    .enum(MantineFontWeight, { error: "Geçerli bir font kalınlığı seçiniz." })
-    .nullish(),
-  paddingY: z
-    .enum(MantineSize, {
-      error: "Geçerli bir dikey padding değeri seçiniz.",
-    })
-    .nullish(),
-  speed: z
-    .number({ error: "Hız değeri zorunludur." })
-    .positive({ error: "Hız pozitif bir sayı olmalıdır." }),
-  pauseOnHover: z.boolean(),
-  isReverse: z.boolean(),
+    // GÜNCELLEME 3: Hata mesajı düzeltildi
+    .min(1, { error: "Marquee en az bir öğe içermelidir." }),
+  options: z.object({
+    backgroundColor: colorHex.nullish(),
+    textColor: colorHex.nullish(),
+    fontSize: z
+      .enum(MantineSize, { error: "Geçerli bir font boyutu seçiniz." })
+      .nullish(),
+    fontWeight: z
+      .enum(MantineFontWeight, { error: "Geçerli bir font kalınlığı seçiniz." })
+      .nullish(),
+    paddingY: z
+      .enum(MantineSize, {
+        error: "Geçerli bir dikey padding değeri seçiniz.",
+      })
+      .nullish(),
+    speed: z
+      .number({ error: "Hız değeri zorunludur." })
+      .positive({ error: "Hız pozitif bir sayı olmalıdır." }),
+    pauseOnHover: z.boolean(),
+    isReverse: z.boolean(),
+  }),
 });
 
 export const ThemeComponentSchema = z.discriminatedUnion("type", [
@@ -253,6 +290,15 @@ export const minimalValidSlide: Omit<SliderInputType, "order" | "sliderId"> = {
     },
   },
   mobileView: null,
+};
+
+export const minimalValidMarqueeItem: Omit<
+  MarqueeComponentOutputType["items"][0],
+  "itemId"
+> = {
+  text: "Yeni Marquee Öğesi",
+  link: null,
+  image: null,
 };
 
 export const ThemeV2DefaultValues: ThemeInputType = {
@@ -351,13 +397,16 @@ export const ThemeV2DefaultValues: ThemeInputType = {
           link: "https://example.com/yeni-sezon",
         },
       ],
-      speed: 40,
-      pauseOnHover: true,
-      isReverse: false,
-      backgroundColor: "#111111",
-      textColor: "#FFFFFF",
-      fontSize: "sm",
-      fontWeight: "bold",
+      options: {
+        speed: 40,
+        pauseOnHover: true,
+        isReverse: false,
+        backgroundColor: "#111111",
+        textColor: "#FFFFFF",
+        fontSize: "sm",
+        fontWeight: "bold",
+        paddingY: "xs",
+      },
     } as MarqueeComponentInputType,
     // İkinci Slider - 2 Slaytlı
     {
@@ -425,15 +474,86 @@ export const ThemeV2DefaultValues: ThemeInputType = {
           text: "BLACK FRIDAY",
         },
       ],
-      speed: 60,
-
-      pauseOnHover: false,
-      isReverse: true,
-      backgroundColor: "#F8F9FA",
-      textColor: "#343A40",
-      fontSize: "md",
-      paddingY: "sm",
-      fontWeight: "normal",
+      options: {
+        speed: 60,
+        pauseOnHover: false,
+        isReverse: true,
+        backgroundColor: "#F8F9FA",
+        textColor: "#343A40",
+        fontSize: "md",
+        paddingY: "sm",
+        fontWeight: "normal",
+      },
     } as MarqueeComponentInputType,
   ],
+};
+
+const getDefaultSlider = (order: number): SliderComponentInputType => ({
+  componentId: createId(),
+  type: "SLIDER",
+  order,
+  options: {
+    autoPlay: true,
+    autoPlayInterval: 5000,
+    loop: true,
+    showIndicators: true,
+    showArrows: true,
+  },
+  sliders: [
+    {
+      order: 0,
+      sliderId: createId(),
+      conditionDates: {
+        addEndDate: false,
+        addStartDate: false,
+        endDate: null,
+        startDate: null,
+      },
+      desktopView: {
+        file: null,
+        aspectRatio: "16/9",
+        existingAsset: {
+          url: "https://placehold.co/1920x1080/6E44FF/FFFFFF?text=YENI+SLAYT",
+          type: "IMAGE",
+        },
+      },
+      mobileView: null,
+    },
+  ],
+});
+
+const getDefaultMarquee = (order: number): MarqueeComponentInputType => ({
+  componentId: createId(),
+  type: "MARQUEE",
+  order,
+  items: [
+    {
+      itemId: createId(),
+      text: "Yeni Marquee Öğesi",
+      link: null,
+      image: null,
+      existingImage: null,
+    },
+  ],
+  options: {
+    speed: 60,
+    pauseOnHover: false,
+    isReverse: false,
+    backgroundColor: "#F8F9FA",
+    textColor: "#343A40",
+    fontSize: "md",
+    paddingY: "sm",
+    fontWeight: "normal",
+  },
+});
+
+export const createComponent = (order: number, type: ThemeComponents) => {
+  switch (type) {
+    case "SLIDER":
+      return getDefaultSlider(order);
+    case "MARQUEE":
+      return getDefaultMarquee(order);
+    default:
+      throw new Error("Bilinmeyen component türü: " + type);
+  }
 };

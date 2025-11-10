@@ -222,6 +222,26 @@ export class DateFormatter {
       return null;
     }
   }
+  static toISOString(date: string | Date | null): string | null {
+    if (!date) return null;
+
+    let dateObj: Date | null;
+
+    if (date instanceof Date) {
+      // Zaten bir Date objesiyse, direkt kullan
+      dateObj = date;
+    } else {
+      // String ise, kendi parse metodumuzu kullanarak Date'e çevir
+      dateObj = this.parseIsoString(date);
+    }
+
+    // Başarılı bir Date objesi varsa ve geçerliyse, ISO string'e çevir
+    if (dateObj && isValid(dateObj)) {
+      return dateObj.toISOString();
+    }
+
+    return null;
+  }
 }
 
 function calculateEAN13CheckDigit(digits: string): string {

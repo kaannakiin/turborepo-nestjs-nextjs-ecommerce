@@ -9,7 +9,11 @@ import {
   ThemeIcon,
 } from "@mantine/core";
 import { Control, useWatch } from "@repo/shared";
-import { SliderComponentInputType, ThemeInputType } from "@repo/types";
+import {
+  MarqueeComponentInputType,
+  SliderComponentInputType,
+  ThemeInputType,
+} from "@repo/types";
 import {
   IconClick,
   IconClipboard,
@@ -19,6 +23,7 @@ import {
 } from "@tabler/icons-react";
 import { useThemeStore } from "../store/zustand-zod-theme.store";
 import MarqueeForm from "./right-side-forms/MarqueeForm";
+import MarqueeItemForm from "./right-side-forms/MarqueeItemForm";
 import SlideForm from "./right-side-forms/SlideForm";
 import SliderForm from "./right-side-forms/SliderForm";
 
@@ -170,17 +175,66 @@ const AsideFormsTable = ({ control }: AsideFormsTableProps) => {
     }
 
     case "MARQUEE_ITEM": {
+      const componentIndex = allComponents.findIndex(
+        (c) => c.componentId === selection.componentId
+      );
+
+      if (componentIndex === -1) {
+        clearSelection();
+        return (
+          <EmptyState
+            icon={IconInfoCircle}
+            title="Öğe Bulunamadı"
+            description="Seçilen öğe artık mevcut değil"
+            color="red"
+          />
+        );
+      }
+
+      const component = allComponents[componentIndex];
+
+      if (component.type !== "MARQUEE") {
+        clearSelection();
+        return (
+          <EmptyState
+            icon={IconInfoCircle}
+            title="Geçersiz Seçim"
+            description="Seçilen öğe için form bulunamadı"
+            color="red"
+          />
+        );
+      }
+      const itemIndex = (
+        component as MarqueeComponentInputType
+      ).items.findIndex((item) => item.itemId === selection.itemId);
+
+      if (itemIndex === -1) {
+        clearSelection();
+        return (
+          <EmptyState
+            icon={IconInfoCircle}
+            title="Öğe Bulunamadı"
+            description="Seçilen öğe artık mevcut değil"
+            color="red"
+          />
+        );
+      }
+      const pathPrefix =
+        `components.${componentIndex}.items.${itemIndex}` as const;
       return (
         <AsideFormLayout
           icon={IconMarquee}
           iconColor="orange"
           title="Marquee Item Ayarları"
-          subtitle={`ID: ...${selection.itemId.slice(-8)}`}
+          subtitle={`${itemIndex + 1}. öğe`}
           onClose={clearSelection}
         >
-          <Text size="sm" c="dimmed">
-            Marquee item ayarları yakında eklenecek
-          </Text>
+          <MarqueeItemForm
+            key={pathPrefix}
+            index={itemIndex}
+            control={control}
+            componentIndex={componentIndex}
+          />
         </AsideFormLayout>
       );
     }

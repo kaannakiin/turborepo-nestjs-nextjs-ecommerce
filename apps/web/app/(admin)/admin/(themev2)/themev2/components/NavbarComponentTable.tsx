@@ -1,8 +1,13 @@
 "use client";
 import { Stack } from "@mantine/core";
-import { Control, useFieldArray } from "@repo/shared";
-import { SliderComponentInputType, ThemeInputType } from "@repo/types";
+import { Control, FieldArrayWithId, useFieldArray } from "@repo/shared";
+import {
+  MarqueeComponentInputType,
+  SliderComponentInputType,
+  ThemeInputType,
+} from "@repo/types";
 import { useEffect, useMemo, useRef } from "react";
+import LeftSideMarqueeList from "./left-side-components/LeftSideMarqueeList";
 import LeftSideSliderList from "./left-side-components/LeftSideSliderList";
 import SortableNavbarComponent from "./SortableNavbarComponent";
 
@@ -99,7 +104,13 @@ const NavbarComponentTable = ({ control }: NavbarComponentTableProps) => {
                 field={field as SliderComponentInputType & { rhf_id: string }}
               />
             )}
-            {field.type === "MARQUEE" && <div>Marquee Form</div>}
+            {field.type === "MARQUEE" && (
+              <LeftSideMarqueeList
+                control={control}
+                index={actualIndex}
+                field={field as MarqueeComponentInputType & { rhf_id: string }}
+              />
+            )}
           </SortableNavbarComponent>
         );
       })}
