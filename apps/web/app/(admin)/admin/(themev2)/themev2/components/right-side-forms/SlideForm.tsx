@@ -3,16 +3,28 @@ import GlobalDropzone from "@/components/GlobalDropzone";
 import { getAspectRatioLabel } from "@lib/helpers";
 import { InputLabel, Select, Switch } from "@mantine/core";
 import { DateTimePicker } from "@mantine/dates";
-import { Control, Controller, DateFormatter, useWatch } from "@repo/shared";
+import {
+  Control,
+  Controller,
+  DateFormatter,
+  UseFormSetValue,
+  useWatch,
+} from "@repo/shared";
 import { AspectRatio, ThemeInputType } from "@repo/types";
 
 interface SlideFormProps {
   control: Control<ThemeInputType>;
+  setValue: UseFormSetValue<ThemeInputType>;
   componentIndex: number;
   slideIndex: number;
 }
 
-const SlideForm = ({ control, componentIndex, slideIndex }: SlideFormProps) => {
+const SlideForm = ({
+  control,
+  componentIndex,
+  slideIndex,
+  setValue,
+}: SlideFormProps) => {
   const prefix = `components.${componentIndex}.sliders.${slideIndex}` as const;
   const data = useWatch({ control, name: prefix });
 
@@ -58,28 +70,13 @@ const SlideForm = ({ control, componentIndex, slideIndex }: SlideFormProps) => {
                   : []
               }
               existingImagesDelete={async (url) => {
-                console.log("Delete desktop image:", url);
+                setValue(`${prefix}.desktopView.existingAsset`, null);
               }}
             />
           </div>
         )}
       />
-      <Controller
-        control={control}
-        name={`${prefix}.desktopView.aspectRatio`}
-        render={({ field, fieldState }) => (
-          <Select
-            {...field}
-            label="Desktop Görünüm Aspect Ratio"
-            error={fieldState.error?.message}
-            data={Object.values(AspectRatio).map((key) => ({
-              value: key,
-              label: getAspectRatioLabel(key),
-            }))}
-            allowDeselect={false}
-          />
-        )}
-      />
+
       <Controller
         control={control}
         name={`${prefix}.mobileView.file`}
@@ -110,22 +107,7 @@ const SlideForm = ({ control, componentIndex, slideIndex }: SlideFormProps) => {
           </div>
         )}
       />
-      <Controller
-        control={control}
-        name={`${prefix}.mobileView.aspectRatio`}
-        render={({ field, fieldState }) => (
-          <Select
-            {...field}
-            label="Mobil Görünüm Aspect Ratio"
-            error={fieldState.error?.message}
-            data={Object.values(AspectRatio).map((key) => ({
-              value: key,
-              label: getAspectRatioLabel(key),
-            }))}
-            allowDeselect={false}
-          />
-        )}
-      />
+
       <Controller
         control={control}
         name={`${prefix}.conditionDates.addStartDate`}

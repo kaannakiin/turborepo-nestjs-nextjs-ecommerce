@@ -8,7 +8,12 @@ import {
   Text,
   ThemeIcon,
 } from "@mantine/core";
-import { Control, useWatch } from "@repo/shared";
+import {
+  Control,
+  UseFormReturn,
+  UseFormSetValue,
+  useWatch,
+} from "@repo/shared";
 import {
   MarqueeComponentInputType,
   SliderComponentInputType,
@@ -26,9 +31,10 @@ import MarqueeForm from "./right-side-forms/MarqueeForm";
 import MarqueeItemForm from "./right-side-forms/MarqueeItemForm";
 import SlideForm from "./right-side-forms/SlideForm";
 import SliderForm from "./right-side-forms/SliderForm";
+import { useEffect } from "react";
 
 interface AsideFormsTableProps {
-  control: Control<ThemeInputType>;
+  forms: UseFormReturn<ThemeInputType>;
 }
 
 interface AsideFormLayoutProps {
@@ -45,15 +51,19 @@ interface EmptyStateProps {
   title: string;
   description: string;
   color?: string;
+  clearAction: () => void;
 }
 
-const AsideFormsTable = ({ control }: AsideFormsTableProps) => {
+const AsideFormsTable = ({
+  forms: { setValue, control },
+}: AsideFormsTableProps) => {
   const { selection, clearSelection } = useThemeStore();
   const allComponents = useWatch({ control, name: "components" });
 
   if (!allComponents) {
     return (
       <EmptyState
+        clearAction={clearSelection}
         icon={IconInfoCircle}
         title="Yükleniyor..."
         description="Tema verileri getiriliyor"
@@ -68,9 +78,9 @@ const AsideFormsTable = ({ control }: AsideFormsTableProps) => {
       );
 
       if (componentIndex === -1) {
-        clearSelection();
         return (
           <EmptyState
+            clearAction={clearSelection}
             icon={IconInfoCircle}
             title="Öğe Bulunamadı"
             description="Seçilen öğe artık mevcut değil"
@@ -82,9 +92,9 @@ const AsideFormsTable = ({ control }: AsideFormsTableProps) => {
       const component = allComponents[componentIndex];
 
       if (component.type !== "SLIDER") {
-        clearSelection();
         return (
           <EmptyState
+            clearAction={clearSelection}
             icon={IconInfoCircle}
             title="Geçersiz Seçim"
             description="Seçilen öğe için form bulunamadı"
@@ -98,9 +108,9 @@ const AsideFormsTable = ({ control }: AsideFormsTableProps) => {
       ).sliders.findIndex((s) => s.sliderId === selection.id);
 
       if (slideIndex === -1) {
-        clearSelection();
         return (
           <EmptyState
+            clearAction={clearSelection}
             icon={IconInfoCircle}
             title="Öğe Bulunamadı"
             description="Seçilen öğe artık mevcut değil"
@@ -125,6 +135,7 @@ const AsideFormsTable = ({ control }: AsideFormsTableProps) => {
             componentIndex={componentIndex}
             slideIndex={slideIndex}
             control={control}
+            setValue={setValue}
           />
         </AsideFormLayout>
       );
@@ -139,9 +150,9 @@ const AsideFormsTable = ({ control }: AsideFormsTableProps) => {
       );
 
       if (!component || index === -1) {
-        clearSelection();
         return (
           <EmptyState
+            clearAction={clearSelection}
             icon={IconInfoCircle}
             title="Öğe Bulunamadı"
             description="Seçilen öğe artık mevcut değil"
@@ -180,9 +191,9 @@ const AsideFormsTable = ({ control }: AsideFormsTableProps) => {
       );
 
       if (componentIndex === -1) {
-        clearSelection();
         return (
           <EmptyState
+            clearAction={clearSelection}
             icon={IconInfoCircle}
             title="Öğe Bulunamadı"
             description="Seçilen öğe artık mevcut değil"
@@ -194,9 +205,9 @@ const AsideFormsTable = ({ control }: AsideFormsTableProps) => {
       const component = allComponents[componentIndex];
 
       if (component.type !== "MARQUEE") {
-        clearSelection();
         return (
           <EmptyState
+            clearAction={clearSelection}
             icon={IconInfoCircle}
             title="Geçersiz Seçim"
             description="Seçilen öğe için form bulunamadı"
@@ -209,9 +220,9 @@ const AsideFormsTable = ({ control }: AsideFormsTableProps) => {
       ).items.findIndex((item) => item.itemId === selection.itemId);
 
       if (itemIndex === -1) {
-        clearSelection();
         return (
           <EmptyState
+            clearAction={clearSelection}
             icon={IconInfoCircle}
             title="Öğe Bulunamadı"
             description="Seçilen öğe artık mevcut değil"
@@ -242,6 +253,7 @@ const AsideFormsTable = ({ control }: AsideFormsTableProps) => {
     default: {
       return (
         <EmptyState
+          clearAction={clearSelection}
           icon={IconClick}
           title="Bir öğe seçin"
           description="Düzenlemek için bir öğe seçerek başlayın"
@@ -298,8 +310,12 @@ const EmptyState = ({
   icon: Icon,
   title,
   description,
+  clearAction,
   color = "blue",
 }: EmptyStateProps) => {
+  useEffect(() => {
+    clearAction();
+  }, [clearAction]);
   return (
     <Stack align="center" justify="center" gap="lg" py="xl" px="md" h="100%">
       <ThemeIcon size={64} variant="light" color={color} radius="xl">

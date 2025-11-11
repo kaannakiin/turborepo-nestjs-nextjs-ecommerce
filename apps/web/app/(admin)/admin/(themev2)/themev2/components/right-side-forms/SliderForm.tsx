@@ -1,8 +1,9 @@
 "use client";
 
-import { NumberInput, Switch } from "@mantine/core";
+import { getAspectRatioLabel } from "@lib/helpers";
+import { NumberInput, Select, Switch } from "@mantine/core";
 import { Control, Controller } from "@repo/shared";
-import { ThemeInputType } from "@repo/types";
+import { AspectRatio, ThemeInputType } from "@repo/types";
 
 interface SliderFormValues {
   control: Control<ThemeInputType>;
@@ -72,6 +73,38 @@ const SliderForm = ({ control, index }: SliderFormValues) => {
             error={fieldState.error?.message}
             label="Okları Göster"
             checked={value}
+          />
+        )}
+      />
+      <Controller
+        control={control}
+        name={`${pathPrefix}.aspectRatio`}
+        render={({ field, fieldState }) => (
+          <Select
+            {...field}
+            label="Aspect Ratio"
+            error={fieldState.error?.message}
+            data={Object.values(AspectRatio).map((key) => ({
+              value: key,
+              label: getAspectRatioLabel(key),
+            }))}
+            allowDeselect={false}
+          />
+        )}
+      />
+      <Controller
+        control={control}
+        name={`${pathPrefix}.mobileAspectRatio`}
+        render={({ field, fieldState }) => (
+          <Select
+            {...field}
+            label="Mobil Aspect Ratio"
+            error={fieldState.error?.message}
+            data={Object.values(AspectRatio).map((key) => ({
+              value: key,
+              label: getAspectRatioLabel(key),
+            }))}
+            allowDeselect={false}
           />
         )}
       />

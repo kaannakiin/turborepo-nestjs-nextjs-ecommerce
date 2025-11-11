@@ -23,9 +23,6 @@ export const SlideSchema = z
           }),
         })
         .nullish(),
-      aspectRatio: z.enum(AspectRatio, {
-        error: "Geçerli bir aspect ratio değeri seçiniz.",
-      }),
     }),
     mobileView: z
       .object({
@@ -38,9 +35,6 @@ export const SlideSchema = z
             }),
           })
           .nullish(),
-        aspectRatio: z.enum(AspectRatio, {
-          error: "Geçerli bir aspect ratio değeri seçiniz.",
-        }),
       })
       .nullish(),
     conditionDates: DiscountDatesSchema,
@@ -125,6 +119,14 @@ export const SliderComponentSchema = z.object({
       }
     ),
   options: z.object({
+    aspectRatio: z.enum(AspectRatio, {
+      error: "Geçerli bir aspect ratio değeri seçiniz.",
+    }),
+    mobileAspectRatio: z
+      .enum(AspectRatio, {
+        error: "Geçerli bir mobile aspect ratio değeri seçiniz.",
+      })
+      .nullish(),
     autoPlay: z.boolean(),
     autoPlayInterval: z
       .number({ error: "Otomatik oynatma aralığı zorunludur." })
@@ -283,7 +285,6 @@ export const minimalValidSlide: Omit<SliderInputType, "order" | "sliderId"> = {
   },
   desktopView: {
     file: null,
-    aspectRatio: "1/1",
     existingAsset: {
       url: "https://placehold.co/1920x1080/6E44FF/FFFFFF?text=YENI+SLAYT",
       type: "IMAGE",
@@ -304,11 +305,13 @@ export const minimalValidMarqueeItem: Omit<
 export const ThemeV2DefaultValues: ThemeInputType = {
   components: [
     {
-      // İlk Slider - 3 Slaytlı
+      // İlk Slider (21:9 Desktop, 9:16 Mobile)
       componentId: createId(),
       type: "SLIDER",
       order: 0,
       options: {
+        aspectRatio: "21/9",
+        mobileAspectRatio: "9/16", // Yeni alan eklendi
         autoPlay: true,
         autoPlayInterval: 5000,
         loop: true,
@@ -323,18 +326,16 @@ export const ThemeV2DefaultValues: ThemeInputType = {
           desktopView: {
             file: null,
             existingAsset: {
-              url: "https://placehold.co/1920x1080/6E44FF/FFFFFF?text=SLIDER+1+-+SLAYT+1",
+              url: "https://placehold.co/1920x823/6E44FF/FFFFFF?text=SLIDER+1+(21:9)",
               type: "IMAGE",
             },
-            aspectRatio: AspectRatio.AUTO,
           },
           mobileView: {
             file: null,
             existingAsset: {
-              url: "https://placehold.co/720x1280/6E44FF/FFFFFF?text=SLAYT+1+MOBIL",
+              url: "https://placehold.co/720x1280/6E44FF/FFFFFF?text=SLAYT+1+MOBIL+(9:16)",
               type: "IMAGE",
             },
-            aspectRatio: AspectRatio.AUTO,
           },
         },
         {
@@ -344,14 +345,14 @@ export const ThemeV2DefaultValues: ThemeInputType = {
           desktopView: {
             file: null,
             existingAsset: {
-              url: "https://placehold.co/1920x1080/FF6B6B/FFFFFF?text=SLIDER+1+-+SLAYT+2",
+              url: "https://placehold.co/1920x823/FF6B6B/FFFFFF?text=SLIDER+1+(21:9)",
               type: "IMAGE",
             },
           },
           mobileView: {
             file: null,
             existingAsset: {
-              url: "https://placehold.co/720x1280/FF6B6B/FFFFFF?text=SLAYT+2+MOBIL",
+              url: "https://placehold.co/720x1280/FF6B6B/FFFFFF?text=SLAYT+2+MOBIL+(9:16)",
               type: "IMAGE",
             },
           },
@@ -363,15 +364,15 @@ export const ThemeV2DefaultValues: ThemeInputType = {
           desktopView: {
             file: null,
             existingAsset: {
-              url: "https://placehold.co/1920x1080/4ECDC4/FFFFFF?text=SLIDER+1+-+SLAYT+3+(VIDEO)",
-              type: "IMAGE", // Video asseti gibi
+              url: "https://placehold.co/1920x823/4ECDC4/FFFFFF?text=SLIDER+1+(21:9)",
+              type: "IMAGE",
             },
           },
           mobileView: null, // Sadece desktop
         },
       ],
     } as SliderComponentInputType,
-    // Test için Marquee Component
+    // Marquee Component (Aynen kaldı)
     {
       componentId: createId(),
       type: "MARQUEE",
@@ -381,20 +382,28 @@ export const ThemeV2DefaultValues: ThemeInputType = {
           itemId: createId(),
           text: "✨ FIRSATLARI KAÇIRMA",
           link: "https://example.com/firsatlar",
+          image: null,
+          existingImage: null,
         },
         {
           itemId: createId(),
           text: "🚀 HIZLI KARGO",
           link: "https://example.com/kargo",
+          image: null,
+          existingImage: null,
         },
         {
           itemId: createId(),
           text: "💳 GÜVENLİ ÖDEME",
+          image: null,
+          existingImage: null,
         },
         {
           itemId: createId(),
           text: "🎉 YENİ SEZON GELDİ",
           link: "https://example.com/yeni-sezon",
+          image: null,
+          existingImage: null,
         },
       ],
       options: {
@@ -408,12 +417,14 @@ export const ThemeV2DefaultValues: ThemeInputType = {
         paddingY: "xs",
       },
     } as MarqueeComponentInputType,
-    // İkinci Slider - 2 Slaytlı
+    // İkinci Slider (16:9 Desktop, 16:9 Mobile)
     {
       componentId: createId(),
       type: "SLIDER",
       order: 2,
       options: {
+        aspectRatio: "16/9",
+        mobileAspectRatio: null, // Mobil, desktop'ı takip edecek (veya auto)
         autoPlay: true,
         autoPlayInterval: 5000,
         loop: true,
@@ -428,14 +439,15 @@ export const ThemeV2DefaultValues: ThemeInputType = {
           desktopView: {
             file: null,
             existingAsset: {
-              url: "https://placehold.co/1920x1080/F06595/FFFFFF?text=SLIDER+2+-+SLAYT+1",
+              url: "https://placehold.co/1920x1080/F06595/FFFFFF?text=SLIDER+2+(16:9)",
               type: "IMAGE",
             },
           },
           mobileView: {
             file: null,
             existingAsset: {
-              url: "https://placehold.co/720x1280/F06595/FFFFFF?text=SLAYT+1+MOBIL",
+              // 16:9'un mobil karşılığı (720 / 16 * 9 = 405)
+              url: "https://placehold.co/720x405/F06595/FFFFFF?text=SLAYT+1+MOBIL+(16:9)",
               type: "IMAGE",
             },
           },
@@ -447,7 +459,7 @@ export const ThemeV2DefaultValues: ThemeInputType = {
           desktopView: {
             file: null,
             existingAsset: {
-              url: "https://placehold.co/1920x1080/A61E4D/FFFFFF?text=SLIDER+2+-+SLAYT+2",
+              url: "https://placehold.co/1920x1080/A61E4D/FFFFFF?text=SLIDER+2+(16:9)",
               type: "IMAGE",
             },
           },
@@ -455,7 +467,7 @@ export const ThemeV2DefaultValues: ThemeInputType = {
         },
       ],
     } as SliderComponentInputType,
-
+    // Marquee Component (Aynen kaldı)
     {
       componentId: createId(),
       type: "MARQUEE",
@@ -464,14 +476,20 @@ export const ThemeV2DefaultValues: ThemeInputType = {
         {
           itemId: createId(),
           text: "%50 İNDİRİM",
+          image: null,
+          existingImage: null,
         },
         {
           itemId: createId(),
           text: "SON GÜN 30 KASIM",
+          image: null,
+          existingImage: null,
         },
         {
           itemId: createId(),
           text: "BLACK FRIDAY",
+          image: null,
+          existingImage: null,
         },
       ],
       options: {
@@ -485,6 +503,43 @@ export const ThemeV2DefaultValues: ThemeInputType = {
         fontWeight: "normal",
       },
     } as MarqueeComponentInputType,
+    // YENİ EKLENEN ÜÇÜNCÜ SLIDER (1:1 Desktop, 4:5 Mobile)
+    {
+      componentId: createId(),
+      type: "SLIDER",
+      order: 4,
+      options: {
+        aspectRatio: "1/1",
+        mobileAspectRatio: "4/5", // Instagram dikey
+        autoPlay: false,
+        autoPlayInterval: 5000,
+        loop: true,
+        showIndicators: true,
+        showArrows: true,
+      },
+      sliders: [
+        {
+          order: 0,
+          sliderId: createId(),
+          ...minimalValidSlide,
+          desktopView: {
+            file: null,
+            existingAsset: {
+              url: "https://placehold.co/1080x1080/12B886/FFFFFF?text=SLIDER+3+(1:1)",
+              type: "IMAGE",
+            },
+          },
+          mobileView: {
+            file: null,
+            existingAsset: {
+              // 4:5 mobil karşılığı (720 / 4 * 5 = 900)
+              url: "https://placehold.co/720x900/12B886/FFFFFF?text=SLAYT+1+MOBIL+(4:5)",
+              type: "IMAGE",
+            },
+          },
+        },
+      ],
+    } as SliderComponentInputType,
   ],
 };
 
@@ -493,6 +548,8 @@ const getDefaultSlider = (order: number): SliderComponentInputType => ({
   type: "SLIDER",
   order,
   options: {
+    aspectRatio: "16/9", // Daha modern bir varsayılan
+    mobileAspectRatio: null, // Varsayılan olarak null
     autoPlay: true,
     autoPlayInterval: 5000,
     loop: true,
@@ -511,9 +568,8 @@ const getDefaultSlider = (order: number): SliderComponentInputType => ({
       },
       desktopView: {
         file: null,
-        aspectRatio: "16/9",
         existingAsset: {
-          url: "https://placehold.co/1920x1080/6E44FF/FFFFFF?text=YENI+SLAYT",
+          url: "https://placehold.co/1920x1080/6E44FF/FFFFFF?text=YENI+SLAYT+(16:9)",
           type: "IMAGE",
         },
       },
