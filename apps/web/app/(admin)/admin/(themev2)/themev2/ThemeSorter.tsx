@@ -1,7 +1,12 @@
 "use client";
 
 import { Control, useWatch } from "@repo/shared";
-import { SliderComponentOutputType, ThemeInputType } from "@repo/types";
+import {
+  MarqueeComponentInputType,
+  SliderComponentOutputType,
+  ThemeInputType,
+} from "@repo/types";
+import FirstThemeMarquee from "./first-theme/FirstThemeMarquee";
 import FirstThemeSlider from "./first-theme/FirstThemeSlider";
 
 interface ThemeSorterProps {
@@ -23,6 +28,13 @@ const ThemeSorter = ({ control }: ThemeSorterProps) => {
                 <FirstThemeSlider
                   key={component.componentId}
                   data={component as SliderComponentOutputType}
+                />
+              );
+            case "MARQUEE":
+              return (
+                <FirstThemeMarquee
+                  key={component.componentId}
+                  data={component as MarqueeComponentInputType}
                 />
               );
           }

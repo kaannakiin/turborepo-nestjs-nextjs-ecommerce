@@ -36,10 +36,30 @@ const SlideRenderer = ({ slide, media, aspectRatio }: SlideRendererProps) => {
   useEffect(() => {
     let objectUrl: string | null = null;
 
-    const currentView =
-      media === "mobile" && slide.mobileView
-        ? slide.mobileView
-        : slide.desktopView;
+    const hasData = (
+      view: SlideOutputType["desktopView"] | null | undefined
+    ): boolean => {
+      return !!(view && (view.file || view.existingAsset));
+    };
+
+    let currentView: SlideOutputType["desktopView"] | null | undefined = null;
+
+    if (media === "mobile") {
+      if (hasData(slide.mobileView)) {
+        currentView = slide.mobileView;
+      } else if (hasData(slide.desktopView)) {
+        currentView = slide.desktopView;
+      }
+    } else {
+      if (hasData(slide.desktopView)) {
+        currentView = slide.desktopView;
+      }
+    }
+
+    if (!currentView) {
+      setAsset(null);
+      return;
+    }
 
     if (currentView.file) {
       const file = currentView.file as File;
@@ -142,6 +162,24 @@ const FirstThemeSlider = ({ data }: FirstThemeSliderProps) => {
   const currentAspectRatio =
     isMobile && mobileRatio ? mobileRatio : desktopRatio;
 
+  const validSlides = sliders?.filter((slide) => {
+    const hasData = (
+      view: SlideOutputType["desktopView"] | null | undefined
+    ): boolean => {
+      return !!(view && (view.file || view.existingAsset));
+    };
+
+    if (media === "mobile") {
+      return hasData(slide.mobileView) || hasData(slide.desktopView);
+    }
+    return hasData(slide.desktopView);
+  });
+
+  // Eğer hiç valid slide yoksa component'i render etme
+  if (!validSlides || validSlides.length === 0) {
+    return null;
+  }
+
   return (
     <Box pos="relative" w="100%" className="group">
       <Carousel
@@ -173,7 +211,7 @@ const FirstThemeSlider = ({ data }: FirstThemeSliderProps) => {
           dragFree: false,
         }}
       >
-        {sliders?.map((slide) => (
+        {validSlides?.map((slide) => (
           <SlideRenderer
             aspectRatio={currentAspectRatio}
             media={media}
