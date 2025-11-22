@@ -28,6 +28,7 @@ import {
   Stack,
   Text,
 } from "@mantine/core";
+import { $Enums } from "@repo/database";
 import {
   Control,
   Controller,
@@ -55,8 +56,6 @@ import { useMemo, useState } from "react";
 import { getFontFamilyLabel } from "../../../../../lib/helpers";
 import MarqueeForm from "../../../components/AdminThemeAsideForms/MarqueeForm";
 import ProductListForm from "../../../components/AdminThemeAsideForms/ProductListForm";
-import SliderForm from "../../../components/AdminThemeAsideForms/SliderForm";
-import { $Enums } from "@repo/database";
 
 type ComponentState =
   | "slider"
@@ -770,16 +769,6 @@ const AdminThemeAside = ({
             </Stack>
           )}
         </>
-      )}
-
-      {(component === "slider" ||
-        (component === "edit" && editingItem?.type === "slider")) && (
-        <SliderForm
-          onSubmit={handleFormSubmit}
-          defaultValues={
-            editingItem?.type === "slider" ? editingItem.data : undefined
-          }
-        />
       )}
 
       {(component === "marquee" ||
