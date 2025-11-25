@@ -14,7 +14,7 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Roles } from 'src/user/reflectors/roles.decorator';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import { type MainDiscount, MainDiscountSchema } from '@repo/types';
-import { $Enums } from '@repo/database/client';
+import { $Enums } from '@repo/database';
 
 @Controller('/admin/discounts')
 @UseGuards(JwtAuthGuard)

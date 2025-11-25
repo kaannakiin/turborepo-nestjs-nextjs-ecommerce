@@ -28,7 +28,7 @@ import {
   FooterLinkType,
 } from "@repo/types";
 import { useState } from "react";
-import { $Enums } from "@repo/database";
+import { $Enums } from "@repo/database/client";
 type AddType = "brand" | "category" | "product" | "custom";
 
 interface FooterLinkFormProps {

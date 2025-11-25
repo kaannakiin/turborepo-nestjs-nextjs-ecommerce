@@ -2,7 +2,7 @@
 import CustomImage from "@/components/CustomImage";
 import { AspectRatio, Badge, Card, Stack, Text } from "@mantine/core";
 import { useHover } from "@mantine/hooks";
-import { $Enums } from "@repo/database";
+import { $Enums } from "@repo/database/client";
 import { GetCategoryProductsResponse } from "@repo/types";
 import { useRouter } from "next/navigation";
 

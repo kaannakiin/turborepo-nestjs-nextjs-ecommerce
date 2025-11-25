@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { buildVariantOrProductUrl } from "../../../lib/helpers";
 import CustomImage from "../../components/CustomImage";
 import ProductPriceFormatter from "./ProductPriceFormatter";
-import { $Enums } from "@repo/database";
+import { $Enums } from "@repo/database/client";
 import { Route } from "next";
 
 const ProductCard = ({ product }: { product: ProductPageDataType }) => {

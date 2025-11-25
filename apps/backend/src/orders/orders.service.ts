@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { $Enums, Prisma } from '@repo/database/client';
+import { $Enums, Prisma } from '@repo/database';
 import {
   CartItemForPayment,
   GetCartForPaymentReturnType,

@@ -3,7 +3,7 @@ import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper from "@lib/fetchWrapper";
 import { Card, SimpleGrid, Stack, Text, Title } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { $Enums } from "@repo/database";
+import { $Enums } from "@repo/database/client";
 import { useQuery } from "@repo/shared";
 import {
   GetPaymentMethodResponseType,

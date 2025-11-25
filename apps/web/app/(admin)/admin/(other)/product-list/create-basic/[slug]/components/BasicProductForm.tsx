@@ -39,7 +39,7 @@ import fetchWrapper from "@lib/fetchWrapper";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import GlobalSeoCard from "@/components/GlobalSeoCard";
 import { getProductTypeLabel } from "@lib/helpers";
-import { $Enums } from "@repo/database";
+import { ProductType } from "@repo/database/client";
 import ProductDropzone from "../../../components/ProductDropzone";
 import GoogleTaxonomySelectV2 from "../../../create-variant/components/GoogleTaxonomySelectV2";
 import ProductPriceNumberInput from "../../../create-variant/components/ProductPriceNumberInput";
@@ -453,7 +453,7 @@ const BasicProductForm = ({
                 {...field}
                 error={fieldState.error?.message}
                 label="Ürün Tipi"
-                data={Object.values($Enums.ProductType).map((data) => ({
+                data={Object.values(ProductType).map((data) => ({
                   label: getProductTypeLabel(data),
                   value: data,
                 }))}

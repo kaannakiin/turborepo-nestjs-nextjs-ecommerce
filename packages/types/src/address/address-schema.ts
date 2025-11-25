@@ -1,4 +1,4 @@
-import { CountryType, Prisma } from "@repo/database";
+import { CountryType, Prisma } from "@repo/database/client";
 import { isPossiblePhoneNumber } from "libphonenumber-js";
 import * as z from "zod";
 

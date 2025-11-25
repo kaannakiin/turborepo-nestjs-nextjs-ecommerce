@@ -4,7 +4,7 @@ import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import { Breadcrumbs, Grid, Stack, Text } from "@mantine/core";
 import { CategoryPagePreparePageReturnData } from "@repo/types";
 import { IconChevronRight } from "@tabler/icons-react";
-import { $Enums } from "@repo/database";
+import { $Enums } from "@repo/database/client";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import CategoryPageDekstopFilter from "./CategoryPageDekstopFilter";

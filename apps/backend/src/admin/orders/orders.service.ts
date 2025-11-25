@@ -1,5 +1,5 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { $Enums, Prisma } from '@repo/database/client';
+import { $Enums, Prisma } from '@repo/database';
 import {
   AdminGetOrderReturnType,
   AdminGetOrdersReturnType,

@@ -7,7 +7,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { $Enums } from '@repo/database/client';
+import { $Enums } from '@repo/database';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { ParseIsoStringPipe } from 'src/common/pipes/parseisostring.pipe';

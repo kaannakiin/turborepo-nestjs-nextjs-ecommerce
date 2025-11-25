@@ -14,7 +14,7 @@ import {
   Table,
   Title,
 } from "@mantine/core";
-import { $Enums } from "@repo/database";
+import { $Enums, DiscountType } from "@repo/database/client";
 import { DateFormatter, useQuery } from "@repo/shared";
 import { GetAllDiscountReturnType } from "@repo/types";
 import { IconEdit, IconTrash } from "@tabler/icons-react";
@@ -71,7 +71,7 @@ const AdminDiscountsPage = () => {
               Yeni İndirim Oluştur
             </Button>
             <Select
-              data={Object.values($Enums.DiscountType).map((type) => ({
+              data={Object.values(DiscountType).map((type) => ({
                 label: getDiscountTypeLabel(type),
                 value: type,
               }))}

@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { $Enums, Prisma } from '@repo/database/client';
+import { $Enums, Prisma } from '@repo/database';
 import { generateProductCodes, slugify } from '@repo/shared';
 import {
   AdminProductTableData,

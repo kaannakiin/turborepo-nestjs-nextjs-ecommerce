@@ -2,7 +2,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '@repo/database/client';
+import { User } from '@repo/database';
 import { createId } from '@repo/shared';
 import { getCountryCodes, RegisterSchemaType, TokenPayload } from '@repo/types';
 import { hash, verify } from 'argon2';

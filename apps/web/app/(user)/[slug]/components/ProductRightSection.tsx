@@ -16,7 +16,7 @@ import {
   UnstyledButton,
   rem,
 } from "@mantine/core";
-import { $Enums } from "@repo/database";
+import { $Enums } from "@repo/database/client";
 import { GetProductPageReturnType } from "@repo/types";
 import { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";

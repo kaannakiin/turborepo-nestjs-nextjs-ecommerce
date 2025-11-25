@@ -8,7 +8,7 @@ import {
   Text,
 } from "@mantine/core";
 import { CategoryHeaderData } from "@repo/types";
-import { $Enums } from "@repo/database";
+import { $Enums } from "@repo/database/client";
 import Link from "next/link";
 import CustomImage from "./CustomImage";
 import { Route } from "next";

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@repo/database/client';
+import { Prisma } from '@repo/database';
 import {
   GoogleTaxonomyCategory,
   TaxonomyCategoryWithChildren,

@@ -1,4 +1,4 @@
-import { $Enums } from "@repo/database";
+import { $Enums } from "@repo/database/client";
 import { MainDiscount } from "@repo/types";
 export const safeTransformDiscountType = (
   currentValues: Partial<MainDiscount>,

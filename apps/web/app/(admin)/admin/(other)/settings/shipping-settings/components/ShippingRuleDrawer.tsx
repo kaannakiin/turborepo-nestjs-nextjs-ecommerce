@@ -30,7 +30,7 @@ import { ShippingRuleSchema, ShippingRuleType } from "@repo/types";
 import { IconPackage } from "@tabler/icons-react";
 import { useEffect } from "react";
 import ProductPriceNumberInput from "../../../product-list/create-variant/components/ProductPriceNumberInput";
-import { $Enums } from "@repo/database";
+import { $Enums, Currency } from "@repo/database/client";
 interface ShippingRuleDrawerProps {
   openedRuleModal: boolean;
   closeRuleModal: () => void;
@@ -177,7 +177,7 @@ const ShippingRuleDrawer = ({
                     withAsterisk
                     allowDeselect={false}
                     size="xs"
-                    data={Object.values($Enums.Currency).map((currency) => ({
+                    data={Object.values(Currency).map((currency) => ({
                       value: currency,
                       label: getCurrencyLabel(currency),
                     }))}

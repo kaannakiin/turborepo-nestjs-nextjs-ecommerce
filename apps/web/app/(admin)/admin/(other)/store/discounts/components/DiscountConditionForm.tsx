@@ -11,12 +11,12 @@ import {
   Text,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import { $Enums, FilterOperator } from "@repo/database/client";
 import { Control, Controller, useFieldArray, useQuery } from "@repo/shared";
 import { DiscountItem, MainDiscount } from "@repo/types";
 import { IconEdit, IconTrash } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import DiscountModal from "./DiscountModal";
-import { $Enums } from "@repo/database";
 
 const getSelectDataLabel = (
   value: $Enums.DiscountConditionType,
@@ -420,11 +420,11 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
                           {...controllerField}
                           data={[
                             {
-                              value: $Enums.FilterOperator.AND,
+                              value: FilterOperator.AND,
                               label: "VE (AND)",
                             },
                             {
-                              value: $Enums.FilterOperator.OR,
+                              value: FilterOperator.OR,
                               label: "VEYA (OR)",
                             },
                           ]}

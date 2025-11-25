@@ -1,4 +1,4 @@
-import { $Enums, Prisma } from "@repo/database";
+import { $Enums, Prisma, WhereAdded } from "@repo/database/client";
 import * as z from "zod";
 
 export type CartItemV3 = {
@@ -68,7 +68,7 @@ export const AddCartReqBodyV3Schema = z.object({
       error: "Geçersiz sepet kimliği",
     })
     .nullish(),
-  whereAdded: z.enum($Enums.WhereAdded),
+  whereAdded: z.enum(WhereAdded),
 });
 
 export type AddCartReqBodyV3Type = z.infer<typeof AddCartReqBodyV3Schema>;
@@ -192,6 +192,7 @@ export const addressSelectForCart = {
     },
   },
 } as const satisfies Prisma.CartInclude["shippingAddress"];
+
 export const cargoRuleSelectForCart = {
   select: {
     id: true,

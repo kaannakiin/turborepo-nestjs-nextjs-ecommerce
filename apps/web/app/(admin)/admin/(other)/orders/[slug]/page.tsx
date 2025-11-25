@@ -30,7 +30,7 @@ import { IconMail, IconNote, IconPhone, IconUser } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
 import FormCard from "../../store/discounts/components/FormCard";
 import AdminOrderAddressCard from "../components/AdminOrderAddressCard";
-import { Prisma } from "@repo/database";
+import { Prisma } from "@repo/database/client";
 
 const AdminOrderViewPage = () => {
   const { slug } = useParams();

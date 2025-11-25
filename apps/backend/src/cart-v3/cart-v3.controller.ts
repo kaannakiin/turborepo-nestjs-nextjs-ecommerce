@@ -9,7 +9,7 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { type User } from '@repo/database/client';
+import { type User } from '@repo/database';
 import {
   AddCartReqBodyV3Schema,
   type AddCartReqBodyV3Type,

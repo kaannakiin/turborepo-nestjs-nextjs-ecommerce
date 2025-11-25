@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { $Enums, Prisma } from '@repo/database/client';
+import { Currency, Prisma } from '@repo/database';
 import {
   CargoRuleWithDetails,
   CargoZoneType,
@@ -77,21 +77,26 @@ export class ShippingService {
     const rulesToCreate: Prisma.CargoRuleCreateManyInput[] = [];
 
     for (const rule of body.rules) {
+      let minValue: number | null | undefined;
+      let maxValue: number | null | undefined;
+
+      if (rule.condition.type === 'ProductWeight') {
+        minValue = rule.condition.minProductWeight;
+        maxValue = rule.condition.maxProductWeight;
+      } else {
+        minValue = rule.condition.minSalesPrice;
+        maxValue = rule.condition.maxSalesPrice;
+      }
+
       rulesToCreate.push({
-        id: rule.uniqueId, // Rule'un kendi ID'sini kullan
+        id: rule.uniqueId,
         name: rule.name,
         cargoZoneId: cargoZone.id,
         currency: rule.currency,
         price: rule.shippingPrice,
         ruleType: rule.condition.type,
-        minValue:
-          rule.condition.type === 'ProductWeight'
-            ? nullifyIfZero(rule.condition.minProductWeight)
-            : nullifyIfZero(rule.condition.minSalesPrice),
-        maxValue:
-          rule.condition.type === 'ProductWeight'
-            ? nullifyIfZero(rule.condition.maxProductWeight)
-            : nullifyIfZero(rule.condition.maxSalesPrice),
+        minValue: nullifyIfZero(minValue),
+        maxValue: nullifyIfZero(maxValue),
       });
     }
 
@@ -181,7 +186,7 @@ export class ShippingService {
 
   calculateCartTotal(
     cartItems: CartItemWithPrices[],
-    currency: $Enums.Currency = 'TRY',
+    currency: Currency = 'TRY',
   ): number {
     let total = 0;
 
@@ -217,7 +222,7 @@ export class ShippingService {
     countryId: string,
     stateId: string | null,
     cityId: string | null,
-    currency: $Enums.Currency,
+    currency: Currency,
     cartTotal: number,
   ): Promise<{
     rules: CargoRuleWithDetails[];

@@ -1,4 +1,4 @@
-import { Prisma } from "@repo/database";
+import { Prisma } from "@repo/database/client";
 import { Pagination } from "../../shared-schema";
 
 export type CartWhereInput = Prisma.CartWhereInput;

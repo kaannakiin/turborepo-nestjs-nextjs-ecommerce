@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { $Enums, Prisma } from '@repo/database/client';
+import { $Enums, Prisma } from '@repo/database';
 import { getSortIndexFromQuery, ProductPageSortOption } from '@repo/shared';
 import {
   CategoryHierarchyNode,

@@ -1,4 +1,4 @@
-import { UserRole } from "@repo/database";
+import { UserRole } from "@repo/database/client";
 import {
   CountryCallingCode,
   getCountries,

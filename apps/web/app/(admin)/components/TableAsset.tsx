@@ -1,6 +1,6 @@
 "use client";
 import { AspectRatio, Modal } from "@mantine/core";
-import { $Enums } from "@repo/database";
+import { $Enums } from "@repo/database/client";
 
 import { IconPhoto, IconSearch, IconVideo } from "@tabler/icons-react";
 import { useState } from "react";

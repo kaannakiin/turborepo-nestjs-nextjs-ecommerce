@@ -2,7 +2,7 @@
 
 import ProductsCarousels from "@/(user)/components/ProductsCarousels";
 import { Stack } from "@mantine/core";
-import { $Enums } from "@repo/database";
+import { $Enums } from "@repo/database/client";
 import { GetProductPageReturnType } from "@repo/types";
 import { useSearchParams } from "next/navigation";
 import ProductAssetViewer from "./ProductAssetViewer";

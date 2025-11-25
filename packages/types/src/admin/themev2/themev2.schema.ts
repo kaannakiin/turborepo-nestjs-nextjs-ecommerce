@@ -1,6 +1,6 @@
 import * as z from "zod";
 import { FileSchema } from "../../products/product-schemas";
-import { $Enums } from "@repo/database";
+import { AssetType, LayoutComponentType } from "@repo/database/client";
 import { DiscountDatesSchema } from "../../discounts/discount.schema";
 import { colorHex } from "../../shared-schema";
 import { MantineFontWeight, MantineSize } from "../../shared/shared-enum";
@@ -18,7 +18,7 @@ export const SliderV2Schema = z
       existingAsset: z
         .object({
           url: z.url({ error: "Geçersiz URL" }),
-          type: z.enum($Enums.AssetType, {
+          type: z.enum(AssetType, {
             error: "Geçerli bir değer seçiniz.",
           }),
         })
@@ -30,7 +30,7 @@ export const SliderV2Schema = z
         existingAsset: z
           .object({
             url: z.url({ error: "Geçersiz URL" }),
-            type: z.enum($Enums.AssetType, {
+            type: z.enum(AssetType, {
               error: "Geçerli bir değer seçiniz.",
             }),
           })
@@ -96,7 +96,7 @@ export const SlideItemSchema = SliderV2Schema.safeExtend({
 );
 
 export const SliderComponentSchema = z.object({
-  type: z.literal<$Enums.LayoutComponentType>("SLIDER"),
+  type: z.literal<LayoutComponentType>("SLIDER"),
   order: z
     .number({ error: "Component sıralaması zorunludur." })
     .int({ error: "Component sıralaması tam sayı olmalıdır." })
@@ -119,7 +119,7 @@ export const SliderComponentSchema = z.object({
 });
 
 export const MarqueeComponentSchema = z.object({
-  type: z.literal<$Enums.LayoutComponentType>("MARQUEE"),
+  type: z.literal<LayoutComponentType>("MARQUEE"),
   order: z.number({ error: "Component sıralaması zorunludur." }).int().min(0),
 
   items: z

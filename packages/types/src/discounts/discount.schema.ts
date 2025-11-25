@@ -1,4 +1,12 @@
-import { $Enums, Prisma } from "@repo/database";
+import {
+  AllowedDiscountedItemsBy,
+  CampaignStatus,
+  Currency,
+  DiscountConditionType,
+  DiscountType,
+  FilterOperator,
+  Prisma,
+} from "@repo/database/client";
 import { isAfter, isValid, parseISO } from "date-fns";
 import * as z from "zod";
 const idArraySchema = z
@@ -10,11 +18,11 @@ const idArraySchema = z
   .min(1, { message: "En az bir öğe seçmelisiniz." });
 
 export const FilterConditionSchema = z.object({
-  operator: z.enum($Enums.FilterOperator, {
+  operator: z.enum(FilterOperator, {
     error: "Bu alan gereklidir.",
   }),
   type: z
-    .enum($Enums.DiscountConditionType, {
+    .enum(DiscountConditionType, {
       error: "Bu alan gereklidir.",
     })
     .nullish(),
@@ -58,7 +66,7 @@ const DiscountConditionSchema = z
       .nullish(),
     allowDiscountedItems: z.boolean(),
     allowedDiscountedItemsBy: z
-      .enum($Enums.AllowedDiscountedItemsBy, {
+      .enum(AllowedDiscountedItemsBy, {
         error: "Bu alan gereklidir.",
       })
       .nullish(),
@@ -301,7 +309,7 @@ export const DiscountDatesSchema = z
 const BaseDiscountSchema = z
   .object({
     uniqueId: z.cuid2().nullish(),
-    status: z.enum($Enums.CampaignStatus, {
+    status: z.enum(CampaignStatus, {
       error: "Bu alan gereklidir.",
     }),
     title: z
@@ -310,7 +318,7 @@ const BaseDiscountSchema = z
       .max(100, { error: "Başlık en fazla 100 karakter olabilir." }),
     currencies: z
       .array(
-        z.enum($Enums.Currency, {
+        z.enum(Currency, {
           error: "Geçerli bir para birimi olmalıdır.",
         })
       )
@@ -705,7 +713,7 @@ function validatePriceTiers<
 }
 
 export const PercentageDiscountSchema = z.object({
-  type: z.literal<$Enums.DiscountType>("PERCENTAGE", {
+  type: z.literal<DiscountType>("PERCENTAGE", {
     error: "İndirim türü yüzde olmalıdır.",
   }),
   discountValue: z
@@ -717,7 +725,7 @@ export const PercentageDiscountSchema = z.object({
 
 export const PercentageGrowQuantityDiscountSchema = z
   .object({
-    type: z.literal<$Enums.DiscountType>("PERCENTAGE_GROW_QUANTITY", {
+    type: z.literal<DiscountType>("PERCENTAGE_GROW_QUANTITY", {
       error: "İndirim türü kademeli yüzde (adet) olmalıdır.",
     }),
     tiers: z
@@ -731,7 +739,7 @@ export const PercentageGrowQuantityDiscountSchema = z
 
 export const PercentageGrowPriceDiscountSchema = z
   .object({
-    type: z.literal<$Enums.DiscountType>("PERCENTAGE_GROW_PRICE", {
+    type: z.literal<DiscountType>("PERCENTAGE_GROW_PRICE", {
       error: "İndirim türü kademeli yüzde (tutar) olmalıdır.",
     }),
     tiers: z
@@ -744,7 +752,7 @@ export const PercentageGrowPriceDiscountSchema = z
   });
 
 export const FixedAmountDiscountSchema = z.object({
-  type: z.literal<$Enums.DiscountType>("FIXED_AMOUNT", {
+  type: z.literal<DiscountType>("FIXED_AMOUNT", {
     error: "İndirim türü sabit tutar olmalıdır.",
   }),
   discountAmount: z
@@ -755,7 +763,7 @@ export const FixedAmountDiscountSchema = z.object({
 
 export const FixedAmountGrowQuantityDiscountSchema = z
   .object({
-    type: z.literal<$Enums.DiscountType>("FIXED_AMOUNT_GROW_QUANTITY", {
+    type: z.literal<DiscountType>("FIXED_AMOUNT_GROW_QUANTITY", {
       error: "İndirim türü kademeli sabit tutar (adet) olmalıdır.",
     }),
     tiers: z
@@ -769,7 +777,7 @@ export const FixedAmountGrowQuantityDiscountSchema = z
 
 export const FixedAmountGrowPriceDiscountSchema = z
   .object({
-    type: z.literal<$Enums.DiscountType>("FIXED_AMOUNT_GROW_PRICE", {
+    type: z.literal<DiscountType>("FIXED_AMOUNT_GROW_PRICE", {
       error: "İndirim türü kademeli sabit tutar (tutar) olmalıdır.",
     }),
     tiers: z
@@ -782,7 +790,7 @@ export const FixedAmountGrowPriceDiscountSchema = z
   });
 
 export const FreeShippingDiscountSchema = z.object({
-  type: z.literal<$Enums.DiscountType>("FREE_SHIPPING", {
+  type: z.literal<DiscountType>("FREE_SHIPPING", {
     error: "İndirim türü ücretsiz kargo olmalıdır.",
   }),
   ...BaseDiscountSchema.shape,
@@ -926,7 +934,7 @@ export type CommonDiscountPrismaData = {
   minItemQuantity: number | null;
   maxItemQuantity: number | null;
   allowDiscountedItems: boolean;
-  allowedDiscountedItemsBy: $Enums.AllowedDiscountedItemsBy | null;
+  allowedDiscountedItemsBy: AllowedDiscountedItemsBy | null;
   mergeOtherCampaigns: boolean;
   isLimitTotalUsage: boolean;
   totalUsageLimit: number | null;

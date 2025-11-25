@@ -12,7 +12,7 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/user/reflectors/roles.decorator';
 import { PaymentsService } from './payments.service';
-import { $Enums } from '@repo/database/client';
+import { $Enums } from '@repo/database';
 
 @Controller('/admin/payments')
 @UseGuards(JwtAuthGuard, RolesGuard)

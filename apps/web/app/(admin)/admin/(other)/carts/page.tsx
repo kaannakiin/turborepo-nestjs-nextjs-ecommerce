@@ -14,7 +14,7 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { $Enums } from "@repo/database";
+import { $Enums, CartStatus } from "@repo/database/client";
 import {
   DateFormatter,
   getCartStatusByValue,
@@ -112,7 +112,7 @@ const AdminCartsPage = () => {
                 replace(`?${params.toString()}`);
               }}
               placeholder="Duruma Göre Filtrele"
-              data={Object.values($Enums.CartStatus).map((status) => ({
+              data={Object.values(CartStatus).map((status) => ({
                 label: getCartStatusSelectLabel(status),
                 value: status,
               }))}
@@ -156,7 +156,7 @@ const AdminCartsPage = () => {
                 replace(`?${params.toString()}`);
               }}
               placeholder="Duruma Göre Filtrele"
-              data={Object.values($Enums.CartStatus).map((status) => ({
+              data={Object.values(CartStatus).map((status) => ({
                 label: getCartStatusSelectLabel(status),
                 value: status,
               }))}
@@ -203,7 +203,7 @@ const AdminCartsPage = () => {
             }}
             placeholder="Duruma Göre Filtrele"
             clearable
-            data={Object.values($Enums.CartStatus).map((status) => ({
+            data={Object.values(CartStatus).map((status) => ({
               label: getCartStatusSelectLabel(status),
               value: status,
             }))}

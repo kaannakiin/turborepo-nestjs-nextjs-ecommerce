@@ -1,5 +1,5 @@
 import { MantineColor, MantineColorsTuple } from "@mantine/core";
-import { $Enums } from "@repo/database";
+import { $Enums } from "@repo/database/client";
 import {
   FontFamily,
   LocationType,

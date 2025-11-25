@@ -7,7 +7,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import type { User } from '@repo/database/client';
+import type { User } from '@repo/database';
 import {
   PaymentZodSchema,
   type ThreeDCallback,

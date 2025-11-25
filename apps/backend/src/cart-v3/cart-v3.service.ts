@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { $Enums, User } from '@repo/database/client';
+import { $Enums, User } from '@repo/database';
 import {
   getActorTypeLabel,
   getCartActivityLabel,
@@ -279,8 +279,8 @@ export class CartV3Service {
     try {
       const cart = (await this.prismaService.cart.findUnique({
         where: { id: cartId },
-        include: GetCartForPaymentIncludeCartType,
-      })) as CartForPayment;
+        include: GetCartForPaymentIncludeCartType as any,
+      })) as unknown as CartForPayment;
 
       if (!cart) {
         await this.createCartPaymentAttempt(cartId, false, 'Sepet bulunamadı');
@@ -352,8 +352,8 @@ export class CartV3Service {
         this.calculateCartItemDiscountAndPrice(
           cart.items.map((item: CartItemForPayment) => ({
             product: item.product,
-            variant: item.variant || undefined,
             quantity: item.quantity,
+            variant: item.variant || undefined,
           })),
           cart.currency,
         );

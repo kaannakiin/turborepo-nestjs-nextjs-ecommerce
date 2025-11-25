@@ -17,7 +17,11 @@ import {
   UnstyledButton,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { $Enums } from "@repo/database";
+import {
+  $Enums,
+  AllowedDiscountedItemsBy,
+  DiscountType,
+} from "@repo/database/client";
 import {
   Control,
   Controller,
@@ -150,11 +154,11 @@ const CampaignOfferForm = ({
                     data={[
                       {
                         label: "Yüzdelik",
-                        value: $Enums.DiscountType.PERCENTAGE,
+                        value: DiscountType.PERCENTAGE,
                       },
                       {
                         label: "Sabit Tutar",
-                        value: $Enums.DiscountType.FIXED_AMOUNT,
+                        value: DiscountType.FIXED_AMOUNT,
                       },
                     ]}
                   />
@@ -178,14 +182,14 @@ const CampaignOfferForm = ({
                       classNames={{
                         label: "font-semibold",
                       }}
-                      value={$Enums.AllowedDiscountedItemsBy.discounted_price}
+                      value={AllowedDiscountedItemsBy.discounted_price}
                       label="İndirimli Fiyat Üzerinden"
                     />
                     <Radio
                       classNames={{
                         label: "font-semibold",
                       }}
-                      value={$Enums.AllowedDiscountedItemsBy.price}
+                      value={AllowedDiscountedItemsBy.price}
                       label="Normal Fiyat Üzerinden"
                     />
                   </SimpleGrid>

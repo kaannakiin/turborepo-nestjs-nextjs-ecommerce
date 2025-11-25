@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { $Enums, StorePaymentProvider } from '@repo/database/client';
+import { $Enums, StorePaymentProvider } from '@repo/database';
 import {
   GetPaymentMethodResponseType,
   IyzicoPaymentMethodType,

@@ -1,4 +1,4 @@
-import { $Enums } from "@repo/database";
+import { $Enums } from "@repo/database/client";
 import { format, formatDistanceToNow, isValid, parseISO } from "date-fns";
 import { de, enUS, tr } from "date-fns/locale";
 export function slugify(text: string): string {

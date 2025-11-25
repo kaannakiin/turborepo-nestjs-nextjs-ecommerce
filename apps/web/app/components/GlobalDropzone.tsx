@@ -14,7 +14,7 @@ import {
 } from "@mantine/core";
 import { Dropzone, DropzoneProps, FileRejection } from "@mantine/dropzone";
 import { MIME_TYPES } from "@repo/types";
-import { $Enums } from "@repo/database";
+import { $Enums, AssetType } from "@repo/database/client";
 import {
   IconAlertCircle,
   IconFile,
@@ -48,7 +48,7 @@ interface GlobalDropzoneProps
 
 const GlobalDropzone = ({
   onDrop,
-  accept = $Enums.AssetType.IMAGE,
+  accept = AssetType.IMAGE,
   maxFiles,
   maxSize,
   multiple = true,
@@ -210,13 +210,13 @@ const GlobalDropzone = ({
   const getDropzoneMessage = () => {
     const typeMessages = acceptedTypes.map((type) => {
       switch (type) {
-        case $Enums.AssetType.IMAGE:
+        case AssetType.IMAGE:
           return "Resim";
-        case $Enums.AssetType.VIDEO:
+        case AssetType.VIDEO:
           return "Video";
-        case $Enums.AssetType.AUDIO:
+        case AssetType.AUDIO:
           return "Ses";
-        case $Enums.AssetType.DOCUMENT:
+        case AssetType.DOCUMENT:
           return "Döküman";
         default:
           return "Dosya";
@@ -295,7 +295,7 @@ const GlobalDropzone = ({
           }}
         >
           <AspectRatio ratio={1} pos="relative" w="100%">
-            {image.type === $Enums.AssetType.IMAGE ? (
+            {image.type === AssetType.IMAGE ? (
               <CustomImage src={image.url} alt="Existing image" />
             ) : (
               <Stack align="center" gap="xs" py="lg">
@@ -411,19 +411,19 @@ const GlobalDropzone = ({
           </Dropzone.Reject>
 
           <Dropzone.Idle>
-            {acceptedTypes.includes($Enums.AssetType.IMAGE) ? (
+            {acceptedTypes.includes(AssetType.IMAGE) ? (
               <IconPhoto
                 size={52}
                 color="var(--mantine-color-dimmed)"
                 stroke={1.5}
               />
-            ) : acceptedTypes.includes($Enums.AssetType.VIDEO) ? (
+            ) : acceptedTypes.includes(AssetType.VIDEO) ? (
               <IconVideo
                 size={52}
                 color="var(--mantine-color-dimmed)"
                 stroke={1.5}
               />
-            ) : acceptedTypes.includes($Enums.AssetType.AUDIO) ? (
+            ) : acceptedTypes.includes(AssetType.AUDIO) ? (
               <IconMusic
                 size={52}
                 color="var(--mantine-color-dimmed)"

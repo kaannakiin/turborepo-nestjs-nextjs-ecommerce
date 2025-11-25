@@ -13,7 +13,7 @@ import {
   TextInput,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { $Enums } from "@repo/database";
+import { $Enums } from "@repo/database/client";
 import {
   Controller,
   createId,

@@ -56,7 +56,7 @@ import { getFontFamilyLabel } from "../../../../../lib/helpers";
 import MarqueeForm from "../../../components/AdminThemeAsideForms/MarqueeForm";
 import ProductListForm from "../../../components/AdminThemeAsideForms/ProductListForm";
 import SliderForm from "../../../components/AdminThemeAsideForms/SliderForm";
-import { $Enums } from "@repo/database";
+import { $Enums, LayoutComponentType } from "@repo/database/client";
 
 type ComponentState =
   | "slider"
@@ -68,25 +68,25 @@ type ComponentState =
   | "footer";
 
 type SliderComponent = {
-  type: typeof $Enums.LayoutComponentType.SLIDER;
+  type: typeof LayoutComponentType.SLIDER;
   layoutOrder: 1;
   data: (SliderType & { order: number })[];
 };
 
 type MarqueeComponent = {
-  type: typeof $Enums.LayoutComponentType.MARQUEE;
+  type: typeof LayoutComponentType.MARQUEE;
   layoutOrder: number;
   data: MarqueeType;
 };
 
 type ProductListComponent = {
-  type: typeof $Enums.LayoutComponentType.PRODUCT_LIST;
+  type: typeof LayoutComponentType.PRODUCT_LIST;
   layoutOrder: number;
   data: ProductListComponentType;
 };
 
 type CategoryGridComponent = {
-  type: typeof $Enums.LayoutComponentType.CATEGORY_GRID;
+  type: typeof LayoutComponentType.CATEGORY_GRID;
   layoutOrder: number;
   data: CategoryGridComponentType;
 };
@@ -107,26 +107,26 @@ interface AdminThemeAsideProps {
 }
 
 const getUniqueId = (comp: LayoutComponent): string => {
-  if (comp.type === $Enums.LayoutComponentType.MARQUEE) {
+  if (comp.type === LayoutComponentType.MARQUEE) {
     return comp.data.uniqueId;
   }
-  if (comp.type === $Enums.LayoutComponentType.PRODUCT_LIST) {
+  if (comp.type === LayoutComponentType.PRODUCT_LIST) {
     return comp.data.uniqueId;
   }
-  if (comp.type === $Enums.LayoutComponentType.CATEGORY_GRID) {
+  if (comp.type === LayoutComponentType.CATEGORY_GRID) {
     return comp.data.uniqueId;
   }
   return "";
 };
 
 const getComponentLabel = (comp: LayoutComponent): string => {
-  if (comp.type === $Enums.LayoutComponentType.MARQUEE) {
+  if (comp.type === LayoutComponentType.MARQUEE) {
     return `Marquee`;
   }
-  if (comp.type === $Enums.LayoutComponentType.PRODUCT_LIST) {
+  if (comp.type === LayoutComponentType.PRODUCT_LIST) {
     return `Ürün Listesi`;
   }
-  if (comp.type === $Enums.LayoutComponentType.CATEGORY_GRID) {
+  if (comp.type === LayoutComponentType.CATEGORY_GRID) {
     return `Kategori Izgarası`;
   }
   return "Component";
@@ -134,25 +134,25 @@ const getComponentLabel = (comp: LayoutComponent): string => {
 
 const isSliderComponent = (comp: LayoutComponent): comp is SliderComponent => {
   if (!comp) return false;
-  return comp.type === $Enums.LayoutComponentType.SLIDER;
+  return comp.type === LayoutComponentType.SLIDER;
 };
 
 const isMarqueeComponent = (
   comp: LayoutComponent
 ): comp is MarqueeComponent => {
-  return comp.type === $Enums.LayoutComponentType.MARQUEE;
+  return comp.type === LayoutComponentType.MARQUEE;
 };
 
 const isProductListComponent = (
   comp: LayoutComponent
 ): comp is ProductListComponent => {
-  return comp.type === $Enums.LayoutComponentType.PRODUCT_LIST;
+  return comp.type === LayoutComponentType.PRODUCT_LIST;
 };
 
 const isCategoryGridComponent = (
   comp: LayoutComponent
 ): comp is CategoryGridComponent => {
-  return comp.type === $Enums.LayoutComponentType.CATEGORY_GRID;
+  return comp.type === LayoutComponentType.CATEGORY_GRID;
 };
 
 // Sortable item component
@@ -317,13 +317,13 @@ const AdminThemeAside = ({
     if (sliderComponentIndex !== -1 && sliderComponent) {
       const newSliders = [...sliderComponent.data, sliderData];
       update(sliderComponentIndex, {
-        type: $Enums.LayoutComponentType.SLIDER,
+        type: LayoutComponentType.SLIDER,
         layoutOrder: 1 as const,
         data: newSliders,
       });
     } else {
       append({
-        type: $Enums.LayoutComponentType.SLIDER,
+        type: LayoutComponentType.SLIDER,
         layoutOrder: 1,
         data: [sliderData],
       });
@@ -338,7 +338,7 @@ const AdminThemeAside = ({
         (_, index) => index !== sliderIndex
       );
       update(sliderComponentIndex, {
-        type: $Enums.LayoutComponentType.SLIDER,
+        type: LayoutComponentType.SLIDER,
         layoutOrder: 1 as const,
         data: newSliders,
       });
@@ -358,7 +358,7 @@ const AdminThemeAside = ({
         const updatedSliders = [...sliderComponent.data];
         updatedSliders[sliderIndex] = sliderData;
         update(sliderComponentIndex, {
-          type: $Enums.LayoutComponentType.SLIDER,
+          type: LayoutComponentType.SLIDER,
           layoutOrder: 1 as const,
           data: updatedSliders,
         });
@@ -373,7 +373,7 @@ const AdminThemeAside = ({
       1
     );
     append({
-      type: $Enums.LayoutComponentType.MARQUEE,
+      type: LayoutComponentType.MARQUEE,
       layoutOrder: maxLayoutOrder + 1,
       data: marqueeData,
     });
@@ -401,7 +401,7 @@ const AdminThemeAside = ({
     if (marqueeIndex !== -1) {
       const existingComponent = safeComponents[marqueeIndex];
       update(marqueeIndex, {
-        type: $Enums.LayoutComponentType.MARQUEE,
+        type: LayoutComponentType.MARQUEE,
         layoutOrder: existingComponent.layoutOrder,
         data: marqueeData,
       });
@@ -417,7 +417,7 @@ const AdminThemeAside = ({
       1
     );
     append({
-      type: $Enums.LayoutComponentType.PRODUCT_LIST,
+      type: LayoutComponentType.PRODUCT_LIST,
       layoutOrder: maxLayoutOrder + 1,
       data: productListData,
     });
@@ -447,7 +447,7 @@ const AdminThemeAside = ({
     if (productListIndex !== -1) {
       const existingComponent = safeComponents[productListIndex];
       update(productListIndex, {
-        type: $Enums.LayoutComponentType.PRODUCT_LIST,
+        type: LayoutComponentType.PRODUCT_LIST,
         layoutOrder: existingComponent.layoutOrder,
         data: productListData,
       });
@@ -463,7 +463,7 @@ const AdminThemeAside = ({
       1
     );
     append({
-      type: $Enums.LayoutComponentType.CATEGORY_GRID,
+      type: LayoutComponentType.CATEGORY_GRID,
       layoutOrder: maxLayoutOrder + 1,
       data: categoryGridData,
     });
@@ -493,7 +493,7 @@ const AdminThemeAside = ({
     if (categoryGridIndex !== -1) {
       const existingComponent = safeComponents[categoryGridIndex];
       update(categoryGridIndex, {
-        type: $Enums.LayoutComponentType.CATEGORY_GRID,
+        type: LayoutComponentType.CATEGORY_GRID,
         layoutOrder: existingComponent.layoutOrder,
         data: categoryGridData,
       });
