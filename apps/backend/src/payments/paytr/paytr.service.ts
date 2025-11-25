@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { $Enums } from '@repo/database';
+import { $Enums } from '@repo/database/client';
 
 @Injectable()
 export class PaytrService {

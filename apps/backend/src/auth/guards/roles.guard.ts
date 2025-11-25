@@ -6,7 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { $Enums } from '@repo/database';
+import { $Enums } from '@repo/database/client';
 import { Observable } from 'rxjs';
 import { IS_PUBLIC_KEY } from 'src/user/reflectors/public.decorator';
 import { Roles } from 'src/user/reflectors/roles.decorator';

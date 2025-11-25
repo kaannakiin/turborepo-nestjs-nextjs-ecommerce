@@ -7,7 +7,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { $Enums } from '@repo/database';
+import { $Enums } from '@repo/database/client';
 import { NullableStringPipe } from 'src/common/pipes/nullable-string.pipe';
 import { OrdersService } from './orders.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';

@@ -1,2 +1,3 @@
-export { prisma } from "./client";
-export * from "../generated/prisma";
+export * from "../generated/prisma/enums.js";
+export * from "../generated/prisma/models.js";
+export * from "../generated/prisma/commonInputTypes.js";

@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { $Enums } from '@repo/database';
+import { $Enums } from '@repo/database/client';
 
 export const Locale = createParamDecorator(
   (data: unknown, ctx: ExecutionContext): $Enums.Locale => {

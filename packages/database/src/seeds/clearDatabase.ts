@@ -1,6 +1,4 @@
-import { PrismaClient } from "../../generated/prisma";
-
-const prisma = new PrismaClient();
+import { prisma } from "../client.js";
 
 async function cleanupDatabase() {
   console.log("🧹 Starting database cleanup...");

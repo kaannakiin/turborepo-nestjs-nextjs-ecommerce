@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { $Enums, Prisma } from '@repo/database';
+import { $Enums, Prisma } from '@repo/database/client';
 import {
   CargoRuleWithDetails,
   CargoZoneType,

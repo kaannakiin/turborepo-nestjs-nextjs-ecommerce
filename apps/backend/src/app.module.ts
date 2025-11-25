@@ -20,7 +20,7 @@ import { OrdersModule } from './orders/orders.module';
 import { SharedModule } from './common/services/shared.module';
 import { PrismaLoggerModule } from './prisma-logger/prisma-logger.module';
 import { PrismaService } from './prisma/prisma.service';
-import { PrismaClient } from '@repo/database';
+import { PrismaClient } from '@repo/database/client';
 @Module({
   imports: [
     PrismaModule,

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { $Enums, StorePaymentProvider, User } from '@repo/database';
+import { $Enums, StorePaymentProvider, User } from '@repo/database/client';
 import {
   BasketItem,
   CartItemForPayment,

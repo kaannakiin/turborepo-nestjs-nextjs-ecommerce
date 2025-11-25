@@ -1,4 +1,4 @@
-import { $Enums, CountryType, Currency, Prisma } from "@repo/database";
+import { RuleType, CountryType, Currency, Prisma } from "@repo/database";
 import * as z from "zod";
 
 export const LocationSchema = z
@@ -74,7 +74,7 @@ export const ShippingRuleSchema = z.object({
   condition: z.discriminatedUnion("type", [
     z
       .object({
-        type: z.literal($Enums.RuleType.SalesPrice),
+        type: z.literal(RuleType.SalesPrice),
         minSalesPrice: z
           .number({
             error: "Geçersiz minimum satış fiyatı",

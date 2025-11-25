@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { $Enums, Prisma } from '@repo/database'; // Prisma tiplerini import etmek önemli
+import { $Enums, Prisma } from '@repo/database/client'; // Prisma tiplerini import etmek önemli
 import {
   CampaignZodType,
   CrossSellingCampaignType,

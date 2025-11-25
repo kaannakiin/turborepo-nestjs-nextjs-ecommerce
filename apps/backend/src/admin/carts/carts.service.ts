@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { $Enums } from '@repo/database';
+import { $Enums } from '@repo/database/client';
 import { CartWhereInput, GetAllCartsReturnType } from '@repo/types';
 import { LocaleService } from 'src/common/services/locale.service';
 import { PrismaService } from 'src/prisma/prisma.service';

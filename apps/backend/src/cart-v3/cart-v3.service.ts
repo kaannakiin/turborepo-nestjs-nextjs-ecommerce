@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { $Enums, User } from '@repo/database';
+import { $Enums, User } from '@repo/database/client';
 import {
   getActorTypeLabel,
   getCartActivityLabel,

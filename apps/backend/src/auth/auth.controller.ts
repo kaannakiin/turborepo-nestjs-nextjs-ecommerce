@@ -11,7 +11,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
-import { type User } from '@repo/database';
+import { type User } from '@repo/database/client';
 import {
   RegisterSchema,
   type RegisterSchemaType,

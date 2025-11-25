@@ -1,7 +1,7 @@
 import { Injectable, Scope, Inject } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import type { Request } from 'express';
-import { $Enums } from '@repo/database';
+import { $Enums } from '@repo/database/client';
 
 @Injectable({ scope: Scope.REQUEST })
 export class LocaleService {

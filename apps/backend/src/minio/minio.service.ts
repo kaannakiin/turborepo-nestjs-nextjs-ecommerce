@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { $Enums } from '@repo/database';
+import { $Enums } from '@repo/database/client';
 import { createId } from '@repo/shared';
 import { type Client } from 'minio';
 import { NestMinioService } from 'nestjs-minio';

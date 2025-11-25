@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { type User } from '@repo/database';
+import { type User } from '@repo/database/client';
 import {
   AuthUserAddressSchema,
   type AuthUserAddressZodType,

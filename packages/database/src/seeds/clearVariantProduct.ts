@@ -1,6 +1,4 @@
-import { PrismaClient } from "../../generated/prisma";
-
-const prisma = new PrismaClient();
+import { prisma } from "../client.js";
 
 /**
  * Bir ürünü ve tüm ilişkili kayıtlarını güvenli bir şekilde siler
