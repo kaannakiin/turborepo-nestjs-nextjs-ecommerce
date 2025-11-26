@@ -17,6 +17,7 @@
   "types": "./dist/index.d.ts",
   "dependencies": {
     "@repo/database": "*",
+    "@repo/shared": "*",
     "date-fns": "^4.1.0",
     "libphonenumber-js": "^1.12.14",
     "zod": "^4.1.3"

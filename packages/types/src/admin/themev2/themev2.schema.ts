@@ -1,4 +1,4 @@
-import { $Enums, AssetType } from "@repo/database/client";
+import { $Enums, AssetType } from "@repo/database";
 import * as z from "zod";
 import { DiscountDatesSchema } from "../../discounts/discount.schema";
 import { FileSchema } from "../../products/product-schemas";
