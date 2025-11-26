@@ -1,4 +1,4 @@
-import { Prisma } from "@repo/database";
+import { Prisma } from "@repo/database/client";
 import { CartV3 } from "../products/cart-schemas-v3";
 
 export type CheckoutAddressType = Prisma.AddressSchemaGetPayload<{

@@ -1,9 +1,9 @@
-import { $Enums, Prisma } from "@repo/database";
+import { Locale, Prisma } from "@repo/database/client";
 import * as z from "zod";
 import { FileSchema, htmlDescriptionSchema } from "./product-schemas";
 
 export const BrandTranslationSchema = z.object({
-  locale: z.enum($Enums.Locale),
+  locale: z.enum(Locale),
   name: z
     .string({ error: "Marka adı zorunludur" })
     .min(1, { message: "Marka adı en az 1 karakter olmalıdır" })

@@ -1,5 +1,4 @@
-import { $Enums } from "@repo/database";
-import { createId } from "@repo/shared";
+import { $Enums, AssetType } from "@repo/database/client";
 import * as z from "zod";
 import { DiscountDatesSchema } from "../../discounts/discount.schema";
 import { FileSchema } from "../../products/product-schemas";
@@ -10,6 +9,7 @@ import {
   MantineSize,
   ThemeComponents,
 } from "../../shared/shared-enum";
+import { createId } from "@repo/shared";
 
 export const SlideSchema = z
   .object({
@@ -18,7 +18,7 @@ export const SlideSchema = z
       existingAsset: z
         .object({
           url: z.url({ error: "Geçersiz URL" }),
-          type: z.enum($Enums.AssetType, {
+          type: z.enum(AssetType, {
             error: "Geçerli bir değer seçiniz.",
           }),
         })
@@ -30,7 +30,7 @@ export const SlideSchema = z
         existingAsset: z
           .object({
             url: z.url({ error: "Geçersiz URL" }),
-            type: z.enum($Enums.AssetType, {
+            type: z.enum(AssetType, {
               error: "Geçerli bir değer seçiniz.",
             }),
           })
@@ -97,8 +97,7 @@ export const SliderSchema = SlideSchema.safeExtend({
 );
 
 export const SliderComponentSchema = z.object({
-  componentId: z.cuid2(),
-  type: z.literal<ThemeComponents>("SLIDER"),
+  type: z.literal<$Enums.LayoutComponentType>("SLIDER"),
   order: z
     .number({ error: "Component sıralaması zorunludur." })
     .int({ error: "Component sıralaması tam sayı olmalıdır." })
@@ -147,8 +146,7 @@ export const SliderComponentSchema = z.object({
 });
 
 export const MarqueeComponentSchema = z.object({
-  componentId: z.cuid2(),
-  type: z.literal<ThemeComponents>("MARQUEE"),
+  type: z.literal<$Enums.LayoutComponentType>("MARQUEE"),
   order: z.number({ error: "Component sıralaması zorunludur." }).int().min(0),
   items: z
     .array(
@@ -544,7 +542,7 @@ export const ThemeV2DefaultValues: ThemeInputType = {
 };
 
 const getDefaultSlider = (order: number): SliderComponentInputType => ({
-  componentId: createId(),
+  // componentId: createId(),
   type: "SLIDER",
   order,
   options: {
@@ -579,7 +577,7 @@ const getDefaultSlider = (order: number): SliderComponentInputType => ({
 });
 
 const getDefaultMarquee = (order: number): MarqueeComponentInputType => ({
-  componentId: createId(),
+  // componentId: createId(),
   type: "MARQUEE",
   order,
   items: [

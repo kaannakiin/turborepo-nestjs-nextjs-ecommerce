@@ -1,4 +1,4 @@
-import { Prisma } from "@repo/database";
+import { Prisma } from "@repo/database/client";
 
 export const addressInclude: Prisma.AddressSchemaInclude = {
   city: { select: { id: true, name: true } },
@@ -50,9 +50,9 @@ export const GetCartItemForPaymentInclude = {
   product: {
     include: {
       assets: {
-        orderBy: {
-          order: "asc",
-        },
+        // orderBy: {
+        //   order: "asc",
+        // },
         select: {
           asset: {
             select: { url: true, type: true },
@@ -66,9 +66,9 @@ export const GetCartItemForPaymentInclude = {
   variant: {
     include: {
       assets: {
-        orderBy: {
-          order: "asc",
-        },
+        // orderBy: {
+        //   order: "asc",
+        // },
         select: {
           asset: {
             select: { url: true, type: true },
@@ -78,7 +78,7 @@ export const GetCartItemForPaymentInclude = {
       prices: true,
       translations: true,
       options: {
-        orderBy: variantOptionsOrderBy,
+        // orderBy: variantOptionsOrderBy,
         select: {
           productVariantOption: {
             select: {
@@ -103,7 +103,7 @@ export const GetCartItemForPaymentInclude = {
       },
     },
   },
-} as const;
+} as const satisfies Prisma.CartItemInclude;
 
 export const GetCartForPaymentIncludeCartType: Prisma.CartInclude = {
   user: true,

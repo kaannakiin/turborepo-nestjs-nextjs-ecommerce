@@ -1,7 +1,5 @@
-import { PrismaClient } from "../../generated/prisma";
 import * as readline from "readline";
-
-const prisma = new PrismaClient();
+import { prisma } from "../client.js";
 
 // Readline interface oluştur
 const rl = readline.createInterface({

@@ -1,10 +1,10 @@
 "use client";
 import { getCurrencyIntlFormat } from "@lib/helpers";
 import { Text, TextProps } from "@mantine/core";
-import { $Enums, Prisma } from "@repo/database";
+import { $Enums, Prisma } from "@repo/database/client";
 
 interface ProductPriceFormatterProps extends TextProps {
-  price: number | Prisma.Decimal;
+  price: number | InstanceType<typeof Prisma.Decimal>;
   currency?: $Enums.Currency;
 }
 

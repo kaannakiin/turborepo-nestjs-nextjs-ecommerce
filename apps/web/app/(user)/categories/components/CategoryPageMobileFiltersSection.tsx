@@ -18,7 +18,7 @@ import {
 import { CategoryPagePreparePageReturnData } from "@repo/types";
 import { IconChevronRight, IconX } from "@tabler/icons-react";
 import { ReadonlyURLSearchParams, useRouter } from "next/navigation";
-import { $Enums } from "@repo/database";
+import { $Enums } from "@repo/database/client";
 interface CategoryPageMobileFilterProps {
   variantGroups: CategoryPagePreparePageReturnData["variantGroups"];
   locale: $Enums.Locale;

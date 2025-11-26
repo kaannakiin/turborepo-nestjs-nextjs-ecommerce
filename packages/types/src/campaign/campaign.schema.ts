@@ -1,4 +1,13 @@
-import { $Enums, Prisma } from "@repo/database";
+import {
+  Prisma,
+  DiscountType,
+  AllowedDiscountedItemsBy,
+  Currency,
+  CampaignType,
+  CampaignStatus,
+  CampaignOfferTargetPage,
+  AssetType,
+} from "@repo/database/client";
 import z from "zod";
 import { DiscountDatesSchema } from "../discounts/discount.schema";
 
@@ -65,7 +74,7 @@ export const OfferSchema = z.object({
   offer: z
     .object({
       discountType: z.enum(
-        [$Enums.DiscountType.FIXED_AMOUNT, $Enums.DiscountType.PERCENTAGE],
+        [DiscountType.FIXED_AMOUNT, DiscountType.PERCENTAGE],
         {
           error: "Geçersiz indirim türü.",
         }
@@ -78,8 +87,8 @@ export const OfferSchema = z.object({
         }),
       discountValueAppliedByPrice: z.enum(
         [
-          $Enums.AllowedDiscountedItemsBy.discounted_price,
-          $Enums.AllowedDiscountedItemsBy.price,
+          AllowedDiscountedItemsBy.discounted_price,
+          AllowedDiscountedItemsBy.price,
         ],
         {
           error: " Geçersiz indirim uygulama türü.",
@@ -96,7 +105,7 @@ export const OfferSchema = z.object({
     })
     .refine(
       (offer) => {
-        return offer.discountType === $Enums.DiscountType.FIXED_AMOUNT
+        return offer.discountType === DiscountType.FIXED_AMOUNT
           ? offer.discountValue > 0
           : offer.discountValue > 0 && offer.discountValue <= 100;
       },
@@ -119,7 +128,7 @@ export const OfferSchema = z.object({
 
 export const BaseCampaignSchema = z.object({
   uniqueId: z.cuid2({ error: "Geçersiz kampanya kimliği." }).nullish(),
-  status: z.enum($Enums.CampaignStatus, {
+  status: z.enum(CampaignStatus, {
     error: "Geçersiz kampanya durumu.",
   }),
   title: z
@@ -132,7 +141,7 @@ export const BaseCampaignSchema = z.object({
     }),
   currencies: z
     .array(
-      z.enum($Enums.Currency, {
+      z.enum(Currency, {
         error: "Bu alan geçerli bir para birimi olmalıdır.",
       })
     )
@@ -199,9 +208,9 @@ export const MustBuyableProductsSchema = z
   );
 
 export const CrossSellingCampaignSchema = z.object({
-  type: z.literal<$Enums.CampaignType>($Enums.CampaignType.CROSS_SELLING),
+  type: z.literal<CampaignType>(CampaignType.CROSS_SELLING),
   ...BaseCampaignSchema.shape,
-  campaignOfferTargetType: z.enum($Enums.CampaignOfferTargetPage, {
+  campaignOfferTargetType: z.enum(CampaignOfferTargetPage, {
     error: "Geçersiz kampanya teklif hedef sayfası.",
   }),
   conditions: z
@@ -232,7 +241,7 @@ export const CrossSellingCampaignSchema = z.object({
 });
 
 export const UpSellingCampaignSchema = z.object({
-  type: z.literal<$Enums.CampaignType>($Enums.CampaignType.UP_SELLING),
+  type: z.literal<CampaignType>(CampaignType.UP_SELLING),
   ...BaseCampaignSchema.shape,
   buyableProducts: MustBuyableProductsSchema,
 });
@@ -272,7 +281,7 @@ export type UpSellProductReturnType = {
     price: number;
     discountedPrice?: number;
     variantId?: string;
-    asset?: { url: string; type: $Enums.AssetType };
+    asset?: { url: string; type: AssetType };
     variantOptions?: Array<{
       variantGroupId: string;
       variantGroupName: string;
@@ -281,15 +290,15 @@ export type UpSellProductReturnType = {
       variantOptionName: string;
       variantOptionSlug: string;
       variantOptionHexValue?: string;
-      variantOptionAsset?: { url: string; type: $Enums.AssetType };
+      variantOptionAsset?: { url: string; type: AssetType };
     }>;
   };
 };
 
 export const UpSellCampaignDefaultValues: UpSellingCampaignType = {
-  type: $Enums.CampaignType.UP_SELLING,
+  type: CampaignType.UP_SELLING,
   title: "",
-  status: $Enums.CampaignStatus.DRAFT,
+  status: CampaignStatus.DRAFT,
   currencies: ["TRY"],
   requirements: {
     addMaxCartAmount: false,
@@ -324,9 +333,9 @@ export const UpSellCampaignDefaultValues: UpSellingCampaignType = {
 };
 
 export const CrossSellingCampaignDefaultValues: CrossSellingCampaignType = {
-  type: $Enums.CampaignType.CROSS_SELLING,
+  type: CampaignType.CROSS_SELLING,
   currencies: ["TRY"],
-  status: $Enums.CampaignStatus.DRAFT,
+  status: CampaignStatus.DRAFT,
   requirements: {
     addMaxCartAmount: false,
     addMinCartAmount: false,
@@ -340,7 +349,7 @@ export const CrossSellingCampaignDefaultValues: CrossSellingCampaignType = {
     endDate: null,
     startDate: null,
   },
-  campaignOfferTargetType: $Enums.CampaignOfferTargetPage.CHECKOUT_PAGE,
+  campaignOfferTargetType: CampaignOfferTargetPage.CHECKOUT_PAGE,
   conditions: { isAllProducts: true, productIds: null, variantIds: null },
   offers: [
     {

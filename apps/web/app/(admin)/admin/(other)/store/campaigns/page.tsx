@@ -18,7 +18,7 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { $Enums } from "@repo/database";
+import { $Enums, CampaignStatus } from "@repo/database/client";
 import { DateFormatter, useQuery } from "@repo/shared";
 import { GetCampaignsReturnType } from "@repo/types";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -123,7 +123,7 @@ const AdminCampaignPage = () => {
                 }
                 replace(`?${params.toString()}`);
               }}
-              data={Object.values($Enums.CampaignStatus).map((value) => ({
+              data={Object.values(CampaignStatus).map((value) => ({
                 label: getCampaignStatusLabel(value),
                 value,
               }))}

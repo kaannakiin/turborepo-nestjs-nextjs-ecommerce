@@ -1,9 +1,15 @@
-import { $Enums, Prisma } from "@repo/database";
+import {
+  AssetType,
+  Currency,
+  Locale,
+  Prisma,
+  ProductType,
+} from "@repo/database/client";
 import * as z from "zod";
 import { FileSchema, htmlDescriptionSchema } from "./product-schemas";
 
 export const CategoryTranslationSchema = z.object({
-  locale: z.enum($Enums.Locale),
+  locale: z.enum(Locale),
   name: z
     .string()
     .min(1, "Kategori adı en az 1 karakter olabilir")
@@ -148,21 +154,21 @@ export type CategoryIdAndName = {
 export type CategoryHeaderData = {
   id: string;
   translations: {
-    locale: $Enums.Locale;
+    locale: Locale;
     name: string;
     slug: string;
   }[];
   allChildCategories?: {
     id: string;
     translations: {
-      locale: $Enums.Locale;
+      locale: Locale;
       name: string;
       slug: string;
     }[];
   }[];
   productImages: Array<{
     url: string;
-    type: $Enums.AssetType;
+    type: AssetType;
   }>;
 };
 export type CategoryPageChildCategories = {
@@ -176,7 +182,7 @@ export type CategoryPageChildCategories = {
       slug: true;
     };
   }>[];
-  image: { url: string; type: $Enums.AssetType } | null;
+  image: { url: string; type: AssetType } | null;
 };
 export type CategoryPageParentCategories = {
   parentId: string | null;
@@ -189,7 +195,7 @@ export type CategoryPageParentCategories = {
       slug: true;
     };
   }>[];
-  image: { url: string; type: $Enums.AssetType } | null;
+  image: { url: string; type: AssetType } | null;
 };
 
 export type CategoryHierarchyNode = {
@@ -200,14 +206,14 @@ export type CategoryHierarchyNode = {
   type: "parent" | "child";
 };
 export interface ProductPrice {
-  currency: $Enums.Currency;
+  currency: Currency;
   price: number;
   buyedPrice?: number;
   discountedPrice?: number;
 }
 
 export interface ProductTranslation {
-  locale: $Enums.Locale;
+  locale: Locale;
   name: string;
   slug: string;
   description?: string;
@@ -218,17 +224,17 @@ export interface ProductTranslation {
 export interface ProductAsset {
   order: number;
   url: string;
-  type: $Enums.AssetType;
+  type: AssetType;
 }
 export interface ProductUnifiedViewData {
   id: string;
   productId: string;
   combinationId?: string;
-  // entryType: $Enums.EntryType;
+  // entryType: EntryeLocaleype;
   entryType: "product" | "variant";
   sku?: string;
   barcode?: string;
-  type: $Enums.ProductType;
+  type: ProductType;
   stock: number;
   active: boolean;
   isProductActive: boolean;

@@ -1,4 +1,7 @@
-import { $Enums } from "@repo/database";
+import {
+  AssetType,
+  LayoutComponentType as DbLayoutComponentType,
+} from "@repo/database/client";
 import * as z from "zod";
 import { FileSchema } from "../products/product-schemas";
 import {
@@ -46,7 +49,7 @@ const SliderSchema = z
             error: "URL 'https' ile başlamalıdır.",
           }),
         type: z
-          .enum($Enums.AssetType, {
+          .enum(AssetType, {
             error: "Geçersiz dosya türü",
           })
           .refine((val) => val === "IMAGE" || val === "VIDEO", {
@@ -65,7 +68,7 @@ const SliderSchema = z
             error: "URL 'https' ile başlamalıdır.",
           }),
         type: z
-          .enum($Enums.AssetType, {
+          .enum(AssetType, {
             error: "Geçersiz dosya türü",
           })
           .refine((val) => val === "IMAGE" || val === "VIDEO", {
@@ -292,12 +295,12 @@ export type CategoryGridComponentType = z.infer<
 
 export const LayoutComponentSchema = z.discriminatedUnion("type", [
   z.object({
-    type: z.literal($Enums.LayoutComponentType.SLIDER),
+    type: z.literal(DbLayoutComponentType.SLIDER),
     layoutOrder: z.literal(1), // Slider her zaman 1 olacak
     data: z.array(SliderWithOrderSchema),
   }),
   z.object({
-    type: z.literal($Enums.LayoutComponentType.MARQUEE),
+    type: z.literal(DbLayoutComponentType.MARQUEE),
     layoutOrder: z
       .number({
         error: "Sıra zorunlu",
@@ -306,7 +309,7 @@ export const LayoutComponentSchema = z.discriminatedUnion("type", [
     data: MarqueeSchema,
   }),
   z.object({
-    type: z.literal($Enums.LayoutComponentType.PRODUCT_LIST),
+    type: z.literal(DbLayoutComponentType.PRODUCT_LIST),
     layoutOrder: z
       .number({
         error: "Sıra zorunlu",
@@ -315,7 +318,7 @@ export const LayoutComponentSchema = z.discriminatedUnion("type", [
     data: ProductListComponentSchema,
   }),
   z.object({
-    type: z.literal($Enums.LayoutComponentType.CATEGORY_GRID),
+    type: z.literal(DbLayoutComponentType.CATEGORY_GRID),
     layoutOrder: z
       .number({
         error: "Sıra zorunlu",

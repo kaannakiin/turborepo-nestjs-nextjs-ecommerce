@@ -28,7 +28,7 @@ import { useState } from "react";
 import { notifications } from "@mantine/notifications";
 import TableAsset from "@/(admin)/components/TableAsset";
 import fetchWrapper from "@lib/fetchWrapper";
-import { $Enums } from "@repo/database";
+import { $Enums } from "@repo/database/client";
 import { Route } from "next";
 const BrandsTable = () => {
   const searchParams = useSearchParams();

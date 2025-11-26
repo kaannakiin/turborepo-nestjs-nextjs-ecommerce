@@ -5,7 +5,7 @@ import fetchWrapper from "@lib/fetchWrapper";
 import { ActionIcon, AppShell, Drawer, Group, Stack } from "@mantine/core";
 import { useDisclosure, useHeadroom } from "@mantine/hooks";
 import { useQuery } from "@repo/shared";
-import { $Enums } from "@repo/database";
+import { $Enums } from "@repo/database/client";
 import {
   CategoryHeaderData,
   MainPageComponentsType,

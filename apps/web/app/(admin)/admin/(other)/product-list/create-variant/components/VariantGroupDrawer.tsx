@@ -60,7 +60,11 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import CreatableSelect from "./CreatableSelect";
 import fetchWrapper from "@lib/fetchWrapper";
-import { $Enums } from "@repo/database";
+import {
+  $Enums,
+  VariantGroupRenderType,
+  VariantGroupType,
+} from "@repo/database/client";
 
 interface VariantGroupDrawerProps
   extends Pick<DrawerProps, "opened" | "onClose"> {
@@ -515,7 +519,7 @@ const VariantGroupDrawer = ({
                       >
                         <SimpleGrid cols={{ xs: 1, sm: 2 }} pt={"2px"}>
                           <Radio.Card
-                            value={$Enums.VariantGroupType.LIST}
+                            value={VariantGroupType.LIST}
                             className={classes.root}
                             radius="md"
                           >
@@ -553,7 +557,7 @@ const VariantGroupDrawer = ({
                             </Group>
                           </Radio.Card>
                           <Radio.Card
-                            value={$Enums.VariantGroupType.COLOR}
+                            value={VariantGroupType.COLOR}
                             className={classes.root}
                             radius="md"
                             color="admin"
@@ -594,7 +598,7 @@ const VariantGroupDrawer = ({
                     >
                       <SimpleGrid cols={{ xs: 1, sm: 2 }} pt={"2px"}>
                         <Radio.Card
-                          value={$Enums.VariantGroupRenderType.BADGE}
+                          value={VariantGroupRenderType.BADGE}
                           className={classes.root}
                           radius="md"
                         >
@@ -637,7 +641,7 @@ const VariantGroupDrawer = ({
                           </Group>
                         </Radio.Card>
                         <Radio.Card
-                          value={$Enums.VariantGroupRenderType.DROPDOWN}
+                          value={VariantGroupRenderType.DROPDOWN}
                           className={classes.root}
                           radius="md"
                         >

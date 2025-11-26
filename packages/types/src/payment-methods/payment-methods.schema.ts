@@ -1,4 +1,4 @@
-import { $Enums } from "@repo/database";
+import { $Enums } from "@repo/database/client";
 import * as z from "zod";
 
 const BasePaymentSchema = z.object({

@@ -1,4 +1,4 @@
-import { $Enums, CountryType, Currency, Prisma } from "@repo/database";
+import { RuleType, CountryType, Currency, Prisma } from "@repo/database/client";
 import * as z from "zod";
 
 export const LocationSchema = z
@@ -74,7 +74,7 @@ export const ShippingRuleSchema = z.object({
   condition: z.discriminatedUnion("type", [
     z
       .object({
-        type: z.literal($Enums.RuleType.SalesPrice),
+        type: z.literal(RuleType.SalesPrice),
         minSalesPrice: z
           .number({
             error: "Geçersiz minimum satış fiyatı",
@@ -113,7 +113,7 @@ export const ShippingRuleSchema = z.object({
 
     z
       .object({
-        type: z.literal($Enums.RuleType.ProductWeight),
+        type: z.literal(RuleType.ProductWeight),
         minProductWeight: z
           .number({
             error: "Geçersiz minimum ürün ağırlığı",
@@ -197,7 +197,7 @@ export type LocationWithCargoZone = Prisma.LocationGetPayload<{
       select: {
         rules: {
           where: {
-            currency: $Enums.Currency;
+            currency: Currency;
           };
         };
       };

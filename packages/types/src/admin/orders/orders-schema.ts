@@ -1,4 +1,4 @@
-import { Prisma } from "@repo/database";
+import { Prisma } from "@repo/database/client";
 import * as z from "zod";
 
 export type GetOrdersReturnType = {

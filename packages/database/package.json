@@ -2,42 +2,51 @@
   "name": "@repo/database",
   "version": "0.0.0",
   "private": true,
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsc -w",
-    "lint": "eslint . --max-warnings 0",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev --skip-generate",
-    "db:deploy": "prisma migrate deploy",
-    "db:views": "node dist/seeds/applyViews.js",
-    "db:deploy:full": "npm run db:deploy && npm run db:views",
-    "db:prisma": "prisma studio"
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./src/index.ts",
+  "browser": {
+    "./dist/index.js": "./dist/client.js",
+    "./dist/index.mjs": "./dist/client.mjs"
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "types": "./src/index.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./src/client.ts",
+      "import": "./dist/client.mjs",
+      "require": "./dist/client.js"
     }
+  },
+  "scripts": {
+    "build": "npm run db:generate && tsup src/index.ts src/client.ts --format esm,cjs",
+    "dev": "tsup src/index.ts src/client.ts --format esm,cjs --watch",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev --skip-generate",
+    "db:deploy": "prisma migrate deploy",
+    "db:views": "ts-node src/seeds/applyViews.ts",
+    "db:deploy:full": "npm run db:deploy && npm run db:views",
+    "db:prisma": "prisma studio"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.0.0",
+    "@prisma/client": "^7.0.0",
+    "argon2": "^0.44.0",
+    "iconv-lite": "^0.7.0",
+    "pg": "^8.16.3"
   },
   "devDependencies": {
     "@repo/eslint-config": "*",
     "@repo/typescript-config": "*",
-    "@types/eslint": "9.6.1",
     "@types/node": "22.8.2",
-    "@types/node-fetch": "^2.6.13",
     "@types/pg": "^8.15.5",
     "dotenv": "^16.4.7",
     "eslint": "9.13.0",
-    "pg": "^8.16.3",
-    "prisma": "^6.9.0",
+    "prisma": "^7.0.0",
+    "tsup": "^8.0.0",
     "typescript": "5.6.3"
-  },
-  "dependencies": {
-    "@prisma/client": "^6.14.0",
-    "argon2": "^0.44.0",
-    "iconv-lite": "^0.7.0",
-    "node-fetch": "^2.7.0"
-  },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts"
+  }
 }

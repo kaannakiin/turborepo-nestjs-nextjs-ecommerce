@@ -1,10 +1,13 @@
 import {
   $Enums,
   AssetType,
+  Currency,
   Locale,
   Prisma,
+  ProductType,
+  VariantGroupRenderType,
   VariantGroupType,
-} from "@repo/database";
+} from "@repo/database/client";
 import { parseDocument } from "htmlparser2";
 import * as z from "zod";
 /**
@@ -206,7 +209,7 @@ export const VariantGroupTranslationSchema = z.object({
 
 export const VariantGroupSchema = z.object({
   uniqueId: z.cuid2({ error: "Geçersiz varyant grup kimliği." }),
-  renderVisibleType: z.enum($Enums.VariantGroupRenderType),
+  renderVisibleType: z.enum(VariantGroupRenderType),
   translations: z
     .array(VariantGroupTranslationSchema, {
       error: "Variant Grup çevirileri zorunludur.",
@@ -237,7 +240,7 @@ export const VariantGroupSchema = z.object({
 
 export const ProductPriceSchema = z
   .object({
-    currency: z.enum($Enums.Currency),
+    currency: z.enum(Currency),
     price: z
       .number()
       .positive({ error: "Fiyat 0'dan büyük olmalıdır." })
@@ -276,7 +279,7 @@ export const ProductPriceSchema = z
   );
 
 export const ProductTranslationSchema = z.object({
-  locale: z.enum($Enums.Locale),
+  locale: z.enum(Locale),
   name: z
     .string({
       error: "Ürün adı zorunludur.",
@@ -332,7 +335,7 @@ export const BaseProductSchema = z
       .max(Number.MAX_SAFE_INTEGER, {
         error: "Stok çok büyük",
       }),
-    type: z.enum($Enums.ProductType),
+    type: z.enum(ProductType),
     translations: z
       .array(ProductTranslationSchema)
       .refine(

@@ -8,7 +8,7 @@ import {
   InputBaseProps,
   useCombobox,
 } from "@mantine/core";
-import { $Enums } from "@repo/database";
+import { $Enums } from "@repo/database/client";
 import {
   createId,
   slugify,

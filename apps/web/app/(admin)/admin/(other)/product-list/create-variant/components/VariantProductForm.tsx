@@ -16,7 +16,7 @@ import {
   Title,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { $Enums } from "@repo/database";
+import { $Enums, ProductType } from "@repo/database/client";
 import {
   Controller,
   createId,
@@ -478,7 +478,7 @@ const VariantProductForm = ({
                 {...field}
                 error={fieldState.error?.message}
                 label="Ürün Tipi"
-                data={Object.values($Enums.ProductType).map((data) => ({
+                data={Object.values(ProductType).map((data) => ({
                   label: getProductTypeLabel(data),
                   value: data,
                 }))}

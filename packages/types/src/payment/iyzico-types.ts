@@ -1,4 +1,4 @@
-import { $Enums, CardAssociation } from "@repo/database";
+import { $Enums, CardAssociation } from "@repo/database/client";
 
 export type IyzLocale = "tr" | "en";
 export type CardType = "CREDIT_CARD" | "DEBIT_CARD" | "PREPAID_CARD";

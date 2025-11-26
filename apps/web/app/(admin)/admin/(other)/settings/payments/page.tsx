@@ -2,7 +2,7 @@
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper, { ApiError } from "@lib/fetchWrapper";
 import { Alert, Button, Group, Stack, Text, Title } from "@mantine/core";
-import { $Enums } from "@repo/database";
+import { $Enums, PaymentProvider } from "@repo/database/client";
 import { useQuery } from "@repo/shared";
 import { PaymentMethodType } from "@repo/types";
 import { IconInfoCircle } from "@tabler/icons-react";
@@ -31,7 +31,7 @@ const AdminPaymentsPage = () => {
 
   const hasPaymentMethods = !isLoading && data && data.length > 0;
 
-  const allProviders = Object.values($Enums.PaymentProvider);
+  const allProviders = Object.values(PaymentProvider);
   const addedProviders = data?.map((method) => method.type) ?? [];
   const allProvidersAdded = data
     ? allProviders.every((provider) => addedProviders.includes(provider))

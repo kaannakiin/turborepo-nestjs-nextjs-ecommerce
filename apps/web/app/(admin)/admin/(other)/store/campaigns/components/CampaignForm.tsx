@@ -27,7 +27,7 @@ import {
 import { DateTimePicker } from "@mantine/dates";
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
-import { $Enums } from "@repo/database";
+import { CampaignStatus, CampaignType, Currency } from "@repo/database/client";
 import {
   Controller,
   dateFns,
@@ -57,9 +57,9 @@ import {
 } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import FormCard from "../../discounts/components/FormCard";
 import CampaignOfferForm from "./CampaignOfferForm";
 import SearchableProductModal from "./SearchableProductModal";
-import FormCard from "../../discounts/components/FormCard";
 
 interface CampaignFormProps {
   defaultValues?: CampaignZodType;
@@ -238,7 +238,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                     {...field}
                     radius="xl"
                     size="sm"
-                    data={Object.values($Enums.CampaignStatus).map((value) => ({
+                    data={Object.values(CampaignStatus).map((value) => ({
                       value,
                       label: getCampaignStatusLabel(value),
                     }))}
@@ -287,19 +287,17 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                         offers: currentValues.offers,
                       };
 
-                      if (newType === $Enums.CampaignType.UP_SELLING) {
+                      if (newType === CampaignType.UP_SELLING) {
                         reset({
                           ...UpSellCampaignDefaultValues,
                           ...commonData,
-                          type: $Enums.CampaignType.UP_SELLING,
+                          type: CampaignType.UP_SELLING,
                         });
-                      } else if (
-                        newType === $Enums.CampaignType.CROSS_SELLING
-                      ) {
+                      } else if (newType === CampaignType.CROSS_SELLING) {
                         reset({
                           ...CrossSellingCampaignDefaultValues,
                           ...commonData,
-                          type: $Enums.CampaignType.CROSS_SELLING,
+                          type: CampaignType.CROSS_SELLING,
                         });
                       }
                     }}
@@ -307,9 +305,9 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                   >
                     <SimpleGrid cols={2}>
                       <Radio.Card
-                        value={$Enums.CampaignType.UP_SELLING}
+                        value={CampaignType.UP_SELLING}
                         className={`border p-4 rounded-xl ${
-                          field.value === $Enums.CampaignType.UP_SELLING
+                          field.value === CampaignType.UP_SELLING
                             ? "border-2 border-[var(--mantine-primary-color-5)] bg-[var(--mantine-primary-color-light)]"
                             : "border border-gray-400 bg-white"
                         }`}
@@ -318,7 +316,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                           <Group gap={"md"}>
                             <ThemeIcon
                               variant={
-                                field.value === $Enums.CampaignType.UP_SELLING
+                                field.value === CampaignType.UP_SELLING
                                   ? "filled"
                                   : "light"
                               }
@@ -333,9 +331,9 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                       </Radio.Card>
 
                       <Radio.Card
-                        value={$Enums.CampaignType.CROSS_SELLING}
+                        value={CampaignType.CROSS_SELLING}
                         className={`border p-4 rounded-xl ${
-                          field.value === $Enums.CampaignType.CROSS_SELLING
+                          field.value === CampaignType.CROSS_SELLING
                             ? "border-2 border-[var(--mantine-primary-color-5)] bg-[var(--mantine-primary-color-light)]"
                             : "border border-gray-400 bg-white"
                         }`}
@@ -344,8 +342,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                           <Group gap={"md"}>
                             <ThemeIcon
                               variant={
-                                field.value ===
-                                $Enums.CampaignType.CROSS_SELLING
+                                field.value === CampaignType.CROSS_SELLING
                                   ? "filled"
                                   : "light"
                               }
@@ -361,7 +358,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                     </SimpleGrid>
                   </Radio.Group>
 
-                  {field.value === $Enums.CampaignType.UP_SELLING && (
+                  {field.value === CampaignType.UP_SELLING && (
                     <Alert
                       icon={<IconInfoCircle size={16} />}
                       title="Up Sell Kampanyası"
@@ -372,7 +369,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                     </Alert>
                   )}
 
-                  {field.value === $Enums.CampaignType.CROSS_SELLING && (
+                  {field.value === CampaignType.CROSS_SELLING && (
                     <Alert
                       icon={<IconInfoCircle size={16} />}
                       title="Cross Sell Kampanyası"
@@ -387,7 +384,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
             />
           </Stack>
         </FormCard>
-        {type === $Enums.CampaignType.UP_SELLING ? (
+        {type === CampaignType.UP_SELLING ? (
           <>
             <FormCard
               title={
@@ -987,7 +984,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                     {...field}
                     error={fieldState.error?.message}
                     label="Para Birimleri"
-                    data={Object.values($Enums.Currency).map((curr) => ({
+                    data={Object.values(Currency).map((curr) => ({
                       label: getCurrencyLabel(curr),
                       value: curr,
                     }))}

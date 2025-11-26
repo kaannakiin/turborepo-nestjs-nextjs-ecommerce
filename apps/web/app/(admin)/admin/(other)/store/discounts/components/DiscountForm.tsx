@@ -31,7 +31,12 @@ import {
 } from "@mantine/core";
 import { DateTimePicker } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
-import { $Enums } from "@repo/database";
+import {
+  $Enums,
+  AllowedDiscountedItemsBy,
+  CampaignStatus,
+  Currency,
+} from "@repo/database/client";
 import {
   Controller,
   FieldErrors,
@@ -335,7 +340,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                     {...field}
                     radius="xl"
                     size="sm"
-                    data={Object.values($Enums.CampaignStatus).map((value) => ({
+                    data={Object.values(CampaignStatus).map((value) => ({
                       value,
                       label: getCampaignStatusLabel(value),
                     }))}
@@ -761,7 +766,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                   if (checked) {
                     setValue(
                       "allowedDiscountedItemsBy",
-                      $Enums.AllowedDiscountedItemsBy.price
+                      AllowedDiscountedItemsBy.price
                     );
                   } else {
                     setValue("allowedDiscountedItemsBy", null);
@@ -787,11 +792,11 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                 >
                   <Group gap={"xl"} py={"xs"}>
                     <Radio
-                      value={$Enums.AllowedDiscountedItemsBy.price}
+                      value={AllowedDiscountedItemsBy.price}
                       label="Satış Fiyatı Üzerinden"
                     />
                     <Radio
-                      value={$Enums.AllowedDiscountedItemsBy.discounted_price}
+                      value={AllowedDiscountedItemsBy.discounted_price}
                       label="İndirimli Fiyat Üzerinden"
                     />
                   </Group>
@@ -1225,7 +1230,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                 {...field}
                 error={fieldState.error?.message}
                 label="Geçerli Kurlar"
-                data={Object.values($Enums.Currency).map((currency) => ({
+                data={Object.values(Currency).map((currency) => ({
                   value: currency,
                   label: getCurrencyLabel(currency),
                 }))}

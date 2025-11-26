@@ -36,7 +36,7 @@ import {
   FileRejection,
   FileWithPath,
 } from "@mantine/dropzone";
-import { $Enums } from "@repo/database";
+import { $Enums } from "@repo/database/client";
 import { MIME_TYPES } from "@repo/types";
 
 import {

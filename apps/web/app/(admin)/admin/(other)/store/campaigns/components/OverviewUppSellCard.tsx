@@ -1,7 +1,11 @@
 "use client";
 import CustomImage from "@/components/CustomImage";
 import fetchWrapper from "@lib/fetchWrapper";
-import { $Enums } from "@repo/database";
+import {
+  $Enums,
+  AllowedDiscountedItemsBy,
+  DiscountType,
+} from "@repo/database/client";
 import { useQuery } from "@repo/shared";
 import { UppSellOfferZodType, UpSellProductReturnType } from "@repo/types";
 import { useEffect, useState } from "react";
@@ -101,11 +105,11 @@ const UpSellPreview = ({ product, offer }: UpSellPreviewProps) => {
   const calculateDiscountedPrice = () => {
     const basePrice =
       offer.offer.discountValueAppliedByPrice ===
-      $Enums.AllowedDiscountedItemsBy.discounted_price
+      AllowedDiscountedItemsBy.discounted_price
         ? product.discountedPrice || product.price
         : product.price;
 
-    if (offer.offer.discountType === $Enums.DiscountType.FIXED_AMOUNT) {
+    if (offer.offer.discountType === DiscountType.FIXED_AMOUNT) {
       return Math.max(0, basePrice - offer.offer.discountValue);
     } else {
       return basePrice - (basePrice * offer.offer.discountValue) / 100;
@@ -115,7 +119,7 @@ const UpSellPreview = ({ product, offer }: UpSellPreviewProps) => {
   const finalPrice = calculateDiscountedPrice();
   const basePrice =
     offer.offer.discountValueAppliedByPrice ===
-    $Enums.AllowedDiscountedItemsBy.discounted_price
+    AllowedDiscountedItemsBy.discounted_price
       ? product.discountedPrice || product.price
       : product.price;
 
@@ -195,7 +199,7 @@ const UpSellPreview = ({ product, offer }: UpSellPreviewProps) => {
           </span>
         </div>
         <div className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
-          {offer.offer.discountType === $Enums.DiscountType.PERCENTAGE
+          {offer.offer.discountType === DiscountType.PERCENTAGE
             ? `%${offer.offer.discountValue} İndirim`
             : `₺${offer.offer.discountValue} İndirim`}
         </div>

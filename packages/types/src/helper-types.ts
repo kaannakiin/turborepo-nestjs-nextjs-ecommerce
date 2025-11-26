@@ -1,4 +1,4 @@
-import { Prisma } from "@repo/database";
+import { Prisma } from "@repo/database/client";
 
 export type CheckoutPageCartType = Prisma.CartGetPayload<{
   include: {

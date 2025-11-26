@@ -1,4 +1,4 @@
-import { OrderItemSchema, Prisma } from "@repo/database";
+import { OrderItemSchema, Prisma } from "@repo/database/client";
 import {
   CartItemForPayment,
   GetCartForPaymentReturnType,

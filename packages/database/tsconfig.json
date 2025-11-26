@@ -2,10 +2,11 @@
   "extends": "@repo/typescript-config/base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "moduleResolution": "nodenext",
-    "strict": false
+    "strict": false,
+    "module": "NodeNext",  
+    "moduleResolution": "NodeNext",  
+    "target": "ES2023"
   },
   "include": ["src"],
-
   "exclude": ["node_modules", "dist"]
 }

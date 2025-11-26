@@ -10,7 +10,7 @@ import {
   Title,
   Typography,
 } from "@mantine/core";
-import { $Enums } from "@repo/database";
+import { $Enums } from "@repo/database/client";
 import { GetProductPageReturnType } from "@repo/types";
 
 interface BasicProductRightSectionProps {

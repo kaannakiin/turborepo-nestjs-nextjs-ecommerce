@@ -13,4 +13,4 @@ cmds = [
 ]
 
 [start]
-cmd = "npm run start:migrate"  
+cmd = "npx turbo run db:generate --filter=@repo/database && npm run start:migrate"
