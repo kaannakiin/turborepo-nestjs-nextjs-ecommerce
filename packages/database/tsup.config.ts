@@ -9,6 +9,7 @@ export default defineConfig({
   dts: false,
   splitting: false,
   clean: true,
+  shims: true,
   external: ["@prisma/client", "@prisma/adapter-pg"],
   noExternal: [],
   treeshake: false,
