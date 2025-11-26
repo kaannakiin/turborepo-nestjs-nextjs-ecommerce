@@ -97,6 +97,7 @@ export const SliderSchema = SlideSchema.safeExtend({
 );
 
 export const SliderComponentSchema = z.object({
+  componentId: z.cuid2(),
   type: z.literal<$Enums.LayoutComponentType>("SLIDER"),
   order: z
     .number({ error: "Component sıralaması zorunludur." })
@@ -146,6 +147,7 @@ export const SliderComponentSchema = z.object({
 });
 
 export const MarqueeComponentSchema = z.object({
+  componentId: z.cuid2(),
   type: z.literal<$Enums.LayoutComponentType>("MARQUEE"),
   order: z.number({ error: "Component sıralaması zorunludur." }).int().min(0),
   items: z
@@ -542,7 +544,7 @@ export const ThemeV2DefaultValues: ThemeInputType = {
 };
 
 const getDefaultSlider = (order: number): SliderComponentInputType => ({
-  // componentId: createId(),
+  componentId: createId(),
   type: "SLIDER",
   order,
   options: {
@@ -577,7 +579,7 @@ const getDefaultSlider = (order: number): SliderComponentInputType => ({
 });
 
 const getDefaultMarquee = (order: number): MarqueeComponentInputType => ({
-  // componentId: createId(),
+  componentId: createId(),
   type: "MARQUEE",
   order,
   items: [
