@@ -765,23 +765,23 @@ enum ActorType {
 }
 
 model Cart {
-  id                       String                    @id @default(cuid())
-  status                   CartStatus                @default(ACTIVE)
-  currency                 Currency                  @default(TRY)
-  locale                   Locale                    @default(TR)
+  id                       String                     @id @default(cuid())
+  status                   CartStatus                 @default(ACTIVE)
+  currency                 Currency                   @default(TRY)
+  locale                   Locale                     @default(TR)
   shippingAddressId        String?
   billingAddressId         String?
   cargoRuleId              String?
   userId                   String?
-  createdAt                DateTime                  @default(now())
-  updatedAt                DateTime                  @updatedAt
-  billingAddress           AddressSchema?            @relation("CartBillingAddress", fields: [billingAddressId], references: [id])
-  cargoRule                CargoRule?                @relation(fields: [cargoRuleId], references: [id])
-  shippingAddress          AddressSchema?            @relation("CartShippingAddress", fields: [shippingAddressId], references: [id])
-  user                     User?                     @relation(fields: [userId], references: [id])
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
+  billingAddress           AddressSchema?             @relation("CartBillingAddress", fields: [billingAddressId], references: [id])
+  cargoRule                CargoRule?                 @relation(fields: [cargoRuleId], references: [id])
+  shippingAddress          AddressSchema?             @relation("CartShippingAddress", fields: [shippingAddressId], references: [id])
+  user                     User?                      @relation(fields: [userId], references: [id])
   items                    CartItem[]
   orderAttempts            OrderSchema[]
-  cartPaymentCheckAttempts CartPaymentCheckAttempts?
+  cartPaymentCheckAttempts CartPaymentCheckAttempts[]
   cartActivityLogs         CartActivityLog[]
 }
 
@@ -1546,4 +1546,56 @@ model ErrorLog {
 
   @@index([context])
   @@index([createdAt(sort: Desc)])
+}
+
+enum PageType {
+  HOME
+  CATEGORY
+  PRODUCT
+  BRAND
+  OTHER
+}
+
+model Theme {
+  id       String  @id @default(cuid())
+  name     String // Örn: "Varsayılan Tema", "Black Friday Teması"
+  isActive Boolean @default(false) // Şu anda canlıda olan tema bu mu?
+
+  // Bütün temayı etkileyen global ayarlar (fontlar, renk paletleri vb.)
+  // Örn: { "colors": { "primary": "#FF0000", "text": "#333" }, "typography": { "fontFamily": "Inter" } }
+  globalSettings Json @default("{}")
+
+  // Bu tema, birden fazla sayfa şablonundan oluşur.
+  pageTemplates PageTemplate[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 2. Sayfa Şablonu Modeli (Senin ThemeV2'nin gelişmiş hali)
+// Bu, tek bir sayfa tipinin (örn: Anasayfa) yapısını tutar.
+model PageTemplate {
+  id       String   @id @default(cuid())
+  name     String // Örn: "Varsayılan Anasayfa", "İndirimli Ürün Sayfası"
+  pageType PageType // Hangi sayfa tipine ait (HOME, PRODUCT vb.)
+
+  // Hangi ana temaya ait?
+  themeId String
+  theme   Theme  @relation(fields: [themeId], references: [id], onDelete: Cascade)
+
+  // == İŞİN SIRRI BURADA ==
+  // Bu şablonun içindeki bölümlerin (sections) yapısı ve verisi.
+  // Bu bir JSON dizisi olacak.
+  // Örn: [ 
+  //   { "id": "uuid-1", "type": "hero-banner", "settings": { "title": "Hoş Geldiniz" } },
+  //   { "id": "uuid-2", "type": "product-grid", "settings": { "collectionId": "abc" } } 
+  // ]
+  sections Json @default("[]")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Bir temada, aynı tipte birden fazla şablon olabilir (örn: 2 farklı ürün sayfası şablonu)
+  // Bu yüzden isim + type + themeId unique olmalı.
+  @@unique([themeId, pageType, name])
 }

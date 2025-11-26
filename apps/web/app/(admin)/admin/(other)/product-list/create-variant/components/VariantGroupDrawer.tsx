@@ -28,6 +28,7 @@ import {
   useFieldArray,
   useForm,
   zodResolver,
+  useWatch,
 } from "@repo/shared";
 import { VariantGroupSchema, VariantGroupZodType } from "@repo/types";
 import {
@@ -114,10 +115,22 @@ const SortableVariantItem = ({
     setDeletePopoverOpened(false);
   };
 
-  const fieldFile = control._getWatch(`options.${index}.file`);
-  const fieldExistingFile = control._getWatch(`options.${index}.existingFile`);
-  const fieldHexValue = control._getWatch(`options.${index}.hexValue`);
-  const fieldTranslations = control._getWatch(`options.${index}.translations`);
+  const fieldFile = useWatch({
+    control,
+    name: `options.${index}.file`,
+  });
+  const fieldExistingFile = useWatch({
+    control,
+    name: `options.${index}.existingFile`,
+  });
+  const fieldHexValue = useWatch({
+    control,
+    name: `options.${index}.hexValue`,
+  });
+  const fieldTranslations = useWatch({
+    control,
+    name: `options.${index}.translations`,
+  });
 
   const getImageUrl = () => {
     if (fieldFile && typeof fieldFile !== "string") {
@@ -801,9 +814,12 @@ const VariantGroupDrawer = ({
               <Controller
                 control={control}
                 name={`options.${selectedVariantIndex}.hexValue`}
-                render={({ field, fieldState }) => (
+                render={({ field: { onChange, ...field }, fieldState }) => (
                   <ColorInput
                     {...field}
+                    onChangeEnd={(value) => {
+                      onChange(value);
+                    }}
                     value={field.value || "#ab7676"}
                     withPicker
                     error={fieldState.error?.message}

@@ -146,10 +146,10 @@ const ProductRightSection = ({
               <ProductPriceFormatter
                 fz={"md"}
                 fw={700}
-                price={variantPrice.price}
+                price={variantPrice.discountedPrice}
               />
               <ProductPriceFormatter
-                price={variantPrice.discountedPrice}
+                price={variantPrice.price}
                 fz={"xs"}
                 className="line-through text-gray-500"
               />

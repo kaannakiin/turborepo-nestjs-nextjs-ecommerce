@@ -13,8 +13,8 @@ import {
   Text,
 } from "@mantine/core";
 import { Dropzone, DropzoneProps, FileRejection } from "@mantine/dropzone";
-import { MIME_TYPES } from "@repo/types";
 import { $Enums, AssetType } from "@repo/database/client";
+import { MIME_TYPES } from "@repo/types";
 import {
   IconAlertCircle,
   IconFile,
@@ -384,74 +384,80 @@ const GlobalDropzone = ({
         </Stack>
       )}
 
-      <Dropzone
-        multiple={multiple}
-        onReject={handleReject}
-        onDrop={handleDrop}
-        maxSize={maxSize}
-        maxFiles={maxFiles}
-        accept={acceptObject}
-      >
-        <Group
-          justify="center"
-          gap="xl"
-          mih={220}
-          style={{ pointerEvents: "none" }}
+      {!multiple && existingImages && existingImages.length > 0 ? null : (
+        <Dropzone
+          multiple={multiple}
+          onReject={handleReject}
+          onDrop={handleDrop}
+          maxSize={maxSize}
+          maxFiles={maxFiles}
+          accept={acceptObject}
         >
-          <Dropzone.Accept>
-            <IconUpload
-              size={52}
-              color="var(--mantine-color-blue-6)"
-              stroke={1.5}
-            />
-          </Dropzone.Accept>
-
-          <Dropzone.Reject>
-            <IconX size={52} color="var(--mantine-color-red-6)" stroke={1.5} />
-          </Dropzone.Reject>
-
-          <Dropzone.Idle>
-            {acceptedTypes.includes(AssetType.IMAGE) ? (
-              <IconPhoto
+          <Group
+            justify="center"
+            gap="xl"
+            mih={220}
+            style={{ pointerEvents: "none" }}
+          >
+            <Dropzone.Accept>
+              <IconUpload
                 size={52}
-                color="var(--mantine-color-dimmed)"
+                color="var(--mantine-color-blue-6)"
                 stroke={1.5}
               />
-            ) : acceptedTypes.includes(AssetType.VIDEO) ? (
-              <IconVideo
-                size={52}
-                color="var(--mantine-color-dimmed)"
-                stroke={1.5}
-              />
-            ) : acceptedTypes.includes(AssetType.AUDIO) ? (
-              <IconMusic
-                size={52}
-                color="var(--mantine-color-dimmed)"
-                stroke={1.5}
-              />
-            ) : (
-              <IconFile
-                size={52}
-                color="var(--mantine-color-dimmed)"
-                stroke={1.5}
-              />
-            )}
-          </Dropzone.Idle>
+            </Dropzone.Accept>
 
-          <div>
-            <Text size="xl" inline>
-              {getDropzoneMessage()} buraya sürükleyin veya seçmek için tıklayın
-            </Text>
-            <Text size="sm" c="dimmed" inline mt={7}>
-              İstediğiniz kadar dosya ekleyebilirsiniz, her dosya{" "}
-              {maxSize ? `${Math.round(maxSize / (1024 * 1024))}MB` : "5MB"}
-              &apos;dan küçük olmalıdır
-            </Text>
-          </div>
-        </Group>
-      </Dropzone>
+            <Dropzone.Reject>
+              <IconX
+                size={52}
+                color="var(--mantine-color-red-6)"
+                stroke={1.5}
+              />
+            </Dropzone.Reject>
 
-      {/* Preview Section */}
+            <Dropzone.Idle>
+              {acceptedTypes.includes($Enums.AssetType.IMAGE) ? (
+                <IconPhoto
+                  size={52}
+                  color="var(--mantine-color-dimmed)"
+                  stroke={1.5}
+                />
+              ) : acceptedTypes.includes($Enums.AssetType.VIDEO) ? (
+                <IconVideo
+                  size={52}
+                  color="var(--mantine-color-dimmed)"
+                  stroke={1.5}
+                />
+              ) : acceptedTypes.includes($Enums.AssetType.AUDIO) ? (
+                <IconMusic
+                  size={52}
+                  color="var(--mantine-color-dimmed)"
+                  stroke={1.5}
+                />
+              ) : (
+                <IconFile
+                  size={52}
+                  color="var(--mantine-color-dimmed)"
+                  stroke={1.5}
+                />
+              )}
+            </Dropzone.Idle>
+
+            <div>
+              <Text size="xl" inline>
+                {getDropzoneMessage()} buraya sürükleyin veya seçmek için
+                tıklayın
+              </Text>
+              <Text size="sm" c="dimmed" inline mt={7}>
+                İstediğiniz kadar dosya ekleyebilirsiniz, her dosya{" "}
+                {maxSize ? `${Math.round(maxSize / (1024 * 1024))}MB` : "5MB"}
+                &apos;dan küçük olmalıdır
+              </Text>
+            </div>
+          </Group>
+        </Dropzone>
+      )}
+
       {(existingImages.length > 0 || files.length > 0) && (
         <SimpleGrid cols={cols} spacing="md">
           {existingImages.map((image, index) =>

@@ -4,8 +4,7 @@ import { Client } from "pg";
 import * as fs from "fs";
 import * as path from "path";
 
-// .env dosyasını yükle
-config();
+config({ path: "../../.env" });
 
 async function applyViews() {
   const DATABASE_URL = process.env.DATABASE_URL;

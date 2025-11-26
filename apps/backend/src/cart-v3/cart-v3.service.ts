@@ -808,6 +808,9 @@ export class CartV3Service {
                 isVisible: true,
               },
               update: {
+                isVisible: true,
+                deletedAt: null,
+                visibleCause: null,
                 quantity: {
                   increment: 1,
                 },
@@ -937,7 +940,6 @@ export class CartV3Service {
   ): Promise<CartActionResponse> {
     try {
       const { cartId, productId, variantId } = data;
-      const locale = this.localeService.getLocale();
 
       const existingItem = await this.prismaService.cartItem.findUnique({
         where: {

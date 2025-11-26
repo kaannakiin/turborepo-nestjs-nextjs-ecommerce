@@ -210,7 +210,7 @@ const ProductTable = () => {
       </Table.ScrollContainer>
 
       {data && data.pagination.totalPages > 1 && (
-        <CustomPagination total={data.pagination.total} />
+        <CustomPagination total={data.pagination.totalPages} />
       )}
 
       <Modal

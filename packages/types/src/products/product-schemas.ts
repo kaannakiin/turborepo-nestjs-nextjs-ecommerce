@@ -10,13 +10,14 @@ import {
 } from "@repo/database/client";
 import { parseDocument } from "htmlparser2";
 import * as z from "zod";
+/**
+ * Asset tiplerine karşılık gelen MIME type'ları tanımlar.
+ * Her asset tipi için izin verilen dosya formatlarının MIME type listesi.
+ */
 export const MIME_TYPES = {
   IMAGE: ["image/jpeg", "image/png", "image/webp", "image/gif"] as string[],
-
   VIDEO: ["video/webm"] as string[],
-
   AUDIO: ["audio/mpeg", "audio/mp4"] as string[],
-
   DOCUMENT: [
     "application/pdf",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -25,6 +26,16 @@ export const MIME_TYPES = {
   ] as string[],
 } as Record<AssetType, string[]>;
 
+/**
+ * Belirtilen asset tipi için izin verilen MIME type'ları döndürür.
+ *
+ * @param type - Asset tipi
+ * @returns MIME type dizisi veya tip bulunamazsa boş dizi
+ *
+ * @example
+ * getMimeTypesForAssetType(AssetType.IMAGE)
+ * // ["image/jpeg", "image/png", "image/webp", "image/gif"]
+ */
 export const getMimeTypesForAssetType = (type: AssetType): string[] => {
   return MIME_TYPES[type] || [];
 };
@@ -50,7 +61,34 @@ export const getAssetTypeMessage = (types: AssetType[] | AssetType): string => {
   return messages.join(" veya ");
 };
 
-export const FileSchema = ({ type }: { type: AssetType[] | AssetType }) => {
+/**
+ * Dosya yükleme için Zod validation şeması oluşturur.
+ * Dosya boyutu, tipi ve içeriği için validasyon kuralları uygular.
+ *
+ * @param type - İzin verilen asset tipi veya tipleri
+ * @param maxSize - Maksimum dosya boyutu (byte cinsinden, varsayılan: 10MB)
+ * @returns Zod dosya validation şeması
+ *
+ * Validasyon kuralları:
+ * - Dosya geçerli bir File instance'ı olmalı
+ * - Dosya boş olmamalı (size > 0)
+ * - Dosya boyutu maxSize'ı geçmemeli
+ * - Dosya tipi belirtilen asset tiplerinden birine uygun olmalı
+ *
+ * @example
+ * const imageSchema = FileSchema({ type: AssetType.IMAGE });
+ * const multiTypeSchema = FileSchema({
+ *   type: [AssetType.IMAGE, AssetType.VIDEO],
+ *   maxSize: 5 * 1024 * 1024 // 5MB
+ * });
+ */
+export const FileSchema = ({
+  type,
+  maxSize = 10 * 1024 * 1024,
+}: {
+  type: AssetType[] | AssetType;
+  maxSize?: number;
+}) => {
   const allowedTypes = Array.isArray(type) ? type : [type];
   const allowedMimeTypes = allowedTypes.flatMap(getMimeTypesForAssetType);
 
@@ -61,8 +99,8 @@ export const FileSchema = ({ type }: { type: AssetType[] | AssetType }) => {
     .refine((file) => file.size > 0, {
       error: "Dosya boş olamaz.",
     })
-    .refine((file) => file.size <= 10 * 1024 * 1024, {
-      error: `Dosya boyutu 10MB'dan küçük olmalıdır.`,
+    .refine((file) => file.size <= maxSize, {
+      error: `Dosya boyutu en fazla ${maxSize / (1024 * 1024)} MB olabilir.`,
     })
     .refine((file) => allowedMimeTypes.includes(file.type), {
       error: `Sadece ${getAssetTypeMessage(allowedTypes)} yükleyebilirsiniz.`,

@@ -45,7 +45,8 @@
     "react-international-phone": "^4.6.0",
     "schema-dts": "^1.1.5",
     "set-cookie-parser": "^2.7.1",
-    "tailwindcss": "^4.1.12"
+    "tailwindcss": "^4.1.12",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@repo/eslint-config": "*",

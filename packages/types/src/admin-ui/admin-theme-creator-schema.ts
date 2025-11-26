@@ -24,7 +24,7 @@ const fontSizeSchema = z.enum(MantineSize, {
   error: "Geçersiz boyut",
 });
 
-export const SliderSchema = z
+const SliderSchema = z
   .object({
     uniqueId: z.cuid2({
       error: "Geçersiz ID",

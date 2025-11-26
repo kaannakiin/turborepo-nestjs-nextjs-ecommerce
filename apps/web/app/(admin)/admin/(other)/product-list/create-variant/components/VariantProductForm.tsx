@@ -37,9 +37,9 @@ import { useRouter } from "next/navigation";
 import { getProductTypeLabel } from "../../../../../../../lib/helpers";
 import GlobalLoadingOverlay from "../../../../../../components/GlobalLoadingOverlay";
 import GlobalSeoCard from "../../../../../../components/GlobalSeoCard";
+import TaxonomySelect from "../../../components/TaxonomySelect";
 import ProductDropzone from "../../components/ProductDropzone";
 import ExistingVariantCard from "./ExistingVariantCard";
-import GoogleTaxonomySelectV2 from "./GoogleTaxonomySelectV2";
 
 const GlobalTextEditor = dynamic(
   () => import("../../../../../../components/GlobalTextEditor"),
@@ -577,10 +577,12 @@ const VariantProductForm = ({
           control={control}
           name="googleTaxonomyId"
           render={({ field, fieldState }) => (
-            <GoogleTaxonomySelectV2
-              {...field}
-              error={fieldState.error?.message}
-            />
+            <>
+              <TaxonomySelect field={{ ...field }} />
+              {fieldState.error && (
+                <InputError>{fieldState.error.message}</InputError>
+              )}
+            </>
           )}
         />
       </SimpleGrid>
