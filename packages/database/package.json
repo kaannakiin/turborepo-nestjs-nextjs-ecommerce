@@ -4,26 +4,26 @@
   "private": true,
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "types": "./src/index.ts",
   "browser": {
     "./dist/index.js": "./dist/client.js",
     "./dist/index.mjs": "./dist/client.mjs"
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./src/index.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
     "./client": {
-      "types": "./dist/client.d.ts",
+      "types": "./src/client.ts",
       "import": "./dist/client.mjs",
       "require": "./dist/client.js"
     }
   },
   "scripts": {
-    "build": "npm run db:generate && tsup src/index.ts src/client.ts --format esm,cjs --dts",
-    "dev": "tsup src/index.ts src/client.ts --format esm,cjs --dts --watch",
+    "build": "npm run db:generate && tsup src/index.ts src/client.ts --format esm,cjs",
+    "dev": "tsup src/index.ts src/client.ts --format esm,cjs --watch",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev --skip-generate",
     "db:deploy": "prisma migrate deploy",
