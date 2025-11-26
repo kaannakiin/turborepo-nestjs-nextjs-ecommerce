@@ -1,6 +1,6 @@
 import { hash } from "argon2";
 import * as readline from "readline";
-import { prisma } from "../client.js";
+import { prisma } from "..";
 
 // Terminal input interface
 const rl = readline.createInterface({

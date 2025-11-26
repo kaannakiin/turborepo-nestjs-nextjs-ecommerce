@@ -1,5 +1,4 @@
-import { prisma } from "../client.js";
-
+import { prisma } from "..";
 async function cleanupDatabase() {
   console.log("🧹 Starting database cleanup...");
 

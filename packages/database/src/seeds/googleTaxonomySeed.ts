@@ -1,6 +1,6 @@
 import fetch from "node-fetch";
 import iconv from "iconv-lite";
-import { prisma } from "../client.js";
+import { prisma } from "..";
 
 async function seedTaxonomyCategories() {
   console.log("🚀 Starting taxonomy seeding process...");

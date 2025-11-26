@@ -1,5 +1,4 @@
-import { prisma } from "../client.js";
-
+import { prisma } from "..";
 async function main() {
   const variantGroups = await prisma.productVariantGroup.updateMany({
     data: {

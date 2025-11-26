@@ -1,5 +1,4 @@
-import { prisma } from "../client.js";
-
+import { prisma } from "..";
 /**
  * Bir ürünü ve tüm ilişkili kayıtlarını güvenli bir şekilde siler
  * @param productId - Silinecek ürünün ID'si
