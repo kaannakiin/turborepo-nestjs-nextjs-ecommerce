@@ -81,6 +81,12 @@ const createbleSelect: Array<{
     description: "Resim ve video slayt gösterisi",
     icon: <IconCarouselHorizontalFilled size={32} />,
   },
+  {
+    type: "PRODUCT_CAROUSEL",
+    label: "Ürün Görseli",
+    description: "Ürün Görseli",
+    icon: <IconCarouselHorizontalFilled size={32} />,
+  },
 ];
 
 const headerHeight = 60;
