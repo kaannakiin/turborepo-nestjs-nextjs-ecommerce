@@ -28,6 +28,7 @@ export class PrismaService
       connectionTimeoutMillis: 10000, // 👈 CRITICAL: Connection timeout
       keepAlive: true, // 👈 CRITICAL: TCP keepalive
       keepAliveInitialDelayMillis: 10000, // Keepalive başlangıç delay
+      ssl: false,
     });
 
     // 2. Pool'u adapter'a ver
@@ -42,9 +43,7 @@ export class PrismaService
         },
       },
       log:
-        process.env.NODE_ENV === 'development'
-          ? ['query', 'error', 'warn']
-          : ['error'],
+        process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
     });
 
     this.pool = pool;
