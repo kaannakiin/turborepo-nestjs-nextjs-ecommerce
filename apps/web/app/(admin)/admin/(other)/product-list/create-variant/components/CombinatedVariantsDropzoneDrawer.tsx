@@ -24,7 +24,6 @@ const CombinatedVariantsDropzoneDrawer = ({
   setValue,
   getValues,
 }: CombinatedVariantsDropzoneDrawerProps) => {
-  // Aktif (Görüntülenen) varyantın verilerini izle
   const existingImages =
     useWatch({
       control,
@@ -37,29 +36,20 @@ const CombinatedVariantsDropzoneDrawer = ({
       name: `combinatedVariants.${selectedIndex}.images`,
     }) || [];
 
-  // --- HANDLERS ---
-
-  // 1. Yeni Resim Ekleme (TOPLU İŞLEM DESTEKLİ)
   const handleAddImages = (files: File[]) => {
-    // Seçili olan TÜM varyantları döngüye al (Sadece şu an açık olanı değil)
-    // Eğer sadece 1 tane seçiliyse array sadece onu içerir.
     const targetIndices = selectedIndexs.length > 0 ? selectedIndexs : [selectedIndex];
 
     targetIndices.forEach((index) => {
-      // Her bir varyantın o anki güncel durumunu al
       const currentExisting = getValues(`combinatedVariants.${index}.existingImages`) || [];
       const currentNewImages = getValues(`combinatedVariants.${index}.images`) || [];
 
-      // O varyanttaki toplam resim sayısına göre order hesapla
       const currentTotalCount = currentExisting.length + currentNewImages.length;
 
-      // Dosyaları formatla
       const newFormattedImages = files.map((file, i) => ({
         file,
         order: currentTotalCount + i,
       }));
 
-      // İlgili varyantı güncelle
       setValue(`combinatedVariants.${index}.images`, [...currentNewImages, ...newFormattedImages], {
         shouldDirty: true,
         shouldValidate: true,
@@ -75,7 +65,6 @@ const CombinatedVariantsDropzoneDrawer = ({
     }
   };
 
-  // 2. Yeni Eklenen Resmi Silme (Sadece aktif varyanttan siler)
   const handleRemoveNewImage = (file: File) => {
     const currentImages = getValues(`combinatedVariants.${selectedIndex}.images`) || [];
     const filteredImages = currentImages.filter((img) => img.file !== file);
@@ -86,7 +75,6 @@ const CombinatedVariantsDropzoneDrawer = ({
     });
   };
 
-  // 3. Mevcut Resmi Silme (API İsteği + State Güncelleme)
   const handleRemoveExistingImage = async (imageUrl: string) => {
     try {
       const deleteResponse = await fetchWrapper.delete(`/admin/products/delete-product-image?imageUrl=${imageUrl}`);
@@ -108,11 +96,10 @@ const CombinatedVariantsDropzoneDrawer = ({
         message: "Görsel silinemedi.",
         color: "red",
       });
-      throw error; // ProductDropzone loading state'i kapatsın diye
+      throw error;
     }
   };
 
-  // 4. Sıralama (Reorder) - Sadece aktif varyant için
   const handleReorder = (
     newOrderList: Array<{
       url: string;
@@ -159,21 +146,18 @@ const CombinatedVariantsDropzoneDrawer = ({
       opened={opened}
       onClose={onClose}
       position="right"
-      size="xl" // Daha geniş alan için
+      size="xl"
       title={selectedIndexs.length > 1 ? `Medya Yükle (${selectedIndexs.length} varyant seçili)` : "Medya Yükle"}
     >
       <Stack>
         <ProductDropzone
-          // State
           existingImages={existingImages}
           images={images}
-          // Handlers
           onAddImages={handleAddImages}
           onRemoveNewImage={handleRemoveNewImage}
           onRemoveExistingImage={handleRemoveExistingImage}
           onReorder={handleReorder}
-          // Görünüm Ayarları
-          cols={2} // Drawer dar olduğu için 2 kolon daha iyi durabilir
+          cols={2}
         />
       </Stack>
     </Drawer>
