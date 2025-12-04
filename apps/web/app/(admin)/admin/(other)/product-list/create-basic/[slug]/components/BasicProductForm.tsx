@@ -25,12 +25,7 @@ import {
   useMutation,
   zodResolver,
 } from "@repo/shared";
-import {
-  BaseProductSchema,
-  BaseProductZodType,
-  BrandSelectType,
-  CategorySelectType,
-} from "@repo/types";
+import { BaseProductSchema, BaseProductZodType, BrandSelectType, CategorySelectType } from "@repo/types";
 
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -46,10 +41,10 @@ import GoogleTaxonomySelectV2 from "../../../create-variant/components/GoogleTax
 import ProductPriceNumberInput from "../../../create-variant/components/ProductPriceNumberInput";
 import TaxonomySelect from "@/(admin)/admin/(other)/components/TaxonomySelect";
 
-const GlobalTextEditor = dynamic(
-  () => import("../../../../../../../components/GlobalTextEditor"),
-  { ssr: false, loading: () => <GlobalLoadingOverlay /> }
-);
+const GlobalTextEditor = dynamic(() => import("../../../../../../../components/GlobalTextEditor"), {
+  ssr: false,
+  loading: () => <GlobalLoadingOverlay />,
+});
 
 interface BasicProductFormProps {
   defaultValues?: BaseProductZodType;
@@ -57,11 +52,7 @@ interface BasicProductFormProps {
   brands: BrandSelectType[];
 }
 
-const BasicProductForm = ({
-  defaultValues,
-  brands,
-  categories,
-}: BasicProductFormProps) => {
+const BasicProductForm = ({ defaultValues, brands, categories }: BasicProductFormProps) => {
   const {
     control,
     handleSubmit,
@@ -114,10 +105,7 @@ const BasicProductForm = ({
       const productResponse = await fetchWrapper.post<{
         success: boolean;
         message: string;
-      }>(
-        `/admin/products/create-or-update-basic-product`,
-        productDataWithoutImages
-      );
+      }>(`/admin/products/create-or-update-basic-product`, productDataWithoutImages);
 
       if (!productResponse.success || !productResponse.data.success) {
         throw new Error("Ürün işlemi sırasında bir hata oluştu.");
@@ -137,10 +125,7 @@ const BasicProductForm = ({
 
         formData.append("productId", data.uniqueId);
 
-        const imageUploadResponse = await fetchWrapper.postFormData(
-          `/admin/products/upload-product-image`,
-          formData
-        );
+        const imageUploadResponse = await fetchWrapper.postFormData(`/admin/products/upload-product-image`, formData);
 
         if (!imageUploadResponse.success) {
           throw new Error("Resim yükleme sırasında hata oluştu.");
@@ -150,13 +135,11 @@ const BasicProductForm = ({
       return productResponse;
     },
     onSuccess: (data1, data, _, context) => {
-      context.client.invalidateQueries({ queryKey: ["admin-products"] });
+      context.client.invalidateQueries({ queryKey: ["admin-basic-product", data.uniqueId] });
 
       notifications.show({
         title: "Başarılı!",
-        message: defaultValues
-          ? "Ürün başarıyla güncellendi."
-          : "Ürün başarıyla oluşturuldu.",
+        message: defaultValues ? "Ürün başarıyla güncellendi." : "Ürün başarıyla oluşturuldu.",
         color: "green",
         autoClose: 3000,
       });
@@ -205,13 +188,9 @@ const BasicProductForm = ({
         throw new Error("Resim silinemedi");
       }
 
-      const filteredImages = watchedExistingImages.filter(
-        (image) => image.url !== urlToRemove
-      );
+      const filteredImages = watchedExistingImages.filter((image) => image.url !== urlToRemove);
 
-      const removedImage = watchedExistingImages.find(
-        (image) => image.url === urlToRemove
-      );
+      const removedImage = watchedExistingImages.find((image) => image.url === urlToRemove);
       const removedOrder = removedImage?.order;
 
       if (removedOrder === undefined) {
@@ -255,13 +234,9 @@ const BasicProductForm = ({
   };
 
   const handleRemoveNewImage = (fileToRemove: File) => {
-    const filteredImages = watchedImages.filter(
-      (item) => item.file !== fileToRemove
-    );
+    const filteredImages = watchedImages.filter((item) => item.file !== fileToRemove);
 
-    const removedImage = watchedImages.find(
-      (item) => item.file === fileToRemove
-    );
+    const removedImage = watchedImages.find((item) => item.file === fileToRemove);
     const removedOrder = removedImage?.order;
 
     if (removedOrder === undefined) {
@@ -303,9 +278,7 @@ const BasicProductForm = ({
 
     const updatedExistingImages = existingImagesInOrder
       .map((item) => {
-        const existingImage = watchedExistingImages.find(
-          (img) => img.url === item.url
-        );
+        const existingImage = watchedExistingImages.find((img) => img.url === item.url);
 
         if (!existingImage) {
           return null;
@@ -324,9 +297,7 @@ const BasicProductForm = ({
           return null;
         }
 
-        const existingNewImage = watchedImages.find(
-          (img) => img.file === item.file
-        );
+        const existingNewImage = watchedImages.find((img) => img.file === item.file);
 
         if (existingNewImage) {
           return {
@@ -336,9 +307,7 @@ const BasicProductForm = ({
         }
 
         const fallbackMatch = watchedImages.find(
-          (img) =>
-            img.file.name === item.file!.name &&
-            img.file.size === item.file!.size
+          (img) => img.file.name === item.file!.name && img.file.size === item.file!.size
         );
 
         if (fallbackMatch) {
@@ -360,9 +329,7 @@ const BasicProductForm = ({
     <Stack gap={"lg"}>
       {isSubmitting || mutation.isPending ? <GlobalLoadingOverlay /> : null}
       <Group align="center" justify="space-between">
-        <Title order={4}>
-          Basit Ürün {defaultValues ? "Güncelle" : "Oluştur"}
-        </Title>
+        <Title order={4}>Basit Ürün {defaultValues ? "Güncelle" : "Oluştur"}</Title>
         <Group gap="md" justify="end">
           <Button
             type="button"
@@ -420,10 +387,7 @@ const BasicProductForm = ({
                 {...field}
                 onChange={(event) => {
                   field.onChange(event);
-                  setValue(
-                    "translations.0.slug",
-                    slugify(event.currentTarget.value)
-                  );
+                  setValue("translations.0.slug", slugify(event.currentTarget.value));
                 }}
                 error={fieldState.error?.message}
                 label="Ürün Adı"
@@ -437,12 +401,7 @@ const BasicProductForm = ({
             control={control}
             name="stock"
             render={({ field, fieldState }) => (
-              <ProductPriceNumberInput
-                {...field}
-                error={fieldState.error?.message}
-                label="Stok"
-                withAsterisk
-              />
+              <ProductPriceNumberInput {...field} error={fieldState.error?.message} label="Stok" withAsterisk />
             )}
           />
         </Grid.Col>
@@ -471,12 +430,7 @@ const BasicProductForm = ({
           control={control}
           name="prices.0.price"
           render={({ field, fieldState }) => (
-            <ProductPriceNumberInput
-              {...field}
-              error={fieldState.error?.message}
-              label="Satış Fiyatı"
-              withAsterisk
-            />
+            <ProductPriceNumberInput {...field} error={fieldState.error?.message} label="Satış Fiyatı" withAsterisk />
           )}
         />
 
@@ -484,11 +438,7 @@ const BasicProductForm = ({
           control={control}
           name="prices.0.discountPrice"
           render={({ field, fieldState }) => (
-            <ProductPriceNumberInput
-              {...field}
-              error={fieldState.error?.message}
-              label="İndirimli Fiyat"
-            />
+            <ProductPriceNumberInput {...field} error={fieldState.error?.message} label="İndirimli Fiyat" />
           )}
         />
 
@@ -496,11 +446,7 @@ const BasicProductForm = ({
           control={control}
           name="prices.0.buyedPrice"
           render={({ field, fieldState }) => (
-            <ProductPriceNumberInput
-              {...field}
-              error={fieldState.error?.message}
-              label="Alış Fiyat"
-            />
+            <ProductPriceNumberInput {...field} error={fieldState.error?.message} label="Alış Fiyat" />
           )}
         />
       </SimpleGrid>
@@ -619,9 +565,7 @@ const BasicProductForm = ({
           render={({ field, fieldState }) => (
             <Box>
               <TaxonomySelect field={{ ...field }} />
-              {fieldState?.error?.message && (
-                <InputError>{fieldState.error?.message}</InputError>
-              )}
+              {fieldState?.error?.message && <InputError>{fieldState.error?.message}</InputError>}
             </Box>
           )}
         />
@@ -646,9 +590,7 @@ const BasicProductForm = ({
           name="images"
           render={({ fieldState }) => (
             <>
-              {fieldState?.error?.message && (
-                <InputError>{fieldState.error?.message}</InputError>
-              )}
+              {fieldState?.error?.message && <InputError>{fieldState.error?.message}</InputError>}
               <ProductDropzone
                 existingImages={watchedExistingImages}
                 images={watchedImages}

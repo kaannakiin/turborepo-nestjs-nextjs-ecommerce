@@ -96,13 +96,11 @@ export class ProductsService {
     },
   ) {
     return this.prismaService.$transaction(async (prisma) => {
-      // Variant group'u güncelle
       await prisma.variantGroup.update({
         where: { id: uniqueId },
         data: { type: data.type },
       });
 
-      // Variant Group translations'ları güncelle
       for (const translation of data.translations) {
         await prisma.variantGroupTranslation.upsert({
           where: {
@@ -128,7 +126,6 @@ export class ProductsService {
         });
       }
 
-      // Variant Options'ları güncelle
       for (const option of data.options) {
         await prisma.variantOption.upsert({
           where: {
@@ -144,7 +141,6 @@ export class ProductsService {
           },
         });
 
-        // Option translations'ları güncelle
         for (const translation of option.translations) {
           await prisma.variantOptionTranslation.upsert({
             where: {
@@ -185,14 +181,12 @@ export class ProductsService {
     type: VariantGroupZodType['type'];
   }) {
     return this.prismaService.$transaction(async (prisma) => {
-      // Variant group'u oluştur
       const variantGroup = await prisma.variantGroup.create({
         data: {
           type: data.type,
         },
       });
 
-      // Variant Group translations'ları oluştur
       for (const translation of data.translations) {
         await prisma.variantGroupTranslation.create({
           data: {
@@ -206,7 +200,6 @@ export class ProductsService {
         });
       }
 
-      // Variant Options'ları oluştur
       for (const option of data.options) {
         await prisma.variantOption.create({
           data: {
@@ -216,7 +209,6 @@ export class ProductsService {
           },
         });
 
-        // Option translations'ları oluştur
         for (const translation of option.translations) {
           await prisma.variantOptionTranslation.create({
             data: {
@@ -242,7 +234,6 @@ export class ProductsService {
   private handlePrismaError(error: Prisma.PrismaClientKnownRequestError) {
     switch (error.code) {
       case 'P2002': {
-        // Unique constraint violation
         const field = error.meta?.target as string[];
         if (field?.includes('slug')) {
           throw new BadRequestException('Bu slug zaten kullanımda');
@@ -253,13 +244,13 @@ export class ProductsService {
         throw new BadRequestException('Bu kayıt zaten mevcut');
       }
 
-      case 'P2025': // Record not found
+      case 'P2025':
         throw new NotFoundException('Kayıt bulunamadı');
 
-      case 'P2003': // Foreign key constraint
+      case 'P2003':
         throw new BadRequestException('İlişkili kayıt bulunamadı');
 
-      case 'P2014': // Required relation missing
+      case 'P2014':
         throw new BadRequestException('Gerekli alan eksik');
 
       default:
@@ -1136,7 +1127,7 @@ export class ProductsService {
             order: a.order,
             type: a.asset.type,
             url: a.asset.url,
-          })),
+          })) as VariantProductZodType['combinatedVariants'][number]['existingImages'],
           variantIds: vc.options.map((o) => ({
             variantGroupId:
               o.productVariantOption.productVariantGroup.variantGroupId,
@@ -1151,7 +1142,7 @@ export class ProductsService {
   async uploadProductsFile(
     files: Array<Express.Multer.File>,
     productId: string,
-    orders: number[] | string, // string de olabilir
+    orders: number[] | string,
   ) {
     if (!productId || productId.trim() === '') {
       throw new BadRequestException('Geçersiz ürün IDsi');
@@ -1171,7 +1162,6 @@ export class ProductsService {
       parsedOrders = orders;
     }
 
-    // Order sayısı dosya sayısıyla eşleşiyor mu kontrol et
     if (parsedOrders.length !== files.length) {
       throw new BadRequestException('Dosya sayısı ile order sayısı eşleşmiyor');
     }
@@ -1190,10 +1180,9 @@ export class ProductsService {
       throw new NotFoundException('Ürün bulunamadı');
     }
 
-    // Files'ı order'a göre eşleştir
     const filesWithOrder = files.map((file, index) => ({
       file,
-      order: Number(parsedOrders[index]), // Explicitly convert to number
+      order: Number(parsedOrders[index]),
     }));
 
     filesWithOrder.sort((a, b) => a.order - b.order);
@@ -1228,7 +1217,6 @@ export class ProductsService {
             },
           });
 
-          // filesWithOrder'dan order bilgisini al ve number'a çevir
           const orderValue = Number(filesWithOrder[index].order);
 
           await tx.productAsset.create({
@@ -1303,32 +1291,27 @@ export class ProductsService {
       }
 
       await this.prismaService.$transaction(async (tx) => {
-        // 1. Silinecek asset'in order'ını al
         const deletedOrder = productAssetToDelete.order;
 
-        // 2. İlgili ProductAsset'i sil
         await tx.productAsset.delete({
           where: { id: productAssetToDelete.id },
         });
 
-        // 3. Kalan asset'leri al
         const remainingAssets = await tx.productAsset.findMany({
           where: { productId: productId },
           orderBy: { order: 'asc' },
         });
 
-        // 4. Önce tüm order'ları geçici negatif değerlere taşı (conflict önleme)
         const TEMP_OFFSET = 10000;
         await Promise.all(
           remainingAssets.map((asset, index) =>
             tx.productAsset.update({
               where: { id: asset.id },
-              data: { order: -(index + TEMP_OFFSET) }, // Negatif geçici değer
+              data: { order: -(index + TEMP_OFFSET) },
             }),
           ),
         );
 
-        // 5. Şimdi gerçek order değerlerini ata (0'dan başlayarak)
         await Promise.all(
           remainingAssets.map((asset, index) =>
             tx.productAsset.update({
@@ -1358,90 +1341,115 @@ export class ProductsService {
     }
   }
 
-  async uploadVariantImage(
+  async uploadBatchVariantImages(
     files: Array<Express.Multer.File>,
-    combinationId: string,
+    payloadString: string,
   ) {
-    if (!combinationId || combinationId.trim() === '') {
-      throw new BadRequestException('Geçersiz varyant kombinasyon IDsi');
-    }
-
-    if (!files || files.length === 0) {
-      throw new BadRequestException('Yüklenecek dosya bulunamadı');
-    }
-
-    // Kombinasyonun var olup olmadığını ve en son resmin sırasını kontrol et
-    const combination =
-      await this.prismaService.productVariantCombination.findUnique({
-        where: { id: combinationId },
-        include: {
-          assets: {
-            select: { order: true },
-            orderBy: { order: 'desc' },
-            take: 1,
-          },
-        },
-      });
-
-    if (!combination) {
-      throw new NotFoundException('Varyant kombinasyonu bulunamadı');
-    }
-
-    // Dosyaları paralel olarak MinIO'ya yükle
-    const uploadPromises = files.map((file) =>
-      this.minioClient.uploadAsset({
-        bucketName: 'products', // veya 'variants' gibi ayrı bir bucket
-        file,
-        isNeedOg: true,
-        isNeedThumbnail: true,
-      }),
-    );
-
-    const uploadResults = await Promise.all(uploadPromises);
-
-    const successfulUploads = uploadResults.filter(
-      (result): result is { success: true; data: ProcessedAsset } =>
-        result.success && result.data != null,
-    );
-
-    if (successfulUploads.length === 0) {
-      throw new InternalServerErrorException('Dosyaların hiçbiri yüklenemedi.');
-    }
-
-    // Son 'order' değerini al, yoksa -1 ile başla
-    const lastOrder = combination.assets[0]?.order ?? -1;
+    let variantsData: Array<{
+      variantId: string;
+      existingImages: Array<{ url: string; order: number }>;
+      newImagesMap: Array<{ order: number; fileIndex: number }>;
+    }> = [];
 
     try {
-      await this.prismaService.$transaction(async (tx) => {
-        for (const [index, upload] of successfulUploads.entries()) {
-          // 1. Yeni Asset'i oluştur
-          const newAsset = await tx.asset.create({
-            data: {
-              url: upload.data.url,
-              type: upload.data.type,
-            },
-          });
+      variantsData = JSON.parse(payloadString || '[]');
+    } catch (e) {
+      throw new BadRequestException('Payload JSON formatı hatalı.');
+    }
 
-          // 2. ProductAsset ile Asset'i kombinasyona bağla
-          await tx.productAsset.create({
-            data: {
-              order: lastOrder + 1 + index,
-              assetId: newAsset.id,
-              combinationId: combinationId, // Anahtar fark: productId yerine combinationId
-            },
-          });
+    if (variantsData.length === 0) {
+      return { message: 'Güncellenecek varyant bulunamadı.' };
+    }
+
+    let uploadedFilesMap: Record<number, ProcessedAsset> = {};
+
+    if (files && files.length > 0) {
+      const uploadPromises = files.map((file, index) =>
+        this.minioClient
+          .uploadAsset({
+            bucketName: 'products',
+            file,
+            isNeedOg: true,
+            isNeedThumbnail: true,
+          })
+          .then((res) => ({ index, res })),
+      );
+
+      const results = await Promise.all(uploadPromises);
+
+      results.forEach(({ index, res }) => {
+        if (res.success && res.data) {
+          uploadedFilesMap[index] = res.data;
         }
       });
+    }
+
+    try {
+      await this.prismaService.$transaction(
+        async (tx) => {
+          for (const variantItem of variantsData) {
+            const { variantId, existingImages, newImagesMap } = variantItem;
+
+            if (newImagesMap && newImagesMap.length > 0) {
+              for (const mapItem of newImagesMap) {
+                const uploadedData = uploadedFilesMap[mapItem.fileIndex];
+
+                if (uploadedData) {
+                  const newAsset = await tx.asset.create({
+                    data: {
+                      url: uploadedData.url,
+                      type: uploadedData.type,
+                    },
+                  });
+
+                  await tx.productAsset.create({
+                    data: {
+                      order: mapItem.order,
+                      assetId: newAsset.id,
+                      combinationId: variantId,
+                    },
+                  });
+                }
+              }
+            }
+
+            if (existingImages && existingImages.length > 0) {
+              for (const img of existingImages) {
+                const asset = await tx.asset.findFirst({
+                  where: { url: img.url },
+                  select: { id: true },
+                });
+
+                if (asset) {
+                  await tx.productAsset.updateMany({
+                    where: {
+                      combinationId: variantId,
+                      assetId: asset.id,
+                    },
+                    data: {
+                      order: img.order,
+                    },
+                  });
+                }
+              }
+            }
+          }
+        },
+        {
+          timeout: 20000,
+        },
+      );
     } catch (error) {
-      console.error('Veritabanı transaction hatası:', error);
+      console.error('Batch DB Transaction Hatası:', error);
+
       throw new InternalServerErrorException(
-        'Dosya bilgileri veritabanına kaydedilemedi.',
+        'Veritabanı güncellemesi sırasında hata oluştu.',
       );
     }
 
     return {
-      message: `${successfulUploads.length} dosya başarıyla yüklendi.`,
-      uploadedCount: successfulUploads.length,
+      success: true,
+      message: `${variantsData.length} varyant başarıyla güncellendi.`,
     };
   }
 
@@ -1465,7 +1473,6 @@ export class ProductsService {
         where: { assetId: asset.id },
       });
 
-    // Asset'in bir varyant kombinasyonuna bağlı olup olmadığını kontrol et
     if (!productAssetToDelete || !productAssetToDelete.combinationId) {
       throw new BadRequestException(
         'Bu görsel bir varyant kombinasyonuna ait değil.',
@@ -1475,7 +1482,6 @@ export class ProductsService {
     const { combinationId } = productAssetToDelete;
 
     try {
-      // 1. Önce MinIO'dan dosyayı sil
       const deleteImageOnMinio = await this.minioClient.deleteAsset(imageUrl);
       if (!deleteImageOnMinio.success) {
         throw new InternalServerErrorException(
@@ -1483,20 +1489,16 @@ export class ProductsService {
         );
       }
 
-      // 2. Veritabanı işlemlerini transaction içinde yap
       await this.prismaService.$transaction(async (tx) => {
-        // a. İlgili ProductAsset ve ilişkili Asset'i sil
         await tx.productAsset.delete({
           where: { id: productAssetToDelete.id },
         });
 
-        // b. Kombinasyona ait kalan tüm asset'leri sıralı çek
         const remainingAssets = await tx.productAsset.findMany({
-          where: { combinationId: combinationId }, // Anahtar fark: productId yerine combinationId
+          where: { combinationId: combinationId },
           orderBy: { order: 'asc' },
         });
 
-        // c. Kalan asset'leri yeniden sırala
         const updatePromises = remainingAssets.map((asset, index) => {
           if (asset.order !== index) {
             return tx.productAsset.update({
@@ -1568,7 +1570,6 @@ export class ProductsService {
         );
       }
 
-      // SKU ve Barcode benzersizlik kontrolü
       let finalSku = sku;
       let finalBarcode = barcode;
 
@@ -1583,7 +1584,6 @@ export class ProductsService {
         if (!finalSku) finalSku = generatedCodes.sku;
         if (!finalBarcode) finalBarcode = generatedCodes.barcode;
 
-        // Oluşturulan kodların benzersizliğini kontrol et
         const [skuCheck, barcodeCheck] = await Promise.all([
           this.prismaService.product.findFirst({
             where: {
@@ -1611,7 +1611,6 @@ export class ProductsService {
           );
         }
       } else {
-        // Manuel girilen SKU ve barcode'ların benzersizliğini kontrol et
         const [skuCheck, barcodeCheck] = await Promise.all([
           this.prismaService.product.findFirst({
             where: {
@@ -1672,7 +1671,6 @@ export class ProductsService {
           },
         });
 
-        // Çevirileri upsert et
         if (translations && translations.length > 0) {
           const translationPromises = translations.map((translation) =>
             tx.productTranslation.upsert({
@@ -1699,7 +1697,6 @@ export class ProductsService {
           await Promise.all(translationPromises);
         }
 
-        // Fiyatları upsert et
         if (prices && prices.length > 0) {
           const pricePromises = prices.map((price) =>
             tx.productPrice.upsert({
@@ -1727,7 +1724,6 @@ export class ProductsService {
           await Promise.all(pricePromises);
         }
 
-        // Kategorileri yönet
         if (categories !== undefined) {
           if (categories && categories.length > 0) {
             const existingCategories = await tx.productCategory.findMany({
@@ -1819,12 +1815,10 @@ export class ProductsService {
         throw new BadRequestException('İlişkili kayıt bulunamadı.');
       }
 
-      // BadRequestException'ları olduğu gibi fırlat
       if (error instanceof BadRequestException) {
         throw error;
       }
 
-      // Diğer hatalar için genel mesaj
       console.error('createOrUpdateBasicProduct error:', error);
       throw new InternalServerErrorException(
         'Ürün işlemi sırasında bir hata oluştu.',
@@ -2029,17 +2023,14 @@ export class ProductsService {
 
     return {
       products: products.map((product): AdminProductTableData => {
-        // Görsel öncelik sırası
         const mainImage = product.assets[0]?.asset;
         const variantImage = product.variantCombinations[0]?.assets[0]?.asset;
         const finalImage = mainImage || variantImage;
 
-        // Fiyat hesaplama
         let priceDisplay: string;
         let stockDisplay: string;
 
         if (product.isVariant && product.variantCombinations.length > 0) {
-          // Varyantlı ürün - min/max hesapla
           const allPrices = product.variantCombinations
             .flatMap((vc) => vc.prices)
             .map((p) => p.discountedPrice || p.price)
@@ -2075,7 +2066,6 @@ export class ProductsService {
             stockDisplay = '0';
           }
         } else {
-          // Basit ürün
           const price = product.prices[0];
           const finalPrice = price?.discountedPrice || price?.price || 0;
           priceDisplay = `₺${finalPrice.toLocaleString('tr-TR')}`;
@@ -2140,7 +2130,6 @@ export class ProductsService {
       throw new NotFoundException('Varyant seçeneği bulunamadı');
     }
     if (variantOption.asset) {
-      // Mevcut görseli sil
       await this.minioClient.deleteAsset(variantOption.asset.url);
       await this.prismaService.asset.delete({
         where: { url: variantOption.asset.url },
@@ -2252,9 +2241,7 @@ export class ProductsService {
       const productSlug = productTranslation ? productTranslation.slug : '';
 
       if (product.isVariant && product.variantCombinations.length > 0) {
-        // Variantlı ürün: Her variantCombination'ı ayrı ürün olarak ekle
         product.variantCombinations.forEach((combination) => {
-          // Variant için fiyat (önce combination'dan, yoksa product'tan)
           const combinationPrice =
             combination.prices.find((p) => p.currency === 'TRY') ||
             combination.prices[0];
@@ -2263,12 +2250,10 @@ export class ProductsService {
             product.prices[0];
           const price = combinationPrice || productPrice;
 
-          // Variant için resim (önce combination'dan, yoksa product'tan)
           const combinationImage = combination.assets[0]?.asset || null;
           const productImage = product.assets[0]?.asset || null;
           const image = combinationImage || productImage;
 
-          // Variant options'ları düzenle
           const variants = combination.options.map((option) => {
             const variantOptionTranslation =
               option.productVariantOption.variantOption.translations.find(
@@ -2311,7 +2296,6 @@ export class ProductsService {
           });
         });
       } else {
-        // Normal ürün (variantsız)
         const productPrice =
           product.prices.find((p) => p.currency === 'TRY') || product.prices[0];
         const productImage = product.assets[0]?.asset || null;
@@ -2343,7 +2327,6 @@ export class ProductsService {
       ...(searchTerm
         ? {
             OR: [
-              // 1. Normal ürünlerde (isVariant: false) sadece ürün adı/slug'ında ara
               {
                 isVariant: false,
                 stock: { gt: 0 },
@@ -2356,7 +2339,7 @@ export class ProductsService {
                   },
                 },
               },
-              // 2. Variant ürünlerde ürün adı/slug'ında ara
+
               {
                 isVariant: true,
                 translations: {
@@ -2368,7 +2351,7 @@ export class ProductsService {
                   },
                 },
               },
-              // 3. Variant ürünlerde variant group/option isimlerinde ara
+
               {
                 isVariant: true,
                 variantGroups: {
@@ -2734,7 +2717,6 @@ export class ProductsService {
       return [];
     }
 
-    // Helper function: Locale'e göre translation al
     const getTranslation = (translations: any[], locale = 'TR') => {
       const translation = translations.find((tr) => tr.locale === locale);
       return translation
@@ -2743,10 +2725,8 @@ export class ProductsService {
     };
 
     return products.map((product) => {
-      // Ürünün ismini al
       const productName = getTranslation(product.translations);
 
-      // Variant yoksa veya kombinasyon yoksa
       if (
         !product.isVariant ||
         !product.variantCombinations ||
@@ -2755,16 +2735,13 @@ export class ProductsService {
         return {
           id: product.id,
           name: productName,
-          // sub yok, bu yüzden undefined bırak (component'te temizlenecek)
         } as DiscountItem;
       }
 
-      // Variant kombinasyonlarını sub olarak ekle
       return {
         id: product.id,
         name: productName,
         sub: product.variantCombinations.map((combination) => {
-          // Her kombinasyonun option'larını birleştir (Renk-Beden formatında)
           const variantName = combination.options
             .map((opt) => {
               const optionName = getTranslation(
@@ -2772,7 +2749,7 @@ export class ProductsService {
               );
               return optionName;
             })
-            .join(' - '); // "Kırmızı - XL" formatında
+            .join(' - ');
 
           return {
             id: combination.id,
@@ -2956,7 +2933,7 @@ export class ProductsService {
       };
 
       const selectedProducts = await this.prismaService.product.findMany({
-        where: selectedProductsWhere, // <-- Güncellenmiş 'where' koşulu kullanıldı
+        where: selectedProductsWhere,
         orderBy: { createdAt: 'desc' },
         include: {
           translations: true,
@@ -3010,7 +2987,6 @@ export class ProductsService {
       const selectedProductIds = selectedProducts.map((p) => p.id);
       const remainingCount = 20 - selectedProducts.length;
 
-      // Kalan slot varsa, seçili olmayanlardan ekle
       let otherProducts: any[] = [];
       if (remainingCount > 0) {
         otherProducts = await this.prismaService.product.findMany({
@@ -3071,7 +3047,6 @@ export class ProductsService {
 
       const totalCount = await this.prismaService.product.count();
 
-      // Seçili ürünler önce, sonra diğerleri
       const allProducts = [...selectedProducts, ...otherProducts];
 
       return {
@@ -3471,7 +3446,7 @@ export class ProductsService {
           product.prices.find((p) => p.currency === 'TRY')?.discountedPrice ||
           null,
         productName: productTranslationName,
-        productSlug: productTranslation?.slug || null, // null check eklendi
+        productSlug: productTranslation?.slug || null,
         asset: product.assets[0]?.asset || null,
       },
     };

@@ -19,34 +19,12 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import {
-  ActionIcon,
-  Alert,
-  AspectRatio,
-  Badge,
-  Group,
-  SimpleGrid,
-  Stack,
-  StyleProp,
-  Text,
-} from "@mantine/core";
-import {
-  Dropzone,
-  DropzoneProps,
-  FileRejection,
-  FileWithPath,
-} from "@mantine/dropzone";
+import { ActionIcon, Alert, AspectRatio, Badge, Group, SimpleGrid, Stack, StyleProp, Text } from "@mantine/core";
+import { Dropzone, DropzoneProps, FileRejection, FileWithPath } from "@mantine/dropzone";
 import { $Enums } from "@repo/database/client";
 import { MIME_TYPES } from "@repo/types";
 
-import {
-  IconAlertCircle,
-  IconGripVertical,
-  IconPhoto,
-  IconTrash,
-  IconUpload,
-  IconX,
-} from "@tabler/icons-react";
+import { IconAlertCircle, IconGripVertical, IconPhoto, IconTrash, IconUpload, IconX } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
 
 interface ProductDropzoneProps {
@@ -81,14 +59,7 @@ interface SortableItemProps {
 }
 
 const SortableItem = ({ id, media, index, onRemove }: SortableItemProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -106,19 +77,11 @@ const SortableItem = ({ id, media, index, onRemove }: SortableItemProps) => {
       className="p-1 border rounded-md overflow-hidden"
     >
       {media.type === "VIDEO" ? (
-        <video
-          src={media.url}
-          className="w-full h-full object-contain"
-          controls={false}
-        />
+        <video src={media.url} className="w-full h-full object-contain" controls={false} />
       ) : (
         <CustomImage src={media.url} alt={`Product ${index + 1}`} />
       )}
-      <Group
-        align="center"
-        justify="space-between"
-        className="w-full h-4 absolute top-2 pr-2 z-50"
-      >
+      <Group align="center" justify="space-between" className="w-full h-4 absolute top-2 pr-2 z-50">
         <Badge color={"admin"} variant={media.isNew ? "filled" : "light"}>
           {media.isNew ? "Yeni" : "Mevcut"} - {index + 1}
         </Badge>
@@ -134,9 +97,7 @@ const SortableItem = ({ id, media, index, onRemove }: SortableItemProps) => {
           </ActionIcon>
           <ActionPopover
             targetIcon={<IconTrash />}
-            text={
-              "Görseli silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
-            }
+            text={"Görseli silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."}
             onConfirm={onRemove}
             size="sm"
           />
@@ -320,51 +281,30 @@ const ProductDropzone = ({
         maxFiles={10 - ((existingImages?.length || 0) + (images?.length || 0))}
         {...props}
       >
-        <Group
-          justify="center"
-          gap="xl"
-          mih={220}
-          style={{ pointerEvents: "none" }}
-        >
+        <Group justify="center" gap="xl" mih={220} style={{ pointerEvents: "none" }}>
           <Dropzone.Accept>
-            <IconUpload
-              size={52}
-              color="var(--mantine-color-blue-6)"
-              stroke={1.5}
-            />
+            <IconUpload size={52} color="var(--mantine-color-blue-6)" stroke={1.5} />
           </Dropzone.Accept>
           <Dropzone.Reject>
             <IconX size={52} color="var(--mantine-color-red-6)" stroke={1.5} />
           </Dropzone.Reject>
           <Dropzone.Idle>
-            <IconPhoto
-              size={52}
-              color="var(--mantine-color-dimmed)"
-              stroke={1.5}
-            />
+            <IconPhoto size={52} color="var(--mantine-color-dimmed)" stroke={1.5} />
           </Dropzone.Idle>
           <div>
             <Text size="xl" inline>
               Görselleri buraya sürükleyin veya dosya seçmek için tıklayın
             </Text>
             <Text size="sm" c="dimmed" inline mt={7}>
-              Ürün görselleri maksimum 10 adet olabilir ve her biri 5MB&apos;den
-              küçük olmalıdır.
+              Ürün görselleri maksimum 10 adet olabilir ve her biri 5MB&apos;den küçük olmalıdır.
             </Text>
           </div>
         </Group>
       </Dropzone>
 
       {sortedMedia.length > 0 && (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={sortedMedia.map((media) => media.id)}
-            strategy={rectSortingStrategy}
-          >
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={sortedMedia.map((media) => media.id)} strategy={rectSortingStrategy}>
             <Group gap={"lg"} className="w-full">
               {sortedMedia.map((media, index) => (
                 <SortableItem
