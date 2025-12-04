@@ -1,85 +1,181 @@
 "use client";
 
-import GlobalDropzone from "@/components/GlobalDropzone";
-import { Drawer, DrawerProps } from "@mantine/core";
-import {
-  Control,
-  Controller,
-  FieldArrayWithId,
-  UseFieldArrayUpdate,
-} from "@repo/shared";
+import fetchWrapper from "@lib/fetchWrapper";
+import { Drawer, DrawerProps, Stack } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import { Control, UseFormGetValues, UseFormSetValue, useWatch } from "@repo/shared";
 import { VariantProductZodType } from "@repo/types";
+import ProductDropzone from "../../components/ProductDropzone";
 
-interface CombinatedVariantsDropzoneDrawer
-  extends Pick<DrawerProps, "opened" | "onClose"> {
+interface CombinatedVariantsDropzoneDrawerProps extends Pick<DrawerProps, "opened" | "onClose"> {
   selectedIndexs: number[];
   selectedIndex: number;
-  fields: FieldArrayWithId<VariantProductZodType, "combinatedVariants", "id">[];
-  update: UseFieldArrayUpdate<VariantProductZodType, "combinatedVariants">;
   control: Control<VariantProductZodType>;
+  setValue: UseFormSetValue<VariantProductZodType>;
+  getValues: UseFormGetValues<VariantProductZodType>;
 }
 
 const CombinatedVariantsDropzoneDrawer = ({
   onClose,
   opened,
-  fields,
   selectedIndexs,
-  update,
   control,
   selectedIndex,
-}: CombinatedVariantsDropzoneDrawer) => {
-  const handleDrop = (files: File[]) => {
-    if (selectedIndexs.length > 1) {
-      selectedIndexs.forEach((index) => {
-        if (index !== selectedIndex) {
-          // selectedIndex zaten GlobalDropzone tarafından güncellendi
-          const currentField = fields[index];
-          if (currentField) {
-            const existingImages = currentField.images || [];
+  setValue,
+  getValues,
+}: CombinatedVariantsDropzoneDrawerProps) => {
+  // Aktif (Görüntülenen) varyantın verilerini izle
+  const existingImages =
+    useWatch({
+      control,
+      name: `combinatedVariants.${selectedIndex}.existingImages`,
+    }) || [];
 
-            update(index, {
-              ...currentField,
-              images: [...existingImages, ...files],
-            });
-          }
-        }
+  const images =
+    useWatch({
+      control,
+      name: `combinatedVariants.${selectedIndex}.images`,
+    }) || [];
+
+  // --- HANDLERS ---
+
+  // 1. Yeni Resim Ekleme (TOPLU İŞLEM DESTEKLİ)
+  const handleAddImages = (files: File[]) => {
+    // Seçili olan TÜM varyantları döngüye al (Sadece şu an açık olanı değil)
+    // Eğer sadece 1 tane seçiliyse array sadece onu içerir.
+    const targetIndices = selectedIndexs.length > 0 ? selectedIndexs : [selectedIndex];
+
+    targetIndices.forEach((index) => {
+      // Her bir varyantın o anki güncel durumunu al
+      const currentExisting = getValues(`combinatedVariants.${index}.existingImages`) || [];
+      const currentNewImages = getValues(`combinatedVariants.${index}.images`) || [];
+
+      // O varyanttaki toplam resim sayısına göre order hesapla
+      const currentTotalCount = currentExisting.length + currentNewImages.length;
+
+      // Dosyaları formatla
+      const newFormattedImages = files.map((file, i) => ({
+        file,
+        order: currentTotalCount + i,
+      }));
+
+      // İlgili varyantı güncelle
+      setValue(`combinatedVariants.${index}.images`, [...currentNewImages, ...newFormattedImages], {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    });
+
+    if (targetIndices.length > 1) {
+      notifications.show({
+        title: "Toplu Yükleme",
+        message: `${files.length} görsel ${targetIndices.length} varyanta başarıyla eklendi.`,
+        color: "blue",
       });
     }
   };
 
-  const currentField = fields[selectedIndex];
-  const currentImageCount =
-    (currentField?.images?.length || 0) +
-    (currentField?.existingImages?.length || 0);
+  // 2. Yeni Eklenen Resmi Silme (Sadece aktif varyanttan siler)
+  const handleRemoveNewImage = (file: File) => {
+    const currentImages = getValues(`combinatedVariants.${selectedIndex}.images`) || [];
+    const filteredImages = currentImages.filter((img) => img.file !== file);
+
+    setValue(`combinatedVariants.${selectedIndex}.images`, filteredImages, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
+
+  // 3. Mevcut Resmi Silme (API İsteği + State Güncelleme)
+  const handleRemoveExistingImage = async (imageUrl: string) => {
+    try {
+      const deleteResponse = await fetchWrapper.delete(`/admin/products/delete-product-image?imageUrl=${imageUrl}`);
+
+      if (!deleteResponse.success) {
+        throw new Error("Silme başarısız");
+      }
+
+      const currentExisting = getValues(`combinatedVariants.${selectedIndex}.existingImages`) || [];
+      const filteredExisting = currentExisting.filter((img) => img.url !== imageUrl);
+
+      setValue(`combinatedVariants.${selectedIndex}.existingImages`, filteredExisting, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    } catch (error) {
+      notifications.show({
+        title: "Hata",
+        message: "Görsel silinemedi.",
+        color: "red",
+      });
+      throw error; // ProductDropzone loading state'i kapatsın diye
+    }
+  };
+
+  // 4. Sıralama (Reorder) - Sadece aktif varyant için
+  const handleReorder = (
+    newOrderList: Array<{
+      url: string;
+      order: number;
+      file?: File;
+      isNew: boolean;
+    }>
+  ) => {
+    const currentExisting = getValues(`combinatedVariants.${selectedIndex}.existingImages`) || [];
+    const currentImages = getValues(`combinatedVariants.${selectedIndex}.images`) || [];
+
+    const updatedExistingImages: typeof existingImages = [];
+    const updatedNewImages: typeof images = [];
+
+    newOrderList.forEach((item) => {
+      if (item.isNew && item.file) {
+        updatedNewImages.push({
+          file: item.file,
+          order: item.order,
+        });
+      } else {
+        const originalImg = currentExisting.find((img) => img.url === item.url);
+        if (originalImg) {
+          updatedExistingImages.push({
+            ...originalImg,
+            order: item.order,
+          });
+        }
+      }
+    });
+
+    setValue(`combinatedVariants.${selectedIndex}.existingImages`, updatedExistingImages, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setValue(`combinatedVariants.${selectedIndex}.images`, updatedNewImages, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
 
   return (
     <Drawer
       opened={opened}
       onClose={onClose}
       position="right"
-      title={
-        selectedIndexs.length > 1
-          ? `Medya Yükle (${selectedIndexs.length} varyant seçili)`
-          : "Medya Yükle"
-      }
+      size="xl" // Daha geniş alan için
+      title={selectedIndexs.length > 1 ? `Medya Yükle (${selectedIndexs.length} varyant seçili)` : "Medya Yükle"}
     >
-      <Controller
-        control={control}
-        name={`combinatedVariants.${selectedIndex}.images`}
-        render={({ field, fieldState }) => (
-          <GlobalDropzone
-            error={fieldState.error?.message}
-            value={field.value || []}
-            onChange={field.onChange} // Bu eksikti!
-            onDrop={handleDrop} // Sadece toplu güncelleme için
-            accept={["IMAGE", "VIDEO"]}
-            multiple
-            maxFiles={10 - currentImageCount}
-            cols={1}
-            maxSize={10 * 1024 * 1024}
-          />
-        )}
-      />
+      <Stack>
+        <ProductDropzone
+          // State
+          existingImages={existingImages}
+          images={images}
+          // Handlers
+          onAddImages={handleAddImages}
+          onRemoveNewImage={handleRemoveNewImage}
+          onRemoveExistingImage={handleRemoveExistingImage}
+          onReorder={handleReorder}
+          // Görünüm Ayarları
+          cols={2} // Drawer dar olduğu için 2 kolon daha iyi durabilir
+        />
+      </Stack>
     </Drawer>
   );
 };

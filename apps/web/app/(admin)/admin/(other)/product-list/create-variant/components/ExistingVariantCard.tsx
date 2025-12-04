@@ -1,6 +1,22 @@
 "use client";
 
 import {
+  closestCenter,
+  DndContext,
+  DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
   ActionIcon,
   Avatar,
   Badge,
@@ -25,27 +41,11 @@ import { Control, Controller, useFieldArray, UseFormGetValues, UseFormSetValue }
 import { VariantGroupZodType, VariantProductZodType } from "@repo/types";
 import { IconDotsVertical, IconEdit, IconPlus, IconPointFilled, IconTrash } from "@tabler/icons-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import VariantGroupDrawer from "./VariantGroupDrawer";
-import {
-  closestCenter,
-  DndContext,
-  DragEndEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { returnCombinateVariant } from "../../../../../../../lib/helpers";
 import CombinatedVariantsDropzoneDrawer from "./CombinatedVariantsDropzoneDrawer";
 import CombinatedVariantsFormDrawer from "./CombinatedVariantsFormDrawer";
 import ProductPriceNumberInput from "./ProductPriceNumberInput";
+import VariantGroupDrawer from "./VariantGroupDrawer";
 
 interface ExistingVariantCardProps {
   control: Control<VariantProductZodType>;
@@ -732,12 +732,12 @@ const ExistingVariantCard = ({ control, errors, setValue, getValues }: ExistingV
 
       <CombinatedVariantsDropzoneDrawer
         control={control}
-        fields={combinatedFields}
-        update={combinatedUpdate}
+        getValues={getValues}
         onClose={closeDropzone}
         opened={dropzoneOpened}
         selectedIndex={dropzoneSelectedIndex}
         selectedIndexs={Array.from(selectedRows)}
+        setValue={setValue}
       />
       <CombinatedVariantsFormDrawer
         opened={openedBottomVariantCombinatedDrawer}
