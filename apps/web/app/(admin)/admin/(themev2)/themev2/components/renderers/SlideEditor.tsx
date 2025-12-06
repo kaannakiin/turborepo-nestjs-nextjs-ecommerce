@@ -1,6 +1,6 @@
 import { Control, UseFormSetValue } from "@repo/shared";
 import { SliderComponentInputType, ThemeInputType } from "@repo/types";
-import { IconClipboard, IconInfoCircle } from "@tabler/icons-react";
+import { IconInfoCircle } from "@tabler/icons-react";
 import { EditorSelection, useThemeStore } from "../../store/zustand-zod-theme.store";
 import { AsideFormLayout } from "../layout/AsideFormLayout";
 import { EmptyState } from "../layout/EmptyState";
@@ -46,12 +46,7 @@ export const SlideEditor = ({ component, index, selection, control, setValue }: 
   const slide = (component as SliderComponentInputType).sliders[slideIndex];
 
   return (
-    <AsideFormLayout
-      icon={IconClipboard}
-      title="Slayt Ayarları"
-      subtitle={`Sıra: ${slide.order + 1}`}
-      onClose={clearSelection}
-    >
+    <AsideFormLayout title="Slayt Ayarları" subtitle={`Sıra: ${slide.order + 1}`} onClose={clearSelection}>
       <SlideForm componentIndex={index} slideIndex={slideIndex} control={control} setValue={setValue} />
     </AsideFormLayout>
   );

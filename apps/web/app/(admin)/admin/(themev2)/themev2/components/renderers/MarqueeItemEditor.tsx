@@ -1,5 +1,5 @@
 import { MarqueeComponentInputType, ThemeInputType } from "@repo/types";
-import { IconInfoCircle, IconMarquee } from "@tabler/icons-react";
+import { IconInfoCircle } from "@tabler/icons-react";
 import { Control } from "react-hook-form";
 import { EditorSelection, useThemeStore } from "../../store/zustand-zod-theme.store";
 import { AsideFormLayout } from "../layout/AsideFormLayout";
@@ -45,13 +45,7 @@ export const MarqueeItemEditor = ({ component, index, selection, control }: Marq
   }
 
   return (
-    <AsideFormLayout
-      icon={IconMarquee}
-      iconColor="orange"
-      title="Marquee Item Ayarları"
-      subtitle={`${itemIndex + 1}. öğe`}
-      onClose={clearSelection}
-    >
+    <AsideFormLayout title="Marquee Item Ayarları" subtitle={`${itemIndex + 1}. öğe`} onClose={clearSelection}>
       <MarqueeItemForm index={itemIndex} control={control} componentIndex={index} />
     </AsideFormLayout>
   );
