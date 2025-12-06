@@ -16,7 +16,7 @@ import {
   Title,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { $Enums, ProductType } from "@repo/database/client";
+import { AssetType, ProductType } from "@repo/database/client";
 import {
   Controller,
   createId,
@@ -24,14 +24,10 @@ import {
   SubmitHandler,
   useForm,
   useMutation,
+  useWatch,
   zodResolver,
 } from "@repo/shared";
-import {
-  BrandSelectType,
-  CategorySelectType,
-  VariantProductSchema,
-  VariantProductZodType,
-} from "@repo/types";
+import { BrandSelectType, CategorySelectType, VariantProductSchema, VariantProductZodType } from "@repo/types";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { getProductTypeLabel } from "../../../../../../../lib/helpers";
@@ -41,10 +37,22 @@ import TaxonomySelect from "../../../components/TaxonomySelect";
 import ProductDropzone from "../../components/ProductDropzone";
 import ExistingVariantCard from "./ExistingVariantCard";
 
-const GlobalTextEditor = dynamic(
-  () => import("../../../../../../components/GlobalTextEditor"),
-  { ssr: false, loading: () => <GlobalLoadingOverlay /> }
-);
+const GlobalTextEditor = dynamic(() => import("../../../../../../components/GlobalTextEditor"), {
+  ssr: false,
+  loading: () => <GlobalLoadingOverlay />,
+});
+interface BatchVariantPayloadItem {
+  variantId: string;
+  existingImages: Array<{
+    url: string;
+    order: number;
+    type?: AssetType;
+  }>;
+  newImagesMap: Array<{
+    order: number;
+    fileIndex: number;
+  }>;
+}
 
 interface VariantProductFormProps {
   defaultValues?: VariantProductZodType;
@@ -52,17 +60,13 @@ interface VariantProductFormProps {
   brands: BrandSelectType[];
 }
 
-const VariantProductForm = ({
-  defaultValues,
-  brands,
-  categories,
-}: VariantProductFormProps) => {
+const VariantProductForm = ({ defaultValues, brands, categories }: VariantProductFormProps) => {
   const {
     control,
     formState: { isSubmitting, errors },
-    watch,
     handleSubmit,
     setValue,
+    getValues,
   } = useForm<VariantProductZodType>({
     resolver: zodResolver(VariantProductSchema),
     defaultValues: defaultValues || {
@@ -84,8 +88,8 @@ const VariantProductForm = ({
       ],
     },
   });
-  const existingImages = watch("existingImages") || [];
-  const images = watch("images") || [];
+  const existingImages = useWatch({ control, name: "existingImages" }) || [];
+  const images = useWatch({ control, name: "images" }) || [];
   const { push } = useRouter();
 
   const createOrUpdateVariantProductMutation = useMutation({
@@ -95,12 +99,10 @@ const VariantProductForm = ({
       const cleanCombinatedVariants = combinatedVariants.map(
         ({ images: variantImages, existingImages, ...variant }) => variant
       );
-      const cleanExistingVariants = data.existingVariants.map(
-        ({ options, ...variant }) => ({
-          ...variant,
-          options: options.map(({ file, ...option }) => option),
-        })
-      );
+      const cleanExistingVariants = data.existingVariants.map(({ options, ...variant }) => ({
+        ...variant,
+        options: options.map(({ file, ...option }) => option),
+      }));
 
       const mainDataResponse = await fetchWrapper.post<{
         success: boolean;
@@ -119,9 +121,7 @@ const VariantProductForm = ({
       });
 
       if (!mainDataResponse.success) {
-        throw new Error(
-          "Ürün kaydedilirken bir hata oluştu. Lütfen tekrar deneyin."
-        );
+        throw new Error("Ürün kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.");
       }
 
       const { data: mdData } = mainDataResponse.data;
@@ -141,24 +141,19 @@ const VariantProductForm = ({
 
       notifications.show({
         title: "Başarılı!",
-        message: defaultValues
-          ? "Ürün başarıyla güncellendi."
-          : "Ürün başarıyla kaydedildi.",
+        message: defaultValues ? "Ürün başarıyla güncellendi." : "Ürün başarıyla kaydedildi.",
         color: "green",
       });
 
       uploadAllImagesInBackground(data, productId, updatedCombinations);
 
-      context.client.invalidateQueries({ queryKey: ["admin-products"] });
+      context.client.invalidateQueries({ queryKey: ["admin-variant-product", productId] });
 
       push("/admin/product-list");
     },
 
     onError: (error, variables, context) => {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "İnternet bağlantınızı kontrol edin.";
+      const errorMessage = error instanceof Error ? error.message : "İnternet bağlantınızı kontrol edin.";
 
       notifications.show({
         title: "Bağlantı Hatası!",
@@ -180,15 +175,14 @@ const VariantProductForm = ({
     try {
       if (formData.images && formData.images.length > 0) {
         const productImageFormData = new FormData();
-        const sortedImages = [...formData.images].sort(
-          (a, b) => a.order - b.order
-        );
+        const sortedImages = [...formData.images].sort((a, b) => a.order - b.order);
+
         sortedImages.forEach((imageFile) => {
           productImageFormData.append("files", imageFile.file);
         });
+
         const orders = sortedImages.map((item) => item.order);
         productImageFormData.append("orders", JSON.stringify(orders));
-
         productImageFormData.append("productId", productId);
 
         const productImageResponse = await fetchWrapper.postFormData(
@@ -201,64 +195,94 @@ const VariantProductForm = ({
         }
       }
 
-      for (const variant of formData.combinatedVariants) {
-        if (variant.images && variant.images.length > 0) {
-          const combinationInfo = updatedCombinations.find(
-            (c) => c.sku === variant.sku
-          );
+      const batchFormData = new FormData();
 
+      const variantsPayload: BatchVariantPayloadItem[] = [];
+
+      let globalFileIndex = 0;
+
+      for (const variant of formData.combinatedVariants) {
+        const currentNewImages = variant.images;
+        const currentExistingImages = variant.existingImages;
+
+        const hasNewImages = currentNewImages && currentNewImages.length > 0;
+        const hasExistingImages = currentExistingImages && currentExistingImages.length > 0;
+
+        if (hasNewImages || hasExistingImages) {
+          const combinationInfo = updatedCombinations.find((c) => c.sku === variant.sku);
           if (!combinationInfo) {
-            console.warn(
-              `SKU'su ${variant.sku} olan kombinasyon için ID bulunamadı, resimler yüklenemiyor.`
-            );
+            console.warn(`SKU: ${variant.sku} için ID bulunamadı.`);
             continue;
           }
 
-          const variantImageFormData = new FormData();
-          variant.images.forEach((imageFile) => {
-            variantImageFormData.append("files", imageFile);
-          });
-          variantImageFormData.append("variantId", combinationInfo.id);
+          const variantData: BatchVariantPayloadItem = {
+            variantId: combinationInfo.id,
+            existingImages: [],
+            newImagesMap: [],
+          };
 
-          const variantImageResponse = await fetchWrapper.postFormData(
-            `/admin/products/upload-variant-image`,
-            variantImageFormData
-          );
+          if (hasNewImages) {
+            const sortedNewImages = [...currentNewImages].sort((a, b) => a.order - b.order);
 
-          if (!variantImageResponse.success) {
-            console.warn(
-              `SKU'su ${variant.sku} olan varyantın resimleri yüklenemedi:`
-            );
+            sortedNewImages.forEach((img) => {
+              batchFormData.append("files", img.file);
+
+              variantData.newImagesMap.push({
+                order: img.order,
+                fileIndex: globalFileIndex,
+              });
+
+              globalFileIndex++;
+            });
           }
+
+          if (hasExistingImages) {
+            const sortedExisting = [...currentExistingImages].sort((a, b) => a.order - b.order);
+
+            variantData.existingImages = sortedExisting.map((img) => ({
+              url: img.url,
+              order: img.order,
+              type: img.type,
+            }));
+          }
+
+          variantsPayload.push(variantData);
         }
       }
 
-      for (const existingVariant of formData.existingVariants) {
-        for (const option of existingVariant.options) {
-          if (option.file) {
-            const optionFormData = new FormData();
-            optionFormData.append("file", option.file);
+      if (variantsPayload.length > 0) {
+        batchFormData.append("payload", JSON.stringify(variantsPayload));
 
-            const fetchRes = await fetchWrapper.postFormData(
-              `/admin/products/upload-option-asset/${option.uniqueId}`,
-              optionFormData
-            );
+        const response = await fetchWrapper.postFormData(`/admin/products/upload-batch-variant-images`, batchFormData);
 
-            if (!fetchRes.success) {
-              console.warn(
-                `Opsiyon ID'si ${option.uniqueId} olan varlığın resmi yüklenemedi:`
+        if (!response.success) {
+          console.warn("Varyant resimleri toplu yüklenirken hata oluştu.");
+        }
+      }
+
+      if (formData.existingVariants) {
+        for (const existingVariant of formData.existingVariants) {
+          for (const option of existingVariant.options) {
+            if (option.file) {
+              const optionFormData = new FormData();
+              optionFormData.append("file", option.file);
+
+              const fetchRes = await fetchWrapper.postFormData(
+                `/admin/products/upload-option-asset/${option.uniqueId}`,
+                optionFormData
               );
+
+              if (!fetchRes.success) {
+                console.warn(`Opsiyon resmi yüklenemedi: ${option.uniqueId}`);
+              }
             }
           }
         }
       }
 
-      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-variant-product", productId] });
     } catch (error) {
-      console.error(
-        "Resimler yüklenirken arka planda genel bir hata oluştu:",
-        error
-      );
+      console.error("Resimler yüklenirken arka planda genel bir hata oluştu:", error);
     }
   };
 
@@ -322,9 +346,7 @@ const VariantProductForm = ({
 
     const updatedExistingImages = existingImagesInOrder
       .map((item) => {
-        const existingImage = existingImages.find(
-          (img) => img.url === item.url
-        );
+        const existingImage = existingImages.find((img) => img.url === item.url);
 
         if (!existingImage) {
           return null;
@@ -353,9 +375,7 @@ const VariantProductForm = ({
         }
 
         const fallbackMatch = images.find(
-          (img) =>
-            img.file.name === item.file!.name &&
-            img.file.size === item.file!.size
+          (img) => img.file.name === item.file!.name && img.file.size === item.file!.size
         );
 
         if (fallbackMatch) {
@@ -383,13 +403,9 @@ const VariantProductForm = ({
         throw new Error("Resim silinemedi");
       }
 
-      const filteredImages = existingImages.filter(
-        (image) => image.url !== urlToRemove
-      );
+      const filteredImages = existingImages.filter((image) => image.url !== urlToRemove);
 
-      const removedImage = existingImages.find(
-        (image) => image.url === urlToRemove
-      );
+      const removedImage = existingImages.find((image) => image.url === urlToRemove);
       const removedOrder = removedImage?.order;
 
       if (removedOrder === undefined) {
@@ -434,13 +450,9 @@ const VariantProductForm = ({
 
   return (
     <Stack gap={"lg"}>
-      {(isSubmitting || createOrUpdateVariantProductMutation.isPending) && (
-        <GlobalLoadingOverlay />
-      )}
+      {(isSubmitting || createOrUpdateVariantProductMutation.isPending) && <GlobalLoadingOverlay />}
       <Group align="center" justify="space-between">
-        <Title order={4}>
-          Varyantlı Ürün {defaultValues ? "Güncelle" : "Oluştur"}
-        </Title>
+        <Title order={4}>Varyantlı Ürün {defaultValues ? "Güncelle" : "Oluştur"}</Title>
         <Group gap="md" justify="end">
           <Button type="button" onClick={handleSubmit(onSubmit)}>
             {defaultValues ? "Güncelle" : "Kaydet"}
@@ -457,10 +469,7 @@ const VariantProductForm = ({
                 {...field}
                 onChange={(event) => {
                   field.onChange(event);
-                  setValue(
-                    "translations.0.slug",
-                    slugify(event.currentTarget.value)
-                  );
+                  setValue("translations.0.slug", slugify(event.currentTarget.value));
                 }}
                 error={fieldState.error?.message}
                 label="Ürün Adı"
@@ -517,9 +526,7 @@ const VariantProductForm = ({
               onRemoveExistingImage={handleRemoveExistingImage}
               onReorder={handleReorder}
             />
-            {fieldState.error && (
-              <InputError>{fieldState.error.message}</InputError>
-            )}
+            {fieldState.error && <InputError>{fieldState.error.message}</InputError>}
           </Stack>
         )}
       />
@@ -579,9 +586,7 @@ const VariantProductForm = ({
           render={({ field, fieldState }) => (
             <>
               <TaxonomySelect field={{ ...field }} />
-              {fieldState.error && (
-                <InputError>{fieldState.error.message}</InputError>
-              )}
+              {fieldState.error && <InputError>{fieldState.error.message}</InputError>}
             </>
           )}
         />
@@ -590,6 +595,7 @@ const VariantProductForm = ({
         control={control}
         errors={errors.existingVariants?.message}
         setValue={setValue}
+        getValues={getValues}
       />
       <GlobalSeoCard
         control={control}

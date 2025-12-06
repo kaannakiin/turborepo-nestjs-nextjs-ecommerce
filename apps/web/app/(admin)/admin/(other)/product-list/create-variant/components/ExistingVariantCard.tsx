@@ -1,6 +1,22 @@
 "use client";
 
 import {
+  closestCenter,
+  DndContext,
+  DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
   ActionIcon,
   Avatar,
   Badge,
@@ -21,47 +37,21 @@ import {
   Title,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import {
-  Control,
-  Controller,
-  useFieldArray,
-  UseFormSetValue,
-} from "@repo/shared";
+import { Control, Controller, useFieldArray, UseFormGetValues, UseFormSetValue } from "@repo/shared";
 import { VariantGroupZodType, VariantProductZodType } from "@repo/types";
-import {
-  IconDotsVertical,
-  IconEdit,
-  IconPlus,
-  IconPointFilled,
-  IconTrash,
-} from "@tabler/icons-react";
+import { IconDotsVertical, IconEdit, IconPlus, IconPointFilled, IconTrash } from "@tabler/icons-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import VariantGroupDrawer from "./VariantGroupDrawer";
-import {
-  closestCenter,
-  DndContext,
-  DragEndEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { returnCombinateVariant } from "../../../../../../../lib/helpers";
 import CombinatedVariantsDropzoneDrawer from "./CombinatedVariantsDropzoneDrawer";
 import CombinatedVariantsFormDrawer from "./CombinatedVariantsFormDrawer";
 import ProductPriceNumberInput from "./ProductPriceNumberInput";
+import VariantGroupDrawer from "./VariantGroupDrawer";
 
 interface ExistingVariantCardProps {
   control: Control<VariantProductZodType>;
   errors?: string;
   setValue: UseFormSetValue<VariantProductZodType>;
+  getValues: UseFormGetValues<VariantProductZodType>;
 }
 
 interface SortableVariantItemProps {
@@ -72,13 +62,7 @@ interface SortableVariantItemProps {
   onDelete: () => void;
 }
 
-const SortableVariantItem = ({
-  id,
-  field,
-  index,
-  onEdit,
-  onDelete,
-}: SortableVariantItemProps) => {
+const SortableVariantItem = ({ id, field, index, onEdit, onDelete }: SortableVariantItemProps) => {
   const [deletePopoverOpened, setDeletePopoverOpened] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -87,14 +71,7 @@ const SortableVariantItem = ({
     setIsMounted(true);
   }, []);
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -120,30 +97,15 @@ const SortableVariantItem = ({
           cursor: isDragging ? "grabbing" : "default",
         }}
       >
-        <Group
-          gap={"md"}
-          align="center"
-          justify="flex-start"
-          style={{ flexShrink: 0 }}
-        >
+        <Group gap={"md"} align="center" justify="flex-start" style={{ flexShrink: 0 }}>
           {/* Sadece client-side'da DnD handle'ı render et */}
           {isMounted ? (
-            <ActionIcon
-              variant="transparent"
-              size={"sm"}
-              style={{ cursor: "grab" }}
-              {...attributes}
-              {...listeners}
-            >
+            <ActionIcon variant="transparent" size={"sm"} style={{ cursor: "grab" }} {...attributes} {...listeners}>
               <IconDotsVertical stroke={2} />
             </ActionIcon>
           ) : (
             // Server-side için placeholder
-            <ActionIcon
-              variant="transparent"
-              size={"sm"}
-              style={{ cursor: "default" }}
-            >
+            <ActionIcon variant="transparent" size={"sm"} style={{ cursor: "default" }}>
               <IconDotsVertical stroke={2} />
             </ActionIcon>
           )}
@@ -154,9 +116,7 @@ const SortableVariantItem = ({
             </Text>
           )}
           <Text fw={700} fz={"sm"} tt={"capitalize"}>
-            {field.translations.find(
-              (translation) => translation.locale === "TR"
-            )?.name || field.translations[0]?.name}
+            {field.translations.find((translation) => translation.locale === "TR")?.name || field.translations[0]?.name}
           </Text>
         </Group>
 
@@ -173,61 +133,33 @@ const SortableVariantItem = ({
           {field?.options &&
             field.options.map((option, optionIndex) => {
               const optionName =
-                option.translations.find(
-                  (translation) => translation.locale === "TR"
-                )?.name || option.translations[0]?.name;
+                option.translations.find((translation) => translation.locale === "TR")?.name ||
+                option.translations[0]?.name;
 
               return (
                 <Flex key={option.uniqueId} gap={4} align="center">
                   {field.type === "LIST" ? (
-                    <Text
-                      size="sm"
-                      fw={500}
-                      c="dimmed"
-                      style={{ whiteSpace: "nowrap" }}
-                    >
+                    <Text size="sm" fw={500} c="dimmed" style={{ whiteSpace: "nowrap" }}>
                       {optionName}
                     </Text>
                   ) : option.file ? (
                     <Group gap={6} align="center" style={{ flexShrink: 0 }}>
-                      <Avatar
-                        src={URL.createObjectURL(option.file)}
-                        radius={4}
-                        size={20}
-                      />
-                      <Text
-                        size="sm"
-                        fw={500}
-                        c="dimmed"
-                        style={{ whiteSpace: "nowrap" }}
-                      >
+                      <Avatar src={URL.createObjectURL(option.file)} radius={4} size={20} />
+                      <Text size="sm" fw={500} c="dimmed" style={{ whiteSpace: "nowrap" }}>
                         {optionName}
                       </Text>
                     </Group>
                   ) : option.existingFile ? (
                     <Group gap={6} align="center" style={{ flexShrink: 0 }}>
                       <Avatar radius={4} size={20} src={option.existingFile} />
-                      <Text
-                        size="sm"
-                        fw={500}
-                        c="dimmed"
-                        style={{ whiteSpace: "nowrap" }}
-                      >
+                      <Text size="sm" fw={500} c="dimmed" style={{ whiteSpace: "nowrap" }}>
                         {optionName}
                       </Text>
                     </Group>
                   ) : (
                     <Group gap={6} align="center" style={{ flexShrink: 0 }}>
-                      <ColorSwatch
-                        size={16}
-                        color={option.hexValue || "#000"}
-                      />
-                      <Text
-                        size="sm"
-                        fw={500}
-                        c="dimmed"
-                        style={{ whiteSpace: "nowrap" }}
-                      >
+                      <ColorSwatch size={16} color={option.hexValue || "#000"} />
+                      <Text size="sm" fw={500} c="dimmed" style={{ whiteSpace: "nowrap" }}>
                         {optionName}
                       </Text>
                     </Group>
@@ -254,19 +186,9 @@ const SortableVariantItem = ({
             <IconEdit />
           </ActionIcon>
 
-          <Popover
-            position="top"
-            withArrow
-            shadow="md"
-            opened={deletePopoverOpened}
-            onChange={setDeletePopoverOpened}
-          >
+          <Popover position="top" withArrow shadow="md" opened={deletePopoverOpened} onChange={setDeletePopoverOpened}>
             <Popover.Target>
-              <ActionIcon
-                variant="transparent"
-                color="red"
-                onClick={() => setDeletePopoverOpened(true)}
-              >
+              <ActionIcon variant="transparent" color="red" onClick={() => setDeletePopoverOpened(true)}>
                 <IconTrash />
               </ActionIcon>
             </Popover.Target>
@@ -276,12 +198,7 @@ const SortableVariantItem = ({
                   Bu varyantı silmek istediğinize emin misiniz?
                 </Text>
                 <Group justify="flex-end" gap="xs">
-                  <Button
-                    size="xs"
-                    variant="light"
-                    color="gray"
-                    onClick={() => setDeletePopoverOpened(false)}
-                  >
+                  <Button size="xs" variant="light" color="gray" onClick={() => setDeletePopoverOpened(false)}>
                     İptal
                   </Button>
                   <Button size="xs" color="red" onClick={handleDeleteConfirm}>
@@ -297,15 +214,9 @@ const SortableVariantItem = ({
   );
 };
 
-const ExistingVariantCard = ({
-  control,
-  errors,
-  setValue,
-}: ExistingVariantCardProps) => {
+const ExistingVariantCard = ({ control, errors, setValue, getValues }: ExistingVariantCardProps) => {
   const [opened, { close, open }] = useDisclosure();
-  const [selectedExistingVariant, setSelectedExistingVariant] = useState<
-    string | null
-  >(null);
+  const [selectedExistingVariant, setSelectedExistingVariant] = useState<string | null>(null);
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [bulkUpdateValues, setBulkUpdateValues] = useState<{
     price: VariantProductZodType["combinatedVariants"][number]["prices"][number]["price"];
@@ -323,15 +234,11 @@ const ExistingVariantCard = ({
     stock: 0,
   });
 
-  const [dropzoneOpened, { close: closeDropzone, open: openDropzone }] =
-    useDisclosure();
+  const [dropzoneOpened, { close: closeDropzone, open: openDropzone }] = useDisclosure();
 
   const [
     openedBottomVariantCombinatedDrawer,
-    {
-      close: closeBottomVariantCombinatedDrawer,
-      open: openBottomVariantCombinatedDrawer,
-    },
+    { close: closeBottomVariantCombinatedDrawer, open: openBottomVariantCombinatedDrawer },
   ] = useDisclosure();
 
   const [dropzoneSelectedIndex, setDropzoneSelectedIndex] = useState<number>(0);
@@ -386,23 +293,13 @@ const ExistingVariantCard = ({
     [combinatedFields, combinatedReplace]
   );
 
-  const getVariantOptionNames = (
-    variantIds: { variantGroupId: string; variantOptionId: string }[]
-  ): string[] => {
+  const getVariantOptionNames = (variantIds: { variantGroupId: string; variantOptionId: string }[]): string[] => {
     return variantIds.map((variantId) => {
-      const field = fields.find(
-        (field) => field.uniqueId === variantId.variantGroupId
-      );
+      const field = fields.find((field) => field.uniqueId === variantId.variantGroupId);
       if (field) {
-        const option = field.options.find(
-          (opt) => opt.uniqueId === variantId.variantOptionId
-        );
+        const option = field.options.find((opt) => opt.uniqueId === variantId.variantOptionId);
         if (option) {
-          return (
-            option.translations.find((t) => t.locale === "TR")?.name ||
-            option.translations[0]?.name ||
-            ""
-          );
+          return option.translations.find((t) => t.locale === "TR")?.name || option.translations[0]?.name || "";
         }
       }
       return "";
@@ -413,9 +310,7 @@ const ExistingVariantCard = ({
   const handleSelectAllChange = useCallback(
     (checked: boolean) => {
       if (checked) {
-        setSelectedRows(
-          new Set(Array.from({ length: combinatedFields.length }, (_, i) => i))
-        );
+        setSelectedRows(new Set(Array.from({ length: combinatedFields.length }, (_, i) => i)));
       } else {
         setSelectedRows(new Set());
       }
@@ -423,25 +318,20 @@ const ExistingVariantCard = ({
     [combinatedFields.length]
   );
 
-  const handleRowSelectionChange = useCallback(
-    (index: number, checked: boolean) => {
-      setSelectedRows((prev) => {
-        const newSet = new Set(prev);
-        if (checked) {
-          newSet.add(index);
-        } else {
-          newSet.delete(index);
-        }
-        return newSet;
-      });
-    },
-    []
-  );
+  const handleRowSelectionChange = useCallback((index: number, checked: boolean) => {
+    setSelectedRows((prev) => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(index);
+      } else {
+        newSet.delete(index);
+      }
+      return newSet;
+    });
+  }, []);
 
   const isAllSelected = useMemo(
-    () =>
-      combinatedFields.length > 0 &&
-      selectedRows.size === combinatedFields.length,
+    () => combinatedFields.length > 0 && selectedRows.size === combinatedFields.length,
     [selectedRows.size, combinatedFields.length]
   );
 
@@ -465,11 +355,7 @@ const ExistingVariantCard = ({
                 stock: numericValue,
               });
             }
-          } else if (
-            field === "price" ||
-            field === "discountPrice" ||
-            field === "buyedPrice"
-          ) {
+          } else if (field === "price" || field === "discountPrice" || field === "buyedPrice") {
             const numericValue = value ? parseFloat(value) : null;
             if (!isNaN(numericValue!) || value === "") {
               combinatedUpdate(index, {
@@ -553,10 +439,7 @@ const ExistingVariantCard = ({
 
         {!hasVariants && (
           <Stack align="center" py="xl" gap={"xs"}>
-            <Title order={4}>
-              Henüz bir varyant eklemediniz. Varyant eklemek için butona
-              tıklayın.
-            </Title>
+            <Title order={4}>Henüz bir varyant eklemediniz. Varyant eklemek için butona tıklayın.</Title>
             <Text>Renk, boyut gibi ürün varyantı ekleyiniz.</Text>
             <Button
               size="md"
@@ -573,15 +456,8 @@ const ExistingVariantCard = ({
         )}
 
         {hasVariants && (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={fields.map((field) => field.id)}
-              strategy={verticalListSortingStrategy}
-            >
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={fields.map((field) => field.id)} strategy={verticalListSortingStrategy}>
               <Stack gap="md" mt="md">
                 {fields.map((field, index) => (
                   <SortableVariantItem
@@ -604,20 +480,14 @@ const ExistingVariantCard = ({
         {hasCombinatedVariants && (
           <Box mt="md">
             <Table.ScrollContainer minWidth={1200}>
-              <Table
-                highlightOnHover
-                highlightOnHoverColor="admin.1"
-                verticalSpacing="sm"
-              >
+              <Table highlightOnHover highlightOnHoverColor="admin.1" verticalSpacing="sm">
                 <Table.Thead>
                   <Table.Tr>
                     <Table.Th>
                       <Checkbox
                         checked={isAllSelected}
                         indeterminate={isIndeterminate}
-                        onChange={(event) =>
-                          handleSelectAllChange(event.currentTarget.checked)
-                        }
+                        onChange={(event) => handleSelectAllChange(event.currentTarget.checked)}
                       />
                     </Table.Th>
                     <Table.Th className="flex items-start">Varyant</Table.Th>
@@ -628,9 +498,7 @@ const ExistingVariantCard = ({
                           size="xs"
                           placeholder="Toplu güncelle"
                           value={bulkUpdateValues.price}
-                          onChange={(value) =>
-                            handleBulkUpdate("price", value?.toString() || "")
-                          }
+                          onChange={(value) => handleBulkUpdate("price", value?.toString() || "")}
                           style={{ marginTop: 4 }}
                         />
                       )}
@@ -642,12 +510,7 @@ const ExistingVariantCard = ({
                           size="xs"
                           placeholder="Toplu güncelle"
                           value={bulkUpdateValues.discountPrice || undefined}
-                          onChange={(value) =>
-                            handleBulkUpdate(
-                              "discountPrice",
-                              value?.toString() || ""
-                            )
-                          }
+                          onChange={(value) => handleBulkUpdate("discountPrice", value?.toString() || "")}
                           style={{ marginTop: 4 }}
                         />
                       )}
@@ -659,12 +522,7 @@ const ExistingVariantCard = ({
                           size="xs"
                           placeholder="Toplu güncelle"
                           value={bulkUpdateValues.buyedPrice || undefined}
-                          onChange={(value) =>
-                            handleBulkUpdate(
-                              "buyedPrice",
-                              value?.toString() || ""
-                            )
-                          }
+                          onChange={(value) => handleBulkUpdate("buyedPrice", value?.toString() || "")}
                           style={{ marginTop: 4 }}
                         />
                       )}
@@ -676,9 +534,7 @@ const ExistingVariantCard = ({
                           size="xs"
                           placeholder="Toplu güncelle"
                           value={bulkUpdateValues.sku}
-                          onChange={(event) =>
-                            handleBulkUpdate("sku", event.currentTarget.value)
-                          }
+                          onChange={(event) => handleBulkUpdate("sku", event.currentTarget.value)}
                           style={{ marginTop: 4 }}
                         />
                       )}
@@ -690,12 +546,7 @@ const ExistingVariantCard = ({
                           size="xs"
                           placeholder="Toplu güncelle"
                           value={bulkUpdateValues.barcode}
-                          onChange={(event) =>
-                            handleBulkUpdate(
-                              "barcode",
-                              event.currentTarget.value
-                            )
-                          }
+                          onChange={(event) => handleBulkUpdate("barcode", event.currentTarget.value)}
                           style={{ marginTop: 4 }}
                         />
                       )}
@@ -707,9 +558,7 @@ const ExistingVariantCard = ({
                           size="xs"
                           placeholder="Toplu güncelle"
                           value={bulkUpdateValues.stock}
-                          onChange={(event) =>
-                            handleBulkUpdate("stock", event?.toString() || "")
-                          }
+                          onChange={(event) => handleBulkUpdate("stock", event?.toString() || "")}
                           style={{ marginTop: 4 }}
                         />
                       )}
@@ -730,12 +579,7 @@ const ExistingVariantCard = ({
                         <Group gap="xs" align="center" wrap="nowrap">
                           <Checkbox
                             checked={selectedRows.has(index)}
-                            onChange={(event) =>
-                              handleRowSelectionChange(
-                                index,
-                                event.currentTarget.checked
-                              )
-                            }
+                            onChange={(event) => handleRowSelectionChange(index, event.currentTarget.checked)}
                           />
                           <ActionIcon
                             radius="sm"
@@ -753,18 +597,11 @@ const ExistingVariantCard = ({
                       </Table.Td>
                       <Table.Td>
                         <Flex gap={4} wrap="wrap">
-                          {getVariantOptionNames(field.variantIds).map(
-                            (name, badgeIndex) => (
-                              <Badge
-                                key={badgeIndex}
-                                variant="light"
-                                size="md"
-                                radius={"0"}
-                              >
-                                {name}
-                              </Badge>
-                            )
-                          )}
+                          {getVariantOptionNames(field.variantIds).map((name, badgeIndex) => (
+                            <Badge key={badgeIndex} variant="light" size="md" radius={"0"}>
+                              {name}
+                            </Badge>
+                          ))}
                         </Flex>
                       </Table.Td>
                       <Table.Td onClick={(e) => e.stopPropagation()}>
@@ -772,11 +609,7 @@ const ExistingVariantCard = ({
                           control={control}
                           name={`combinatedVariants.${index}.prices.0.price`}
                           render={({ field, fieldState }) => (
-                            <ProductPriceNumberInput
-                              {...field}
-                              error={fieldState.error?.message}
-                              size="sm"
-                            />
+                            <ProductPriceNumberInput {...field} error={fieldState.error?.message} size="sm" />
                           )}
                         />
                       </Table.Td>
@@ -850,19 +683,12 @@ const ExistingVariantCard = ({
                           )}
                         />
                       </Table.Td>
-                      <Table.Td
-                        align="center"
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <Table.Td align="center" onClick={(e) => e.stopPropagation()}>
                         <Controller
                           control={control}
                           name={`combinatedVariants.${index}.active`}
                           render={({ field: { value, ...field } }) => (
-                            <Switch
-                              {...field}
-                              checked={value}
-                              label={value ? "Aktif" : "Pasif"}
-                            />
+                            <Switch {...field} checked={value} label={value ? "Aktif" : "Pasif"} />
                           )}
                         />
                       </Table.Td>
@@ -876,30 +702,18 @@ const ExistingVariantCard = ({
       </Card>
 
       <VariantGroupDrawer
-        key={
-          selectedExistingVariant
-            ? fields.find((field) => field.id === selectedExistingVariant)?.id
-            : "new"
-        }
+        key={selectedExistingVariant ? fields.find((field) => field.id === selectedExistingVariant)?.id : "new"}
         defaultValues={
-          selectedExistingVariant
-            ? fields.find((field) => field.id === selectedExistingVariant)
-            : undefined
+          selectedExistingVariant ? fields.find((field) => field.id === selectedExistingVariant) : undefined
         }
         onSubmit={(data) => {
           const dataWithId = { ...data, id: data.uniqueId };
 
           if (selectedExistingVariant) {
-            const index = fields.findIndex(
-              (f) => f.id === selectedExistingVariant
-            );
+            const index = fields.findIndex((f) => f.id === selectedExistingVariant);
             if (index !== -1) {
               update(index, dataWithId);
-              regenerateCombinations([
-                ...fields.slice(0, index),
-                dataWithId,
-                ...fields.slice(index + 1),
-              ]);
+              regenerateCombinations([...fields.slice(0, index), dataWithId, ...fields.slice(index + 1)]);
             }
           } else {
             append(dataWithId);
@@ -918,12 +732,12 @@ const ExistingVariantCard = ({
 
       <CombinatedVariantsDropzoneDrawer
         control={control}
-        fields={combinatedFields}
-        update={combinatedUpdate}
+        getValues={getValues}
         onClose={closeDropzone}
         opened={dropzoneOpened}
         selectedIndex={dropzoneSelectedIndex}
         selectedIndexs={Array.from(selectedRows)}
+        setValue={setValue}
       />
       <CombinatedVariantsFormDrawer
         opened={openedBottomVariantCombinatedDrawer}
@@ -933,6 +747,7 @@ const ExistingVariantCard = ({
         selectedIndex={dropzoneSelectedIndex} // Bu satırı ekle
         control={control}
         setValue={setValue}
+        getValues={getValues}
       />
     </>
   );

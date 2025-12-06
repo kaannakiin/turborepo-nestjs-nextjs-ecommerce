@@ -119,19 +119,20 @@ export class ProductsController {
     return this.productsService.createOrUpdateVariantProduct(data);
   }
 
-  @Post('upload-variant-image')
-  @UseInterceptors(FilesInterceptor('files'))
-  async uploadVariantImage(
+  @Post('upload-batch-variant-images')
+  @UseInterceptors(FilesInterceptor('files', 10))
+  async uploadBatchVariantImages(
     @UploadedFiles(
       new FilesValidationPipe({
         maxSize: 10 * 1024 * 1024,
         types: ['IMAGE', 'VIDEO'],
+        required: false,
       }),
     )
     files: Array<Express.Multer.File>,
-    @Body() body: { variantId: string },
+    @Body() body: { payload: string },
   ) {
-    return this.productsService.uploadVariantImage(files, body.variantId);
+    return this.productsService.uploadBatchVariantImages(files, body.payload);
   }
 
   @Delete('variant-image')

@@ -113,8 +113,7 @@ export const htmlDescriptionSchema = z
   .max(10000, { error: "Açıklama en fazla 10.000 karakter olabilir." })
   .refine(
     (value) => {
-      const dangerousTags =
-        /<(script|iframe|object|embed|form|input|button|meta|link|style)/i;
+      const dangerousTags = /<(script|iframe|object|embed|form|input|button|meta|link|style)/i;
       return !dangerousTags.test(value);
     },
     {
@@ -185,26 +184,17 @@ export const VariantOptionSchema = z.object({
     .nullable()
     .optional(),
   file: FileSchema({ type: "IMAGE" }).optional().nullable(),
-  existingFile: z
-    .url({ error: "Lütfen geçerli bir url giriniz" })
-    .optional()
-    .nullable(),
+  existingFile: z.url({ error: "Lütfen geçerli bir url giriniz" }).optional().nullable(),
 });
 
 export const VariantGroupTranslationSchema = z.object({
   locale: z.enum(Locale),
-  name: z
-    .string({ error: "Variant Grup adı zorunludur." })
-    .min(1, "Variant Grup adı zorunludur.")
-    .max(256, {
-      error: "Variant Grup adı 256 karakterden uzun olamaz.",
-    }),
-  slug: z
-    .string({ error: "Slug zorunludur." })
-    .min(1, "Slug zorunludur.")
-    .max(256, {
-      error: "Slug 256 karakterden uzun olamaz.",
-    }),
+  name: z.string({ error: "Variant Grup adı zorunludur." }).min(1, "Variant Grup adı zorunludur.").max(256, {
+    error: "Variant Grup adı 256 karakterden uzun olamaz.",
+  }),
+  slug: z.string({ error: "Slug zorunludur." }).min(1, "Slug zorunludur.").max(256, {
+    error: "Slug 256 karakterden uzun olamaz.",
+  }),
 });
 
 export const VariantGroupSchema = z.object({
@@ -241,12 +231,9 @@ export const VariantGroupSchema = z.object({
 export const ProductPriceSchema = z
   .object({
     currency: z.enum(Currency),
-    price: z
-      .number()
-      .positive({ error: "Fiyat 0'dan büyük olmalıdır." })
-      .max(Number.MAX_SAFE_INTEGER, {
-        error: "Fiyat çok büyük.",
-      }),
+    price: z.number().positive({ error: "Fiyat 0'dan büyük olmalıdır." }).max(Number.MAX_SAFE_INTEGER, {
+      error: "Fiyat çok büyük.",
+    }),
     discountPrice: z
       .number()
       .min(0, { error: "İndirimli fiyat 0'dan küçük olamaz." })
@@ -349,8 +336,7 @@ export const BaseProductSchema = z
       )
       .refine(
         (val) => {
-          const isUnique =
-            val.length === new Set(val.map((item) => item.locale)).size;
+          const isUnique = val.length === new Set(val.map((item) => item.locale)).size;
           return isUnique;
         },
         {
@@ -371,8 +357,7 @@ export const BaseProductSchema = z
       )
       .refine(
         (val) => {
-          const isCurrenciesUnique =
-            new Set(val.map((item) => item.currency)).size === val.length;
+          const isCurrenciesUnique = new Set(val.map((item) => item.currency)).size === val.length;
           return isCurrenciesUnique;
         },
         {
@@ -404,10 +389,7 @@ export const BaseProductSchema = z
       .array(z.cuid2({ error: "Geçersiz kategori kimliği" }))
       .optional()
       .nullable(),
-    googleTaxonomyId: z
-      .cuid2({ error: "Geçersiz Google Taksonomi kimliği" })
-      .optional()
-      .nullable(),
+    googleTaxonomyId: z.cuid2({ error: "Geçersiz Google Taksonomi kimliği" }).optional().nullable(),
   })
   .check(({ issues, value }) => {
     const assetLimit = 10;
@@ -426,8 +408,7 @@ export const BaseProductSchema = z
     // Sadece duplicate order kontrolü
     if (value.existingImages && value.existingImages.length > 0) {
       const existingOrders = value.existingImages.map((img) => img.order);
-      const hasDuplicateOrders =
-        new Set(existingOrders).size !== existingOrders.length;
+      const hasDuplicateOrders = new Set(existingOrders).size !== existingOrders.length;
 
       if (hasDuplicateOrders) {
         issues.push({
@@ -464,107 +445,175 @@ export const BaseProductSchema = z
     if (hasOverallDuplicates) {
       issues.push({
         path: ["images"],
-        error:
-          "Mevcut ve yeni görsellerin sıra numaraları birbirleriyle çakışmamalıdır.",
+        error: "Mevcut ve yeni görsellerin sıra numaraları birbirleriyle çakışmamalıdır.",
         code: "custom",
         input: ["images"],
       });
     }
   });
 
-export const CombinatedVariantsSchema = z.object({
-  variantIds: z
-    .array(
-      z.object({
-        variantGroupId: z.cuid2(),
-        variantOptionId: z.cuid2(),
+export const CombinatedVariantsSchema = z
+  .object({
+    variantIds: z
+      .array(
+        z.object({
+          variantGroupId: z.cuid2(),
+          variantOptionId: z.cuid2(),
+        })
+      )
+      .min(1, { error: "En az bir varyant seçmelisiniz." }),
+    sku: z
+      .string({
+        error: "SKU zorunludur.",
       })
-    )
-    .min(1, { error: "En az bir varyant seçmelisiniz." }),
-  sku: z
-    .string({
-      error: "SKU zorunludur.",
-    })
-    .max(100, {
-      error: "SKU 100 karakterden uzun olamaz.",
-    }),
-  barcode: z
-    .string({
-      error: "Barkod zorunludur.",
-    })
-    .max(100, {
-      error: "Barkod 100 karakterden uzun olamaz.",
-    }),
-  prices: z
-    .array(ProductPriceSchema)
-    .refine(
-      (val) => {
-        const isTrExists = val.some((item) => item.currency === "TRY");
-        return isTrExists;
-      },
-      {
-        error: "Türk Lirası (TRY) fiyatı bulunmalıdır.",
-        path: ["prices"],
-      }
-    )
-    .refine(
-      (val) => {
-        const isCurrenciesUnique =
-          new Set(val.map((item) => item.currency)).size === val.length;
-        return isCurrenciesUnique;
-      },
-      {
-        error: "Para birimi eşsiz olmalıdır",
-        path: ["prices"],
-      }
-    ),
-  existingImages: z
-    .array(
-      z.object({
-        url: z.url({ error: "Lütfen geçerli bir url giriniz" }),
-        type: z.enum(AssetType),
+      .max(100, {
+        error: "SKU 100 karakterden uzun olamaz.",
+      }),
+    barcode: z
+      .string({
+        error: "Barkod zorunludur.",
       })
-    )
-    .optional()
-    .nullable(),
-  images: z
-    .array(FileSchema({ type: ["IMAGE", "VIDEO"] }))
-    .optional()
-    .nullable(),
-  translations: z
-    .array(
-      ProductTranslationSchema.omit({
-        name: true,
-        slug: true,
-      })
-    )
-    .refine(
-      (val) => {
-        const isTrLocale = val.some((item) => item.locale === Locale.TR);
-        return isTrLocale;
-      },
-      {
-        error: " En az bir çeviri Türkçe (TR) olmalıdır.",
+      .max(100, {
+        error: "Barkod 100 karakterden uzun olamaz.",
+      }),
+    prices: z
+      .array(ProductPriceSchema)
+      .refine(
+        (val) => {
+          const isTrExists = val.some((item) => item.currency === "TRY");
+          return isTrExists;
+        },
+        {
+          error: "Türk Lirası (TRY) fiyatı bulunmalıdır.",
+          path: ["prices"],
+        }
+      )
+      .refine(
+        (val) => {
+          const isCurrenciesUnique = new Set(val.map((item) => item.currency)).size === val.length;
+          return isCurrenciesUnique;
+        },
+        {
+          error: "Para birimi eşsiz olmalıdır",
+          path: ["prices"],
+        }
+      ),
+    existingImages: z
+      .array(
+        z.object({
+          url: z.url({ error: "Lütfen geçerli bir url giriniz" }),
+          type: z.enum(AssetType),
+          order: z.number().min(0),
+        })
+      )
+      .optional()
+      .nullable(),
+    images: z
+      .array(
+        z.object({
+          file: FileSchema({ type: ["IMAGE", "VIDEO"] }),
+          order: z.number().min(0),
+        })
+      )
+      .optional()
+      .nullable(),
+    translations: z
+      .array(
+        ProductTranslationSchema.omit({
+          name: true,
+          slug: true,
+        })
+      )
+      .refine(
+        (val) => {
+          const isTrLocale = val.some((item) => item.locale === Locale.TR);
+          return isTrLocale;
+        },
+        {
+          error: " En az bir çeviri Türkçe (TR) olmalıdır.",
+        }
+      )
+      .refine(
+        (val) => {
+          const isUnique = val.length === new Set(val.map((item) => item.locale)).size;
+          return isUnique;
+        },
+        {
+          error: "Her dil için yalnızca bir çeviri sağlanmalıdır.",
+        }
+      ),
+    active: z.boolean(),
+    stock: z
+      .number({ error: "Stok zorunludur." })
+      .min(0, { error: "Stok 0'dan küçük olamaz." })
+      .max(Number.MAX_SAFE_INTEGER, {
+        error: "Stok çok büyük",
+      }),
+  })
+  .check(({ issues, value, aborted }) => {
+    const assetLimit = 10;
+    const existingCount = value.existingImages?.length || 0;
+    const newCount = value.images?.length || 0;
+    const totalAsset = existingCount + newCount;
+
+    // 1. Toplam sayı kontrolü
+    if (totalAsset > assetLimit) {
+      issues.push({
+        code: "custom",
+        input: ["images"],
+        path: ["images"],
+        message: `Toplam varlık sayısı ${assetLimit} ile sınırlıdır.`,
+      });
+    }
+
+    // 2. Mevcut görsellerin kendi içinde sıra (order) kontrolü
+    if (value.existingImages && value.existingImages.length > 0) {
+      const existingOrders = value.existingImages.map((img) => img.order);
+      const hasDuplicateOrders = new Set(existingOrders).size !== existingOrders.length;
+
+      if (hasDuplicateOrders) {
+        issues.push({
+          code: "custom",
+          input: ["images"],
+          path: ["existingImages"],
+          message: "Mevcut görsellerin sıra numaraları benzersiz olmalıdır.",
+        });
       }
-    )
-    .refine(
-      (val) => {
-        const isUnique =
-          val.length === new Set(val.map((item) => item.locale)).size;
-        return isUnique;
-      },
-      {
-        error: "Her dil için yalnızca bir çeviri sağlanmalıdır.",
+    }
+
+    // 3. Yeni görsellerin kendi içinde sıra (order) kontrolü
+    if (value.images && value.images.length > 0) {
+      const newOrders = value.images.map((img) => img.order);
+      const hasDuplicateOrders = new Set(newOrders).size !== newOrders.length;
+
+      if (hasDuplicateOrders) {
+        issues.push({
+          code: "custom",
+          input: ["images"],
+          path: ["images"],
+          message: "Yeni görsellerin sıra numaraları benzersiz olmalıdır.",
+        });
       }
-    ),
-  active: z.boolean(),
-  stock: z
-    .number({ error: "Stok zorunludur." })
-    .min(0, { error: "Stok 0'dan küçük olamaz." })
-    .max(Number.MAX_SAFE_INTEGER, {
-      error: "Stok çok büyük",
-    }),
-});
+    }
+
+    // 4. Mevcut ve yeni görsellerin çakışma kontrolü
+    const allOrders = [
+      ...(value.existingImages?.map((img) => img.order) || []),
+      ...(value.images?.map((img) => img.order) || []),
+    ];
+
+    const hasOverallDuplicates = new Set(allOrders).size !== allOrders.length;
+
+    if (hasOverallDuplicates) {
+      // Hatayı images altına ekliyoruz
+      issues.push({
+        code: "custom",
+        input: ["images"],
+        path: ["images"],
+        message: "Mevcut ve yeni görsellerin sıra numaraları birbirleriyle çakışmamalıdır.",
+      });
+    }
+  });
 
 export const VariantProductSchema = BaseProductSchema.omit({
   prices: true,
@@ -588,14 +637,10 @@ export const BodyCuid2Schema = z.object({
 export type BodyCuid2ZodType = z.infer<typeof BodyCuid2Schema>;
 export type Cuid2ZodType = z.infer<typeof Cuid2Schema>;
 export type VariantProductZodType = z.infer<typeof VariantProductSchema>;
-export type VariantGroupTranslationZodType = z.infer<
-  typeof VariantGroupTranslationSchema
->;
+export type VariantGroupTranslationZodType = z.infer<typeof VariantGroupTranslationSchema>;
 export type VariantGroupZodType = z.infer<typeof VariantGroupSchema>;
 export type VariantOptionZodType = z.infer<typeof VariantOptionSchema>;
-export type VariantOptionTranslationZodType = z.infer<
-  typeof VariantOptionTranslationSchema
->;
+export type VariantOptionTranslationZodType = z.infer<typeof VariantOptionTranslationSchema>;
 
 export type BaseProductZodType = z.infer<typeof BaseProductSchema>;
 

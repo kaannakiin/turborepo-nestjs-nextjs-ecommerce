@@ -1,8 +1,8 @@
 "use client";
+
 import { AspectRatio, Modal } from "@mantine/core";
 import { $Enums } from "@repo/database/client";
-
-import { IconPhoto, IconSearch, IconVideo } from "@tabler/icons-react";
+import { IconPhoto, IconVideo, IconZoomIn } from "@tabler/icons-react";
 import { useState } from "react";
 import CustomImage from "../../components/CustomImage";
 
@@ -30,20 +30,17 @@ const TableAsset = ({ url, type }: TableAssetProps) => {
     setIsModalOpen(false);
   };
 
-  // URL yoksa fallback UI
   if (!hasUrl) {
     return (
       <div className="relative w-full h-full min-h-16">
-        <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50 rounded-lg border border-gray-200">
+        <div className="w-full h-full p-4 flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200/50 shadow-sm">
           {type === "IMAGE" ? (
             <>
-              <IconPhoto size={32} className="text-gray-300 mb-2" />
-              <span className="text-gray-400 text-xs">Görsel Yok</span>
+              <IconPhoto size={24} className="text-gray-400" />
             </>
           ) : (
             <>
-              <IconVideo size={32} className="text-gray-300 mb-2" />
-              <span className="text-gray-400 text-xs">Video Yok</span>
+              <IconVideo size={24} className="text-gray-400" />
             </>
           )}
         </div>
@@ -54,28 +51,28 @@ const TableAsset = ({ url, type }: TableAssetProps) => {
   return (
     <>
       <div
-        className="relative w-full h-full min-h-12 cursor-pointer group"
+        className="relative w-full h-full min-h-12 cursor-pointer group overflow-hidden rounded-xl"
         onClick={handleClick}
       >
-        {type === "IMAGE" ? (
-          <AspectRatio ratio={1} pos={"relative"}>
-            <CustomImage src={url} alt="Asset" />
-          </AspectRatio>
-        ) : (
-          <video
-            src={url}
-            className="w-full h-full object-contain rounded-lg"
-            muted
-            playsInline
-          />
-        )}
-
-        <div className="absolute inset-0 hover:bg-gray-500 bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200 flex items-center justify-center ">
-          <IconSearch
-            className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-            size={24}
-          />
+        <div className="transition-transform duration-300 ease-out group-hover:scale-105">
+          {type === "IMAGE" ? (
+            <AspectRatio ratio={1} pos="relative">
+              <CustomImage src={url} alt="Asset" />
+            </AspectRatio>
+          ) : (
+            <video src={url} className="w-full h-full object-contain rounded-xl" muted playsInline />
+          )}
         </div>
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out">
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="p-3 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg transform scale-75 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300 ease-out delay-75">
+              <IconZoomIn size={20} className="text-white drop-shadow-md" />
+            </div>
+          </div>
+        </div>
+
+        <div className="absolute inset-0 rounded-xl ring-0 ring-white/0 group-hover:ring-2 group-hover:ring-white/30 transition-all duration-300 pointer-events-none" />
       </div>
 
       <Modal
@@ -84,25 +81,32 @@ const TableAsset = ({ url, type }: TableAssetProps) => {
         size="xl"
         centered
         withCloseButton
+        radius="lg"
         overlayProps={{
-          backgroundOpacity: 0.8,
-          blur: 3,
+          backgroundOpacity: 0.85,
+          blur: 8,
+        }}
+        styles={{
+          content: {
+            backgroundColor: "transparent",
+            boxShadow: "none",
+          },
+          header: {
+            backgroundColor: "transparent",
+          },
+          close: {
+            color: "white",
+            "&:hover": {
+              backgroundColor: "rgba(255,255,255,0.1)",
+            },
+          },
         }}
       >
-        <AspectRatio
-          ratio={1}
-          className="relative"
-          style={{ minHeight: "60vh" }}
-        >
+        <AspectRatio ratio={1} className="relative" style={{ minHeight: "60vh" }}>
           {type === "IMAGE" ? (
             <CustomImage src={url} alt="Asset - Enlarged" />
           ) : (
-            <video
-              src={url}
-              className="w-full h-full object-contain"
-              controls
-              autoPlay
-            />
+            <video src={url} className="w-full h-full object-contain rounded-lg" controls autoPlay />
           )}
         </AspectRatio>
       </Modal>

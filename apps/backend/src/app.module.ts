@@ -1,26 +1,20 @@
-import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import Redis from 'ioredis';
 import { NestMinioModule } from 'nestjs-minio';
 import { AdminModule } from './admin/admin.module';
+import { ChatModule } from './ai/chat/chat.module';
 import { AuthModule } from './auth/auth.module';
+import { CartV3Module } from './cart-v3/cart-v3.module';
+import { SharedModule } from './common/services/shared.module';
 import { LocationsModule } from './locations/locations.module';
 import { MinioModule } from './minio/minio.module';
+import { OrdersModule } from './orders/orders.module';
+import { PaymentsModule } from './payments/payments.module';
+import { PrismaLoggerModule } from './prisma-logger/prisma-logger.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { UserPageModule } from './user-page/user-page.module';
 import { UserModule } from './user/user.module';
-import { CartV3Module } from './cart-v3/cart-v3.module';
-import { ChatModule } from './ai/chat/chat.module';
-import { PaymentsModule } from './payments/payments.module';
-import { OrdersModule } from './orders/orders.module';
-import { SharedModule } from './common/services/shared.module';
-import { PrismaLoggerModule } from './prisma-logger/prisma-logger.module';
-import { PrismaService } from './prisma/prisma.service';
-import { PrismaClient } from '@repo/database';
 @Module({
   imports: [
     PrismaModule,
@@ -32,13 +26,22 @@ import { PrismaClient } from '@repo/database';
     AdminModule,
     NestMinioModule.registerAsync({
       isGlobal: true,
-      useFactory: (configService: ConfigService) => ({
-        endPoint: configService.get<string>('MINIO_ENDPOINT_SETTINGS'),
-        port: parseInt(configService.get<string>('MINIO_PORT')) || 443,
-        useSSL: configService.get<string>('MINIO_USE_SSL') === 'true',
-        accessKey: configService.get<string>('MINIO_ACCESS_KEY'),
-        secretKey: configService.get<string>('MINIO_SECRET_KEY'),
-      }),
+      useFactory: (configService: ConfigService) => {
+        const accessKey = configService.getOrThrow<string>('MINIO_ACCESS_KEY');
+        const secretKey = configService.getOrThrow<string>('MINIO_SECRET_KEY');
+        const useSSL = configService.get<string>('MINIO_USE_SSL') === 'true';
+        const endpointRaw = configService.get<string>('MINIO_ENDPOINT');
+        const url = new URL(endpointRaw);
+        const endPoint = url.hostname;
+        const port = parseInt(configService.get<string>('MINIO_PORT')) || 443;
+        return {
+          endPoint,
+          port,
+          useSSL,
+          accessKey,
+          secretKey,
+        };
+      },
       inject: [ConfigService],
     }),
     MinioModule,

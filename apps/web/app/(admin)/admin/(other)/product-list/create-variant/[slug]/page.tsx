@@ -1,113 +1,113 @@
-import {
-  BrandSelectType,
-  CategorySelectType,
-  VariantProductZodType,
-} from "@repo/types";
-import { cookies } from "next/headers";
+"use client";
+
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import fetchWrapper from "@lib/fetchWrapper";
+import { useQuery } from "@repo/shared";
+import { BrandSelectType, CategorySelectType, VariantProductZodType } from "@repo/types";
+import { useParams } from "next/navigation";
 import ProductErrorComponent from "../../components/ProductErrorComponent";
 import ProductNotFound from "../../components/ProductNotFound";
 import VariantProductForm from "../components/VariantProductForm";
-import { Params } from "types/GlobalTypes";
 
-const CreateVariantProductPage = async ({ params }: { params: Params }) => {
-  const id = (await params).slug;
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value || "";
-  const brandResponse = await fetch(
-    `${process.env.BACKEND_URL}/admin/products/brands/get-all-brands-without-query`,
-    {
-      method: "GET",
-      headers: {
-        Cookie: `token=${token}`,
-      },
-      credentials: "include",
-      cache: "no-store",
-    }
-  );
-  if (!brandResponse.ok) {
+const CreateVariantProductPage = () => {
+  const { slug } = useParams();
+  const id = slug as string;
+  const isEditMode = id !== "new";
+
+  const brandsQuery = useQuery({
+    queryKey: ["admin-brands-select"],
+    queryFn: async () => {
+      const response = await fetchWrapper.get<BrandSelectType[]>(`/admin/products/brands/get-all-brands-without-query`);
+      if (response.success) {
+        return response.data || response;
+      }
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const categoriesQuery = useQuery({
+    queryKey: ["admin-categories-select"],
+    queryFn: async () => {
+      const response = await fetchWrapper.get<CategorySelectType[]>(
+        `/admin/products/categories/get-all-categories-without-query`
+      );
+      if (response.success) {
+        return response.data || response;
+      }
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const productQuery = useQuery({
+    queryKey: ["admin-variant-product", id],
+    queryFn: async () => {
+      const response = await fetchWrapper.get<VariantProductZodType>(`/admin/products/get-product-variant/${id}`);
+      if (response.success) {
+        return response.data || response;
+      }
+    },
+    enabled: isEditMode,
+    retry: 1,
+    staleTime: 1000 * 60 * 5,
+    select: (data: VariantProductZodType) => {
+      if (!data) return data;
+
+      const cleanData = structuredClone(data);
+
+      if (cleanData.existingImages && cleanData.existingImages.length > 0) {
+        cleanData.existingImages.sort((a, b) => a.order - b.order);
+
+        cleanData.existingImages.forEach((img, index) => {
+          img.order = index;
+        });
+      }
+
+      if (cleanData.combinatedVariants && cleanData.combinatedVariants.length > 0) {
+        cleanData.combinatedVariants.forEach((variant) => {
+          if (variant.existingImages && variant.existingImages.length > 0) {
+            variant.existingImages.sort((a, b) => a.order - b.order);
+
+            variant.existingImages.forEach((img, index) => {
+              img.order = index;
+            });
+          }
+        });
+      }
+
+      return cleanData;
+    },
+  });
+
+  const isLoading = brandsQuery.isLoading || categoriesQuery.isLoading || (isEditMode && productQuery.isLoading);
+
+  if (isLoading) {
+    return <GlobalLoadingOverlay visible={true} />;
+  }
+
+  if (brandsQuery.isError || !brandsQuery.data) {
     return <ProductErrorComponent message="Markalar yüklenirken hata oluştu" />;
   }
-  const brands = (await brandResponse.json()) as BrandSelectType[];
-  const categoryResponse = await fetch(
-    `${process.env.BACKEND_URL}/admin/products/categories/get-all-categories-without-query`,
-    {
-      method: "GET",
-      headers: {
-        Cookie: `token=${token}`,
-      },
-      credentials: "include",
-      cache: "no-cache",
+  if (categoriesQuery.isError || !categoriesQuery.data) {
+    return <ProductErrorComponent message="Kategoriler yüklenirken hata oluştu" />;
+  }
+
+  if (isEditMode) {
+    if (productQuery.isError) {
+      return <ProductErrorComponent message="Ürün yüklenirken hata oluştu veya ürün bulunamadı." />;
     }
+
+    if (!productQuery.data) {
+      return <ProductNotFound message="Aradığınız ürün varyantı sistemde mevcut değil veya silinmiş olabilir." />;
+    }
+  }
+
+  return (
+    <VariantProductForm
+      brands={brandsQuery.data as BrandSelectType[]}
+      categories={categoriesQuery.data as CategorySelectType[]}
+      defaultValues={isEditMode ? (productQuery.data as VariantProductZodType) : undefined}
+    />
   );
-  if (!categoryResponse.ok) {
-    return (
-      <ProductErrorComponent message="Kategoriler yüklenirken hata oluştu" />
-    );
-  }
-  const categories = (await categoryResponse.json()) as CategorySelectType[];
-  if (id === "new") {
-    return <VariantProductForm brands={brands} categories={categories} />;
-  }
-
-  try {
-    const response = await fetch(
-      `${process.env.BACKEND_URL}/admin/products/get-product-variant/${id}`,
-      {
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
-        headers: {
-          Cookie: `token=${token}`,
-        },
-      }
-    );
-
-    if (response.status === 404) {
-      return (
-        <ProductNotFound message="Aradığınız ürün varyantı sistemde mevcut değil veya silinmiş olabilir." />
-      );
-    }
-
-    if (!response.ok) {
-      console.error("API Error:", response.statusText);
-      return <ProductErrorComponent message="Sunucu hatası oluştu" />;
-    }
-
-    const responseText = await response.text();
-
-    if (
-      !responseText ||
-      responseText.trim() === "" ||
-      responseText === "null"
-    ) {
-      return (
-        <ProductNotFound message="Aradığınız ürün varyantı sistemde mevcut değil veya silinmiş olabilir." />
-      );
-    }
-
-    let data: VariantProductZodType | null;
-    try {
-      data = JSON.parse(responseText);
-    } catch (parseError) {
-      return <ProductErrorComponent message="Veri formatı hatası" />;
-    }
-
-    if (!data) {
-      return (
-        <ProductNotFound message="Aradığınız ürün varyantı sistemde mevcut değil veya silinmiş olabilir." />
-      );
-    }
-
-    return (
-      <VariantProductForm
-        defaultValues={data}
-        brands={brands}
-        categories={categories}
-      />
-    );
-  } catch (error) {
-    return <ProductErrorComponent message="Bağlantı hatası oluştu" />;
-  }
 };
 
 export default CreateVariantProductPage;
