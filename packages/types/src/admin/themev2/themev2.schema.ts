@@ -9,7 +9,6 @@ import {
   MantineSize,
   ThemeComponents,
 } from "../../shared/shared-enum";
-import { createId } from "@repo/shared";
 
 export const SlideSchema = z
   .object({
@@ -98,7 +97,7 @@ export const SliderSchema = SlideSchema.safeExtend({
 
 export const SliderComponentSchema = z.object({
   componentId: z.cuid2(),
-  type: z.literal<$Enums.LayoutComponentType>("SLIDER"),
+  type: z.literal<ThemeComponents>("SLIDER"),
   order: z
     .number({ error: "Component sıralaması zorunludur." })
     .int({ error: "Component sıralaması tam sayı olmalıdır." })
@@ -148,7 +147,7 @@ export const SliderComponentSchema = z.object({
 
 export const MarqueeComponentSchema = z.object({
   componentId: z.cuid2(),
-  type: z.literal<$Enums.LayoutComponentType>("MARQUEE"),
+  type: z.literal<ThemeComponents>("MARQUEE"),
   order: z.number({ error: "Component sıralaması zorunludur." }).int().min(0),
   items: z
     .array(
@@ -174,41 +173,39 @@ export const MarqueeComponentSchema = z.object({
                 error: "Geçerli bir değer seçiniz.",
               }),
             })
-            .nullish(), // <-- BURASI EKLENDİ
+            .nullish(),
         })
         .check(({ value: item, issues }) => {
           const hasText = item.text != null && item.text.trim() !== "";
           const hasNewImage = item.image != null;
           const hasExistingImage = item.existingImage != null;
 
-          // Kural A: Hem yeni resim hem de mevcut resim bir arada olamaz
           if (hasNewImage && hasExistingImage) {
             issues.push({
               code: "custom",
               message: "Hem yeni resim hem de mevcut resim seçilemez.",
-              path: ["image"], // Hatayı 'image' alanına ata
+              path: ["image"],
               input: item.image,
             });
             issues.push({
               code: "custom",
               message: "Hem yeni resim hem de mevcut resim seçilemez.",
-              path: ["existingImage"], // Hatayı 'existingImage' alanına ata4
+              path: ["existingImage"],
               input: item.existingImage,
             });
           }
 
-          // Kural B: En az biri dolu olmalı (Metin VEYA Yeni Resim VEYA Mevcut Resim)
           if (!hasText && !hasNewImage && !hasExistingImage) {
             issues.push({
               code: "custom",
               message: "Öğe, bir metin VEYA bir resim içermelidir.",
-              path: ["text"], // Hatayı 'text' alanına ata
+              path: ["text"],
               input: item.text,
             });
           }
         })
     )
-    // GÜNCELLEME 3: Hata mesajı düzeltildi
+
     .min(1, { error: "Marquee en az bir öğe içermelidir." }),
   options: z.object({
     backgroundColor: colorHex.nullish(),
@@ -231,10 +228,59 @@ export const MarqueeComponentSchema = z.object({
     isReverse: z.boolean(),
   }),
 });
+export const CarouselItemSchema = z
+  .object({
+    productId: z.cuid2().optional().nullable(),
+    variantId: z.cuid2().optional().nullable(),
+    customTitle: z.string().optional(),
+    customImage: z.url().optional(),
+    badgeText: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (!data.productId && !data.variantId) {
+        return false;
+      }
+    },
+    {
+      error: "Ürün veya Varyant ID'si zorunludur.",
+    }
+  );
+
+export const CarouselConfigSchema = z.object({
+  slidesPerViewDesktop: z.number().min(1).max(6),
+  slidesPerViewTablet: z.number().min(1).max(4),
+  slidesPerViewMobile: z.number().min(1).max(2),
+  autoplay: z.boolean(),
+  autoplaySpeed: z.number().min(1000),
+  loop: z.boolean(),
+  showArrows: z.boolean(),
+  showDots: z.boolean(),
+  showAddToCartButton: z.boolean(),
+  aspectRatio: z.enum(AspectRatio, {
+    error: "Geçerli bir aspect ratio değeri seçiniz.",
+  }),
+});
+
+export const ProductCarouselComponentSchema = z.object({
+  componentId: z.cuid2({
+    error: "Geçerli bir component ID'si giriniz.",
+  }),
+  type: z.literal("PRODUCT_CAROUSEL"),
+  order: z.number({ error: "Sıralama zorunludur." }).int().min(0),
+  title: z.string().max(100).optional(),
+  description: z.string().max(300).optional(),
+  config: CarouselConfigSchema,
+  items: z
+    .array(CarouselItemSchema)
+    .min(1, { message: "Carousel içinde en az 1 ürün olmalıdır." })
+    .max(20, { message: "Carousel içine en fazla 20 ürün ekleyebilirsiniz." }),
+});
 
 export const ThemeComponentSchema = z.discriminatedUnion("type", [
   SliderComponentSchema,
   MarqueeComponentSchema,
+  ProductCarouselComponentSchema,
 ]);
 
 export const ThemeSchema = z.object({
@@ -254,362 +300,30 @@ export const ThemeSchema = z.object({
 export type SliderInputType = z.input<typeof SliderSchema>;
 export type SliderOutputType = z.infer<typeof SliderSchema>;
 
-// Slide (tek slayt - order ile birlikte)
 export type SlideInputType = z.input<typeof SlideSchema>;
 export type SlideOutputType = z.infer<typeof SlideSchema>;
 
-// Slider Component (tüm slider component'i)
 export type SliderComponentInputType = z.input<typeof SliderComponentSchema>;
 export type SliderComponentOutputType = z.infer<typeof SliderComponentSchema>;
 
-// ============ MARQUEE SCHEMA ============
 export type MarqueeComponentInputType = z.input<typeof MarqueeComponentSchema>;
 export type MarqueeComponentOutputType = z.infer<typeof MarqueeComponentSchema>;
 
-// ============ THEME SCHEMAS ============
+export type CarouselItemInputType = z.input<typeof CarouselItemSchema>;
+export type CarouselItemOutputType = z.infer<typeof CarouselItemSchema>;
 
-// Theme Component (discriminated union - SLIDER | MARQUEE)
+export type CarouselConfigInputType = z.input<typeof CarouselConfigSchema>;
+export type CarouselConfigOutputType = z.infer<typeof CarouselConfigSchema>;
+
+export type ProductCarouselComponentInputType = z.input<
+  typeof ProductCarouselComponentSchema
+>;
+export type ProductCarouselComponentOutputType = z.infer<
+  typeof ProductCarouselComponentSchema
+>;
+
 export type ThemeComponentInputType = z.input<typeof ThemeComponentSchema>;
 export type ThemeComponentOutputType = z.infer<typeof ThemeComponentSchema>;
 
-// Theme (ana schema - component array'i)
 export type ThemeInputType = z.input<typeof ThemeSchema>;
 export type ThemeOutputType = z.infer<typeof ThemeSchema>;
-
-export const minimalValidSlide: Omit<SliderInputType, "order" | "sliderId"> = {
-  conditionDates: {
-    addEndDate: false,
-    addStartDate: false,
-    endDate: null,
-    startDate: null,
-  },
-  desktopView: {
-    file: null,
-    existingAsset: {
-      url: "https://placehold.co/1920x1080/6E44FF/FFFFFF?text=YENI+SLAYT",
-      type: "IMAGE",
-    },
-  },
-  mobileView: null,
-};
-
-export const minimalValidMarqueeItem: Omit<
-  MarqueeComponentOutputType["items"][0],
-  "itemId"
-> = {
-  text: "Yeni Marquee Öğesi",
-  link: null,
-  image: null,
-};
-
-export const ThemeV2DefaultValues: ThemeInputType = {
-  components: [
-    {
-      // İlk Slider (21:9 Desktop, 9:16 Mobile)
-      componentId: createId(),
-      type: "SLIDER",
-      order: 0,
-      options: {
-        aspectRatio: "21/9",
-        mobileAspectRatio: "9/16", // Yeni alan eklendi
-        autoPlay: true,
-        autoPlayInterval: 5000,
-        loop: true,
-        showIndicators: true,
-        showArrows: true,
-      },
-      sliders: [
-        {
-          order: 0,
-          sliderId: createId(),
-          ...minimalValidSlide,
-          desktopView: {
-            file: null,
-            existingAsset: {
-              url: "https://placehold.co/1920x823/6E44FF/FFFFFF?text=SLIDER+1+(21:9)",
-              type: "IMAGE",
-            },
-          },
-          mobileView: {
-            file: null,
-            existingAsset: {
-              url: "https://placehold.co/720x1280/6E44FF/FFFFFF?text=SLAYT+1+MOBIL+(9:16)",
-              type: "IMAGE",
-            },
-          },
-        },
-        {
-          order: 1,
-          sliderId: createId(),
-          ...minimalValidSlide,
-          desktopView: {
-            file: null,
-            existingAsset: {
-              url: "https://placehold.co/1920x823/FF6B6B/FFFFFF?text=SLIDER+1+(21:9)",
-              type: "IMAGE",
-            },
-          },
-          mobileView: {
-            file: null,
-            existingAsset: {
-              url: "https://placehold.co/720x1280/FF6B6B/FFFFFF?text=SLAYT+2+MOBIL+(9:16)",
-              type: "IMAGE",
-            },
-          },
-        },
-        {
-          order: 2,
-          sliderId: createId(),
-          ...minimalValidSlide,
-          desktopView: {
-            file: null,
-            existingAsset: {
-              url: "https://placehold.co/1920x823/4ECDC4/FFFFFF?text=SLIDER+1+(21:9)",
-              type: "IMAGE",
-            },
-          },
-          mobileView: null, // Sadece desktop
-        },
-      ],
-    } as SliderComponentInputType,
-    // Marquee Component (Aynen kaldı)
-    {
-      componentId: createId(),
-      type: "MARQUEE",
-      order: 1,
-      items: [
-        {
-          itemId: createId(),
-          text: "✨ FIRSATLARI KAÇIRMA",
-          link: "https://example.com/firsatlar",
-          image: null,
-          existingImage: null,
-        },
-        {
-          itemId: createId(),
-          text: "🚀 HIZLI KARGO",
-          link: "https://example.com/kargo",
-          image: null,
-          existingImage: null,
-        },
-        {
-          itemId: createId(),
-          text: "💳 GÜVENLİ ÖDEME",
-          image: null,
-          existingImage: null,
-        },
-        {
-          itemId: createId(),
-          text: "🎉 YENİ SEZON GELDİ",
-          link: "https://example.com/yeni-sezon",
-          image: null,
-          existingImage: null,
-        },
-      ],
-      options: {
-        speed: 40,
-        pauseOnHover: true,
-        isReverse: false,
-        backgroundColor: "#111111",
-        textColor: "#FFFFFF",
-        fontSize: "sm",
-        fontWeight: "bold",
-        paddingY: "xs",
-      },
-    } as MarqueeComponentInputType,
-    // İkinci Slider (16:9 Desktop, 16:9 Mobile)
-    {
-      componentId: createId(),
-      type: "SLIDER",
-      order: 2,
-      options: {
-        aspectRatio: "16/9",
-        mobileAspectRatio: null, // Mobil, desktop'ı takip edecek (veya auto)
-        autoPlay: true,
-        autoPlayInterval: 5000,
-        loop: true,
-        showIndicators: true,
-        showArrows: true,
-      },
-      sliders: [
-        {
-          order: 0,
-          sliderId: createId(),
-          ...minimalValidSlide,
-          desktopView: {
-            file: null,
-            existingAsset: {
-              url: "https://placehold.co/1920x1080/F06595/FFFFFF?text=SLIDER+2+(16:9)",
-              type: "IMAGE",
-            },
-          },
-          mobileView: {
-            file: null,
-            existingAsset: {
-              // 16:9'un mobil karşılığı (720 / 16 * 9 = 405)
-              url: "https://placehold.co/720x405/F06595/FFFFFF?text=SLAYT+1+MOBIL+(16:9)",
-              type: "IMAGE",
-            },
-          },
-        },
-        {
-          order: 1,
-          sliderId: createId(),
-          ...minimalValidSlide,
-          desktopView: {
-            file: null,
-            existingAsset: {
-              url: "https://placehold.co/1920x1080/A61E4D/FFFFFF?text=SLIDER+2+(16:9)",
-              type: "IMAGE",
-            },
-          },
-          mobileView: null,
-        },
-      ],
-    } as SliderComponentInputType,
-    // Marquee Component (Aynen kaldı)
-    {
-      componentId: createId(),
-      type: "MARQUEE",
-      order: 3,
-      items: [
-        {
-          itemId: createId(),
-          text: "%50 İNDİRİM",
-          image: null,
-          existingImage: null,
-        },
-        {
-          itemId: createId(),
-          text: "SON GÜN 30 KASIM",
-          image: null,
-          existingImage: null,
-        },
-        {
-          itemId: createId(),
-          text: "BLACK FRIDAY",
-          image: null,
-          existingImage: null,
-        },
-      ],
-      options: {
-        speed: 60,
-        pauseOnHover: false,
-        isReverse: true,
-        backgroundColor: "#F8F9FA",
-        textColor: "#343A40",
-        fontSize: "md",
-        paddingY: "sm",
-        fontWeight: "normal",
-      },
-    } as MarqueeComponentInputType,
-    // YENİ EKLENEN ÜÇÜNCÜ SLIDER (1:1 Desktop, 4:5 Mobile)
-    {
-      componentId: createId(),
-      type: "SLIDER",
-      order: 4,
-      options: {
-        aspectRatio: "1/1",
-        mobileAspectRatio: "4/5", // Instagram dikey
-        autoPlay: false,
-        autoPlayInterval: 5000,
-        loop: true,
-        showIndicators: true,
-        showArrows: true,
-      },
-      sliders: [
-        {
-          order: 0,
-          sliderId: createId(),
-          ...minimalValidSlide,
-          desktopView: {
-            file: null,
-            existingAsset: {
-              url: "https://placehold.co/1080x1080/12B886/FFFFFF?text=SLIDER+3+(1:1)",
-              type: "IMAGE",
-            },
-          },
-          mobileView: {
-            file: null,
-            existingAsset: {
-              // 4:5 mobil karşılığı (720 / 4 * 5 = 900)
-              url: "https://placehold.co/720x900/12B886/FFFFFF?text=SLAYT+1+MOBIL+(4:5)",
-              type: "IMAGE",
-            },
-          },
-        },
-      ],
-    } as SliderComponentInputType,
-  ],
-};
-
-const getDefaultSlider = (order: number): SliderComponentInputType => ({
-  componentId: createId(),
-  type: "SLIDER",
-  order,
-  options: {
-    aspectRatio: "16/9", // Daha modern bir varsayılan
-    mobileAspectRatio: null, // Varsayılan olarak null
-    autoPlay: true,
-    autoPlayInterval: 5000,
-    loop: true,
-    showIndicators: true,
-    showArrows: true,
-  },
-  sliders: [
-    {
-      order: 0,
-      sliderId: createId(),
-      conditionDates: {
-        addEndDate: false,
-        addStartDate: false,
-        endDate: null,
-        startDate: null,
-      },
-      desktopView: {
-        file: null,
-        existingAsset: {
-          url: "https://placehold.co/1920x1080/6E44FF/FFFFFF?text=YENI+SLAYT+(16:9)",
-          type: "IMAGE",
-        },
-      },
-      mobileView: null,
-    },
-  ],
-});
-
-const getDefaultMarquee = (order: number): MarqueeComponentInputType => ({
-  componentId: createId(),
-  type: "MARQUEE",
-  order,
-  items: [
-    {
-      itemId: createId(),
-      text: "Yeni Marquee Öğesi",
-      link: null,
-      image: null,
-      existingImage: null,
-    },
-  ],
-  options: {
-    speed: 60,
-    pauseOnHover: false,
-    isReverse: false,
-    backgroundColor: "#F8F9FA",
-    textColor: "#343A40",
-    fontSize: "md",
-    paddingY: "sm",
-    fontWeight: "normal",
-  },
-});
-
-export const createComponent = (order: number, type: ThemeComponents) => {
-  switch (type) {
-    case "SLIDER":
-      return getDefaultSlider(order);
-    case "MARQUEE":
-      return getDefaultMarquee(order);
-    default:
-      throw new Error("Bilinmeyen component türü: " + type);
-  }
-};

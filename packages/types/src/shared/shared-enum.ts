@@ -89,6 +89,7 @@ export type FontFamily = (typeof FontFamily)[keyof typeof FontFamily];
 export const ThemeComponents = {
   SLIDER: "SLIDER",
   MARQUEE: "MARQUEE",
+  PRODUCT_CAROUSEL: "PRODUCT_CAROUSEL",
 } as const;
 
 export type ThemeComponents =

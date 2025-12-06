@@ -175,7 +175,6 @@ const FirstThemeSlider = ({ data }: FirstThemeSliderProps) => {
     return hasData(slide.desktopView);
   });
 
-  // Eğer hiç valid slide yoksa component'i render etme
   if (!validSlides || validSlides.length === 0) {
     return null;
   }

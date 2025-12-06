@@ -2,13 +2,27 @@ import { Stack } from "@mantine/core";
 import { Control, UseFieldArrayReturn } from "@repo/shared";
 import {
   MarqueeComponentInputType,
+  ProductCarouselComponentInputType,
   SliderComponentInputType,
+  ThemeComponents,
   ThemeInputType,
 } from "@repo/types";
 import { useMemo } from "react";
 import LeftSideMarqueeList from "./left-side-components/LeftSideMarqueeList";
 import LeftSideSliderList from "./left-side-components/LeftSideSliderList";
 import SortableNavbarComponent from "./SortableNavbarComponent";
+import LeftSideProductForm from "./left-side-components/LeftSideProductForm";
+
+const getTitle = (type: ThemeComponents, index: number) => {
+  switch (type) {
+    case "SLIDER":
+      return `Slider (${index + 1})`;
+    case "MARQUEE":
+      return `Marquee (${index + 1})`;
+    case "PRODUCT_CAROUSEL":
+      return `Ürün Slaytı (${index + 1})`;
+  }
+};
 
 interface NavbarComponentTableProps {
   control: Control<ThemeInputType>;
@@ -74,11 +88,7 @@ const NavbarComponentTable = ({
           <SortableNavbarComponent
             key={field.rhf_id}
             componentId={field.componentId}
-            title={
-              field.type === "SLIDER"
-                ? `Slider (${sortedIndex + 1})`
-                : `Marquee (${sortedIndex + 1})`
-            }
+            title={getTitle(field.type, sortedIndex)}
             onDelete={() => handleDelete(field.rhf_id)}
             onMoveUp={() => handleSwap(sortedIndex, sortedIndex - 1)}
             onMoveDown={() => handleSwap(sortedIndex, sortedIndex + 1)}
@@ -97,6 +107,17 @@ const NavbarComponentTable = ({
                 control={control}
                 index={actualIndex}
                 field={field as MarqueeComponentInputType & { rhf_id: string }}
+              />
+            )}
+            {field.type === "PRODUCT_CAROUSEL" && (
+              <LeftSideProductForm
+                control={control}
+                index={actualIndex}
+                field={
+                  field as ProductCarouselComponentInputType & {
+                    rhf_id: string;
+                  }
+                }
               />
             )}
           </SortableNavbarComponent>

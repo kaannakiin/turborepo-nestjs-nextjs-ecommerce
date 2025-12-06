@@ -23,3 +23,4 @@ export * from "./payment-methods/payment-methods.schema";
 export * from "./api/admin/payment/payment.types";
 export * from "./admin/themev2/themev2.schema";
 export * from "./admin/carts/admin-carts.types";
+export * from "./admin/themev2/default-values";

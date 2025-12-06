@@ -3,11 +3,14 @@
 import { Control, useWatch } from "@repo/shared";
 import {
   MarqueeComponentInputType,
+  ProductCarouselComponentOutputType,
   SliderComponentOutputType,
   ThemeInputType,
 } from "@repo/types";
 import FirstThemeMarquee from "./first-theme/FirstThemeMarquee";
 import FirstThemeSlider from "./first-theme/FirstThemeSlider";
+import { Stack } from "@mantine/core";
+import FirstThemeProductCarousel from "./first-theme/FirstThemeProductCarousel";
 
 interface ThemeSorterProps {
   control: Control<ThemeInputType>;
@@ -18,7 +21,7 @@ const ThemeSorter = ({ control }: ThemeSorterProps) => {
     name: "components",
   });
   return (
-    <>
+    <Stack gap="xs">
       {data
         .sort((a, b) => a.order - b.order)
         .map((component) => {
@@ -37,9 +40,17 @@ const ThemeSorter = ({ control }: ThemeSorterProps) => {
                   data={component as MarqueeComponentInputType}
                 />
               );
+
+            case "PRODUCT_CAROUSEL":
+              return (
+                <FirstThemeProductCarousel
+                  key={component.componentId}
+                  data={component as ProductCarouselComponentOutputType}
+                />
+              );
           }
         })}
-    </>
+    </Stack>
   );
 };
 

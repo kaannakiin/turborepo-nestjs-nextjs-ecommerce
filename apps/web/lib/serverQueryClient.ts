@@ -1,12 +1,14 @@
-import { QueryClient } from "@repo/shared";
+import { QueryClient } from '@repo/shared';
 
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: Infinity,
-      gcTime: 1000 * 60 * 10,
+      staleTime: 1000 * 60 * 1,
+      gcTime: 1000 * 60 * 15,
       refetchOnWindowFocus: false,
-      retry: 3,
-    },
-  },
+      refetchOnReconnect: true,
+      retry: 2,
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
+    }
+  }
 });
