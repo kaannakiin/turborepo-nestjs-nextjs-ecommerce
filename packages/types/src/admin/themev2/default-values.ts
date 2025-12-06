@@ -1,12 +1,12 @@
 import { createId } from "@repo/shared";
+import { ThemeComponents } from "../../shared/shared-enum";
 import {
-  SliderComponentInputType,
   MarqueeComponentInputType,
   ProductCarouselComponentInputType,
+  SliderComponentInputType,
   SliderInputType,
   ThemeInputType,
 } from "./themev2.schema";
-import { ThemeComponents } from "../../shared/shared-enum";
 
 export const minimalValidSlide: Omit<SliderInputType, "order" | "sliderId"> = {
   conditionDates: {
@@ -55,9 +55,7 @@ export const getDefaultSlider = (order: number): SliderComponentInputType => ({
   ],
 });
 
-export const getDefaultMarquee = (
-  order: number
-): MarqueeComponentInputType => ({
+export const getDefaultMarquee = (order: number): MarqueeComponentInputType => ({
   componentId: createId(),
   type: "MARQUEE",
   order,
@@ -89,9 +87,7 @@ export const getDefaultMarquee = (
   },
 });
 
-export const getDefaultProductCarousel = (
-  order: number
-): ProductCarouselComponentInputType => ({
+export const getDefaultProductCarousel = (order: number): ProductCarouselComponentInputType => ({
   componentId: createId(),
   type: "PRODUCT_CAROUSEL",
   order,
@@ -111,15 +107,14 @@ export const getDefaultProductCarousel = (
   },
   items: [
     {
-      // Validasyondan geçmesi için createId ile geçici bir ID atıyoruz.
-      // Frontend'de bu ürün "seçilmemiş" gibi görünecek şekilde handle edilmeli.
+      itemId: createId(),
       productId: createId(),
       variantId: null,
       customTitle: "Örnek Ürün Başlığı",
       badgeText: "YENİ",
-      // customImage opsiyonel olduğu için boş bırakabiliriz
     },
     {
+      itemId: createId(),
       productId: createId(),
       variantId: null,
       customTitle: "İkinci Ürün",

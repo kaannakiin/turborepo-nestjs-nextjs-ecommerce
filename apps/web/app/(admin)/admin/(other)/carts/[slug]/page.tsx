@@ -69,16 +69,10 @@ const getStatusBadge = (status: string) => {
     },
   };
 
-  const config =
-    statusConfig[status as keyof typeof statusConfig] || statusConfig.ACTIVE;
+  const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.ACTIVE;
 
   return (
-    <Badge
-      size="lg"
-      variant="light"
-      color={config.color}
-      leftSection={<config.icon size={16} />}
-    >
+    <Badge size="lg" variant="light" color={config.color} leftSection={<config.icon size={16} />}>
       {config.label}
     </Badge>
   );
@@ -111,9 +105,7 @@ const CartViewPage = () => {
   const { data: cart, isLoading } = useQuery({
     queryKey: ["admin-cart", { slug }],
     queryFn: async () => {
-      const response = await fetchWrapper.get<GetCartForAdminReturnType>(
-        `/admin/carts/${slug}`
-      );
+      const response = await fetchWrapper.get<GetCartForAdminReturnType>(`/admin/carts/${slug}`);
       if (!response.success) {
         const error = response as ApiError;
         throw new Error(error.error || "Failed to fetch cart data");
@@ -136,9 +128,7 @@ const CartViewPage = () => {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <IconAlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900">
-            Sepet bulunamadı
-          </h2>
+          <h2 className="text-xl font-semibold text-gray-900">Sepet bulunamadı</h2>
         </div>
       </div>
     );
@@ -146,10 +136,7 @@ const CartViewPage = () => {
 
   const totalItems = cart.items.length;
   const totalPrice = cart.items.reduce((sum, item) => {
-    const priceData =
-      item.variant && item.variantId
-        ? item.variant.prices
-        : item.product.prices;
+    const priceData = item.variant && item.variantId ? item.variant.prices : item.product.prices;
     const localePrice = priceData.find((p) => p.currency === cart.currency);
     const itemPrice = localePrice?.discountedPrice ?? localePrice?.price ?? 0;
     return sum + itemPrice * item.quantity;
@@ -175,12 +162,7 @@ const CartViewPage = () => {
               <Text size="sm" c="dimmed" mb={4}>
                 Toplam Tutar
               </Text>
-              <ProductPriceFormatter
-                price={totalPrice}
-                currency={cart.currency}
-                size="xl"
-                fw={500}
-              />
+              <ProductPriceFormatter price={totalPrice} currency={cart.currency} size="xl" fw={500} />
             </Paper>
             <Paper p="md" radius="md" bg="gray.0">
               <Text size="sm" c="dimmed" mb={4}>
@@ -257,23 +239,14 @@ const CartViewPage = () => {
                 {cart.items.map((item) => {
                   const product = item.product;
                   const variant = item.variant;
-                  const priceData =
-                    item.variant && item.variantId
-                      ? item.variant.prices
-                      : item.product.prices;
-                  const localePrice = priceData.find(
-                    (p) => p.currency === cart.currency
-                  );
+                  const priceData = item.variant && item.variantId ? item.variant.prices : item.product.prices;
+                  const localePrice = priceData.find((p) => p.currency === cart.currency);
                   const originalPrice = localePrice?.price || 0;
                   const discountedPrice = localePrice?.discountedPrice;
                   const finalPrice = discountedPrice ?? originalPrice;
-                  const hasDiscount =
-                    discountedPrice && discountedPrice < originalPrice;
-                  const productName =
-                    product?.translations?.[0]?.name || "İsimsiz Ürün";
-                  const imageUrl =
-                    product?.assets?.[0]?.asset?.url ||
-                    variant?.assets?.[0]?.asset?.url;
+                  const hasDiscount = discountedPrice && discountedPrice < originalPrice;
+                  const productName = product?.translations?.[0]?.name || "İsimsiz Ürün";
+                  const imageUrl = product?.assets?.[0]?.asset?.url || variant?.assets?.[0]?.asset?.url;
 
                   return (
                     <Paper
@@ -282,12 +255,8 @@ const CartViewPage = () => {
                       radius="md"
                       withBorder
                       style={{
-                        borderColor: item.isVisible
-                          ? "var(--mantine-color-gray-3)"
-                          : "var(--mantine-color-red-3)",
-                        backgroundColor: item.isVisible
-                          ? "white"
-                          : "var(--mantine-color-red-0)",
+                        borderColor: item.isVisible ? "var(--mantine-color-gray-3)" : "var(--mantine-color-red-3)",
+                        backgroundColor: item.isVisible ? "white" : "var(--mantine-color-red-0)",
                       }}
                     >
                       <Group align="flex-start" wrap="nowrap">
@@ -299,11 +268,7 @@ const CartViewPage = () => {
                             <Text fw={500}>
                               {productName}{" "}
                               {variant?.options
-                                ?.map(
-                                  (opt) =>
-                                    opt.productVariantOption.variantOption
-                                      .translations[0]?.name
-                                )
+                                ?.map((opt) => opt.productVariantOption.variantOption.translations[0]?.name)
                                 .join(" - ")}
                             </Text>
                             <Stack gap={2} align="flex-end">
@@ -330,14 +295,9 @@ const CartViewPage = () => {
 
                           {!item.isVisible && (
                             <Group gap="xs">
-                              <IconAlertCircle
-                                size={16}
-                                color="var(--mantine-color-red-6)"
-                              />
+                              <IconAlertCircle size={16} color="var(--mantine-color-red-6)" />
                               <Text size="sm" c="red">
-                                Görünmez -{" "}
-                                {getInvisibleCauseLabel(item.visibleCause) ||
-                                  "Bilinmeyen sebep"}
+                                Görünmez - {getInvisibleCauseLabel(item.visibleCause) || "Bilinmeyen sebep"}
                               </Text>
                             </Group>
                           )}
@@ -352,10 +312,7 @@ const CartViewPage = () => {
             {cart.cartPaymentCheckAttempts.length > 0 && (
               <Card shadow="sm" padding="lg" radius="md" withBorder>
                 <Group mb="md">
-                  <IconCreditCard
-                    size={24}
-                    color="var(--mantine-color-gray-6)"
-                  />
+                  <IconCreditCard size={24} color="var(--mantine-color-gray-6)" />
                   <Title order={3}>Ödeme Denemeleri</Title>
                 </Group>
                 <Stack gap="sm">
@@ -366,34 +323,20 @@ const CartViewPage = () => {
                       radius="md"
                       withBorder
                       style={{
-                        borderColor: attempt.isSuccess
-                          ? "var(--mantine-color-green-3)"
-                          : "var(--mantine-color-red-3)",
+                        borderColor: attempt.isSuccess ? "var(--mantine-color-green-3)" : "var(--mantine-color-red-3)",
                         backgroundColor: attempt.isSuccess
                           ? "var(--mantine-color-green-0)"
                           : "var(--mantine-color-red-0)",
                       }}
                     >
-                      <Group
-                        justify="space-between"
-                        mb={attempt.message ? "xs" : 0}
-                      >
+                      <Group justify="space-between" mb={attempt.message ? "xs" : 0}>
                         <Group>
                           {attempt.isSuccess ? (
-                            <IconCircleCheck
-                              size={24}
-                              color="var(--mantine-color-green-6)"
-                            />
+                            <IconCircleCheck size={24} color="var(--mantine-color-green-6)" />
                           ) : (
-                            <IconCircleX
-                              size={24}
-                              color="var(--mantine-color-red-6)"
-                            />
+                            <IconCircleX size={24} color="var(--mantine-color-red-6)" />
                           )}
-                          <Text
-                            fw={500}
-                            c={attempt.isSuccess ? "green.9" : "red.9"}
-                          >
+                          <Text fw={500} c={attempt.isSuccess ? "green.9" : "red.9"}>
                             {attempt.isSuccess ? "Başarılı" : "Başarısız"}
                           </Text>
                         </Group>
@@ -421,11 +364,7 @@ const CartViewPage = () => {
               </Group>
 
               <ScrollArea h={500} type="auto" pr={"lg"}>
-                <Timeline
-                  active={cart.cartActivityLogs.length}
-                  bulletSize={24}
-                  lineWidth={2}
-                >
+                <Timeline active={cart.cartActivityLogs.length} bulletSize={24} lineWidth={2}>
                   {cart.cartActivityLogs.map((log, index) => {
                     const details = log.details as any;
                     const context = details?.context;
