@@ -19,7 +19,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ActionIcon, Alert, AspectRatio, Badge, Group, SimpleGrid, Stack, StyleProp, Text } from "@mantine/core";
+import { ActionIcon, Alert, AspectRatio, Badge, Box, Group, SimpleGrid, Stack, StyleProp, Text } from "@mantine/core";
 import { Dropzone, DropzoneProps, FileRejection, FileWithPath } from "@mantine/dropzone";
 import { $Enums } from "@repo/database/client";
 import { MIME_TYPES } from "@repo/types";
@@ -68,41 +68,44 @@ const SortableItem = ({ id, media, index, onRemove }: SortableItemProps) => {
   };
 
   return (
-    <AspectRatio
-      ref={setNodeRef}
-      style={style}
-      maw={240}
-      ratio={1}
-      pos={"relative"}
-      className="p-1 border rounded-md overflow-hidden"
-    >
-      {media.type === "VIDEO" ? (
-        <video src={media.url} className="w-full h-full object-contain" controls={false} />
-      ) : (
-        <CustomImage src={media.url} alt={`Product ${index + 1}`} />
-      )}
-      <Group align="center" justify="space-between" className="w-full h-4 absolute top-2 pr-2 z-50">
-        <Badge color={"admin"} variant={media.isNew ? "filled" : "light"}>
-          {media.isNew ? "Yeni" : "Mevcut"} - {index + 1}
-        </Badge>
-        <Group gap={"lg"}>
+    <AspectRatio ref={setNodeRef} style={style} maw={240} ratio={1} pos={"relative"} className="relative group">
+      <Box className="relative w-full h-full rounded-lg overflow-hidden bg-gray-50 shadow-sm hover:shadow-md transition-shadow">
+        {media.type === "VIDEO" ? (
+          <video src={media.url} className="w-full h-full object-cover" controls={false} />
+        ) : (
+          <CustomImage src={media.url} alt={`Product ${index + 1}`} className="w-full h-full object-cover" />
+        )}
+
+        <Box className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors pointer-events-none" />
+
+        <Box className="absolute top-2 left-2 z-10">
+          <Badge color="admin" variant={media.isNew ? "filled" : "light"} size="sm" className="shadow-sm">
+            {media.isNew ? "Yeni" : "Mevcut"} • {index + 1}
+          </Badge>
+        </Box>
+
+        <Group gap="xs" className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
           <ActionIcon
-            variant="transparent"
-            size={"lg"}
+            variant="light"
+            size="sm"
+            color="gray"
             {...attributes}
             {...listeners}
-            className={isDragging ? "cursor-grabbing" : "cursor-move"}
+            className={`${isDragging ? "cursor-grabbing" : "cursor-move"} shadow-sm backdrop-blur-sm bg-white/90`}
           >
-            <IconGripVertical />
+            <IconGripVertical size={16} />
           </ActionIcon>
+
           <ActionPopover
-            targetIcon={<IconTrash />}
+            targetIcon={<IconTrash size={16} />}
             text={"Görseli silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."}
             onConfirm={onRemove}
             size="sm"
+            variant="light"
+            className="shadow-sm backdrop-blur-sm bg-white/90"
           />
         </Group>
-      </Group>
+      </Box>
     </AspectRatio>
   );
 };

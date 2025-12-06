@@ -1,24 +1,10 @@
 "use client";
 
-import {
-  ActionIcon,
-  AppShellSection,
-  Button,
-  Collapse,
-  Group,
-  Highlight,
-  Stack,
-  Text,
-  TextInput,
-  Tooltip,
-  Transition,
-  UnstyledButton,
-} from "@mantine/core";
+import { AppShellSection, Group, Highlight, Stack, Text, TextInput, Tooltip, UnstyledButton } from "@mantine/core";
 import { useDebouncedState, useHotkeys } from "@mantine/hooks";
 import {
   IconBrush,
   IconBuildingWarehouse,
-  IconChevronLeftPipe,
   IconHome2,
   IconPackage,
   IconSearch,
@@ -199,7 +185,6 @@ const AdminNavbar = ({ onNavItemClick }: AdminNavbarProps) => {
   const [activeGroup, setActiveGroup] = useState<number>(0);
   const [activeHref, setActiveHref] = useState<string>("");
   const [searchOpen, setSearchOpen] = useState<boolean>(false);
-  const [visibleLeftSide, setVisibleLeftSide] = useState<boolean>(true);
 
   const handleCloseSearch = () => {
     if (searchOpen) {
@@ -247,9 +232,7 @@ const AdminNavbar = ({ onNavItemClick }: AdminNavbarProps) => {
 
   useEffect(() => {
     const adminPrefix = "/admin";
-    const currentPath = pathname.startsWith(adminPrefix)
-      ? pathname.slice(adminPrefix.length)
-      : pathname;
+    const currentPath = pathname.startsWith(adminPrefix) ? pathname.slice(adminPrefix.length) : pathname;
 
     let bestMatchGroup = 0;
     let bestMatchHref = "";
@@ -257,10 +240,7 @@ const AdminNavbar = ({ onNavItemClick }: AdminNavbarProps) => {
 
     data.forEach((group, groupIndex) => {
       group.sub.forEach((subItem) => {
-        if (
-          currentPath.startsWith(subItem.href) &&
-          subItem.href.length > bestMatchLength
-        ) {
+        if (currentPath.startsWith(subItem.href) && subItem.href.length > bestMatchLength) {
           bestMatchLength = subItem.href.length;
           bestMatchGroup = groupIndex;
           bestMatchHref = subItem.href;
@@ -316,23 +296,14 @@ const AdminNavbar = ({ onNavItemClick }: AdminNavbarProps) => {
                   <IconSearch size={18} className="text-white" stroke={2.5} />
                 </div>
                 <div className="flex-1 text-left">
-                  <Text
-                    size="sm"
-                    fw={500}
-                    c="dimmed"
-                    className="group-hover:text-gray-700 transition-colors"
-                  >
+                  <Text size="sm" fw={500} c="dimmed" className="group-hover:text-gray-700 transition-colors">
                     Menüde Ara
                   </Text>
                   <Text size="xs" c="dimmed" opacity={0.7}>
                     Hızlı erişim için ara
                   </Text>
                 </div>
-                <Text
-                  size="xs"
-                  c="dimmed"
-                  className="px-2 py-1 bg-gray-100 rounded border border-gray-200 font-mono"
-                >
+                <Text size="xs" c="dimmed" className="px-2 py-1 bg-gray-100 rounded border border-gray-200 font-mono">
                   Ctrl+K
                 </Text>
               </div>
@@ -374,66 +345,25 @@ const AdminNavbar = ({ onNavItemClick }: AdminNavbarProps) => {
       </AppShellSection>
 
       <div className="flex h-full">
-        <Collapse
-          in={!searchOpen}
-          transitionDuration={300}
-          transitionTimingFunction="ease"
-        >
-          <Transition
-            mounted={visibleLeftSide}
-            transition="slide-right"
-            duration={300}
-          >
-            {(styles) => (
-              <Stack
-                style={styles}
-                className="w-14 h-full  bg-[var(--mantine-color-admin-0)] border-r border-gray-200"
-              >
-                <Stack align="center" className="h-full" py={"xs"}>
-                  <ActionIcon
-                    onClick={() => {
-                      setVisibleLeftSide((prev) => !prev);
-                    }}
-                    p={"0"}
-                    size={"lg"}
-                  >
-                    <IconChevronLeftPipe />
-                  </ActionIcon>
-                  {data.map((item, index) => (
-                    <Tooltip
-                      key={index}
-                      label={item.label}
-                      position="right"
-                      offset={10}
-                    >
-                      <UnstyledButton
-                        className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 ease-in-out ${
-                          activeGroup === index && !isSearchMode
-                            ? "bg-[var(--mantine-color-admin-9)] text-white shadow-md hover:bg-[var(--mantine-color-admin-8)] hover:shadow-lg hover:scale-105"
-                            : "text-gray-600 hover:bg-[var(--mantine-color-admin-2)] hover:text-[var(--mantine-color-admin-9)] hover:shadow-sm hover:scale-105"
-                        }`}
-                        onClick={() => handleGroupClick(index)}
-                      >
-                        {item.icon}
-                      </UnstyledButton>
-                    </Tooltip>
-                  ))}
-                </Stack>
-              </Stack>
-            )}
-          </Transition>
-        </Collapse>
+        <Stack className="w-14 h-full  bg-[var(--mantine-color-admin-0)] border-r border-gray-200">
+          <Stack align="center" className="h-full" py={"xs"}>
+            {data.map((item, index) => (
+              <Tooltip key={index} label={item.label} position="right" offset={10}>
+                <UnstyledButton
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 ease-in-out ${
+                    activeGroup === index && !isSearchMode
+                      ? "bg-[var(--mantine-color-admin-9)] text-white shadow-md hover:bg-[var(--mantine-color-admin-8)] hover:shadow-lg hover:scale-105"
+                      : "text-gray-600 hover:bg-[var(--mantine-color-admin-2)] hover:text-[var(--mantine-color-admin-9)] hover:shadow-sm hover:scale-105"
+                  }`}
+                  onClick={() => handleGroupClick(index)}
+                >
+                  {item.icon}
+                </UnstyledButton>
+              </Tooltip>
+            ))}
+          </Stack>
+        </Stack>
         <div className={`flex-1 bg-white`}>
-          {!visibleLeftSide && !searchOpen && (
-            <Button
-              fullWidth
-              onClick={() => setVisibleLeftSide(true)}
-              variant="light"
-              size={"sm"}
-            >
-              <IconChevronLeftPipe className="rotate-180" />
-            </Button>
-          )}
           {isSearchMode && itemsToRender.length === 0 ? (
             <Text p="md" c="dimmed" size="sm" ta="center">
               Arama sonucu bulunamadı.
@@ -453,9 +383,7 @@ const AdminNavbar = ({ onNavItemClick }: AdminNavbarProps) => {
                   <Group gap={12} align="center">
                     <div
                       className={`transition-colors duration-200 ${
-                        activeHref === subItem.href
-                          ? "text-white"
-                          : "text-gray-500"
+                        activeHref === subItem.href ? "text-white" : "text-gray-500"
                       }`}
                     >
                       {subItem.icon}
@@ -464,22 +392,18 @@ const AdminNavbar = ({ onNavItemClick }: AdminNavbarProps) => {
                       fz={"sm"}
                       fw={600}
                       className={`transition-all duration-200 ${
-                        activeHref === subItem.href
-                          ? "text-white font-semibold"
-                          : "text-gray-700"
+                        activeHref === subItem.href ? "text-white font-semibold" : "text-gray-700"
                       }`}
                       highlight={isSearchMode ? inputValue : ""}
                       highlightStyles={
                         activeHref === subItem.href
                           ? {
-                              backgroundColor:
-                                "var(--mantine-primary-color-filled)",
+                              backgroundColor: "var(--mantine-primary-color-filled)",
                               color: "white",
                               fontWeight: 700,
                             }
                           : {
-                              backgroundColor:
-                                "var(--mantine-primary-color-light)",
+                              backgroundColor: "var(--mantine-primary-color-light)",
                               color: "var(--mantine-primary-color-filled)",
                               fontWeight: 700,
                             }

@@ -6,17 +6,9 @@ import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 import AdminNavbar from "./AdminNavbar";
 
-const AdminAppShellLayout = ({
-  children,
-  session,
-}: {
-  children: ReactNode;
-  session: TokenPayload;
-}) => {
-  const [mobileOpened, { toggle: toggleMobile, close: closeMobile }] =
-    useDisclosure();
+const AdminAppShellLayout = ({ children, session }: { children: ReactNode; session: TokenPayload }) => {
+  const [mobileOpened, { toggle: toggleMobile, close: closeMobile }] = useDisclosure();
 
-  // localStorage ile navbar durumunu kaydet
   const [navbarState, setNavbarState] = useLocalStorage({
     key: "admin-navbar-opened",
     defaultValue: true,
@@ -34,8 +26,6 @@ const AdminAppShellLayout = ({
     setNavbarState(!navbarState);
   };
 
-  const pathname = usePathname();
-
   return (
     <AppShell
       padding="md"
@@ -49,18 +39,8 @@ const AdminAppShellLayout = ({
       <AppShell.Header>
         <Group h="100%" px="md" align="center" justify="space-between">
           <Group gap={"lg"} h={"100%"} align="center" justify="flex-start">
-            <Burger
-              opened={mobileOpened}
-              onClick={toggleMobile}
-              hiddenFrom="sm"
-              size="md"
-            />
-            <Burger
-              opened={navbarState}
-              onClick={toggleDesktop}
-              visibleFrom="sm"
-              size="md"
-            />
+            <Burger opened={mobileOpened} onClick={toggleMobile} hiddenFrom="sm" size="md" />
+            <Burger opened={navbarState} onClick={toggleDesktop} visibleFrom="sm" size="md" />
           </Group>
         </Group>
       </AppShell.Header>
