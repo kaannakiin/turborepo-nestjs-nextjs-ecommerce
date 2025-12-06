@@ -17,12 +17,7 @@ const SliderForm = ({ control, index }: SliderFormValues) => {
         control={control}
         name={`${pathPrefix}.autoPlay`}
         render={({ field: { value, ...field }, fieldState }) => (
-          <Switch
-            {...field}
-            error={fieldState.error?.message}
-            label="Otomatik Oynat"
-            checked={value}
-          />
+          <Switch {...field} error={fieldState.error?.message} label="Otomatik Oynat" checked={value} />
         )}
       />
       <Controller
@@ -44,36 +39,21 @@ const SliderForm = ({ control, index }: SliderFormValues) => {
         control={control}
         name={`${pathPrefix}.loop`}
         render={({ field: { value, ...field }, fieldState }) => (
-          <Switch
-            {...field}
-            error={fieldState.error?.message}
-            label="Döngü"
-            checked={value}
-          />
+          <Switch {...field} error={fieldState.error?.message} label="Döngü" checked={value} />
         )}
       />
       <Controller
         control={control}
         name={`${pathPrefix}.showIndicators`}
         render={({ field: { value, ...field }, fieldState }) => (
-          <Switch
-            {...field}
-            error={fieldState.error?.message}
-            label="Göstergeleri Göster"
-            checked={value}
-          />
+          <Switch {...field} error={fieldState.error?.message} label="Göstergeleri Göster" checked={value} />
         )}
       />
       <Controller
         control={control}
         name={`${pathPrefix}.showArrows`}
         render={({ field: { value, ...field }, fieldState }) => (
-          <Switch
-            {...field}
-            error={fieldState.error?.message}
-            label="Okları Göster"
-            checked={value}
-          />
+          <Switch {...field} error={fieldState.error?.message} label="Okları Göster" checked={value} />
         )}
       />
       <Controller
