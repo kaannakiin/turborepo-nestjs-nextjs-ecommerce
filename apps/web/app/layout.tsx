@@ -3,11 +3,12 @@ import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
 import ThemeProvider from "./(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import LayoutProviderWrapper from "./components/LayoutProviderWrapper";
 import "./globals.css";
+import { ReactNode } from "react";
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   return (
     <html lang="tr" {...mantineHtmlProps}>

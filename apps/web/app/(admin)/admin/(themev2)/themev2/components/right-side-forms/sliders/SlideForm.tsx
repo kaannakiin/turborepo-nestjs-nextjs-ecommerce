@@ -1,16 +1,9 @@
 "use client";
 import GlobalDropzone from "@/components/GlobalDropzone";
-import { getAspectRatioLabel } from "@lib/helpers";
-import { InputLabel, Select, Switch } from "@mantine/core";
+import { InputLabel, Switch } from "@mantine/core";
 import { DateTimePicker } from "@mantine/dates";
-import {
-  Control,
-  Controller,
-  DateFormatter,
-  UseFormSetValue,
-  useWatch,
-} from "@repo/shared";
-import { AspectRatio, ThemeInputType } from "@repo/types";
+import { Control, Controller, DateFormatter, UseFormSetValue, useWatch } from "@repo/shared";
+import { ThemeInputType } from "@repo/types";
 
 interface SlideFormProps {
   control: Control<ThemeInputType>;
@@ -19,12 +12,7 @@ interface SlideFormProps {
   slideIndex: number;
 }
 
-const SlideForm = ({
-  control,
-  componentIndex,
-  slideIndex,
-  setValue,
-}: SlideFormProps) => {
+const SlideForm = ({ control, componentIndex, slideIndex, setValue }: SlideFormProps) => {
   const prefix = `components.${componentIndex}.sliders.${slideIndex}` as const;
   const data = useWatch({ control, name: prefix });
 
@@ -36,13 +24,9 @@ const SlideForm = ({
     ? DateFormatter.parseIsoString(data.conditionDates.endDate)
     : undefined;
 
-  const minEndDate = startDateValue
-    ? new Date(startDateValue.getTime() + 10 * 60 * 1000)
-    : undefined;
+  const minEndDate = startDateValue ? new Date(startDateValue.getTime() + 10 * 60 * 1000) : undefined;
 
-  const maxStartDate = endDateValue
-    ? new Date(endDateValue.getTime() - 10 * 60 * 1000)
-    : undefined;
+  const maxStartDate = endDateValue ? new Date(endDateValue.getTime() - 10 * 60 * 1000) : undefined;
 
   return (
     <>
@@ -64,11 +48,7 @@ const SlideForm = ({
               accept={["IMAGE", "VIDEO"]}
               cols={1}
               error={fieldState.error?.message}
-              existingImages={
-                data?.desktopView?.existingAsset
-                  ? [data.desktopView.existingAsset]
-                  : []
-              }
+              existingImages={data?.desktopView?.existingAsset ? [data.desktopView.existingAsset] : []}
               existingImagesDelete={async (url) => {
                 setValue(`${prefix}.desktopView.existingAsset`, null);
               }}
@@ -95,11 +75,7 @@ const SlideForm = ({
               accept={["IMAGE", "VIDEO"]}
               cols={1}
               error={fieldState.error?.message}
-              existingImages={
-                data?.mobileView?.existingAsset
-                  ? [data.mobileView.existingAsset]
-                  : []
-              }
+              existingImages={data?.mobileView?.existingAsset ? [data.mobileView.existingAsset] : []}
               existingImagesDelete={async (url) => {
                 console.log("Delete mobile image:", url);
               }}
@@ -111,9 +87,7 @@ const SlideForm = ({
       <Controller
         control={control}
         name={`${prefix}.conditionDates.addStartDate`}
-        render={({ field: { value, ...field } }) => (
-          <Switch checked={value} {...field} label="Başlangıç Tarihi Ekle" />
-        )}
+        render={({ field: { value, ...field } }) => <Switch checked={value} {...field} label="Başlangıç Tarihi Ekle" />}
       />
       {data?.conditionDates?.addStartDate && (
         <Controller
@@ -137,9 +111,7 @@ const SlideForm = ({
       <Controller
         control={control}
         name={`${prefix}.conditionDates.addEndDate`}
-        render={({ field: { value, ...field } }) => (
-          <Switch checked={value} {...field} label="Bitiş Tarihi Ekle" />
-        )}
+        render={({ field: { value, ...field } }) => <Switch checked={value} {...field} label="Bitiş Tarihi Ekle" />}
       />
       {data?.conditionDates?.addEndDate && (
         <Controller
