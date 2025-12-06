@@ -3,7 +3,7 @@
 import GlobalDropzone from "@/components/GlobalDropzone";
 import { ActionIcon, InputLabel, TextInput } from "@mantine/core";
 import { Control, Controller, useWatch } from "@repo/shared";
-import { ThemeInputType } from "@repo/types";
+import { MarqueeComponentInputType, ThemeInputType } from "@repo/types";
 import { IconLink } from "@tabler/icons-react";
 
 interface MarqueeItemFormProps {
@@ -12,25 +12,15 @@ interface MarqueeItemFormProps {
   componentIndex: number;
 }
 
-const MarqueeItemForm = ({
-  control,
-  index,
-  componentIndex,
-}: MarqueeItemFormProps) => {
+const MarqueeItemForm = ({ control, index, componentIndex }: MarqueeItemFormProps) => {
   const prefix = `components.${componentIndex}.items.${index}` as const;
-  const data = useWatch({ control, name: prefix });
+  const data = useWatch({ control, name: prefix }) as MarqueeComponentInputType["items"][number];
   return (
     <>
       <Controller
         control={control}
         name={`${prefix}.text`}
-        render={({ field, fieldState }) => (
-          <TextInput
-            {...field}
-            error={fieldState.error?.message}
-            label="Yazı"
-          />
-        )}
+        render={({ field, fieldState }) => <TextInput {...field} error={fieldState.error?.message} label="Yazı" />}
       />
       <Controller
         control={control}
