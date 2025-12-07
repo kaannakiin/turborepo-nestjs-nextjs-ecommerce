@@ -3,7 +3,12 @@ import * as z from "zod";
 import { DiscountDatesSchema } from "../../discounts/discount.schema";
 import { FileSchema } from "../../products/product-schemas";
 import { colorHex } from "../../shared-schema";
-import { AspectRatio, MantineFontWeight, MantineSize, ThemeComponents } from "../../shared/shared-enum";
+import {
+  AspectRatio,
+  MantineFontWeight,
+  MantineSize,
+  ThemeComponents,
+} from "../../shared/shared-enum";
 
 export const SlideSchema = z
   .object({
@@ -40,7 +45,8 @@ export const SlideSchema = z
     if (!hasDesktopFile && !hasDesktopExisting) {
       issues.push({
         code: "custom",
-        message: "Desktop görünümü için bir dosya veya mevcut asset seçilmelidir",
+        message:
+          "Desktop görünümü için bir dosya veya mevcut asset seçilmelidir",
         path: ["desktopView"],
         input: data.desktopView,
       });
@@ -204,14 +210,20 @@ export const MarqueeComponentSchema = z.object({
   options: z.object({
     backgroundColor: colorHex.nullish(),
     textColor: colorHex.nullish(),
-    fontSize: z.enum(MantineSize, { error: "Geçerli bir font boyutu seçiniz." }).nullish(),
-    fontWeight: z.enum(MantineFontWeight, { error: "Geçerli bir font kalınlığı seçiniz." }).nullish(),
+    fontSize: z
+      .enum(MantineSize, { error: "Geçerli bir font boyutu seçiniz." })
+      .nullish(),
+    fontWeight: z
+      .enum(MantineFontWeight, { error: "Geçerli bir font kalınlığı seçiniz." })
+      .nullish(),
     paddingY: z
       .enum(MantineSize, {
         error: "Geçerli bir dikey padding değeri seçiniz.",
       })
       .nullish(),
-    speed: z.number({ error: "Hız değeri zorunludur." }).positive({ error: "Hız pozitif bir sayı olmalıdır." }),
+    speed: z
+      .number({ error: "Hız değeri zorunludur." })
+      .positive({ error: "Hız pozitif bir sayı olmalıdır." }),
     pauseOnHover: z.boolean(),
     isReverse: z.boolean(),
   }),
@@ -256,13 +268,15 @@ export const ProductCarouselComponentSchema = z.object({
   }),
   type: z.literal("PRODUCT_CAROUSEL"),
   order: z.number({ error: "Sıralama zorunludur." }).int().min(0),
-  title: z.string().max(100).optional(),
-  description: z.string().max(300).optional(),
+  title: z.string({ error: "Başlık zorunludur." }).max(100).optional(),
+  description: z.string({ error: "Açıklama zorunludur." }).max(300).optional(),
   config: CarouselConfigSchema,
   items: z
-    .array(CarouselItemSchema)
-    .min(1, { message: "Carousel içinde en az 1 ürün olmalıdır." })
-    .max(20, { message: "Carousel içine en fazla 20 ürün ekleyebilirsiniz." }),
+    .array(CarouselItemSchema, {
+      error: "Carousel öğeleri zorunludur.",
+    })
+    .min(1, { error: "Carousel içinde en az 1 ürün olmalıdır." })
+    .max(50, { error: "Carousel içine en fazla 50 ürün ekleyebilirsiniz." }),
 });
 
 export const ThemeComponentSchema = z.discriminatedUnion("type", [
@@ -303,8 +317,12 @@ export type CarouselItemOutputType = z.infer<typeof CarouselItemSchema>;
 export type CarouselConfigInputType = z.input<typeof CarouselConfigSchema>;
 export type CarouselConfigOutputType = z.infer<typeof CarouselConfigSchema>;
 
-export type ProductCarouselComponentInputType = z.input<typeof ProductCarouselComponentSchema>;
-export type ProductCarouselComponentOutputType = z.infer<typeof ProductCarouselComponentSchema>;
+export type ProductCarouselComponentInputType = z.input<
+  typeof ProductCarouselComponentSchema
+>;
+export type ProductCarouselComponentOutputType = z.infer<
+  typeof ProductCarouselComponentSchema
+>;
 
 export type ThemeComponentInputType = z.input<typeof ThemeComponentSchema>;
 export type ThemeComponentOutputType = z.infer<typeof ThemeComponentSchema>;

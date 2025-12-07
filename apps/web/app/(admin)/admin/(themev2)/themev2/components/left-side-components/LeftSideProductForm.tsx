@@ -1,5 +1,3 @@
-"use client";
-
 import {
   closestCenter,
   DndContext,
@@ -10,24 +8,41 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
-import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { Button, Stack, Text, ThemeIcon } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Control, createId, useFieldArray } from "@repo/shared";
-import { ProductCarouselComponentInputType, ThemeInputType } from "@repo/types";
+import {
+  CarouselItemInputType,
+  ProductCarouselComponentInputType,
+  ThemeInputType,
+} from "@repo/types";
 import { IconPlus } from "@tabler/icons-react";
-import SelectableProductModal from "../../../../../../components/modals/SelectableProductModal";
+import { useMemo } from "react";
+import SelectableProductModal, {
+  SimplifiedProductSelection,
+} from "../../../../../../components/modals/SelectableProductModal";
 import { useThemeStore } from "../../store/zustand-zod-theme.store";
 import { SortableListRow } from "../common/SortableListRow";
+
 interface LeftSideProductFormProps {
   control: Control<ThemeInputType>;
   index: number;
   field: ProductCarouselComponentInputType;
 }
 
-const LeftSideProductForm = ({ index, field, control }: LeftSideProductFormProps) => {
+const LeftSideProductForm = ({
+  index,
+  field,
+  control,
+}: LeftSideProductFormProps) => {
   const [opened, { open, close }] = useDisclosure();
-  const { selectProductCarouselItem, selection, clearSelection } = useThemeStore();
+  const { selectProductCarouselItem, selection, clearSelection } =
+    useThemeStore();
   const productPaths = `components.${index}.items` as const;
 
   const { fields, append, remove, move } = useFieldArray({
@@ -51,6 +66,24 @@ const LeftSideProductForm = ({ index, field, control }: LeftSideProductFormProps
     }
   };
 
+  const existingItemsPayload = useMemo(() => {
+    return fields
+      .map((fieldItem) => {
+        const item = fieldItem as unknown as (typeof field.items)[number];
+
+        const id = item.variantId || item.productId;
+
+        if (!id) return null;
+
+        return {
+          id: id,
+          isVariant: !!item.variantId,
+          name: item.customTitle || "",
+        } satisfies SimplifiedProductSelection;
+      })
+      .filter((item): item is SimplifiedProductSelection => item !== null);
+  }, [field, fields]);
+
   return (
     <DndContext
       sensors={sensors}
@@ -58,19 +91,26 @@ const LeftSideProductForm = ({ index, field, control }: LeftSideProductFormProps
       onDragEnd={handleDragEnd}
       modifiers={[restrictToVerticalAxis]}
     >
-      <SortableContext items={fields.map((f) => f.id)} strategy={verticalListSortingStrategy}>
+      <SortableContext
+        items={fields.map((f) => f.id)}
+        strategy={verticalListSortingStrategy}
+      >
         <Stack gap={0}>
           {fields.map((item, itemIndex) => {
             const itemData = item as unknown as (typeof field.items)[number];
 
-            const isSelected = selection?.type === "PRODUCT_CAROUSEL_ITEM" && selection.itemId === itemData.itemId;
+            const isSelected =
+              selection?.type === "PRODUCT_CAROUSEL_ITEM" &&
+              selection.itemId === itemData.itemId;
 
             return (
               <SortableListRow
                 key={item.id}
                 id={item.id}
                 isSelected={isSelected}
-                onClick={() => selectProductCarouselItem(field.componentId, itemData.itemId)}
+                onClick={() =>
+                  selectProductCarouselItem(field.componentId, itemData.itemId)
+                }
                 onDelete={() => {
                   remove(itemIndex);
                   if (isSelected) clearSelection();
@@ -109,14 +149,23 @@ const LeftSideProductForm = ({ index, field, control }: LeftSideProductFormProps
       </Button>
 
       <SelectableProductModal
-        initialData={[]}
-        multiple={false}
+        opened={opened}
         onClose={close}
+        multiple={true}
+        initialData={existingItemsPayload}
         onSubmit={(data) => {
           const selectedItems = Array.isArray(data) ? data : [data];
+
+          const currentIds = new Set(
+            fields.map((f: CarouselItemInputType) => f.variantId || f.productId)
+          );
+
           selectedItems.forEach((product) => {
+            if (currentIds.has(product.id)) return;
+
             append({
               itemId: createId(),
+
               productId: product.isVariant ? null : product.id,
               variantId: product.isVariant ? product.id : null,
               customTitle: product.name,
@@ -125,7 +174,6 @@ const LeftSideProductForm = ({ index, field, control }: LeftSideProductFormProps
           });
           close();
         }}
-        opened={opened}
       />
     </DndContext>
   );

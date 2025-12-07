@@ -1,30 +1,29 @@
-import { MarqueeComponentInputType, ThemeInputType } from "@repo/types";
-import { IconInfoCircle } from "@tabler/icons-react";
-import { Control } from "react-hook-form";
+import { Control } from "@repo/shared";
+import { ProductCarouselComponentInputType, ThemeInputType } from "@repo/types";
 import {
   EditorSelection,
   useThemeStore,
 } from "../../store/zustand-zod-theme.store";
-import { AsideFormLayout } from "../layout/AsideFormLayout";
 import { EmptyState } from "../layout/EmptyState";
-import MarqueeItemForm from "../right-side-forms/marquee/MarqueeItemForm";
+import { IconInfoCircle } from "@tabler/icons-react";
+import { AsideFormLayout } from "../layout/AsideFormLayout";
+import ProductCarouselItemForm from "../right-side-forms/product-carousel/ProductCarouselItemForm";
 
-interface MarqueeItemEditorProps {
-  component: MarqueeComponentInputType;
+interface ProductCarouselEditorProps {
+  component: ProductCarouselComponentInputType;
   index: number;
-  selection: Extract<EditorSelection, { type: "MARQUEE_ITEM" }>;
+  selection: Extract<EditorSelection, { type: "PRODUCT_CAROUSEL_ITEM" }>;
   control: Control<ThemeInputType>;
 }
 
-export const MarqueeItemEditor = ({
+const ProductCarouselEditor = ({
   component,
+  control,
   index,
   selection,
-  control,
-}: MarqueeItemEditorProps) => {
+}: ProductCarouselEditorProps) => {
   const { clearSelection } = useThemeStore();
-
-  if (component.type !== "MARQUEE") {
+  if (component.type !== "PRODUCT_CAROUSEL") {
     return (
       <EmptyState
         clearAction={clearSelection}
@@ -35,10 +34,9 @@ export const MarqueeItemEditor = ({
       />
     );
   }
-
-  const itemIndex = (component as MarqueeComponentInputType).items.findIndex(
-    (item) => item.itemId === selection.itemId
-  );
+  const itemIndex = (
+    component as ProductCarouselComponentInputType
+  ).items.findIndex((item) => item.itemId === selection.itemId);
 
   if (itemIndex === -1) {
     return (
@@ -54,11 +52,11 @@ export const MarqueeItemEditor = ({
 
   return (
     <AsideFormLayout
-      title="Marquee Item Ayarları"
+      title="Ürün Item Ayarları"
       subtitle={`${itemIndex + 1}. öğe`}
       onClose={clearSelection}
     >
-      <MarqueeItemForm
+      <ProductCarouselItemForm
         index={itemIndex}
         control={control}
         componentIndex={index}
@@ -66,3 +64,5 @@ export const MarqueeItemEditor = ({
     </AsideFormLayout>
   );
 };
+
+export default ProductCarouselEditor;

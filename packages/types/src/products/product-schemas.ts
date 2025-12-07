@@ -113,7 +113,8 @@ export const htmlDescriptionSchema = z
   .max(10000, { error: "Açıklama en fazla 10.000 karakter olabilir." })
   .refine(
     (value) => {
-      const dangerousTags = /<(script|iframe|object|embed|form|input|button|meta|link|style)/i;
+      const dangerousTags =
+        /<(script|iframe|object|embed|form|input|button|meta|link|style)/i;
       return !dangerousTags.test(value);
     },
     {
@@ -184,17 +185,26 @@ export const VariantOptionSchema = z.object({
     .nullable()
     .optional(),
   file: FileSchema({ type: "IMAGE" }).optional().nullable(),
-  existingFile: z.url({ error: "Lütfen geçerli bir url giriniz" }).optional().nullable(),
+  existingFile: z
+    .url({ error: "Lütfen geçerli bir url giriniz" })
+    .optional()
+    .nullable(),
 });
 
 export const VariantGroupTranslationSchema = z.object({
   locale: z.enum(Locale),
-  name: z.string({ error: "Variant Grup adı zorunludur." }).min(1, "Variant Grup adı zorunludur.").max(256, {
-    error: "Variant Grup adı 256 karakterden uzun olamaz.",
-  }),
-  slug: z.string({ error: "Slug zorunludur." }).min(1, "Slug zorunludur.").max(256, {
-    error: "Slug 256 karakterden uzun olamaz.",
-  }),
+  name: z
+    .string({ error: "Variant Grup adı zorunludur." })
+    .min(1, "Variant Grup adı zorunludur.")
+    .max(256, {
+      error: "Variant Grup adı 256 karakterden uzun olamaz.",
+    }),
+  slug: z
+    .string({ error: "Slug zorunludur." })
+    .min(1, "Slug zorunludur.")
+    .max(256, {
+      error: "Slug 256 karakterden uzun olamaz.",
+    }),
 });
 
 export const VariantGroupSchema = z.object({
@@ -231,9 +241,12 @@ export const VariantGroupSchema = z.object({
 export const ProductPriceSchema = z
   .object({
     currency: z.enum(Currency),
-    price: z.number().positive({ error: "Fiyat 0'dan büyük olmalıdır." }).max(Number.MAX_SAFE_INTEGER, {
-      error: "Fiyat çok büyük.",
-    }),
+    price: z
+      .number()
+      .positive({ error: "Fiyat 0'dan büyük olmalıdır." })
+      .max(Number.MAX_SAFE_INTEGER, {
+        error: "Fiyat çok büyük.",
+      }),
     discountPrice: z
       .number()
       .min(0, { error: "İndirimli fiyat 0'dan küçük olamaz." })
@@ -336,7 +349,8 @@ export const BaseProductSchema = z
       )
       .refine(
         (val) => {
-          const isUnique = val.length === new Set(val.map((item) => item.locale)).size;
+          const isUnique =
+            val.length === new Set(val.map((item) => item.locale)).size;
           return isUnique;
         },
         {
@@ -357,7 +371,8 @@ export const BaseProductSchema = z
       )
       .refine(
         (val) => {
-          const isCurrenciesUnique = new Set(val.map((item) => item.currency)).size === val.length;
+          const isCurrenciesUnique =
+            new Set(val.map((item) => item.currency)).size === val.length;
           return isCurrenciesUnique;
         },
         {
@@ -389,7 +404,10 @@ export const BaseProductSchema = z
       .array(z.cuid2({ error: "Geçersiz kategori kimliği" }))
       .optional()
       .nullable(),
-    googleTaxonomyId: z.cuid2({ error: "Geçersiz Google Taksonomi kimliği" }).optional().nullable(),
+    googleTaxonomyId: z
+      .cuid2({ error: "Geçersiz Google Taksonomi kimliği" })
+      .optional()
+      .nullable(),
   })
   .check(({ issues, value }) => {
     const assetLimit = 10;
@@ -408,7 +426,8 @@ export const BaseProductSchema = z
     // Sadece duplicate order kontrolü
     if (value.existingImages && value.existingImages.length > 0) {
       const existingOrders = value.existingImages.map((img) => img.order);
-      const hasDuplicateOrders = new Set(existingOrders).size !== existingOrders.length;
+      const hasDuplicateOrders =
+        new Set(existingOrders).size !== existingOrders.length;
 
       if (hasDuplicateOrders) {
         issues.push({
@@ -445,7 +464,8 @@ export const BaseProductSchema = z
     if (hasOverallDuplicates) {
       issues.push({
         path: ["images"],
-        error: "Mevcut ve yeni görsellerin sıra numaraları birbirleriyle çakışmamalıdır.",
+        error:
+          "Mevcut ve yeni görsellerin sıra numaraları birbirleriyle çakışmamalıdır.",
         code: "custom",
         input: ["images"],
       });
@@ -490,7 +510,8 @@ export const CombinatedVariantsSchema = z
       )
       .refine(
         (val) => {
-          const isCurrenciesUnique = new Set(val.map((item) => item.currency)).size === val.length;
+          const isCurrenciesUnique =
+            new Set(val.map((item) => item.currency)).size === val.length;
           return isCurrenciesUnique;
         },
         {
@@ -535,7 +556,8 @@ export const CombinatedVariantsSchema = z
       )
       .refine(
         (val) => {
-          const isUnique = val.length === new Set(val.map((item) => item.locale)).size;
+          const isUnique =
+            val.length === new Set(val.map((item) => item.locale)).size;
           return isUnique;
         },
         {
@@ -569,7 +591,8 @@ export const CombinatedVariantsSchema = z
     // 2. Mevcut görsellerin kendi içinde sıra (order) kontrolü
     if (value.existingImages && value.existingImages.length > 0) {
       const existingOrders = value.existingImages.map((img) => img.order);
-      const hasDuplicateOrders = new Set(existingOrders).size !== existingOrders.length;
+      const hasDuplicateOrders =
+        new Set(existingOrders).size !== existingOrders.length;
 
       if (hasDuplicateOrders) {
         issues.push({
@@ -610,7 +633,8 @@ export const CombinatedVariantsSchema = z
         code: "custom",
         input: ["images"],
         path: ["images"],
-        message: "Mevcut ve yeni görsellerin sıra numaraları birbirleriyle çakışmamalıdır.",
+        message:
+          "Mevcut ve yeni görsellerin sıra numaraları birbirleriyle çakışmamalıdır.",
       });
     }
   });
@@ -637,10 +661,14 @@ export const BodyCuid2Schema = z.object({
 export type BodyCuid2ZodType = z.infer<typeof BodyCuid2Schema>;
 export type Cuid2ZodType = z.infer<typeof Cuid2Schema>;
 export type VariantProductZodType = z.infer<typeof VariantProductSchema>;
-export type VariantGroupTranslationZodType = z.infer<typeof VariantGroupTranslationSchema>;
+export type VariantGroupTranslationZodType = z.infer<
+  typeof VariantGroupTranslationSchema
+>;
 export type VariantGroupZodType = z.infer<typeof VariantGroupSchema>;
 export type VariantOptionZodType = z.infer<typeof VariantOptionSchema>;
-export type VariantOptionTranslationZodType = z.infer<typeof VariantOptionTranslationSchema>;
+export type VariantOptionTranslationZodType = z.infer<
+  typeof VariantOptionTranslationSchema
+>;
 
 export type BaseProductZodType = z.infer<typeof BaseProductSchema>;
 

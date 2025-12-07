@@ -1,10 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { AssetType, Prisma } from '@repo/database';
 import {
+  ProductCarouselItemDataType,
+  ProductCarouselRequestType,
   productQueryInclude,
   ProductSelectResult,
   ProductWithPayload,
   SearchableProductModalResponseType,
+  ThemeProductCarouselProductPayload,
+  ThemeProductCarouselVariantPayload,
   variantQueryInclude,
   VariantWithPayload,
 } from '@repo/types';
@@ -190,5 +194,44 @@ export class Themev2Service {
       selectedData: selectedItems,
       data: mappedProducts,
     };
+  }
+
+  async getProductCarouselProducts(
+    params: ProductCarouselRequestType,
+  ): Promise<ProductCarouselItemDataType> {
+    try {
+      const { productIds, variantIds } = params;
+
+      const [products, variants] = await Promise.all([
+        this.prismaService.product.findMany({
+          where: {
+            id: { in: productIds },
+            active: true,
+            stock: { gt: 0 },
+          },
+          include: ThemeProductCarouselProductPayload,
+        }),
+
+        this.prismaService.productVariantCombination.findMany({
+          where: {
+            id: { in: variantIds },
+            stock: { gt: 0 },
+            active: true,
+            product: { active: true },
+          },
+          include: ThemeProductCarouselVariantPayload,
+        }),
+      ]);
+
+      return {
+        success: true,
+        products: products,
+        variants: variants,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Ürün verileri yüklenirken beklenmedik bir hata oluştu.',
+      );
+    }
   }
 }

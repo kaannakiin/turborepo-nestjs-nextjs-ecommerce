@@ -1,9 +1,14 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
-import { Cuid2ZodType } from '@repo/types';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import { Roles } from 'src/user/reflectors/roles.decorator';
 import { Themev2Service } from './themev2.service';
+import {
+  Cuid2ZodType,
+  ProductCarouselRequestSchema,
+  type ProductCarouselRequestType,
+} from '@repo/types';
 
 @Controller('admin/themev2')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -19,11 +24,19 @@ export class Themev2Controller {
     @Body()
     body: {
       search?: string;
-      initialIds?: { id: string; isVariant: boolean }[];
+      initialIds?: { id: Cuid2ZodType; isVariant: boolean }[];
       page?: number;
       limit?: number;
     },
   ) {
     return this.themev2Service.getProducts(body);
+  }
+
+  @Post('product-carousel-products')
+  async getThemeV2ProductCarouselProducts(
+    @Body(new ZodValidationPipe(ProductCarouselRequestSchema))
+    body: ProductCarouselRequestType,
+  ) {
+    return this.themev2Service.getProductCarouselProducts(body);
   }
 }

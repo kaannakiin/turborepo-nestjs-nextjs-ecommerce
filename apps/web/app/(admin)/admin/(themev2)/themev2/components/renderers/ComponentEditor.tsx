@@ -1,7 +1,6 @@
 import { Text } from "@mantine/core";
 import { Control } from "@repo/shared";
 import { ThemeComponents, ThemeInputType } from "@repo/types";
-import { IconClipboard } from "@tabler/icons-react";
 import { useThemeStore } from "../../store/zustand-zod-theme.store";
 import { AsideFormLayout } from "../layout/AsideFormLayout";
 import MarqueeForm from "../right-side-forms/marquee/MarqueeForm";
@@ -27,10 +26,19 @@ const COMPONENT_FORM_MAP: Record<string, React.ComponentType<any>> = {
   PRODUCT_CAROUSEL: ProductCarouselForm,
 };
 
-export const ComponentEditor = ({ component, index, control }: ComponentEditorProps) => {
+export const ComponentEditor = ({
+  component,
+  index,
+  control,
+}: ComponentEditorProps) => {
   const FormComponent = COMPONENT_FORM_MAP[component.type];
 
-  if (!FormComponent) return <Text p="md">Bu bileşen tipi ({component.type}) için form bulunamadı.</Text>;
+  if (!FormComponent)
+    return (
+      <Text p="md">
+        Bu bileşen tipi ({component.type}) için form bulunamadı.
+      </Text>
+    );
 
   return (
     <AsideFormLayout

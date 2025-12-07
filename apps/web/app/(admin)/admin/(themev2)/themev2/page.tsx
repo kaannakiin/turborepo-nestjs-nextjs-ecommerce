@@ -167,7 +167,7 @@ const ThemeV2 = () => {
               gap={"xs"}
               align="center"
               visibleFrom="sm"
-              className="border-2 p-1 border-[var(--mantine-primary-color-5)] rounded-md overflow-hidden "
+              className="border-2 p-1 border-(--mantine-primary-color-5) rounded-md overflow-hidden "
             >
               {themeIcons.map((themeIcon) => (
                 <ActionIcon
