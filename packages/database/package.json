@@ -25,7 +25,7 @@
     "build": "npm run db:generate && tsup src/index.ts src/client.ts --format esm,cjs",
     "dev": "tsup src/index.ts src/client.ts --format esm,cjs --watch",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev --skip-generate",
+    "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:views": "ts-node src/seeds/applyViews.ts",
     "db:deploy:full": "npm run db:deploy && npm run db:views",

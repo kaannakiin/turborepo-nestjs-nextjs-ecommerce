@@ -158,30 +158,30 @@ export class AuthService {
     });
     const hashedRefreshToken = await hash(refreshToken);
 
-    await this.prismaService.user.update({
-      where: { id: user.id },
-      data: {
-        refreshTokens: {
-          create: {
-            id: tokenPayload.jti,
-            expiresAt: expiresRefreshToken,
-            hashedRefreshToken: hashedRefreshToken,
-            browser: req.useragent.browser || 'Unknown',
-            browserVersion: req.useragent.version || 'Unknown',
-            os: req.useragent.os || 'Unknown',
-            deviceName: req.useragent.platform || 'Unknown',
-            deviceType: req.useragent.isMobile
-              ? 'MOBILE'
-              : req.useragent.isTablet
-                ? 'TABLET'
-                : 'DESKTOP',
-            ipAddress: req.socket.remoteAddress || req.ip || 'Unknown',
-            osVersion: req.useragent.os || 'Unknown',
-            userAgent: req.useragent.source || 'Unknown',
-          },
-        },
-      },
-    });
+    // await this.prismaService.user.update({
+    //   where: { id: user.id },
+    //   data: {
+    //     refreshTokens: {
+    //       create: {
+    //         id: tokenPayload.jti,
+    //         expiresAt: expiresRefreshToken,
+    //         hashedRefreshToken: hashedRefreshToken,
+    //         browser: req.useragent.browser || 'Unknown',
+    //         browserVersion: req.useragent.version || 'Unknown',
+    //         os: req.useragent.os || 'Unknown',
+    //         deviceName: req.useragent.platform || 'Unknown',
+    //         deviceType: req.useragent.isMobile
+    //           ? 'MOBILE'
+    //           : req.useragent.isTablet
+    //             ? 'TABLET'
+    //             : 'DESKTOP',
+    //         ipAddress: req.socket.remoteAddress || req.ip || 'Unknown',
+    //         osVersion: req.useragent.os || 'Unknown',
+    //         userAgent: req.useragent.source || 'Unknown',
+    //       },
+    //     },
+    //   },
+    // });
     response.cookie('token', accessToken, {
       httpOnly: true,
       secure: this.configService.get('NODE_ENV') === 'production',

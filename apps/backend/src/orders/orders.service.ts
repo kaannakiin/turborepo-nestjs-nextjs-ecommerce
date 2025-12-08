@@ -36,7 +36,7 @@ export class OrdersService {
 
         const cartItems = cart.items as CartItemForPayment[];
 
-        const orderExist = await tx.orderSchema.findUnique({
+        const orderExist = await tx.orderSchema.findFirst({
           where: {
             cartId: cart.id,
           },
