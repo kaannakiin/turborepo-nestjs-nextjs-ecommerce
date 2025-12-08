@@ -10,4 +10,4 @@ cmds = ["npm ci"]
 cmds = ["npx turbo run db:generate", "npx turbo run build"]
 
 [start]
-cmd = "DATABASE_URL='postgres://postgres:CCokBe2XPoPCdJzqUGe7dcw7AlXg7UY4eEmUc8P9AxvqqBT4E39YlX8C2ahbblsX@88.99.1.151:5600/postgres' npx prisma migrate resolve --applied 0_init --schema=packages/database/prisma/schema.prisma && DATABASE_URL='postgres://postgres:CCokBe2XPoPCdJzqUGe7dcw7AlXg7UY4eEmUc8P9AxvqqBT4E39YlX8C2ahbblsX@88.99.1.151:5600/postgres' npx prisma migrate deploy --schema=packages/database/prisma/schema.prisma && npx turbo run db:generate --filter=@repo/database && npm run start:migrate"
+cmd = "echo \"DATABASE_URL='postgres://postgres:CCokBe2XPoPCdJzqUGe7dcw7AlXg7UY4eEmUc8P9AxvqqBT4E39YlX8C2ahbblsX@88.99.1.151:5600/postgres'\" > .env && cp .env packages/database/.env && npx prisma migrate resolve --applied 0_init --schema=packages/database/prisma/schema.prisma && npx prisma migrate deploy --schema=packages/database/prisma/schema.prisma && npx turbo run db:generate --filter=@repo/database && npm run start:migrate"
