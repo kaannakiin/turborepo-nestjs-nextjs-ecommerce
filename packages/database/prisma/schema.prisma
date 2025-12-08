@@ -9,152 +9,6 @@ datasource db {
   provider = "postgresql"
 }
 
-enum VariantGroupRenderType {
-  DROPDOWN
-  BADGE
-}
-
-enum CampaignStatus {
-  DRAFT
-  ACTIVE
-  SCHEDULED
-  ARCHIVED
-}
-
-enum CampaignType {
-  CROSS_SELLING
-  UP_SELLING
-}
-
-enum CampaignOfferTargetPage {
-  CHECKOUT_PAGE
-  POST_CHECKOUT
-  PRODUCT
-}
-
-enum CartStatus {
-  ACTIVE
-  ABANDONED
-  CONVERTED
-  MERGED
-}
-
-enum LayoutComponentType {
-  MARQUEE
-  SLIDER
-  PRODUCT_LIST
-  CATEGORY_GRID
-}
-
-enum UserRole {
-  OWNER
-  ADMIN
-  USER
-}
-
-enum Locale {
-  TR
-  EN
-  DE
-}
-
-enum Currency {
-  TRY
-  USD
-  EUR
-  GBP
-}
-
-enum VariantGroupType {
-  LIST
-  COLOR
-}
-
-enum AssetType {
-  IMAGE
-  VIDEO
-  AUDIO
-  DOCUMENT
-}
-
-enum ProductType {
-  DIGITAL
-  PHYSICAL
-}
-
-enum CountryType {
-  NONE
-  STATE
-  CITY
-}
-
-enum WhereAdded {
-  PRODUCT_PAGE
-  CATEGORY_PAGE
-  BRAND_PAGE
-  CART_PAGE
-}
-
-enum inVisibleCause {
-  DELETED
-  DELETED_BY_USER
-  DELETED_BY_ADMIN
-  OUT_OF_STOCK
-  CURRENCY_MISMATCH
-  LOCALE_MISMATCH
-}
-
-enum RuleType {
-  SalesPrice
-  ProductWeight
-}
-
-enum PaymentProvider {
-  IYZICO
-  PAYTR
-  STRIPE
-  PAYPAL
-  BANK_TRANSFER
-}
-
-enum DiscountType {
-  PERCENTAGE
-  PERCENTAGE_GROW_QUANTITY
-  PERCENTAGE_GROW_PRICE
-  FIXED_AMOUNT
-  FIXED_AMOUNT_GROW_QUANTITY
-  FIXED_AMOUNT_GROW_PRICE
-  FREE_SHIPPING
-}
-
-enum AllowedDiscountedItemsBy {
-  price
-  discounted_price
-}
-
-enum FilterOperator {
-  AND
-  OR
-}
-
-enum DiscountConditionType {
-  PRODUCT
-  CATEGORY
-  BRAND
-  VARIANT
-}
-
-enum DiscountEffectType {
-  AUTOMATIC
-  COUPON
-}
-
-enum DiscountWhereVisible {
-  PRODUCT_PAGE
-  CHECKOUT_PAGE
-  ALL
-}
-
 model Asset {
   id                String             @id @default(cuid())
   type              AssetType          @default(IMAGE)
@@ -187,32 +41,30 @@ model User {
   carts             Cart[]
   specificDiscounts DiscountCustomer[]
   discountUsages    DiscountUsage[]
+  orders            OrderSchema[]
   refreshTokens     RefreshTokens[]
   defaultAddress    AddressSchema?     @relation("UserDefaultAddress", fields: [defaultAddressId], references: [id])
-  orders            OrderSchema[]
 
   @@index([id, email, phone])
 }
 
 model RefreshTokens {
-  id                 String    @id @default(cuid())
-  hashedRefreshToken String    @unique
+  id                 String         @id @default(cuid())
+  hashedRefreshToken String         @unique
   userAgent          String?
-  browser            String?
-  browserVersion     String?
   os                 String?
-  osVersion          String?
   deviceType         String?
-  deviceName         String?
   ipAddress          String?
   userId             String
   expiresAt          DateTime
   revokedAt          DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt          DateTime       @default(now())
+  replacedByTokenId  String?        @unique
+  replacedBy         RefreshTokens? @relation("TokenChain", fields: [replacedByTokenId], references: [id])
+  predecessor        RefreshTokens? @relation("TokenChain")
+  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([id, hashedRefreshToken])
+  @@index([userId])
 }
 
 model CategoryTranslation {
@@ -487,6 +339,7 @@ model Product {
   cartItems              CartItem[]
   discountConditions     DiscountProduct[]
   footerLinks            FooterLinks[]
+  orderItem              OrderItemSchema[]
   brand                  Brand?                      @relation(fields: [brandId], references: [id])
   taxonomyCategory       TaxonomyCategory?           @relation(fields: [taxonomyCategoryId], references: [id])
   assets                 ProductAsset[]
@@ -497,7 +350,6 @@ model Product {
   translations           ProductTranslation[]
   variantCombinations    ProductVariantCombination[]
   variantGroups          ProductVariantGroup[]
-  orderItem              OrderItemSchema[]
 
   @@index([brandId])
   @@index([taxonomyCategoryId])
@@ -555,13 +407,13 @@ model ProductVariantCombination {
   offerInCampaigns     CampaignOffer[]
   cartItems            CartItem[]
   discountConditions   DiscountProductVariant[]
+  orderItem            OrderItemSchema[]
   assets               ProductAsset[]
   productListItems     ProductListCarouselItem[]
   prices               ProductPrice[]
   product              Product                           @relation(fields: [productId], references: [id], onDelete: Cascade)
   options              ProductVariantCombinationOption[]
   translations         ProductVariantTranslation[]
-  orderItem            OrderItemSchema[]
 
   @@unique([productId, sku])
   @@unique([productId, barcode])
@@ -700,69 +552,29 @@ model CartItem {
   deletedAt    DateTime?
   createdAt    DateTime                   @default(now())
   updatedAt    DateTime                   @updatedAt
+  logs         CartActivityLog[]
   cart         Cart                       @relation(fields: [cartId], references: [id], onDelete: Cascade)
   product      Product?                   @relation(fields: [productId], references: [id], onDelete: Cascade)
   variant      ProductVariantCombination? @relation(fields: [variantId], references: [id], onDelete: Cascade)
-  logs         CartActivityLog[]
 
   @@unique([cartId, productId, variantId])
   @@index([cartId, productId, variantId])
 }
 
 model CartActivityLog {
-  id     String @id @default(cuid())
-  cartId String
-  cart   Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
-
-  // Eylem spesifik bir ürünle ilgiliyse (opsiyonel)
-  cartItemId String?
-  cartItem   CartItem? @relation(fields: [cartItemId], references: [id], onDelete: SetNull)
-
-  activityType CartActivityType // Ne olduğunu belirten enum
-
-  // Eylemi kim yaptı? (Kullanıcı, Admin veya Sistem)
-  actorType ActorType @default(USER)
-  actorId   String? // Eylemi yapanın ID'si (eğer varsa)
-
-  // Ekstra detayları (JSON olarak) saklamak için
-  // Örn: Miktar değişiminde {"old": 2, "new": 3}
-  // Örn: Görünmez olma {"cause": "OUT_OF_STOCK"}
-  details Json?
-
-  createdAt DateTime @default(now())
+  id           String           @id @default(cuid())
+  cartId       String
+  cartItemId   String?
+  activityType CartActivityType
+  actorType    ActorType        @default(USER)
+  actorId      String?
+  details      Json?
+  createdAt    DateTime         @default(now())
+  cart         Cart             @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cartItem     CartItem?        @relation(fields: [cartItemId], references: [id])
 
   @@index([cartId, createdAt(sort: Desc)])
   @@index([cartItemId])
-}
-
-// Bu eylemleri tetikleyen enumlar
-enum CartActivityType {
-  // Sepet Eylemleri
-  CART_CREATED
-  CART_MERGED // Misafir sepeti kullanıcıyla birleşti
-  CART_STATUS_CHANGED // Örn: ACTIVE -> ABANDONED
-
-  // Ürün Eylemleri
-  ITEM_ADDED
-  ITEM_REMOVED
-  ITEM_QUANTITY_CHANGED
-
-  // Görünürlük Eylemleri (senin inVisibleCause'una istinaden)
-  ITEM_VISIBILITY_CHANGED // Bir ürün görünmez/görünür oldu
-
-  // Adres Eylemleri
-  SHIPPING_ADDRESS_SET
-  BILLING_ADDRESS_SET
-
-  // Ödeme Eylemleri
-  PAYMENT_ATTEMPT_FAILED
-  PAYMENT_ATTEMPT_SUCCESS
-}
-
-enum ActorType {
-  USER // Müşteri
-  ADMIN // Admin panelinden bir yetkili
-  SYSTEM // Stok kontrolü, cron job gibi otomatik sistemler
 }
 
 model Cart {
@@ -780,22 +592,20 @@ model Cart {
   cargoRule                CargoRule?                 @relation(fields: [cargoRuleId], references: [id])
   shippingAddress          AddressSchema?             @relation("CartShippingAddress", fields: [shippingAddressId], references: [id])
   user                     User?                      @relation(fields: [userId], references: [id])
-  items                    CartItem[]
-  orderAttempts            OrderSchema[]
-  cartPaymentCheckAttempts CartPaymentCheckAttempts[]
   cartActivityLogs         CartActivityLog[]
+  items                    CartItem[]
+  cartPaymentCheckAttempts CartPaymentCheckAttempts[]
+  orderAttempts            OrderSchema[]
 }
 
 model CartPaymentCheckAttempts {
-  id     String @id @default(cuid())
-  cartId String @unique
-  cart   Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
-
-  message   String? @db.Text
-  isSuccess Boolean @default(false)
-
+  id        String   @id @default(cuid())
+  cartId    String
+  message   String?
+  isSuccess Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
 }
 
 model FooterLinks {
@@ -978,9 +788,9 @@ model AddressSchema {
   user                       User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   billingCarts               Cart[]        @relation("CartBillingAddress")
   shippingCarts              Cart[]        @relation("CartShippingAddress")
-  defaultForUser             User?         @relation("UserDefaultAddress")
-  shippingOrders             OrderSchema[] @relation("OrderSchemaShippingAddress")
   billingOrders              OrderSchema[] @relation("OrderSchemaBillingAddress")
+  shippingOrders             OrderSchema[] @relation("OrderSchemaShippingAddress")
+  defaultForUser             User?         @relation("UserDefaultAddress")
 
   @@index([userId])
   @@index([countryId])
@@ -1277,6 +1087,132 @@ model AssetLibrary {
   updatedAt DateTime  @updatedAt
 }
 
+model OrderItemSchema {
+  id              String                     @id @default(cuid())
+  buyedPrice      Decimal
+  quantity        Int                        @default(1)
+  totalPrice      Decimal
+  totalFinalPrice Decimal
+  discountAmount  Decimal?
+  taxAmount       Decimal?
+  productSnapshot Json?
+  variantSnapshot Json?
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+  status          OrderItemStatus            @default(PENDING)
+  variantId       String?
+  productId       String
+  orderId         String
+  shipmentId      String?
+  order           OrderSchema                @relation(fields: [orderId], references: [id])
+  product         Product                    @relation(fields: [productId], references: [id])
+  shipment        Shipment?                  @relation(fields: [shipmentId], references: [id])
+  variant         ProductVariantCombination? @relation(fields: [variantId], references: [id])
+
+  @@unique([orderId, productId, variantId])
+}
+
+model OrderSchema {
+  id                      String                   @id @default(cuid())
+  orderNumber             String                   @unique
+  totalPrice              Decimal
+  totalFinalPrice         Decimal
+  discountAmount          Decimal?
+  taxAmount               Decimal?
+  shippingCost            Decimal?
+  currency                Currency                 @default(TRY)
+  locale                  Locale                   @default(TR)
+  orderNote               String?
+  paymentProvider         PaymentProvider          @default(IYZICO)
+  paymentStatus           PaymentStatus            @default(PENDING)
+  orderStatus             OrderStatus              @default(PENDING)
+  shippingAddressSnapshot Json?
+  billingAddressSnapshot  Json?
+  cargoRuleSnapshot       Json?
+  clientIp                String?
+  userAgent               String?
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  cartId                  String?
+  userId                  String?
+  shippingAddressRecordId String?
+  billingAddressRecordId  String?
+  cargoRuleId             String?
+  itemsSchema             OrderItemSchema[]
+  billingAddressRecord    AddressSchema?           @relation("OrderSchemaBillingAddress", fields: [billingAddressRecordId], references: [id])
+  cargoRule               CargoRule?               @relation(fields: [cargoRuleId], references: [id])
+  cart                    Cart?                    @relation(fields: [cartId], references: [id])
+  shippingAddressRecord   AddressSchema?           @relation("OrderSchemaShippingAddress", fields: [shippingAddressRecordId], references: [id])
+  user                    User?                    @relation(fields: [userId], references: [id])
+  transactions            OrderTransactionSchema[]
+  shipments               Shipment[]
+}
+
+model OrderTransactionSchema {
+  id                    String           @id @default(cuid())
+  orderId               String
+  providerTransactionId String?
+  amount                Decimal
+  status                PaymentStatus
+  paymentType           PaymentType
+  provider              PaymentProvider
+  binNumber             String?
+  lastFourDigits        String?
+  cardAssociation       CardAssociation?
+  cardFamilyName        String?
+  gatewayResponse       Json?
+  createdAt             DateTime         @default(now())
+  order                 OrderSchema      @relation(fields: [orderId], references: [id])
+}
+
+model Shipment {
+  id               String            @id @default(cuid())
+  orderId          String
+  trackingCode     String?
+  shippingProvider String?
+  status           ShipmentStatus    @default(PENDING)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  orderItems       OrderItemSchema[]
+  order            OrderSchema       @relation(fields: [orderId], references: [id])
+}
+
+model ErrorLog {
+  id        String   @id @default(cuid())
+  message   String
+  stack     String?
+  errorCode String?
+  context   String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([context])
+  @@index([createdAt(sort: Desc)])
+}
+
+model Theme {
+  id             String         @id @default(cuid())
+  name           String
+  isActive       Boolean        @default(false)
+  globalSettings Json           @default("{}")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  pageTemplates  PageTemplate[]
+}
+
+model PageTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  pageType  PageType
+  themeId   String
+  sections  Json     @default("[]")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  theme     Theme    @relation(fields: [themeId], references: [id], onDelete: Cascade)
+
+  @@unique([themeId, pageType, name])
+}
+
 view ProductUnifiedView {
   id                     String?
   productId              String?
@@ -1302,64 +1238,204 @@ view ProductUnifiedView {
   variantOptions         Json?
 }
 
+enum VariantGroupRenderType {
+  DROPDOWN
+  BADGE
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  SCHEDULED
+  ARCHIVED
+}
+
+enum CampaignType {
+  CROSS_SELLING
+  UP_SELLING
+}
+
+enum CampaignOfferTargetPage {
+  CHECKOUT_PAGE
+  POST_CHECKOUT
+  PRODUCT
+}
+
+enum CartStatus {
+  ACTIVE
+  ABANDONED
+  CONVERTED
+  MERGED
+}
+
+enum LayoutComponentType {
+  MARQUEE
+  SLIDER
+  PRODUCT_LIST
+  CATEGORY_GRID
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  USER
+}
+
+enum Locale {
+  TR
+  EN
+  DE
+}
+
+enum Currency {
+  TRY
+  USD
+  EUR
+  GBP
+}
+
+enum VariantGroupType {
+  LIST
+  COLOR
+}
+
+enum AssetType {
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+}
+
+enum ProductType {
+  DIGITAL
+  PHYSICAL
+}
+
+enum CountryType {
+  NONE
+  STATE
+  CITY
+}
+
+enum WhereAdded {
+  PRODUCT_PAGE
+  CATEGORY_PAGE
+  BRAND_PAGE
+  CART_PAGE
+}
+
+enum inVisibleCause {
+  DELETED
+  DELETED_BY_USER
+  DELETED_BY_ADMIN
+  OUT_OF_STOCK
+  CURRENCY_MISMATCH
+  LOCALE_MISMATCH
+}
+
+enum RuleType {
+  SalesPrice
+  ProductWeight
+}
+
+enum PaymentProvider {
+  IYZICO
+  PAYTR
+  STRIPE
+  PAYPAL
+  BANK_TRANSFER
+}
+
+enum DiscountType {
+  PERCENTAGE
+  PERCENTAGE_GROW_QUANTITY
+  PERCENTAGE_GROW_PRICE
+  FIXED_AMOUNT
+  FIXED_AMOUNT_GROW_QUANTITY
+  FIXED_AMOUNT_GROW_PRICE
+  FREE_SHIPPING
+}
+
+enum AllowedDiscountedItemsBy {
+  price
+  discounted_price
+}
+
+enum FilterOperator {
+  AND
+  OR
+}
+
+enum DiscountConditionType {
+  PRODUCT
+  CATEGORY
+  BRAND
+  VARIANT
+}
+
+enum DiscountEffectType {
+  AUTOMATIC
+  COUPON
+}
+
+enum DiscountWhereVisible {
+  PRODUCT_PAGE
+  CHECKOUT_PAGE
+  ALL
+}
+
+enum CartActivityType {
+  CART_CREATED
+  CART_MERGED
+  CART_STATUS_CHANGED
+  ITEM_ADDED
+  ITEM_REMOVED
+  ITEM_QUANTITY_CHANGED
+  ITEM_VISIBILITY_CHANGED
+  SHIPPING_ADDRESS_SET
+  BILLING_ADDRESS_SET
+  PAYMENT_ATTEMPT_FAILED
+  PAYMENT_ATTEMPT_SUCCESS
+}
+
+enum ActorType {
+  USER
+  ADMIN
+  SYSTEM
+}
+
 enum OrderStatus {
-  // Sipariş oluşturuldu ancak ödeme henüz tamamlanmadı veya onaylanmadı.
   PENDING
-  // Ödeme başarıyla alındı. Depoya/satıcıya "hazırlayın" diye iletilebilir.
   CONFIRMED
-  // Siparişin içindeki en az bir OrderItem hazırlanıyor.
   PROCESSING
-  // Sipariş içindeki BAZI item'lar kargolandı.
   PARTIALLY_SHIPPED
-  // Sipariş içindeki TÜM item'lar kargolandı.
   SHIPPED
-  // Sipariş içindeki BAZI item'lar teslim edildi.
   PARTIALLY_DELIVERED
-  // Sipariş içindeki TÜM item'lar teslim edildi.
   DELIVERED
-  // Sipariş (veya içindeki tüm item'lar) iptal edildi.
   CANCELLED
-  // Siparişin BİR KISMI için para iadesi yapıldı.
   PARTIALLY_REFUNDED
-  // Siparişin TAMAMI için para iadesi yapıldı.
   REFUNDED
-  // Sipariş teslim edildi ve iade/değişim süresi doldu. Arşivlenebilir.
   COMPLETED
 }
 
 enum OrderItemStatus {
-  // Siparişin ödemesi bekleniyor.
   PENDING
-  // Siparişin ödemesi alındı. Ürün depoda hazırlanıyor.
   PREPARING
-  // Bu ürün kargoya verildi.
   SHIPPED
-  // Bu ürün müşteriye teslim edildi.
   DELIVERED
-  // Müşteri bu ürünü (kargolanmadan) iptal etme talebi gönderdi.
   CANCEL_REQUESTED
-  // İptal talebi reddedildi.
   CANCEL_REJECTED
-  // İptal talebi onaylandı.
   CANCELLED
-  // Müşteri ürünü teslim aldıktan sonra iade talebi oluşturdu.
   REFUND_REQUESTED
-  // İade talebi incelendi ve "ürünü geri gönderebilirsin" onayı verildi.
   REFUND_REQUEST_ACCEPTED
-  // İade talebi reddedildi.
   REFUND_REJECTED
-  // Ürün depoya geri geldi ve müşteriye para iadesi yapıldı.
   REFUNDED
 }
 
 enum PaymentStatus {
-  // Ödeme başarısız oldu
   FAILED
-  // Ödeme tamamlandı
   PAID
-  // Kısmi ödeme alındı (örn: Kısmi iade sonrası)
   PARTIALLY_PAID
-  // Ödeme bekleniyor
   PENDING
 }
 
@@ -1381,139 +1457,10 @@ enum PaymentType {
 }
 
 enum ShipmentStatus {
-  // Kargo bilgisi girildi, kargo şubesine verilmedi
   PENDING
-  // Yolda
   IN_TRANSIT
-  // Teslim Edildi
   DELIVERED
-  // Teslimat Başarısız
   FAILED
-}
-
-model OrderItemSchema {
-  id         String  @id @default(cuid())
-  // buyedPrice: Kullanıcının 1 adet ürün için ödediği 
-  //             NİHAİ BİRİM FİYAT (Örn: 80 TL)
-  buyedPrice Decimal
-
-  quantity Int @default(1)
-
-  // totalPrice: Ürünün Orijinal (İndirimsiz) TOPLAM Fiyatı
-  //             (Örn: 100 TL * 2 adet = 200 TL)
-  totalPrice Decimal
-
-  // totalFinalPrice: Kullanıcının bu kalem için ödediği
-  //                  NİHAİ TOPLAM FİYAT (buyedPrice * quantity)
-  //                  (Örn: 80 TL * 2 adet = 160 TL)
-  totalFinalPrice Decimal
-
-  // discountAmount: Bu kalem için yapılan TOPLAM indirim
-  //                 (totalPrice - totalFinalPrice)
-  //                 (Örn: 200 TL - 160 TL = 40 TL)
-  discountAmount Decimal?
-  taxAmount      Decimal?
-
-  productSnapshot Json?
-  variantSnapshot Json?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  status          OrderItemStatus @default(PENDING)
-
-  // İlişkiler
-  variantId String?
-  variant   ProductVariantCombination? @relation(fields: [variantId], references: [id])
-  productId String
-  product   Product                    @relation(fields: [productId], references: [id])
-  orderId   String
-  order     OrderSchema                @relation(fields: [orderId], references: [id])
-
-  // Bu item hangi sevkiyata (kargoya) ait?
-  shipmentId String?
-  shipment   Shipment? @relation(fields: [shipmentId], references: [id])
-
-  @@unique([orderId, productId, variantId])
-}
-
-model OrderSchema {
-  id              String   @id @default(cuid())
-  orderNumber     String   @unique
-  totalPrice      Decimal
-  totalFinalPrice Decimal
-  discountAmount  Decimal?
-  taxAmount       Decimal?
-  shippingCost    Decimal?
-
-  currency  Currency @default(TRY)
-  locale    Locale   @default(TR)
-  orderNote String?  @db.Text
-
-  paymentProvider PaymentProvider @default(IYZICO)
-  paymentStatus   PaymentStatus   @default(PENDING) // Özet ödeme durumu
-  orderStatus     OrderStatus     @default(PENDING) // Özet sipariş durumu
-
-  shippingAddressSnapshot Json?
-  billingAddressSnapshot  Json?
-  cargoRuleSnapshot       Json?
-
-  clientIp  String?
-  userAgent String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // İlişkiler
-  cartId                  String?        @unique
-  cart                    Cart?          @relation(fields: [cartId], references: [id])
-  userId                  String?
-  user                    User?          @relation(fields: [userId], references: [id])
-  shippingAddressRecordId String?
-  shippingAddressRecord   AddressSchema? @relation("OrderSchemaShippingAddress", fields: [shippingAddressRecordId], references: [id])
-  billingAddressRecordId  String?
-  billingAddressRecord    AddressSchema? @relation("OrderSchemaBillingAddress", fields: [billingAddressRecordId], references: [id])
-  cargoRuleId             String?
-  cargoRule               CargoRule?     @relation(fields: [cargoRuleId], references: [id])
-
-  // Siparişe bağlı tüm alt modeller
-  itemsSchema  OrderItemSchema[]
-  transactions OrderTransactionSchema[]
-  shipments    Shipment[]
-}
-
-model OrderTransactionSchema {
-  id      String      @id @default(cuid())
-  orderId String
-  order   OrderSchema @relation(fields: [orderId], references: [id])
-
-  // Iyzico, PayTR vb. provider'dan gelen unique işlem ID'si
-  providerTransactionId String?
-  amount                Decimal // Bu işlemde ne kadar çekildi/iade edildi
-  status                PaymentStatus // FAILED, PAID, PENDING
-  paymentType           PaymentType // CREDIT_CARD, WALLET, etc.
-  provider              PaymentProvider // IYZICO, PAYTR, etc.
-  binNumber             String? // Eğer kredi kartı ile ödeme yapıldıysa, kartın BIN numarası  
-  lastFourDigits        String? // Eğer kredi kartı ile ödeme yapıldıysa, kartın son 4 hanesi
-  cardAssociation       CardAssociation? // MASTER_CARD, VISA, etc.
-  cardFamilyName        String? // Bonus, World, Maximum, etc.
-  // Hata ayıklama için provider'dan dönen tüm ham response
-  gatewayResponse       Json?
-
-  createdAt DateTime @default(now())
-}
-
-model Shipment {
-  id      String      @id @default(cuid())
-  orderId String
-  order   OrderSchema @relation(fields: [orderId], references: [id])
-
-  trackingCode     String? // Kargo Takip Kodu
-  shippingProvider String? // MNG, Aras, Yurtiçi, etc.
-  status           ShipmentStatus @default(PENDING)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Bu sevkiyatın içinde hangi ürünler var?
-  orderItems OrderItemSchema[]
 }
 
 enum CardAssociation {
@@ -1531,72 +1478,10 @@ enum CardAssociation {
   UNKNOWN
 }
 
-model ErrorLog {
-  id String @id @default(cuid())
-
-  // Hatanın kendisi
-  message   String  @db.Text // error.message
-  stack     String? @db.Text // error.stack (en önemlisi)
-  errorCode String? // e.g., Prisma'nın P2025 kodu
-
-  // Hatanın bağlamı (Context)
-  context String // Hatanın nerede olduğunu söyler. Örn: "CartV3Service.createLog"
-  meta    Json? // Hata anındaki veriler. Örn: { cartId: "...", activityType: "..." }
-
-  createdAt DateTime @default(now())
-
-  @@index([context])
-  @@index([createdAt(sort: Desc)])
-}
-
 enum PageType {
   HOME
   CATEGORY
   PRODUCT
   BRAND
   OTHER
-}
-
-model Theme {
-  id       String  @id @default(cuid())
-  name     String // Örn: "Varsayılan Tema", "Black Friday Teması"
-  isActive Boolean @default(false) // Şu anda canlıda olan tema bu mu?
-
-  // Bütün temayı etkileyen global ayarlar (fontlar, renk paletleri vb.)
-  // Örn: { "colors": { "primary": "#FF0000", "text": "#333" }, "typography": { "fontFamily": "Inter" } }
-  globalSettings Json @default("{}")
-
-  // Bu tema, birden fazla sayfa şablonundan oluşur.
-  pageTemplates PageTemplate[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// 2. Sayfa Şablonu Modeli (Senin ThemeV2'nin gelişmiş hali)
-// Bu, tek bir sayfa tipinin (örn: Anasayfa) yapısını tutar.
-model PageTemplate {
-  id       String   @id @default(cuid())
-  name     String // Örn: "Varsayılan Anasayfa", "İndirimli Ürün Sayfası"
-  pageType PageType // Hangi sayfa tipine ait (HOME, PRODUCT vb.)
-
-  // Hangi ana temaya ait?
-  themeId String
-  theme   Theme  @relation(fields: [themeId], references: [id], onDelete: Cascade)
-
-  // == İŞİN SIRRI BURADA ==
-  // Bu şablonun içindeki bölümlerin (sections) yapısı ve verisi.
-  // Bu bir JSON dizisi olacak.
-  // Örn: [ 
-  //   { "id": "uuid-1", "type": "hero-banner", "settings": { "title": "Hoş Geldiniz" } },
-  //   { "id": "uuid-2", "type": "product-grid", "settings": { "collectionId": "abc" } } 
-  // ]
-  sections Json @default("[]")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Bir temada, aynı tipte birden fazla şablon olabilir (örn: 2 farklı ürün sayfası şablonu)
-  // Bu yüzden isim + type + themeId unique olmalı.
-  @@unique([themeId, pageType, name])
 }
