@@ -1,46 +1,54 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { AssetType, Prisma } from '@repo/database';
 import {
-  ProductCarouselItemDataType,
-  ProductCarouselRequestType,
+  ProductCarouselComponentInputType,
+  ProductCart,
   productQueryInclude,
+  productQueryIncludeV2,
   ProductSelectResult,
   ProductWithPayload,
   SearchableProductModalResponseType,
-  ThemeProductCarouselProductPayload,
-  ThemeProductCarouselVariantPayload,
-  variantQueryInclude,
+  variantQueryIncludeV2,
   VariantWithPayload,
 } from '@repo/types';
+import { ProductMapService } from 'src/common/services/product-map.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class Themev2Service {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private productMapService: ProductMapService,
+  ) {}
 
   private mapProductToResult(product: ProductWithPayload): ProductSelectResult {
     const parentName =
       product.translations?.[0]?.name || product.sku || 'No Name';
+
     const assetRecord = product.assets?.[0];
-    const image = assetRecord?.asset;
+    const parentImage = assetRecord?.asset
+      ? {
+          url: assetRecord.asset.url,
+          type: assetRecord.asset.type as AssetType,
+        }
+      : undefined;
 
     const childrenVariants: ProductSelectResult[] =
       product.variantCombinations?.map((variant) => {
         return this.mapVariantToResult(
           variant as VariantWithPayload,
           parentName,
+          parentImage,
         );
       }) || [];
 
     return {
       id: product.id,
       name: parentName,
-      isVariant: product.isVariant,
+      isVariant: false,
       sku: product.sku,
       stock: product.stock,
-      image: image
-        ? { url: image.url, type: image.type as AssetType }
-        : undefined,
+      image: parentImage,
       variantCombinations: [],
       variants: childrenVariants,
     };
@@ -48,33 +56,29 @@ export class Themev2Service {
 
   private mapVariantToResult(
     variant: VariantWithPayload,
-    overrideParentName?: string,
+    parentName: string,
+    parentImage?: { url: string; type: AssetType },
   ): ProductSelectResult {
-    const parentName =
-      overrideParentName || variant.product?.translations?.[0]?.name || '';
-
     const variantAttributes =
       variant.options?.map((opt) => {
         const pvo = opt.productVariantOption;
+        const variantOption = pvo.variantOption;
+        const variantGroup = variantOption.variantGroup;
+        const groupName = variantGroup.translations?.[0]?.name || 'Group';
 
-        const groupName =
-          pvo.productVariantGroup.variantGroup.translations?.[0]?.name ||
-          'Group';
-        const optionName =
-          pvo.variantOption.translations?.[0]?.name || 'Option';
+        const optionName = variantOption.translations?.[0]?.name || 'Option';
+
         const optionValue =
-          pvo.variantOption.translations?.[0]?.name ||
-          pvo.variantOption.hexValue ||
-          '';
+          variantOption.translations?.[0]?.name || variantOption.hexValue || '';
 
         return {
           variantId: variant.id,
-          variantGroupId: pvo.productVariantGroup.variantGroupId,
+
+          variantGroupId: variantGroup.id,
           variantGroupName: groupName,
-          variantOptionId: pvo.variantOptionId,
+          variantOptionId: variantOption.id,
           variantOptionName: optionName,
           variantOptionValue: optionValue,
-
           _displayName: `${groupName}: ${optionValue}`,
         };
       }) || [];
@@ -82,19 +86,18 @@ export class Themev2Service {
     const variantSuffix = variantAttributes
       .map((attr) => attr._displayName)
       .join(' | ');
+
     const fullName = variantSuffix
       ? `${parentName} - ${variantSuffix}`
       : parentName;
 
-    let imageUrl: string | undefined;
-    let imageType: AssetType | undefined;
+    let image = parentImage;
 
     if (variant.assets?.[0]?.asset) {
-      imageUrl = variant.assets[0].asset.url;
-      imageType = variant.assets[0].asset.type as AssetType;
-    } else if (variant.product?.assets?.[0]?.asset) {
-      imageUrl = variant.product.assets[0].asset.url;
-      imageType = variant.product.assets[0].asset.type as AssetType;
+      image = {
+        url: variant.assets[0].asset.url,
+        type: variant.assets[0].asset.type as AssetType,
+      };
     }
 
     const cleanedAttributes = variantAttributes.map(
@@ -108,53 +111,22 @@ export class Themev2Service {
       sku: variant.sku,
       stock: variant.stock,
       variantCombinations: cleanedAttributes,
-      image:
-        imageUrl && imageType ? { url: imageUrl, type: imageType } : undefined,
+      image: image,
       variants: [],
     };
   }
 
   async getProducts({
-    initialIds = [],
     search,
     page = 1,
     limit = 12,
   }: {
     search?: string;
-    initialIds?: { id: string; isVariant: boolean }[];
     page?: number;
     limit?: number;
   }): Promise<SearchableProductModalResponseType> {
-    const initialProductIds = initialIds
-      .filter((x) => !x.isVariant)
-      .map((x) => x.id);
-    const initialVariantIds = initialIds
-      .filter((x) => x.isVariant)
-      .map((x) => x.id);
-
-    let selectedItems: ProductSelectResult[] = [];
-
-    if (page === 1 && initialIds.length > 0) {
-      const [products, variants] = await Promise.all([
-        this.prismaService.product.findMany({
-          where: { id: { in: initialProductIds } },
-          include: productQueryInclude,
-        }),
-        this.prismaService.productVariantCombination.findMany({
-          where: { id: { in: initialVariantIds } },
-          include: variantQueryInclude,
-        }),
-      ]);
-
-      selectedItems = [
-        ...products.map((p) => this.mapProductToResult(p)),
-        ...variants.map((v) => this.mapVariantToResult(v)),
-      ];
-    }
-
     const whereClause: Prisma.ProductWhereInput = {
       active: true,
-      id: { notIn: initialProductIds },
     };
 
     if (search) {
@@ -190,47 +162,51 @@ export class Themev2Service {
         totalCount: total,
         totalPages: Math.ceil(total / limit),
       },
-
-      selectedData: selectedItems,
       data: mappedProducts,
     };
   }
 
-  async getProductCarouselProducts(
-    params: ProductCarouselRequestType,
-  ): Promise<ProductCarouselItemDataType> {
+  async carouselProducts(
+    productIds: string[],
+    variantIds: string[],
+  ): Promise<{
+    success: boolean;
+    products: ProductCart[];
+    variants: ProductCart[];
+  }> {
     try {
-      const { productIds, variantIds } = params;
-
       const [products, variants] = await Promise.all([
         this.prismaService.product.findMany({
-          where: {
-            id: { in: productIds },
-            active: true,
-            stock: { gt: 0 },
-          },
-          include: ThemeProductCarouselProductPayload,
+          where: { id: { in: productIds }, active: true, stock: { gt: 0 } },
+          include: productQueryIncludeV2,
         }),
-
         this.prismaService.productVariantCombination.findMany({
           where: {
-            id: { in: variantIds },
-            stock: { gt: 0 },
             active: true,
-            product: { active: true },
+            stock: { gt: 0 },
+            id: { in: variantIds },
+            product: {
+              active: true,
+            },
           },
-          include: ThemeProductCarouselVariantPayload,
+          include: variantQueryIncludeV2,
         }),
       ]);
+      console.log(
+        'Fetched products and variants for carousel.',
+        products.length,
+        variants.length,
+      );
 
       return {
         success: true,
-        products: products,
-        variants: variants,
+        products: this.productMapService.produtMap(products),
+        variants: this.productMapService.variantMap(variants),
       };
     } catch (error) {
+      console.error('Error in carouselProducts:', error);
       throw new InternalServerErrorException(
-        'Ürün verileri yüklenirken beklenmedik bir hata oluştu.',
+        'Bilinmeyen bir hata oluştu. Lütfen tekrar deneyiniz.',
       );
     }
   }

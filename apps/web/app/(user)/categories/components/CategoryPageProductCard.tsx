@@ -1,4 +1,5 @@
 "use client";
+import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 import CustomImage from "@/components/CustomImage";
 import { AspectRatio, Badge, Card, Stack, Text } from "@mantine/core";
 import { useHover } from "@mantine/hooks";
@@ -33,7 +34,6 @@ const CategoryPageProductCard = ({ product }: CategoryPageProductCardProps) => {
     ? `${translation.slug}?${product.variantOptions.map((vg) => `${vg.variantGroupSlug}=${vg.variantOptionSlug}`).join("&")}`
     : `${translation.slug}`;
 
-  // İndirim hesaplamaları
   const discountedPrice = product.prices.find((price) => price.discountedPrice);
   const isDiscounted =
     !!discountedPrice &&
@@ -109,29 +109,31 @@ const CategoryPageProductCard = ({ product }: CategoryPageProductCardProps) => {
         <Stack gap="0" align="baseline">
           {isDiscounted && discountedPrice ? (
             <>
-              <Text size="sm" c="dimmed" td="line-through">
-                ₺{" "}
-                {discountedPrice.price.toLocaleString("tr-TR", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </Text>
-              <Text size="md" fw={700}>
-                ₺{" "}
-                {discountedPrice.discountedPrice!.toLocaleString("tr-TR", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </Text>
+              <ProductPriceFormatter
+                price={discountedPrice.price}
+                size="sm"
+                c="dimmed"
+                td="line-through"
+              />
+              <ProductPriceFormatter
+                price={discountedPrice.discountedPrice}
+                size="md"
+                fw={700}
+              />
             </>
           ) : (
-            <Text size="md" fw={700}>
-              ₺{" "}
-              {product.prices[0]?.price.toLocaleString("tr-TR", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            </Text>
+            <ProductPriceFormatter
+              price={product.prices[0]?.price}
+              size="md"
+              fw={700}
+            />
+            // <Text size="md" fw={700}>
+            //   ₺
+            //   {product.prices[0]?.price.toLocaleString("tr-TR", {
+            //     minimumFractionDigits: 2,
+            //     maximumFractionDigits: 2,
+            //   })}
+            // </Text>
           )}
         </Stack>
       </Stack>

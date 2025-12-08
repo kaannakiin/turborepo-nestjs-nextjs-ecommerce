@@ -2,6 +2,7 @@
 
 import { getAspectRatioLabel } from "@lib/helpers";
 import {
+  ColorInput,
   NumberInput,
   Select,
   Switch,
@@ -37,6 +38,13 @@ const ProductCarouselConfigForm = ({
       />
       <Controller
         control={control}
+        name={`${prefix}.config.titleTextColor`}
+        render={({ field: { onChange, ...field } }) => (
+          <ColorInput {...field} onChangeEnd={onChange} />
+        )}
+      />
+      <Controller
+        control={control}
         name={`${prefix}.description`}
         render={({ field, fieldState }) => (
           <Textarea
@@ -49,7 +57,13 @@ const ProductCarouselConfigForm = ({
           />
         )}
       />
-
+      <Controller
+        control={control}
+        name={`${prefix}.config.descriptionTextColor`}
+        render={({ field: { onChange, ...field } }) => (
+          <ColorInput {...field} onChangeEnd={onChange} />
+        )}
+      />
       <Controller
         control={control}
         name={`${prefix}.config.slidesPerViewDesktop`}

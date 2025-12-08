@@ -1,118 +1,205 @@
-"use client";
-
+import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper from "@lib/fetchWrapper";
-import { useQuery } from "@repo/shared";
-import {
-  ProductCarouselComponentOutputType,
-  ProductCarouselItemDataType,
-} from "@repo/types";
-import { useEffect, useMemo, useState } from "react";
-
+import { Carousel } from "@mantine/carousel";
+import { Box, Container, Stack, Text, Title } from "@mantine/core";
+import { keepPreviousData, useQuery, useQueryClient } from "@repo/shared";
+import { ProductCarouselComponentInputType, ProductCart } from "@repo/types";
+import Autoplay from "embla-carousel-autoplay";
+import Fade from "embla-carousel-fade";
+import { useMemo, useRef } from "react";
+import FirstThemeProductCart from "./FirstThemeProductCart";
+import classes from "./modules/ProductCarousel.module.css";
+import AutoHeight from "embla-carousel-auto-height";
 interface FirstThemeProductCarouselProps {
-  data: ProductCarouselComponentOutputType;
+  data: ProductCarouselComponentInputType;
 }
 
 const FirstThemeProductCarousel = ({
   data,
 }: FirstThemeProductCarouselProps) => {
-  const [cachedItems, setCachedItems] = useState<{
-    products: ProductCarouselItemDataType["products"];
-    variants: ProductCarouselItemDataType["variants"];
-  }>({
-    products: [],
-    variants: [],
-  });
-
-  const currentProductIds = useMemo(
-    () =>
-      data?.items
-        .filter((item) => item.productId)
-        .map((item) => item.productId!) || [],
-    [data]
+  const queryClient = useQueryClient();
+  const { config, title, description } = data;
+  const { media } = useTheme();
+  const autoplay = useRef(
+    Autoplay({ delay: config.autoplaySpeed, stopOnInteraction: false })
   );
 
-  const currentVariantIds = useMemo(
-    () =>
-      data?.items
-        .filter((item) => item.variantId)
-        .map((item) => item.variantId!) || [],
-    [data]
-  );
+  const { productIds, variantIds } = useMemo(() => {
+    const pIds = data.items
+      .filter((item) => item.productId && !item.variantId)
+      .map((item) => item.productId!)
+      .sort();
 
-  const missingProductIds = useMemo(() => {
-    const existingIds = new Set(cachedItems.products.map((p) => p.id));
-    return currentProductIds.filter((id) => !existingIds.has(id));
-  }, [currentProductIds, cachedItems.products]);
+    const vIds = data.items
+      .filter((item) => item.variantId)
+      .map((item) => item.variantId!)
+      .sort();
 
-  const missingVariantIds = useMemo(() => {
-    const existingIds = new Set(cachedItems.variants.map((v) => v.id));
-    return currentVariantIds.filter((id) => !existingIds.has(id));
-  }, [currentVariantIds, cachedItems.variants]);
+    return { productIds: pIds, variantIds: vIds };
+  }, [data.items]);
 
-  const { data: newFetchedData, isLoading } = useQuery({
-    queryKey: [
-      "product-carousel-missing",
-      { missingProductIds, missingVariantIds },
-    ],
+  const queryKey = [
+    "theme-carousel",
+    { componentId: data.componentId, p: productIds, v: variantIds },
+  ];
+
+  const { data: productsData, isLoading } = useQuery({
+    queryKey: queryKey,
     queryFn: async () => {
-      const response = await fetchWrapper.post<ProductCarouselItemDataType>(
-        "/admin/themev2/product-carousel-products",
-        {
-          productIds: missingProductIds,
-          variantIds: missingVariantIds,
-        }
-      );
-      if (!response.success) {
-        throw new Error("Ürün verileri alınamadı");
+      if (productIds.length === 0 && variantIds.length === 0) {
+        return { products: [], variants: [] };
       }
-      if (!response.data.success) {
-        throw new Error("Ürün verileri işlenemedi");
+
+      const existingQueries = queryClient.getQueriesData<{
+        products: ProductCart[];
+        variants: ProductCart[];
+      }>({ queryKey: ["theme-carousel"] });
+
+      const foundInCache = existingQueries.find(([_, cachedData]) => {
+        if (!cachedData) return false;
+        const hasAllProducts = productIds.every((id) =>
+          cachedData.products.some((p) => p.id === id)
+        );
+        const hasAllVariants = variantIds.every((id) =>
+          cachedData.variants.some((v) => v.id === id)
+        );
+        return hasAllProducts && hasAllVariants;
+      });
+
+      if (foundInCache) {
+        const cachedData = foundInCache[1];
+        return {
+          products: cachedData.products.filter((p) =>
+            productIds.includes(p.id)
+          ),
+          variants: cachedData.variants.filter((v) =>
+            variantIds.includes(v.id)
+          ),
+        };
       }
+
+      const response = await fetchWrapper.post<{
+        success: boolean;
+        products: ProductCart[];
+        variants: ProductCart[];
+      }>("/admin/themev2/carousel-products", {
+        productIds,
+        variantIds,
+      });
+
+      if (!response.success) throw new Error("Hata oluştu.");
       return response.data;
     },
-
-    enabled: missingProductIds.length > 0 || missingVariantIds.length > 0,
-
-    staleTime: Infinity,
-    gcTime: 1000 * 60 * 10,
+    enabled: productIds.length > 0 || variantIds.length > 0,
+    placeholderData: keepPreviousData,
   });
 
-  useEffect(() => {
-    if (newFetchedData) {
-      const newProducts =
-        (newFetchedData as unknown as ProductCarouselItemDataType).products ||
-        [];
-      const newVariants =
-        (newFetchedData as unknown as ProductCarouselItemDataType).variants ||
-        [];
+  const slides = useMemo(() => {
+    if (!productsData) return [];
 
-      if (newProducts.length > 0 || newVariants.length > 0) {
-        setCachedItems((prev) => ({
-          products: [...prev.products, ...newProducts],
-          variants: [...prev.variants, ...newVariants],
-        }));
-      }
-    }
-  }, [newFetchedData]);
+    const pool = [
+      ...(productsData.products || []),
+      ...(productsData.variants || []),
+    ];
 
-  const displayProducts = cachedItems.products.filter((p) =>
-    currentProductIds.includes(p.id)
-  );
+    return data.items
+      .map((cmsItem) => {
+        const found = pool.find(
+          (p) => p.id === (cmsItem.variantId || cmsItem.productId)
+        );
+        if (!found) return null;
 
-  const displayVariants = cachedItems.variants.filter((v) =>
-    currentVariantIds.includes(v.id)
-  );
+        return {
+          ...found,
+          displayTitle: cmsItem.customTitle || found.name,
+          displayBadge: cmsItem.badgeText,
+        };
+      })
+      .filter(Boolean) as (ProductCart & {
+      displayTitle: string;
+      displayBadge?: string;
+    })[];
+  }, [productsData, data.items]);
 
-  const isGlobalLoading =
-    (missingProductIds.length > 0 || missingVariantIds.length > 0) && isLoading;
-
-  if (isGlobalLoading) return <div>Yükleniyor...</div>;
+  if (isLoading) return <GlobalLoadingOverlay />;
+  if (slides.length === 0) return null;
 
   return (
-    <div>
-      <div>Ürün Sayısı: {displayProducts.length}</div>
-      <div>Varyant Sayısı: {displayVariants.length}</div>
-    </div>
+    <Box component="section" py="xl">
+      <Container size="xl">
+        {(title || description) && (
+          <Stack mb="xl" align="center" gap="xs">
+            {title && (
+              <Title
+                order={2}
+                style={{ color: config.titleTextColor || "inherit" }}
+                ta="center"
+              >
+                {title}
+              </Title>
+            )}
+            {description && (
+              <Text
+                c={config.descriptionTextColor || "dimmed"}
+                ta="center"
+                maw={600}
+              >
+                {description}
+              </Text>
+            )}
+          </Stack>
+        )}
+
+        <Carousel
+          withIndicators={config.showDots}
+          className="items-start"
+          withControls={config.showArrows}
+          emblaOptions={{
+            loop: config.loop,
+            align: "start",
+            slidesToScroll:
+              media === "desktop"
+                ? config.slidesPerViewDesktop
+                : media === "tablet"
+                  ? config.slidesPerViewTablet
+                  : config.slidesPerViewMobile,
+          }}
+          slideSize={
+            media === "desktop"
+              ? `${100 / config.slidesPerViewDesktop}%`
+              : media === "tablet"
+                ? `${100 / config.slidesPerViewTablet}%`
+                : `${100 / config.slidesPerViewMobile}%`
+          }
+          slideGap={{ base: "md", md: "lg" }}
+          plugins={
+            config.autoplay
+              ? [autoplay.current, Fade(), AutoHeight()]
+              : [Fade(), AutoHeight()]
+          }
+          onMouseEnter={config.autoplay ? autoplay.current.stop : undefined}
+          onMouseLeave={config.autoplay ? autoplay.current.reset : undefined}
+          classNames={{
+            root: classes.root,
+            controls: classes.controls,
+            control: classes.control,
+            indicator: classes.indicator,
+          }}
+          controlsOffset={"xs"}
+        >
+          {slides.map((product) => (
+            <Carousel.Slide key={product.id}>
+              <FirstThemeProductCart
+                data={product}
+                aspectRatio={config.aspectRatio}
+                showAddToCartButton={config.showAddToCartButton}
+              />
+            </Carousel.Slide>
+          ))}
+        </Carousel>
+      </Container>
+    </Box>
   );
 };
 

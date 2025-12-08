@@ -260,6 +260,8 @@ export const CarouselConfigSchema = z.object({
   aspectRatio: z.enum(AspectRatio, {
     error: "Geçerli bir aspect ratio değeri seçiniz.",
   }),
+  titleTextColor: colorHex.nullish(),
+  descriptionTextColor: colorHex.nullish(),
 });
 
 export const ProductCarouselComponentSchema = z.object({

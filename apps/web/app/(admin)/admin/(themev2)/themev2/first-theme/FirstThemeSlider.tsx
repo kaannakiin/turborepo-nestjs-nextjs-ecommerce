@@ -21,7 +21,7 @@ import {
 } from "@tabler/icons-react";
 import Autoplay from "embla-carousel-autoplay";
 import { useEffect, useRef, useState } from "react";
-
+import Fade from "embla-carousel-fade";
 interface SlideRendererProps {
   slide: SlideOutputType;
   media: Media;
@@ -198,7 +198,7 @@ const FirstThemeSlider = ({ data }: FirstThemeSliderProps) => {
         }}
         withIndicators={media !== "desktop"}
         withControls={media === "desktop"}
-        plugins={options.autoPlay ? [autoplay.current] : []}
+        plugins={options.autoPlay ? [autoplay.current, Fade()] : [Fade()]}
         nextControlIcon={<IconChevronRight size={24} />}
         previousControlIcon={<IconChevronLeft size={24} />}
         slideSize="100%"
