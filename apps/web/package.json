@@ -34,6 +34,7 @@
     "axios": "^1.12.2",
     "dayjs": "^1.11.18",
     "embla-carousel": "^8.6.0",
+    "embla-carousel-auto-height": "^8.6.0",
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-fade": "^8.6.0",
     "embla-carousel-react": "^8.6.0",

@@ -8,6 +8,7 @@ import Fade from "embla-carousel-fade";
 import { useState } from "react";
 import CustomImage from "../../../components/CustomImage";
 import styles from "./Carousel.module.css";
+
 interface ProductAssetViewerProps {
   assets: { url: string; type: $Enums.AssetType }[];
 }

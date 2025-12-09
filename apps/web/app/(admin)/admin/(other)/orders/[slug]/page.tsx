@@ -163,17 +163,13 @@ const AdminOrderViewPage = () => {
                             <Table.Td>
                               <Group gap="md" wrap="nowrap">
                                 <AspectRatio ratio={1} w={80} pos={"relative"}>
-                                  {imageUrl ? (
-                                    <CustomImage
-                                      src={imageUrl}
-                                      alt={fullProductName}
-                                    />
-                                  ) : (
-                                    <Image
-                                      src="https://placehold.co/80x80?text=No+Image"
-                                      alt="Placeholder"
-                                    />
-                                  )}
+                                  <CustomImage
+                                    src={
+                                      imageUrl ||
+                                      "https://placehold.co/80x80?text=No+Image"
+                                    }
+                                    alt={fullProductName}
+                                  />
                                 </AspectRatio>
                                 <Stack gap={4}>
                                   <Text size="sm" fw={500} lineClamp={2}>

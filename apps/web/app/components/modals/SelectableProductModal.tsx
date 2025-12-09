@@ -1,360 +1,304 @@
 import fetchWrapper from "@lib/fetchWrapper";
 import {
   ActionIcon,
-  AspectRatio,
-  Box,
+  Avatar,
   Button,
   Checkbox,
   Collapse,
-  Flex,
   Group,
-  Loader,
   Modal,
+  ModalProps,
   Pagination,
-  Radio,
   ScrollArea,
   Stack,
   Text,
   TextInput,
-  UnstyledButton,
 } from "@mantine/core";
-import { useDebouncedValue, useDisclosure } from "@mantine/hooks";
+import { useDebouncedState } from "@mantine/hooks";
 import { useQuery } from "@repo/shared";
-import { ProductSelectResult, SearchableProductModalResponseType } from "@repo/types";
-import { IconChevronDown, IconChevronRight, IconSearch, IconX } from "@tabler/icons-react";
-import { useEffect, useMemo, useState } from "react";
-import TableAsset from "../../(admin)/components/TableAsset";
+import { SearchableProductModalResponseType } from "@repo/types";
+import {
+  IconCheck,
+  IconChevronDown,
+  IconChevronRight,
+  IconSearch,
+} from "@tabler/icons-react";
+import { useEffect, useState } from "react";
+import GlobalLoader from "../GlobalLoader";
 
-interface ProductModalWithImageProps {
-  onSubmit: (data: ProductSelectResult | Array<ProductSelectResult>) => void;
-  initialData?: ProductSelectResult | Array<ProductSelectResult> | null;
+interface SelectableProductModalProps {
+  multiple: boolean;
   opened: boolean;
   onClose: () => void;
-  multiple?: boolean;
+  props?: Omit<ModalProps, "opened" | "onClose">;
+  selectedIds?: string[];
+  onSubmit: (
+    selectedProducts: SearchableProductModalResponseType["data"][number][]
+  ) => void;
 }
-
-interface ProductRowProps {
-  item: ProductSelectResult;
-  selectedItems: ProductSelectResult[];
-  onSelect: (item: ProductSelectResult) => void;
-  multiple: boolean;
-  isChild?: boolean;
-  inSelectedSection?: boolean;
-}
-
-const ProductRow = ({
-  item,
-  selectedItems,
-  onSelect,
-  multiple,
-  isChild = false,
-  inSelectedSection = false,
-}: ProductRowProps) => {
-  const [opened, { toggle }] = useDisclosure(false);
-
-  const isSelected = selectedItems.some((i) => i.id === item.id);
-  const hasVariants = item.variants && item.variants.length > 0;
-
-  const shouldIndent = isChild && !inSelectedSection;
-
-  const SelectionControl = multiple ? (
-    <Checkbox checked={isSelected} readOnly tabIndex={-1} size="sm" style={{ cursor: "pointer" }} />
-  ) : (
-    <Radio checked={isSelected} readOnly tabIndex={-1} size="sm" style={{ cursor: "pointer" }} />
-  );
-
-  return (
-    <Box>
-      <Group wrap="nowrap" align="center" gap={0} bg={isSelected ? "var(--mantine-color-blue-0)" : "transparent"}>
-        <UnstyledButton
-          onClick={() => onSelect(item)}
-          style={{
-            flex: 1,
-            padding: "8px 12px",
-            borderBottom: !isChild && !hasVariants ? "1px solid var(--mantine-color-gray-2)" : "none",
-          }}
-        >
-          <Group wrap="nowrap" gap="sm">
-            <Box ml={shouldIndent ? 24 : 0} style={{ flexShrink: 0 }}>
-              {SelectionControl}
-            </Box>
-
-            {item?.image && (
-              <AspectRatio ratio={1} maw={64} pos={"relative"}>
-                <TableAsset withModal={false} type={item.image?.type} url={item.image?.url || ""} />
-              </AspectRatio>
-            )}
-
-            <Box style={{ flex: 1, overflow: "hidden" }}>
-              <Group gap="xs">
-                <Text size="sm" fw={isChild ? 400 : 500} lineClamp={1}>
-                  {item.name}
-                </Text>
-              </Group>
-            </Box>
-          </Group>
-        </UnstyledButton>
-
-        {hasVariants && (
-          <ActionIcon variant="subtle" color="gray" onClick={toggle} mr="sm" style={{ flexShrink: 0 }}>
-            {opened ? <IconChevronDown size={18} /> : <IconChevronRight size={18} />}
-          </ActionIcon>
-        )}
-      </Group>
-
-      {hasVariants && (
-        <Collapse in={opened}>
-          <Stack gap={0} style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
-            {item.variants?.map((variant) => (
-              <ProductRow
-                key={variant.id}
-                item={variant}
-                selectedItems={selectedItems}
-                onSelect={onSelect}
-                multiple={multiple}
-                isChild={true}
-                inSelectedSection={inSelectedSection}
-              />
-            ))}
-          </Stack>
-        </Collapse>
-      )}
-
-      {!isChild && !hasVariants && <Box style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }} />}
-    </Box>
-  );
-};
 
 const SelectableProductModal = ({
-  onSubmit,
-  initialData,
-  opened,
+  multiple,
   onClose,
-  multiple = false,
-}: ProductModalWithImageProps) => {
-  const [activePage, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch] = useDebouncedValue(search, 500);
+  opened,
+  props,
+  selectedIds = [],
+  onSubmit,
+}: SelectableProductModalProps) => {
+  const [page, setPage] = useState<number>(1);
+  const [limit] = useState<number>(10);
+  const [search, setSearch] = useDebouncedState<string>("", 500);
 
-  const [selectedItems, setSelectedItems] = useState<ProductSelectResult[]>([]);
+  const [localSelected, setLocalSelected] = useState<
+    SearchableProductModalResponseType["data"][number][]
+  >([]);
 
-  const [selectedSectionOpened, { toggle: toggleSelectedSection }] = useDisclosure(!multiple);
-
-  useEffect(() => {
-    if (opened && initialData) {
-      const items = Array.isArray(initialData) ? initialData : [initialData];
-      setSelectedItems(items);
-    } else if (opened && !initialData) {
-      setSelectedItems([]);
-    }
-  }, [opened, initialData]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
-
-  const initialIdsPayload = useMemo(() => {
-    if (!initialData) return [];
-    const items = Array.isArray(initialData) ? initialData : [initialData];
-    return items.map((item) => ({ id: item.id, isVariant: item.isVariant }));
-  }, [initialData]);
+  const [expandedParents, setExpandedParents] = useState<string[]>([]);
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["product-modal-select", debouncedSearch, activePage, initialIdsPayload],
+    queryKey: ["selectable-products-modal", { page, limit, search }],
     queryFn: async () => {
-      const response = await fetchWrapper.post<SearchableProductModalResponseType>(
-        "/admin/themev2/selectable-modal-products",
+      const res = await fetchWrapper.get<SearchableProductModalResponseType>(
+        "/admin/themev2/selectable-products",
         {
-          search: debouncedSearch,
-          page: activePage,
-          limit: 10,
-          initialIds: initialIdsPayload,
+          params: { limit, page, search: search ? search.trim() : undefined },
         }
       );
-
-      if (!response.success) throw new Error("Fetch failed");
-      return response.data;
+      if (!res.success) throw new Error("Failed to fetch products");
+      if (!res.data.success) throw new Error("Failed to fetch products data");
+      return res.data;
     },
     enabled: opened,
   });
 
-  const productList = data?.data || [];
-  const totalPages = data?.pagination?.totalPages || 1;
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
-  const handleSelect = (item: ProductSelectResult) => {
-    if (multiple) {
-      const isSelected = selectedItems.some((i) => i.id === item.id);
-
-      if (!item.isVariant && item.variants && item.variants.length > 0) {
-        if (isSelected) {
-          const childrenIds = item.variants.map((v) => v.id);
-          setSelectedItems((prev) => prev.filter((i) => i.id !== item.id && !childrenIds.includes(i.id)));
-        } else {
-          const children = item.variants;
-          const newItems = [item, ...children].filter(
-            (newItem) => !selectedItems.some((existing) => existing.id === newItem.id)
-          );
-          setSelectedItems((prev) => [...prev, ...newItems]);
-        }
-        return;
-      }
-
-      if (isSelected) {
-        setSelectedItems((prev) => {
-          const remaining = prev.filter((i) => i.id !== item.id);
-
-          return remaining.filter((parent) => {
-            if (parent.variants?.some((v) => v.id === item.id)) {
-              return false;
-            }
-            return true;
-          });
-        });
-      } else {
-        setSelectedItems((prev) => [...prev, item]);
-      }
-    } else {
-      setSelectedItems([item]);
-    }
+  const isSelected = (id: string) => {
+    return (
+      selectedIds.includes(id) || localSelected.some((item) => item.id === id)
+    );
   };
 
-  const handleConfirm = () => {
-    if (multiple) {
-      onSubmit(selectedItems);
-    } else {
-      if (selectedItems.length > 0) {
-        onSubmit(selectedItems[0]);
+  const toggleExpand = (id: string) => {
+    setExpandedParents((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleSingleSelect = (
+    product: SearchableProductModalResponseType["data"][number]
+  ) => {
+    setLocalSelected((prev) => {
+      const exists = prev.find((p) => p.id === product.id);
+
+      if (multiple) {
+        if (exists) return prev.filter((p) => p.id !== product.id);
+        return [...prev, product];
+      } else {
+        return exists ? [] : [product];
       }
+    });
+  };
+
+  const handleParentSelect = (
+    parent: SearchableProductModalResponseType["data"][number]
+  ) => {
+    if (!parent.variants) return;
+
+    if (!multiple) {
+      toggleExpand(parent.id);
+      return;
     }
+
+    const allVariantIds = parent.variants.map((v) => v.id);
+    const selectedVariantIds = localSelected.map((p) => p.id);
+
+    const isAllSelected = allVariantIds.every((id) =>
+      selectedVariantIds.includes(id)
+    );
+
+    setLocalSelected((prev) => {
+      if (isAllSelected) {
+        return prev.filter((p) => !allVariantIds.includes(p.id));
+      } else {
+        const newVariants = parent.variants!.filter(
+          (v) => !prev.some((selected) => selected.id === v.id)
+        );
+        return [...prev, ...newVariants];
+      }
+    });
+  };
+
+  const handleSubmit = () => {
+    onSubmit(localSelected);
     onClose();
   };
 
-  const visibleSelectedItems = useMemo(() => {
-    return selectedItems.filter((item) => {
-      const isChildOfSelectedParent = selectedItems.some((parent) =>
-        parent.variants?.some((child) => child.id === item.id)
-      );
-      return !isChildOfSelectedParent;
-    });
-  }, [selectedItems]);
+  const renderRow = (
+    item: SearchableProductModalResponseType["data"][number],
+    isChild = false
+  ) => {
+    const hasVariants = item.variants && item.variants.length > 0;
+    const itemIsSelected = isSelected(item.id);
+    const isExpanded = expandedParents.includes(item.id);
 
-  return (
-    <Modal opened={opened} onClose={onClose} title="Ürün Seçimi" size="lg" scrollAreaComponent={ScrollArea.Autosize}>
-      <Stack gap="md">
-        <TextInput
-          placeholder="Ürün adı, SKU veya barkod ara..."
-          leftSection={<IconSearch size={16} />}
-          value={search}
-          onChange={(event) => setSearch(event.currentTarget.value)}
-          rightSection={
-            search && (
-              <ActionIcon variant="transparent" onClick={() => setSearch("")}>
-                <IconX size={14} />
-              </ActionIcon>
-            )
-          }
-        />
+    const isSelectable = multiple || !hasVariants;
 
-        <ScrollArea h={400} type="always" offsetScrollbars>
-          <Stack gap={0}>
-            {isLoading || isFetching ? (
-              <Flex justify="center" align="center" h={200}>
-                <Loader size="sm" />
-              </Flex>
-            ) : (
-              <>
-                {/* --- SEÇİLİ ÜRÜNLER BÖLÜMÜ --- */}
-                {selectedItems.length > 0 && !debouncedSearch && activePage === 1 && (
-                  <Box>
-                    <UnstyledButton onClick={toggleSelectedSection} style={{ width: "100%" }}>
-                      <Group
-                        justify="space-between"
-                        px="sm"
-                        py="xs"
-                        bg="gray.0"
-                        style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}
-                      >
-                        <Text size="xs" fw={700} c="dimmed" tt="uppercase">
-                          Seçili Ürünler ({selectedItems.length})
-                        </Text>
-                        <ActionIcon variant="subtle" color="gray" size="sm" component="span">
-                          {selectedSectionOpened ? <IconChevronDown size={16} /> : <IconChevronRight size={16} />}
-                        </ActionIcon>
-                      </Group>
-                    </UnstyledButton>
-                    <Collapse in={selectedSectionOpened}>
-                      <Stack gap={0}>
-                        {/* Burada filtrelenmiş listeyi kullanıyoruz */}
-                        {visibleSelectedItems.map((item) => (
-                          <ProductRow
-                            key={`selected-${item.id}`}
-                            item={item}
-                            selectedItems={selectedItems}
-                            multiple={multiple}
-                            onSelect={handleSelect}
-                            inSelectedSection={true}
-                          />
-                        ))}
-                      </Stack>
-                    </Collapse>
-                  </Box>
-                )}
+    let parentChecked = false;
+    let parentIndeterminate = false;
 
-                {(debouncedSearch || productList.length > 0) && (
-                  <Text
-                    size="xs"
-                    fw={700}
-                    c="dimmed"
-                    tt="uppercase"
-                    px="sm"
-                    py="xs"
-                    bg="gray.0"
-                    mt={selectedItems.length > 0 && activePage === 1 && !debouncedSearch ? "sm" : 0}
-                  >
-                    Tüm Ürünler (Sayfa {activePage})
-                  </Text>
-                )}
+    if (hasVariants && multiple) {
+      const totalVariants = item.variants!.length;
+      const selectedCount = item.variants!.filter((v) =>
+        isSelected(v.id)
+      ).length;
+      parentChecked = totalVariants > 0 && totalVariants === selectedCount;
+      parentIndeterminate = selectedCount > 0 && selectedCount < totalVariants;
+    } else {
+      parentChecked = itemIsSelected;
+    }
 
-                {productList.map((item) => (
-                  <ProductRow
-                    key={item.id}
-                    item={item}
-                    selectedItems={selectedItems}
-                    multiple={multiple}
-                    onSelect={handleSelect}
-                  />
-                ))}
-
-                {!isLoading && productList.length === 0 && selectedItems.length === 0 && (
-                  <Flex justify="center" align="center" h={150} direction="column">
-                    <Text c="dimmed">Sonuç bulunamadı</Text>
-                  </Flex>
-                )}
-              </>
-            )}
-          </Stack>
-        </ScrollArea>
-
-        <Stack gap="xs" pt="sm" style={{ borderTop: "1px solid var(--mantine-color-gray-3)" }}>
-          {totalPages > 1 && (
-            <Flex justify="center">
-              <Pagination total={totalPages} value={activePage} onChange={setPage} size="sm" />
-            </Flex>
+    return (
+      <div
+        key={item.id}
+        className={`border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors ${
+          isChild ? "bg-gray-50/50" : ""
+        }`}
+      >
+        <Group p="xs" wrap="nowrap" align="center">
+          {isSelectable ? (
+            <Checkbox
+              checked={parentChecked}
+              indeterminate={parentIndeterminate}
+              onChange={() =>
+                hasVariants
+                  ? handleParentSelect(item)
+                  : handleSingleSelect(item)
+              }
+              radius="sm"
+              className="cursor-pointer"
+            />
+          ) : (
+            <div className="w-5" />
           )}
 
-          <Group justify="space-between">
-            <Text size="sm" c="dimmed">
-              {selectedItems.length} ürün seçildi
+          <Avatar
+            src={item.image?.url}
+            radius="md"
+            size={isChild ? "sm" : "md"}
+            className="bg-gray-100"
+          >
+            {item.name.charAt(0)}
+          </Avatar>
+
+          <div className="flex-1 min-w-0">
+            <Text size="sm" fw={500} lineClamp={1}>
+              {item.name}
             </Text>
-            <Group>
-              <Button variant="default" onClick={onClose}>
-                İptal
-              </Button>
-              <Button onClick={handleConfirm}>Seçimi Tamamla</Button>
+            <Group gap="xs">
+              {item.variants?.length === 0 && (
+                <Text size="xs" c="dimmed">
+                  SKU: {item.sku || "-"}
+                </Text>
+              )}
+
+              {item.variants?.length === 0 && (
+                <Text size="xs" c={item.stock > 0 ? "teal" : "red"}>
+                  Stok: {item.stock}
+                </Text>
+              )}
             </Group>
+          </div>
+
+          {hasVariants && (
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              onClick={() => toggleExpand(item.id)}
+            >
+              {isExpanded ? (
+                <IconChevronDown size={18} />
+              ) : (
+                <IconChevronRight size={18} />
+              )}
+            </ActionIcon>
+          )}
+        </Group>
+
+        {hasVariants && (
+          <Collapse in={isExpanded}>
+            <div className="pl-6 pr-2 py-1 flex flex-col gap-1 border-l-2 border-gray-200 ml-4 mb-2">
+              {item.variants?.map((variant) => renderRow(variant, true))}
+            </div>
+          </Collapse>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      title="Ürün Seçimi"
+      size="lg"
+      classNames={{
+        header: "border-b border-gray-200",
+        body: "p-0 flex flex-col h-[600px]",
+      }}
+      {...props}
+    >
+      <div className="p-3 border-b border-gray-200 bg-white">
+        <TextInput
+          defaultValue={search}
+          placeholder="Ürün adı, SKU ile ara..."
+          leftSection={<IconSearch size={16} />}
+          onChange={(event) => setSearch(event.currentTarget.value)}
+        />
+      </div>
+
+      <ScrollArea className="flex-1 bg-white">
+        {isLoading ? (
+          <GlobalLoader />
+        ) : data?.data && data.data.length > 0 ? (
+          <Stack gap={0}>{data.data.map((item) => renderRow(item))}</Stack>
+        ) : (
+          <div className="p-8 text-center text-gray-500">Ürün bulunamadı.</div>
+        )}
+      </ScrollArea>
+
+      <div className="p-3 border-t border-gray-200 bg-gray-50 flex flex-col gap-3">
+        {data?.pagination && (
+          <div className="flex justify-center">
+            <Pagination
+              total={data.pagination.totalPages}
+              value={page}
+              onChange={setPage}
+              size="sm"
+            />
+          </div>
+        )}
+
+        <Group justify="space-between">
+          <Text size="sm" c="dimmed">
+            {localSelected.length} ürün seçildi
+          </Text>
+          <Group>
+            <Button variant="default" onClick={onClose}>
+              İptal
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              leftSection={<IconCheck size={16} />}
+              disabled={localSelected.length === 0}
+            >
+              Seçimi Tamamla
+            </Button>
           </Group>
-        </Stack>
-      </Stack>
+        </Group>
+      </div>
     </Modal>
   );
 };

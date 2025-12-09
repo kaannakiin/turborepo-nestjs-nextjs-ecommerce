@@ -112,7 +112,7 @@ export async function generateMetadata({
 
   const description = category.metaDescription || `Kategori: ${category.name}`;
 
-  let ogImageUrl = `${baseUrl}/og-default.jpg`; // Varsayılan
+  let ogImageUrl = `${baseUrl}/og-default.jpg`;
   if (category.category?.image?.url) {
     ogImageUrl = generateOgImageUrl(category.category.image.url);
   }
@@ -126,7 +126,6 @@ export async function generateMetadata({
       canonical: categoryUrl,
     },
 
-    // Open Graph
     openGraph: {
       type: "website",
       url: categoryUrl,
@@ -144,7 +143,6 @@ export async function generateMetadata({
       locale: category.locale || "tr_TR",
     },
 
-    // Twitter
     twitter: {
       card: "summary_large_image",
       title,
@@ -152,7 +150,6 @@ export async function generateMetadata({
       images: [ogImageUrl],
     },
 
-    // Robots
     robots: {
       index: true,
       follow: true,
@@ -164,7 +161,6 @@ export async function generateMetadata({
       },
     },
 
-    // Other metadata
     other: {
       ...(breadcrumbData && {
         "breadcrumb-schema": JSON.stringify(breadcrumbData),

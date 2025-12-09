@@ -1,25 +1,54 @@
 import { AssetType, Prisma } from "@repo/database";
 import { Pagination } from "../../shared-schema";
+import * as z from "zod";
 
-export const variantQueryInclude = {
-  translations: { where: { locale: "TR" } },
-  product: {
-    include: {
-      translations: { where: { locale: "TR" } },
-      assets: { take: 1, include: { asset: true } },
+export const CarouselProductsDtoSchema = z.object({
+  productIds: z.array(z.cuid2()),
+  variantIds: z.array(z.cuid2()),
+});
+
+export type CarouselProductsDto = z.infer<typeof CarouselProductsDtoSchema>;
+
+const variantQueryInclude = {
+  assets: {
+    where: { asset: { type: "IMAGE" } },
+    take: 1,
+    select: {
+      asset: { select: { url: true, type: true } },
     },
   },
-  assets: {
-    take: 1,
-    include: { asset: { select: { url: true, type: true } } },
-  },
+  translations: true,
+  prices: true,
   options: {
-    include: {
-      productVariantOption: {
-        include: {
-          variantOption: { include: { translations: { where: { locale: "TR" } } } },
+    orderBy: [
+      {
+        productVariantOption: {
           productVariantGroup: {
-            include: { variantGroup: { include: { translations: { where: { locale: "TR" } } } } },
+            order: "asc",
+          },
+        },
+      },
+      {
+        productVariantOption: {
+          order: "asc",
+        },
+      },
+    ],
+    select: {
+      productVariantOption: {
+        select: {
+          variantOption: {
+            select: {
+              id: true,
+              translations: true,
+              hexValue: true,
+              variantGroup: {
+                select: {
+                  translations: true,
+                  id: true,
+                },
+              },
+            },
           },
         },
       },
@@ -34,9 +63,53 @@ export const productQueryInclude = {
     take: 1,
     include: { asset: { select: { url: true, type: true } } },
   },
-
   variantCombinations: {
-    include: variantQueryInclude,
+    include: {
+      assets: {
+        where: { asset: { type: "IMAGE" } },
+        take: 1,
+        select: {
+          asset: { select: { url: true, type: true } },
+        },
+      },
+      translations: true,
+      prices: true,
+      options: {
+        orderBy: [
+          {
+            productVariantOption: {
+              productVariantGroup: {
+                order: "asc",
+              },
+            },
+          },
+          {
+            productVariantOption: {
+              order: "asc",
+            },
+          },
+        ],
+        select: {
+          productVariantOption: {
+            select: {
+              variantOption: {
+                select: {
+                  id: true,
+                  translations: true,
+                  hexValue: true,
+                  variantGroup: {
+                    select: {
+                      translations: true,
+                      id: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   },
 } satisfies Prisma.ProductInclude;
 
@@ -69,6 +142,110 @@ export interface ProductSelectResult {
 export type SearchableProductModalResponseType = {
   success: boolean;
   pagination?: Pagination;
-  selectedData: ProductSelectResult[];
   data: ProductSelectResult[];
+};
+
+export const ThemeProductCarouselProductPayload = {
+  assets: {
+    take: 2,
+    orderBy: { order: "asc" },
+    select: {
+      asset: {
+        select: {
+          url: true,
+          type: true,
+        },
+      },
+    },
+  },
+  translations: true,
+  prices: true,
+} as const satisfies Prisma.ProductInclude;
+
+export const ThemeProductCarouselVariantPayload = {
+  assets: {
+    take: 2,
+    orderBy: { order: "asc" },
+    select: {
+      asset: {
+        select: {
+          url: true,
+          type: true,
+        },
+      },
+    },
+  },
+  prices: true,
+  translations: true,
+  product: {
+    select: {
+      assets: {
+        take: 2,
+        orderBy: { order: "asc" },
+        select: {
+          asset: {
+            select: {
+              url: true,
+              type: true,
+            },
+          },
+        },
+      },
+      translations: true,
+    },
+  },
+  options: {
+    orderBy: [
+      {
+        productVariantOption: {
+          productVariantGroup: {
+            order: "asc",
+          },
+        },
+      },
+      {
+        productVariantOption: {
+          order: "asc",
+        },
+      },
+    ],
+    select: {
+      productVariantOption: {
+        select: {
+          variantOption: {
+            select: {
+              asset: {
+                select: {
+                  url: true,
+                  type: true,
+                },
+              },
+              translations: true,
+              hexValue: true,
+              variantGroup: {
+                select: {
+                  translations: true,
+                  type: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+} as const satisfies Prisma.ProductVariantCombinationInclude;
+
+export type ProductCarouselItemDataType = {
+  success: boolean;
+  products: Array<
+    Prisma.ProductGetPayload<{
+      include: typeof ThemeProductCarouselProductPayload;
+    }>
+  >;
+  variants: Array<
+    Prisma.ProductVariantCombinationGetPayload<{
+      include: typeof ThemeProductCarouselVariantPayload;
+    }>
+  >;
 };

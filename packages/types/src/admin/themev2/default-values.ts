@@ -18,7 +18,7 @@ export const minimalValidSlide: Omit<SliderInputType, "order" | "sliderId"> = {
   desktopView: {
     file: null,
     existingAsset: {
-      url: "https://placehold.co/1920x1080/6E44FF/FFFFFF?text=YENI+SLAYT",
+      url: "https://placehold.co/1920x1080/6E44FF/FFFFFF.webp?text=YENI+SLAYT",
       type: "IMAGE",
     },
   },
@@ -46,7 +46,7 @@ export const getDefaultSlider = (order: number): SliderComponentInputType => ({
       desktopView: {
         file: null,
         existingAsset: {
-          url: "https://placehold.co/1920x1080/6E44FF/FFFFFF?text=YENI+SLAYT+(16:9)",
+          url: "https://placehold.co/1920x1080/6E44FF/FFFFFF.webp?text=YENI+SLAYT+(16:9)",
           type: "IMAGE",
         },
       },
@@ -55,7 +55,9 @@ export const getDefaultSlider = (order: number): SliderComponentInputType => ({
   ],
 });
 
-export const getDefaultMarquee = (order: number): MarqueeComponentInputType => ({
+export const getDefaultMarquee = (
+  order: number
+): MarqueeComponentInputType => ({
   componentId: createId(),
   type: "MARQUEE",
   order,
@@ -87,7 +89,9 @@ export const getDefaultMarquee = (order: number): MarqueeComponentInputType => (
   },
 });
 
-export const getDefaultProductCarousel = (order: number): ProductCarouselComponentInputType => ({
+export const getDefaultProductCarousel = (
+  order: number
+): ProductCarouselComponentInputType => ({
   componentId: createId(),
   type: "PRODUCT_CAROUSEL",
   order,
@@ -100,10 +104,12 @@ export const getDefaultProductCarousel = (order: number): ProductCarouselCompone
     autoplay: false,
     autoplaySpeed: 3000,
     loop: true,
+    descriptionTextColor: "#555555",
+    titleTextColor: "#111111",
     showArrows: true,
     showDots: true,
     showAddToCartButton: true,
-    aspectRatio: "3/4", // Veya Enum'ındaki uygun bir değer (örn: portrait)
+    aspectRatio: "3/4",
   },
   items: [
     {
@@ -136,6 +142,7 @@ export const createComponent = (order: number, type: ThemeComponents) => {
       throw new Error(`Bilinmeyen component türü: ${_exhaustiveCheck}`);
   }
 };
+
 export const ThemeV2DefaultValues: ThemeInputType = {
   components: [
     {
@@ -159,14 +166,14 @@ export const ThemeV2DefaultValues: ThemeInputType = {
           desktopView: {
             file: null,
             existingAsset: {
-              url: "https://placehold.co/1920x823/6E44FF/FFFFFF?text=SLIDER+1+(21:9)",
+              url: "https://placehold.co/1920x823/6E44FF/FFFFFF.webp?text=SLIDER+1+(21:9)",
               type: "IMAGE",
             },
           },
           mobileView: {
             file: null,
             existingAsset: {
-              url: "https://placehold.co/720x1280/6E44FF/FFFFFF?text=SLAYT+1+MOBIL+(9:16)",
+              url: "https://placehold.co/720x1280/6E44FF/FFFFFF.webp?text=SLAYT+1+MOBIL+(9:16)",
               type: "IMAGE",
             },
           },
@@ -178,14 +185,14 @@ export const ThemeV2DefaultValues: ThemeInputType = {
           desktopView: {
             file: null,
             existingAsset: {
-              url: "https://placehold.co/1920x823/FF6B6B/FFFFFF?text=SLIDER+1+(21:9)",
+              url: "https://placehold.co/1920x823/FF6B6B/FFFFFF.webp?text=SLIDER+1+(21:9)",
               type: "IMAGE",
             },
           },
           mobileView: {
             file: null,
             existingAsset: {
-              url: "https://placehold.co/720x1280/FF6B6B/FFFFFF?text=SLAYT+2+MOBIL+(9:16)",
+              url: "https://placehold.co/720x1280/FF6B6B/FFFFFF.webp?text=SLAYT+2+MOBIL+(9:16)",
               type: "IMAGE",
             },
           },
@@ -197,7 +204,7 @@ export const ThemeV2DefaultValues: ThemeInputType = {
           desktopView: {
             file: null,
             existingAsset: {
-              url: "https://placehold.co/1920x823/4ECDC4/FFFFFF?text=SLIDER+1+(21:9)",
+              url: "https://placehold.co/1920x823/4ECDC4/FFFFFF.webp?text=SLIDER+1+(21:9)",
               type: "IMAGE",
             },
           },
@@ -272,14 +279,14 @@ export const ThemeV2DefaultValues: ThemeInputType = {
           desktopView: {
             file: null,
             existingAsset: {
-              url: "https://placehold.co/1920x1080/F06595/FFFFFF?text=SLIDER+2+(16:9)",
+              url: "https://placehold.co/1920x1080/F06595/FFFFFF.webp?text=SLIDER+2+(16:9)",
               type: "IMAGE",
             },
           },
           mobileView: {
             file: null,
             existingAsset: {
-              url: "https://placehold.co/720x405/F06595/FFFFFF?text=SLAYT+1+MOBIL+(16:9)",
+              url: "https://placehold.co/720x405/F06595/FFFFFF.webp?text=SLAYT+1+MOBIL+(16:9)",
               type: "IMAGE",
             },
           },
@@ -291,7 +298,7 @@ export const ThemeV2DefaultValues: ThemeInputType = {
           desktopView: {
             file: null,
             existingAsset: {
-              url: "https://placehold.co/1920x1080/A61E4D/FFFFFF?text=SLIDER+2+(16:9)",
+              url: "https://placehold.co/1920x1080/A61E4D/FFFFFF.webp?text=SLIDER+2+(16:9)",
               type: "IMAGE",
             },
           },
@@ -357,14 +364,14 @@ export const ThemeV2DefaultValues: ThemeInputType = {
           desktopView: {
             file: null,
             existingAsset: {
-              url: "https://placehold.co/1080x1080/12B886/FFFFFF?text=SLIDER+3+(1:1)",
+              url: "https://placehold.co/1080x1080/12B886/FFFFFF.webp?text=SLIDER+3+(1:1)",
               type: "IMAGE",
             },
           },
           mobileView: {
             file: null,
             existingAsset: {
-              url: "https://placehold.co/720x900/12B886/FFFFFF?text=SLAYT+1+MOBIL+(4:5)",
+              url: "https://placehold.co/720x900/12B886/FFFFFF.webp?text=SLAYT+1+MOBIL+(4:5)",
               type: "IMAGE",
             },
           },

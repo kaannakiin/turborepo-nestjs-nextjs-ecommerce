@@ -1,16 +1,16 @@
 "use client";
 
+import { Stack } from "@mantine/core";
 import { Control, useWatch } from "@repo/shared";
 import {
   MarqueeComponentInputType,
-  ProductCarouselComponentOutputType,
+  ProductCarouselComponentInputType,
   SliderComponentOutputType,
   ThemeInputType,
 } from "@repo/types";
 import FirstThemeMarquee from "./first-theme/FirstThemeMarquee";
-import FirstThemeSlider from "./first-theme/FirstThemeSlider";
-import { Stack } from "@mantine/core";
 import FirstThemeProductCarousel from "./first-theme/FirstThemeProductCarousel";
+import FirstThemeSlider from "./first-theme/FirstThemeSlider";
 
 interface ThemeSorterProps {
   control: Control<ThemeInputType>;
@@ -45,7 +45,7 @@ const ThemeSorter = ({ control }: ThemeSorterProps) => {
               return (
                 <FirstThemeProductCarousel
                   key={component.componentId}
-                  data={component as ProductCarouselComponentOutputType}
+                  data={component as ProductCarouselComponentInputType}
                 />
               );
           }
