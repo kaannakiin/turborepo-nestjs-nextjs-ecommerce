@@ -1,7 +1,7 @@
 "use client";
 import NextImage from "next/image";
 import { Image as MantineImage } from "@mantine/core";
-import { MouseEventHandler, useState, useMemo } from "react";
+import { MouseEventHandler, useState, useMemo, CSSProperties } from "react";
 
 interface CustomImageProps {
   alt?: string;
@@ -9,6 +9,7 @@ interface CustomImageProps {
   className?: string;
   onClick?: MouseEventHandler<HTMLDivElement> | undefined;
   priority?: boolean;
+  style?: CSSProperties | undefined;
 }
 
 const CustomImage = ({
@@ -17,6 +18,7 @@ const CustomImage = ({
   className = "",
   onClick,
   priority = false,
+  style,
 }: CustomImageProps) => {
   const [isLoading, setIsLoading] = useState(true);
 
@@ -26,7 +28,10 @@ const CustomImage = ({
     if (!src) return false;
     try {
       const url = new URL(src);
-      return IGNORED_HOSTS.includes(url.hostname);
+      return (
+        IGNORED_HOSTS.includes(url.hostname) ||
+        (typeof Blob !== "undefined" && url.protocol === "blob:")
+      );
     } catch {
       return false;
     }
@@ -38,6 +43,7 @@ const CustomImage = ({
       <MantineImage
         src={src}
         alt={alt}
+        style={style}
         className={className}
         onClick={onClick}
       />
@@ -70,6 +76,8 @@ const CustomImage = ({
           alt={alt}
           src={thumbnailSrc as string}
           fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          style={style}
           className={`
             object-contain 
             filter blur-xl scale-110 
@@ -83,8 +91,11 @@ const CustomImage = ({
         alt={alt}
         src={src}
         fill
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        style={style}
         priority={priority}
         onLoad={() => setIsLoading(false)}
+        loading="eager"
         className={`
           object-contain 
           transition-all duration-500 ease-in-out

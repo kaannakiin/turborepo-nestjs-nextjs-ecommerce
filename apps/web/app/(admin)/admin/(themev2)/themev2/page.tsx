@@ -36,6 +36,7 @@ import { Media, useTheme } from "../../(theme)/ThemeContexts/ThemeContext";
 import AsideFormsTable from "./components/AsideFormsTable";
 import NavbarComponentTable from "./components/NavbarComponentTable";
 import ThemeSorter from "./ThemeSorter";
+import LeftSiderHeader from "./components/left-side-components/LeftSideHeader";
 
 const themeIcons: Array<{
   key: Media;
@@ -192,19 +193,20 @@ const ThemeV2 = () => {
           </Group>
         </AppShell.Header>
         <AppShell.Navbar bg={"gray.0"}>
-          <ScrollArea pl={"0"} scrollbarSize={5} px={"xs"}>
+          <ScrollArea scrollbarSize={5} px={"xs"}>
             <Collapse
               transitionDuration={300}
               transitionTimingFunction="linear"
               in={mode === "default"}
             >
-              <div>
+              <Stack gap="xs" pt={"sm"}>
+                <LeftSiderHeader />
                 <NavbarComponentTable
                   key={componentOrderKey}
                   control={forms.control}
                   functions={componontsFieldArray}
                 />
-                <Group align="center" justify="center" py="md">
+                <Group align="center" justify="center">
                   <Button
                     leftSection={<IconPlus />}
                     onClick={() => setMode("addSection")}
@@ -212,7 +214,7 @@ const ThemeV2 = () => {
                     Yeni Bölüm
                   </Button>
                 </Group>
-              </div>
+              </Stack>
             </Collapse>
 
             <Collapse

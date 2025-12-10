@@ -16,6 +16,7 @@ import * as z from "zod";
  */
 export const MIME_TYPES = {
   IMAGE: ["image/jpeg", "image/png", "image/webp", "image/gif"] as string[],
+  LOGO: ["image/svg+xml"] as string[],
   VIDEO: ["video/webm"] as string[],
   AUDIO: ["audio/mpeg", "audio/mp4"] as string[],
   DOCUMENT: [
@@ -24,7 +25,7 @@ export const MIME_TYPES = {
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "text/plain",
   ] as string[],
-} as Record<AssetType, string[]>;
+} as Record<FileType, string[]>;
 
 /**
  * Belirtilen asset tipi için izin verilen MIME type'ları döndürür.
@@ -33,14 +34,14 @@ export const MIME_TYPES = {
  * @returns MIME type dizisi veya tip bulunamazsa boş dizi
  *
  * @example
- * getMimeTypesForAssetType(AssetType.IMAGE)
+ * getMimeTypesForAssetType(FileType.IMAGE)
  * // ["image/jpeg", "image/png", "image/webp", "image/gif"]
  */
-export const getMimeTypesForAssetType = (type: AssetType): string[] => {
+export const getMimeTypesForAssetType = (type: FileType): string[] => {
   return MIME_TYPES[type] || [];
 };
 
-export const getAssetTypeMessage = (types: AssetType[] | AssetType): string => {
+export const getAssetTypeMessage = (types: FileType[] | FileType): string => {
   const typeArray = Array.isArray(types) ? types : [types];
 
   const messages = typeArray.map((type) => {
@@ -82,11 +83,13 @@ export const getAssetTypeMessage = (types: AssetType[] | AssetType): string => {
  *   maxSize: 5 * 1024 * 1024 // 5MB
  * });
  */
+
+type FileType = AssetType | "LOGO";
 export const FileSchema = ({
   type,
   maxSize = 10 * 1024 * 1024,
 }: {
-  type: AssetType[] | AssetType;
+  type: FileType[] | FileType;
   maxSize?: number;
 }) => {
   const allowedTypes = Array.isArray(type) ? type : [type];

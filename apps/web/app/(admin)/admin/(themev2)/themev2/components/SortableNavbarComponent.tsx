@@ -1,4 +1,5 @@
 "use client";
+import { DraggableSyntheticListeners } from "@dnd-kit/core";
 import {
   ActionIcon,
   Box,
@@ -10,12 +11,11 @@ import {
 } from "@mantine/core";
 import { useDisclosure, useHover } from "@mantine/hooks";
 import {
-  IconArrowDown,
-  IconArrowUp,
   IconChevronRight,
+  IconGripVertical,
   IconTrash,
 } from "@tabler/icons-react";
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { useThemeStore } from "../store/zustand-zod-theme.store";
 
 interface SortableNavbarComponentProps {
@@ -23,11 +23,9 @@ interface SortableNavbarComponentProps {
   title: string;
   children: ReactNode;
   onDelete?: () => void;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
-  isFirst?: boolean;
-  isLast?: boolean;
+  dragHandleProps?: DraggableSyntheticListeners;
   defaultOpened?: boolean;
+  isDragging?: boolean;
 }
 
 const SortableNavbarComponent = ({
@@ -35,19 +33,22 @@ const SortableNavbarComponent = ({
   title,
   children,
   onDelete,
-  onMoveUp,
-  onMoveDown,
-  isFirst = false,
-  isLast = false,
+  dragHandleProps,
   defaultOpened = false,
+  isDragging = false,
 }: SortableNavbarComponentProps) => {
-  const [opened, { toggle }] = useDisclosure(defaultOpened);
+  const [opened, { toggle, close }] = useDisclosure(defaultOpened);
   const { hovered, ref: hoverRef } = useHover();
   const { selection, selectComponent } = useThemeStore();
 
   const isComponentSelected =
     selection?.type === "COMPONENT" && selection.componentId === componentId;
 
+  useEffect(() => {
+    if (isDragging && opened) {
+      close();
+    }
+  }, [isDragging, opened, close]);
   return (
     <Box
       ref={hoverRef}
@@ -56,77 +57,77 @@ const SortableNavbarComponent = ({
           ? "var(--mantine-primary-color-5)"
           : "var(--mantine-color-gray-2)",
         borderWidth: isComponentSelected ? "2px" : "1px",
+        position: "relative",
       }}
-      className="border transition-all duration-200"
+      className="border transition-all duration-200 bg-white rounded-md overflow-hidden"
     >
       <Group
         align="center"
         px="sm"
         py="xs"
-        onClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          selectComponent(componentId);
-          toggle();
-        }}
-        className="cursor-pointer hover:bg-gray-50 transition-colors"
-        bg="white"
         wrap="nowrap"
+        gap={0}
+        className="transition-colors hover:bg-gray-50"
       >
-        <ThemeIcon
-          variant="transparent"
-          color="gray"
-          size="sm"
-          className="transition-transform duration-300"
+        <Box
           style={{
-            transform: opened ? "rotate(90deg)" : "rotate(0deg)",
+            maxWidth: hovered ? "28px" : "0px",
+            opacity: hovered ? 1 : 0,
+            overflow: "hidden",
+            transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+            display: "flex",
+            alignItems: "center",
           }}
         >
-          <IconChevronRight size={16} />
-        </ThemeIcon>
-
-        <Text fw={600} size="sm" flex={1}>
-          {title}
-        </Text>
+          <ActionIcon
+            variant="transparent"
+            color="gray"
+            size="sm"
+            style={{ cursor: "grab", touchAction: "none", minWidth: "22px" }}
+            {...dragHandleProps}
+            mr={6}
+          >
+            <IconGripVertical size={18} />
+          </ActionIcon>
+        </Box>
 
         <Group
+          flex={1}
+          align="center"
           gap="xs"
-          style={{ opacity: hovered ? 1 : 0, transition: "opacity 0.2s" }}
+          style={{ cursor: "pointer" }}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            selectComponent(componentId);
+            toggle();
+          }}
         >
-          {onMoveUp && (
-            <ActionIcon
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                onMoveUp();
-              }}
-              variant={isFirst ? "subtle" : "filled"}
-              size="sm"
-              color="gray"
-              disabled={isFirst}
-              title="Yukarı Taşı"
-            >
-              <IconArrowUp size={16} />
-            </ActionIcon>
-          )}
+          <ThemeIcon
+            variant="transparent"
+            color="gray"
+            size="sm"
+            className="transition-transform duration-300"
+            style={{
+              transform: opened ? "rotate(90deg)" : "rotate(0deg)",
+            }}
+          >
+            <IconChevronRight size={16} />
+          </ThemeIcon>
 
-          {onMoveDown && (
-            <ActionIcon
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                onMoveDown();
-              }}
-              variant={isLast ? "subtle" : "filled"}
-              size="sm"
-              color="gray"
-              disabled={isLast}
-              title="Aşağı Taşı"
-            >
-              <IconArrowDown size={16} />
-            </ActionIcon>
-          )}
+          <Text fw={600} size="sm" flex={1} style={{ userSelect: "none" }}>
+            {title}
+          </Text>
+        </Group>
 
+        <Box
+          style={{
+            opacity: hovered ? 1 : 0,
+            transition: "opacity 0.2s",
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
           {onDelete && (
             <ActionIcon
               onClick={(e) => {
@@ -142,11 +143,11 @@ const SortableNavbarComponent = ({
               <IconTrash size={16} />
             </ActionIcon>
           )}
-        </Group>
+        </Box>
       </Group>
 
       <Collapse in={opened} transitionDuration={300}>
-        <Stack gap={0} bg="gray.0">
+        <Stack gap={0} bg="gray.0" className="border-t border-gray-100 p-2">
           {children}
         </Stack>
       </Collapse>

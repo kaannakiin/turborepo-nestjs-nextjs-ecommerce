@@ -2,7 +2,7 @@
 
 import { safeTransformDiscountType } from "@/(admin)/admin/(other)/store/discounts/helperDiscount";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
   getCampaignStatusLabel,
   getCurrencyLabel,

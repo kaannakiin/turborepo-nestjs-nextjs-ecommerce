@@ -1,7 +1,7 @@
 "use client";
 
 import { LOCALE_CART_COOKIE } from "@lib/constants";
-import fetchWrapper, { ApiError } from "@lib/fetchWrapper";
+import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
 import {
   createId,
   useMutation,

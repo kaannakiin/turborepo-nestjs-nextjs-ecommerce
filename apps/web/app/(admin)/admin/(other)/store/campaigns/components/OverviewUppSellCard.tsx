@@ -1,6 +1,6 @@
 "use client";
 import CustomImage from "@/components/CustomImage";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
   $Enums,
   AllowedDiscountedItemsBy,

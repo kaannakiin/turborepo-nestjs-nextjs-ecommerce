@@ -2,7 +2,10 @@
 import { LoadingOverlay, LoadingOverlayProps } from "@mantine/core";
 import { usePathname } from "next/navigation";
 
-type GlobalLoadingOverlayProps = Omit<LoadingOverlayProps, "zIndex" | "overlayProps" | "loaderProps">;
+type GlobalLoadingOverlayProps = Omit<
+  LoadingOverlayProps,
+  "zIndex" | "overlayProps" | "loaderProps"
+>;
 const GlobalLoadingOverlay = ({ ...props }: GlobalLoadingOverlayProps) => {
   const pathname = usePathname();
 

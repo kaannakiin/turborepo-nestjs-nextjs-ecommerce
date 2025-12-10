@@ -1,0 +1,162 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type AdminProductsResponseGql {
+  items: [ProductGqlModel!]!
+  pagination: PaginationMetaGql
+  success: Boolean!
+}
+
+type AssetSelectGql {
+  type: String
+  url: String
+}
+
+input AttributeFilterInput {
+  """VariantGroup ID (Örn: Renk Grubunun IDsi)"""
+  groupId: String!
+
+  """Seçilen Option IDleri (Örn: Kırmızı, Mavi IDleri)"""
+  optionIds: [String!]!
+}
+
+type CombinationOptionGql {
+  productVariantOption: ProductVariantOptionWrapperGql
+}
+
+"""Para birimleri"""
+enum CurrencyGql {
+  EUR
+  GBP
+  TRY
+  USD
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+"""Desteklenen diller"""
+enum LocaleGql {
+  DE
+  EN
+  TR
+}
+
+type PaginationMetaGql {
+  currentPage: Int!
+  perPage: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+input PriceRangeInput {
+  currency: CurrencyGql = TRY
+  max: Float
+  min: Float
+}
+
+type ProductAssetWrapperGql {
+  asset: AssetSelectGql
+}
+
+type ProductGqlModel {
+  active: Boolean!
+  assets: [ProductAssetWrapperGql]
+  barcode: String
+  createdAt: DateTime!
+  id: String!
+  isVariant: Boolean!
+  prices: [ProductPriceGql]
+  sku: String
+  stock: Int!
+  translations: [ProductTranslationGql]
+  variantCombinations: [ProductVariantCombinationGql]
+}
+
+type ProductPriceGql {
+  currency: CurrencyGql!
+  price: Float!
+}
+
+"""Ürün sıralama alanları"""
+enum ProductSortFieldGql {
+  CREATED_AT
+  NAME
+  PRICE
+  STOCK
+}
+
+input ProductSortInput {
+  field: ProductSortFieldGql!
+  order: SortOrderGql!
+}
+
+type ProductTranslationGql {
+  description: String
+  name: String
+}
+
+type ProductVariantCombinationGql {
+  assets: [ProductAssetWrapperGql]
+  barcode: String
+  id: String!
+  options: [CombinationOptionGql]
+  prices: [ProductPriceGql]
+  sku: String
+  stock: Int!
+}
+
+type ProductVariantGroupSelectGql {
+  renderVisibleType: String
+}
+
+type ProductVariantOptionWrapperGql {
+  productVariantGroup: ProductVariantGroupSelectGql
+  variantOption: VariantOptionSelectGql
+}
+
+input ProductsFilterInput {
+  """Varyant özellikleri filtrelemesi"""
+  attributes: [AttributeFilterInput!]
+
+  """Marka ID listesi (OR mantığı)"""
+  brandIds: [String!]
+
+  """Kategori ID listesi (OR mantığı)"""
+  categoryIds: [String!]
+
+  """Sadece stokta olanları getir"""
+  hasStock: Boolean
+  isActive: Boolean = true
+  isVariant: Boolean
+  priceRange: PriceRangeInput
+  search: String
+  tagIds: [String!]
+}
+
+type Query {
+  getProductsForAdmin(filter: ProductsFilterInput, limit: Int! = 10, locale: LocaleGql! = TR, page: Int! = 1, sort: ProductSortInput): AdminProductsResponseGql!
+}
+
+"""Sıralama düzeni"""
+enum SortOrderGql {
+  ASC
+  DESC
+}
+
+type VariantGroupSelectGql {
+  id: String!
+  translations: [ProductTranslationGql]
+  type: String
+}
+
+type VariantOptionSelectGql {
+  asset: AssetSelectGql
+  hexValue: String
+  id: String!
+  translations: [ProductTranslationGql]
+  variantGroup: VariantGroupSelectGql
+}

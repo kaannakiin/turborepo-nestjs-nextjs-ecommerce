@@ -90,6 +90,8 @@ export const ThemeComponents = {
   SLIDER: "SLIDER",
   MARQUEE: "MARQUEE",
   PRODUCT_CAROUSEL: "PRODUCT_CAROUSEL",
+  HEADER: "HEADER",
+  FOOTER: "FOOTER",
 } as const;
 
 export type ThemeComponents =

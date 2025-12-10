@@ -3,7 +3,7 @@ import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 import CustomPagination from "@/components/CustomPagination";
 import CustomSearchInput from "@/components/CustomSearchInput";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper, { ApiError } from "@lib/fetchWrapper";
+import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
 import {
   ActionIcon,
   Alert,

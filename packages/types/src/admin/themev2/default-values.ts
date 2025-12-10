@@ -136,10 +136,6 @@ export const createComponent = (order: number, type: ThemeComponents) => {
       return getDefaultMarquee(order);
     case "PRODUCT_CAROUSEL":
       return getDefaultProductCarousel(order);
-
-    default:
-      const _exhaustiveCheck: never = type;
-      throw new Error(`Bilinmeyen component türü: ${_exhaustiveCheck}`);
   }
 };
 

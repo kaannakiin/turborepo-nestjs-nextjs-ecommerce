@@ -13,7 +13,7 @@ import {
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import styles from "./styles/ProductListCarousel.module.css";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { Route } from "next";
 
 interface MainPageProductListProps {

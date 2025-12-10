@@ -1,6 +1,6 @@
 "use client";
 import GlobalLoader from "@/components/GlobalLoader";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { getSelectionTextShipping } from "@lib/helpers";
 import {
   ActionIcon,

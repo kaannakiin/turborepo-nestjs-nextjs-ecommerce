@@ -5,6 +5,8 @@ export type EditorSelection =
   | { type: "SLIDE"; componentId: string; id: string }
   | { type: "MARQUEE_ITEM"; componentId: string; itemId: string }
   | { type: "PRODUCT_CAROUSEL_ITEM"; componentId: string; itemId: string }
+  | { type: "HEADER" }
+  | { type: "FOOTER" }
   | null;
 
 interface EditorStore {
@@ -13,6 +15,8 @@ interface EditorStore {
   selectSlide: (componentId: string, id: string) => void;
   selectMarqueeItem: (componentId: string, itemId: string) => void;
   selectProductCarouselItem: (componentId: string, itemId: string) => void;
+  selectHeader: () => void;
+  selectFooter: () => void;
   clearSelection: () => void;
 }
 
@@ -38,5 +42,15 @@ export const useThemeStore = create<EditorStore>((set) => ({
       selection: { type: "PRODUCT_CAROUSEL_ITEM", componentId, itemId },
     }),
 
+  selectHeader: () => {
+    set({
+      selection: { type: "HEADER" },
+    });
+  },
+  selectFooter: () => {
+    set({
+      selection: { type: "FOOTER" },
+    });
+  },
   clearSelection: () => set({ selection: null }),
 }));

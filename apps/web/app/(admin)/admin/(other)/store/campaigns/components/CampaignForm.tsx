@@ -2,7 +2,7 @@
 import ActionPopover from "@/(admin)/components/ActionPopoverr";
 
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper, { ApiError } from "@lib/fetchWrapper";
+import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
 import { getCampaignStatusLabel, getCurrencyLabel } from "@lib/helpers";
 import {
   Alert,

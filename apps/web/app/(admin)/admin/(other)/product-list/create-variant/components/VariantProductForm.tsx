@@ -1,6 +1,6 @@
 "use client";
 
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { queryClient } from "@lib/serverQueryClient";
 import {
   Button,
@@ -27,7 +27,12 @@ import {
   useWatch,
   zodResolver,
 } from "@repo/shared";
-import { BrandSelectType, CategorySelectType, VariantProductSchema, VariantProductZodType } from "@repo/types";
+import {
+  BrandSelectType,
+  CategorySelectType,
+  VariantProductSchema,
+  VariantProductZodType,
+} from "@repo/types";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { getProductTypeLabel } from "../../../../../../../lib/helpers";
@@ -37,10 +42,13 @@ import TaxonomySelect from "../../../components/TaxonomySelect";
 import ProductDropzone from "../../components/ProductDropzone";
 import ExistingVariantCard from "./ExistingVariantCard";
 
-const GlobalTextEditor = dynamic(() => import("../../../../../../components/GlobalTextEditor"), {
-  ssr: false,
-  loading: () => <GlobalLoadingOverlay />,
-});
+const GlobalTextEditor = dynamic(
+  () => import("../../../../../../components/GlobalTextEditor"),
+  {
+    ssr: false,
+    loading: () => <GlobalLoadingOverlay />,
+  }
+);
 interface BatchVariantPayloadItem {
   variantId: string;
   existingImages: Array<{
@@ -60,7 +68,11 @@ interface VariantProductFormProps {
   brands: BrandSelectType[];
 }
 
-const VariantProductForm = ({ defaultValues, brands, categories }: VariantProductFormProps) => {
+const VariantProductForm = ({
+  defaultValues,
+  brands,
+  categories,
+}: VariantProductFormProps) => {
   const {
     control,
     formState: { isSubmitting, errors },
@@ -99,10 +111,12 @@ const VariantProductForm = ({ defaultValues, brands, categories }: VariantProduc
       const cleanCombinatedVariants = combinatedVariants.map(
         ({ images: variantImages, existingImages, ...variant }) => variant
       );
-      const cleanExistingVariants = data.existingVariants.map(({ options, ...variant }) => ({
-        ...variant,
-        options: options.map(({ file, ...option }) => option),
-      }));
+      const cleanExistingVariants = data.existingVariants.map(
+        ({ options, ...variant }) => ({
+          ...variant,
+          options: options.map(({ file, ...option }) => option),
+        })
+      );
 
       const mainDataResponse = await fetchWrapper.post<{
         success: boolean;
@@ -121,7 +135,9 @@ const VariantProductForm = ({ defaultValues, brands, categories }: VariantProduc
       });
 
       if (!mainDataResponse.success) {
-        throw new Error("Ürün kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.");
+        throw new Error(
+          "Ürün kaydedilirken bir hata oluştu. Lütfen tekrar deneyin."
+        );
       }
 
       const { data: mdData } = mainDataResponse.data;
@@ -141,19 +157,26 @@ const VariantProductForm = ({ defaultValues, brands, categories }: VariantProduc
 
       notifications.show({
         title: "Başarılı!",
-        message: defaultValues ? "Ürün başarıyla güncellendi." : "Ürün başarıyla kaydedildi.",
+        message: defaultValues
+          ? "Ürün başarıyla güncellendi."
+          : "Ürün başarıyla kaydedildi.",
         color: "green",
       });
 
       uploadAllImagesInBackground(data, productId, updatedCombinations);
 
-      context.client.invalidateQueries({ queryKey: ["admin-variant-product", productId] });
+      context.client.invalidateQueries({
+        queryKey: ["admin-variant-product", productId],
+      });
 
       push("/admin/product-list");
     },
 
     onError: (error, variables, context) => {
-      const errorMessage = error instanceof Error ? error.message : "İnternet bağlantınızı kontrol edin.";
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "İnternet bağlantınızı kontrol edin.";
 
       notifications.show({
         title: "Bağlantı Hatası!",
@@ -175,7 +198,9 @@ const VariantProductForm = ({ defaultValues, brands, categories }: VariantProduc
     try {
       if (formData.images && formData.images.length > 0) {
         const productImageFormData = new FormData();
-        const sortedImages = [...formData.images].sort((a, b) => a.order - b.order);
+        const sortedImages = [...formData.images].sort(
+          (a, b) => a.order - b.order
+        );
 
         sortedImages.forEach((imageFile) => {
           productImageFormData.append("files", imageFile.file);
@@ -206,10 +231,13 @@ const VariantProductForm = ({ defaultValues, brands, categories }: VariantProduc
         const currentExistingImages = variant.existingImages;
 
         const hasNewImages = currentNewImages && currentNewImages.length > 0;
-        const hasExistingImages = currentExistingImages && currentExistingImages.length > 0;
+        const hasExistingImages =
+          currentExistingImages && currentExistingImages.length > 0;
 
         if (hasNewImages || hasExistingImages) {
-          const combinationInfo = updatedCombinations.find((c) => c.sku === variant.sku);
+          const combinationInfo = updatedCombinations.find(
+            (c) => c.sku === variant.sku
+          );
           if (!combinationInfo) {
             console.warn(`SKU: ${variant.sku} için ID bulunamadı.`);
             continue;
@@ -222,7 +250,9 @@ const VariantProductForm = ({ defaultValues, brands, categories }: VariantProduc
           };
 
           if (hasNewImages) {
-            const sortedNewImages = [...currentNewImages].sort((a, b) => a.order - b.order);
+            const sortedNewImages = [...currentNewImages].sort(
+              (a, b) => a.order - b.order
+            );
 
             sortedNewImages.forEach((img) => {
               batchFormData.append("files", img.file);
@@ -237,7 +267,9 @@ const VariantProductForm = ({ defaultValues, brands, categories }: VariantProduc
           }
 
           if (hasExistingImages) {
-            const sortedExisting = [...currentExistingImages].sort((a, b) => a.order - b.order);
+            const sortedExisting = [...currentExistingImages].sort(
+              (a, b) => a.order - b.order
+            );
 
             variantData.existingImages = sortedExisting.map((img) => ({
               url: img.url,
@@ -253,7 +285,10 @@ const VariantProductForm = ({ defaultValues, brands, categories }: VariantProduc
       if (variantsPayload.length > 0) {
         batchFormData.append("payload", JSON.stringify(variantsPayload));
 
-        const response = await fetchWrapper.postFormData(`/admin/products/upload-batch-variant-images`, batchFormData);
+        const response = await fetchWrapper.postFormData(
+          `/admin/products/upload-batch-variant-images`,
+          batchFormData
+        );
 
         if (!response.success) {
           console.warn("Varyant resimleri toplu yüklenirken hata oluştu.");
@@ -280,9 +315,14 @@ const VariantProductForm = ({ defaultValues, brands, categories }: VariantProduc
         }
       }
 
-      queryClient.invalidateQueries({ queryKey: ["admin-variant-product", productId] });
+      queryClient.invalidateQueries({
+        queryKey: ["admin-variant-product", productId],
+      });
     } catch (error) {
-      console.error("Resimler yüklenirken arka planda genel bir hata oluştu:", error);
+      console.error(
+        "Resimler yüklenirken arka planda genel bir hata oluştu:",
+        error
+      );
     }
   };
 
@@ -346,7 +386,9 @@ const VariantProductForm = ({ defaultValues, brands, categories }: VariantProduc
 
     const updatedExistingImages = existingImagesInOrder
       .map((item) => {
-        const existingImage = existingImages.find((img) => img.url === item.url);
+        const existingImage = existingImages.find(
+          (img) => img.url === item.url
+        );
 
         if (!existingImage) {
           return null;
@@ -375,7 +417,9 @@ const VariantProductForm = ({ defaultValues, brands, categories }: VariantProduc
         }
 
         const fallbackMatch = images.find(
-          (img) => img.file.name === item.file!.name && img.file.size === item.file!.size
+          (img) =>
+            img.file.name === item.file!.name &&
+            img.file.size === item.file!.size
         );
 
         if (fallbackMatch) {
@@ -403,9 +447,13 @@ const VariantProductForm = ({ defaultValues, brands, categories }: VariantProduc
         throw new Error("Resim silinemedi");
       }
 
-      const filteredImages = existingImages.filter((image) => image.url !== urlToRemove);
+      const filteredImages = existingImages.filter(
+        (image) => image.url !== urlToRemove
+      );
 
-      const removedImage = existingImages.find((image) => image.url === urlToRemove);
+      const removedImage = existingImages.find(
+        (image) => image.url === urlToRemove
+      );
       const removedOrder = removedImage?.order;
 
       if (removedOrder === undefined) {
@@ -450,9 +498,13 @@ const VariantProductForm = ({ defaultValues, brands, categories }: VariantProduc
 
   return (
     <Stack gap={"lg"}>
-      {(isSubmitting || createOrUpdateVariantProductMutation.isPending) && <GlobalLoadingOverlay />}
+      {(isSubmitting || createOrUpdateVariantProductMutation.isPending) && (
+        <GlobalLoadingOverlay />
+      )}
       <Group align="center" justify="space-between">
-        <Title order={4}>Varyantlı Ürün {defaultValues ? "Güncelle" : "Oluştur"}</Title>
+        <Title order={4}>
+          Varyantlı Ürün {defaultValues ? "Güncelle" : "Oluştur"}
+        </Title>
         <Group gap="md" justify="end">
           <Button type="button" onClick={handleSubmit(onSubmit)}>
             {defaultValues ? "Güncelle" : "Kaydet"}
@@ -469,7 +521,10 @@ const VariantProductForm = ({ defaultValues, brands, categories }: VariantProduc
                 {...field}
                 onChange={(event) => {
                   field.onChange(event);
-                  setValue("translations.0.slug", slugify(event.currentTarget.value));
+                  setValue(
+                    "translations.0.slug",
+                    slugify(event.currentTarget.value)
+                  );
                 }}
                 error={fieldState.error?.message}
                 label="Ürün Adı"
@@ -526,7 +581,9 @@ const VariantProductForm = ({ defaultValues, brands, categories }: VariantProduc
               onRemoveExistingImage={handleRemoveExistingImage}
               onReorder={handleReorder}
             />
-            {fieldState.error && <InputError>{fieldState.error.message}</InputError>}
+            {fieldState.error && (
+              <InputError>{fieldState.error.message}</InputError>
+            )}
           </Stack>
         )}
       />
@@ -586,7 +643,9 @@ const VariantProductForm = ({ defaultValues, brands, categories }: VariantProduc
           render={({ field, fieldState }) => (
             <>
               <TaxonomySelect field={{ ...field }} />
-              {fieldState.error && <InputError>{fieldState.error.message}</InputError>}
+              {fieldState.error && (
+                <InputError>{fieldState.error.message}</InputError>
+              )}
             </>
           )}
         />

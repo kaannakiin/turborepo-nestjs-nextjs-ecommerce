@@ -1,4 +1,4 @@
-import fetchWrapper from "./fetchWrapper";
+import fetchWrapper from "./wrappers/fetchWrapper";
 
 export const createAIProxyFetch = (proxyBaseUrl: string) => {
   const aiFetch = async (

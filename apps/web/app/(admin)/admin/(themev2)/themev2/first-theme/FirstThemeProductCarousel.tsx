@@ -1,16 +1,16 @@
 import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper from "@lib/fetchWrapper";
-import { Carousel } from "@mantine/carousel";
-import { Box, Container, Stack, Text, Title } from "@mantine/core";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
+import { Container, Stack, Text, Title } from "@mantine/core";
 import { keepPreviousData, useQuery, useQueryClient } from "@repo/shared";
 import { ProductCarouselComponentInputType, ProductCart } from "@repo/types";
-import Autoplay from "embla-carousel-autoplay";
-import Fade from "embla-carousel-fade";
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+import { Autoplay, Navigation, Pagination } from "swiper/modules";
+import { Swiper, SwiperSlide } from "swiper/react";
 import FirstThemeProductCart from "./FirstThemeProductCart";
-import classes from "./modules/ProductCarousel.module.css";
-import AutoHeight from "embla-carousel-auto-height";
 interface FirstThemeProductCarouselProps {
   data: ProductCarouselComponentInputType;
 }
@@ -20,10 +20,8 @@ const FirstThemeProductCarousel = ({
 }: FirstThemeProductCarouselProps) => {
   const queryClient = useQueryClient();
   const { config, title, description } = data;
+
   const { media } = useTheme();
-  const autoplay = useRef(
-    Autoplay({ delay: config.autoplaySpeed, stopOnInteraction: false })
-  );
 
   const { productIds, variantIds } = useMemo(() => {
     const pIds = data.items
@@ -122,84 +120,76 @@ const FirstThemeProductCarousel = ({
     })[];
   }, [productsData, data.items]);
 
+  const currentSlidesPerView =
+    media === "desktop"
+      ? config.slidesPerViewDesktop
+      : media === "tablet"
+        ? config.slidesPerViewTablet
+        : config.slidesPerViewMobile;
+
   if (isLoading) return <GlobalLoadingOverlay />;
   if (slides.length === 0) return null;
 
   return (
-    <Box component="section" py="xl">
-      <Container size="xl">
-        {(title || description) && (
-          <Stack mb="xl" align="center" gap="xs">
-            {title && (
-              <Title
-                order={2}
-                style={{ color: config.titleTextColor || "inherit" }}
-                ta="center"
-              >
-                {title}
-              </Title>
-            )}
-            {description && (
-              <Text
-                c={config.descriptionTextColor || "dimmed"}
-                ta="center"
-                maw={600}
-              >
-                {description}
-              </Text>
-            )}
-          </Stack>
-        )}
+    <Container size="xl">
+      {(title || description) && (
+        <Stack mb="xl" align="center" gap="xs">
+          {/* Title ve Description kodların */}
+          {title && (
+            <Title
+              order={2}
+              style={{ color: config.titleTextColor || "inherit" }}
+              ta="center"
+            >
+              {title}
+            </Title>
+          )}
+          {description && (
+            <Text
+              c={config.descriptionTextColor || "dimmed"}
+              ta="center"
+              maw={600}
+            >
+              {description}
+            </Text>
+          )}
+        </Stack>
+      )}
 
-        <Carousel
-          withIndicators={config.showDots}
-          className="items-start"
-          withControls={config.showArrows}
-          emblaOptions={{
-            loop: config.loop,
-            align: "start",
-            slidesToScroll:
-              media === "desktop"
-                ? config.slidesPerViewDesktop
-                : media === "tablet"
-                  ? config.slidesPerViewTablet
-                  : config.slidesPerViewMobile,
-          }}
-          slideSize={
-            media === "desktop"
-              ? `${100 / config.slidesPerViewDesktop}%`
-              : media === "tablet"
-                ? `${100 / config.slidesPerViewTablet}%`
-                : `${100 / config.slidesPerViewMobile}%`
-          }
-          slideGap={{ base: "md", md: "lg" }}
-          plugins={
-            config.autoplay
-              ? [autoplay.current, Fade(), AutoHeight()]
-              : [Fade(), AutoHeight()]
-          }
-          onMouseEnter={config.autoplay ? autoplay.current.stop : undefined}
-          onMouseLeave={config.autoplay ? autoplay.current.reset : undefined}
-          classNames={{
-            root: classes.root,
-            controls: classes.controls,
-            control: classes.control,
-            indicator: classes.indicator,
-          }}
-          controlsOffset={"xs"}
-        >
-          {slides.map((product) => (
-            <Carousel.Slide key={product.id}>
-              <FirstThemeProductCart
-                data={product}
-                aspectRatio={config.aspectRatio}
-                showAddToCartButton={config.showAddToCartButton}
-              />
-            </Carousel.Slide>
-          ))}
-        </Carousel>
-      </Container>
-    </Box>
+      <Swiper
+        modules={[Navigation, Pagination, Autoplay]}
+        spaceBetween={20}
+        loop={config.loop}
+        autoHeight={true}
+        navigation={config.showArrows}
+        pagination={
+          config.showDots ? { clickable: true, dynamicBullets: true } : false
+        }
+        autoplay={
+          config.autoplay
+            ? {
+                delay: config.autoplaySpeed || 3000,
+                disableOnInteraction: false,
+                pauseOnMouseEnter: true,
+              }
+            : false
+        }
+        slidesPerView={currentSlidesPerView}
+        style={{
+          paddingBottom: config.showDots ? "40px" : "0",
+        }}
+      >
+        {slides.map((product) => (
+          <SwiperSlide key={product.id} style={{ height: "auto" }}>
+            <FirstThemeProductCart
+              data={product}
+              aspectRatio={config.aspectRatio}
+              showAddToCartButton={config.showAddToCartButton}
+            />
+          </SwiperSlide>
+        ))}
+      </Swiper>
+    </Container>
   );
 };
 

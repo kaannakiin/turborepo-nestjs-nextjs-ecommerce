@@ -4,6 +4,7 @@ import ThemeProvider from "./(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import LayoutProviderWrapper from "./components/LayoutProviderWrapper";
 import "./globals.css";
 import { ReactNode } from "react";
+import { CartProviderV3 } from "./context/cart-context/CartContextV3";
 
 export default function RootLayout({
   children,
@@ -17,7 +18,9 @@ export default function RootLayout({
       </head>
       <body className="relative" suppressHydrationWarning={true}>
         <LayoutProviderWrapper>
-          <ThemeProvider>{children}</ThemeProvider>
+          <CartProviderV3>
+            <ThemeProvider>{children}</ThemeProvider>
+          </CartProviderV3>
         </LayoutProviderWrapper>
       </body>
     </html>

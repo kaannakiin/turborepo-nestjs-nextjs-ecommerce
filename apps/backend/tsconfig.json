@@ -5,7 +5,7 @@
     "moduleResolution": "nodenext",
     "module": "NodeNext",
     "paths": {
-      "src/*": ["./src/*"] // ← baseUrl yerine bunu kullan
+      "src/*": ["./src/*"]
     }
   }
 }

@@ -26,3 +26,10 @@ export * from "./shared/shared-types";
 export * from "./shipping/shipping-schemas";
 export * from "./user-ui/helperPrismaQueries";
 export * from "./admin/themev2/api-types";
+export * from "./admin/themev2/component-schemas/header-schema";
+export * from "./admin/apis/products/product-api.schema";
+export * from "./admin/apis/gql/graphql.schemas";
+
+//v2 Schemas
+
+export * from "./v2/index";

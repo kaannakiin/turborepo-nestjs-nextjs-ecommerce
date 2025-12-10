@@ -1,5 +1,5 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
-
+import { csrfManager } from "./csrf-manager";
 type ApiSuccess<T> = { success: true; data: T; status: number };
 export type ApiError = { success: false; error: string; status: number };
 type ApiResponse<T> = ApiSuccess<T> | ApiError;
@@ -12,10 +12,6 @@ class AxiosWrapper {
     resolve: (value: unknown) => void;
     reject: (reason?: unknown) => void;
   }[] = [];
-
-  private csrfToken: string | null = null;
-
-  private csrfInitializationPromise: Promise<void>;
 
   constructor() {
     this.api = axios.create({
@@ -30,28 +26,6 @@ class AxiosWrapper {
     });
 
     this.initializeInterceptors();
-
-    this.csrfInitializationPromise = this.initializeCsrf().catch((err) => {
-      console.error("Initial CSRF fetch failed in constructor:", err);
-    });
-  }
-
-  /**
-   * CSRF token'ını backend'den alır ve sınıf değişkenine atar.
-   */
-  private async initializeCsrf(): Promise<void> {
-    try {
-      const response = await axios.get<{ csrfToken: string }>(
-        `${this.api.defaults.baseURL}/auth/csrf`,
-        { withCredentials: true }
-      );
-
-      this.csrfToken = response.data.csrfToken;
-    } catch (error) {
-      console.error("Failed to initialize CSRF token:", error);
-
-      throw new Error("CSRF token initialization failed");
-    }
   }
 
   private hasRefreshToken(): boolean {
@@ -79,21 +53,10 @@ class AxiosWrapper {
         );
 
         if (needsCsrf) {
-          if (!this.csrfToken) {
-            try {
-              await this.csrfInitializationPromise;
-            } catch (e) {
-              console.error(
-                "CSRF token fetch failed in request interceptor:",
-                e
-              );
-            }
-          }
+          const token = await csrfManager.getToken();
 
-          if (this.csrfToken) {
-            config.headers["X-CSRF-Token"] = this.csrfToken;
-          } else {
-            console.error("Cannot set CSRF token, it's still null.");
+          if (token) {
+            config.headers["X-CSRF-Token"] = token;
           }
         }
         return config;
@@ -114,12 +77,8 @@ class AxiosWrapper {
 
         if (error.response.status === 403 && !originalRequest._retry) {
           originalRequest._retry = true;
-
           try {
-            console.log("CSRF token invalid, refreshing...");
-
-            this.csrfInitializationPromise = this.initializeCsrf();
-            await this.csrfInitializationPromise;
+            await csrfManager.refreshToken();
 
             return this.api(originalRequest);
           } catch (csrfError) {
@@ -190,27 +149,6 @@ class AxiosWrapper {
         error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.",
       status: 0,
     };
-  }
-
-  /**
-   * Dışarıdan geçerli bir CSRF token'ı almak için (örn: FormData ile)
-   * güvenli bir yol sağlar. Gerekirse token'ın alınmasını bekler.
-   */
-  public async getValidCsrfToken(): Promise<string | null> {
-    try {
-      await this.csrfInitializationPromise;
-    } catch (e) {
-      console.warn("CSRF promise was rejected, re-initializing...");
-
-      this.csrfInitializationPromise = this.initializeCsrf();
-      try {
-        await this.csrfInitializationPromise;
-      } catch (e2) {
-        console.error("CSRF re-initialization failed.");
-        return null;
-      }
-    }
-    return this.csrfToken;
   }
 
   public async get<T>(

@@ -10,7 +10,6 @@ interface TableAssetProps {
   type: $Enums.AssetType;
   withModal?: boolean;
 }
-
 const AssetModal = lazy(() =>
   Promise.resolve({
     default: ({
@@ -27,37 +26,72 @@ const AssetModal = lazy(() =>
       <Modal
         opened={isOpen}
         onClose={onClose}
-        size="xl"
         centered
+        size="auto"
         withCloseButton
-        radius="lg"
+        padding={0}
         overlayProps={{
-          backgroundOpacity: 0.85,
-          blur: 8,
+          backgroundOpacity: 0.55,
+          blur: 3,
         }}
         styles={{
           content: {
             backgroundColor: "transparent",
             boxShadow: "none",
+
+            maxWidth: "100vw",
+            maxHeight: "100vh",
+            overflow: "hidden",
+          },
+          body: {
+            padding: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           },
           header: {
             backgroundColor: "transparent",
+            position: "absolute",
+            top: 0,
+            right: 0,
+            zIndex: 10,
           },
           close: {
             color: "white",
-            "&:hover": {
-              backgroundColor: "rgba(255,255,255,0.1)",
-            },
+            backgroundColor: "rgba(0,0,0,0.5)",
+            "&:hover": { backgroundColor: "rgba(0,0,0,0.7)" },
           },
         }}
       >
-        <AspectRatio ratio={1} className="relative" style={{ minHeight: "60vh" }}>
+        <div className="relative flex items-center justify-center">
           {type === "IMAGE" ? (
-            <CustomImage src={url} alt="Asset - Enlarged" />
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={url}
+              alt="Asset - Enlarged"
+              className="rounded-lg shadow-xl"
+              style={{
+                maxHeight: "85vh",
+                maxWidth: "90vw",
+                width: "auto",
+                height: "auto",
+                objectFit: "contain",
+                display: "block",
+              }}
+            />
           ) : (
-            <video src={url} className="w-full h-full object-contain rounded-lg" controls autoPlay />
+            <video
+              src={url}
+              className="object-contain rounded-lg"
+              style={{
+                maxHeight: "85vh",
+                maxWidth: "90vw",
+              }}
+              controls
+              autoPlay
+            />
           )}
-        </AspectRatio>
+        </div>
       </Modal>
     ),
   })
@@ -85,7 +119,7 @@ const TableAsset = ({ url, type, withModal = true }: TableAssetProps) => {
   if (!hasUrl) {
     return (
       <div className="relative w-full h-full min-h-16">
-        <div className="w-full h-full p-4 flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200/50 shadow-sm">
+        <div className="w-full h-full p-4 flex flex-col items-center justify-center bg-linear-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200/50 shadow-sm">
           {type === "IMAGE" ? (
             <IconPhoto size={24} className="text-gray-400" />
           ) : (
@@ -104,7 +138,12 @@ const TableAsset = ({ url, type, withModal = true }: TableAssetProps) => {
             <CustomImage src={url} alt="Asset" />
           </AspectRatio>
         ) : (
-          <video src={url} className="w-full h-full object-contain rounded-xl" muted playsInline />
+          <video
+            src={url}
+            className="w-full h-full object-contain rounded-xl"
+            muted
+            playsInline
+          />
         )}
       </div>
     );
@@ -122,10 +161,15 @@ const TableAsset = ({ url, type, withModal = true }: TableAssetProps) => {
               <CustomImage src={url} alt="Asset" />
             </AspectRatio>
           ) : (
-            <video src={url} className="w-full h-full object-contain rounded-xl" muted playsInline />
+            <video
+              src={url}
+              className="w-full h-full object-contain rounded-xl"
+              muted
+              playsInline
+            />
           )}
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out">
+        <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out">
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="p-3 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg transform scale-75 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300 ease-out delay-75">
               <IconZoomIn size={20} className="text-white drop-shadow-md" />
@@ -137,7 +181,12 @@ const TableAsset = ({ url, type, withModal = true }: TableAssetProps) => {
 
       {isModalOpen && (
         <Suspense fallback={null}>
-          <AssetModal isOpen={isModalOpen} onClose={handleCloseModal} url={url!} type={type} />
+          <AssetModal
+            isOpen={isModalOpen}
+            onClose={handleCloseModal}
+            url={url!}
+            type={type}
+          />
         </Suspense>
       )}
     </>

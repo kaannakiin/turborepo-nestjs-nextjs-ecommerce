@@ -92,6 +92,7 @@ async function bootstrap() {
         const paymentCallbackUrl = new URL(paymentCallback);
 
         const excludedPaths = [
+          '/graphql',
           '/auth/csrf',
           '/auth/refresh',
           paymentCallbackUrl.pathname,

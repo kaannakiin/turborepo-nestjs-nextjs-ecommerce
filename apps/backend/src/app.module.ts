@@ -15,6 +15,9 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { UserPageModule } from './user-page/user-page.module';
 import { UserModule } from './user/user.module';
+import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { join } from 'path';
 @Module({
   imports: [
     PrismaModule,
@@ -54,6 +57,34 @@ import { UserModule } from './user/user.module';
     PaymentsModule,
     OrdersModule,
     PrismaLoggerModule,
+    GraphQLModule.forRootAsync<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        autoSchemaFile: join(process.cwd(), 'apps/backend/src/schema.gql'),
+        sortSchema: true,
+        playground: configService.get<string>('NODE_ENV') !== 'production',
+        introspection: configService.get<string>('NODE_ENV') !== 'production',
+        context: ({ req, res }) => ({ req, res }),
+        cors: {
+          origin: configService.get('ALLOWED_ORIGINS')?.split(',') || true,
+          credentials: true,
+        },
+        formatError: (error) => {
+          console.error('GraphQL Error:', error);
+
+          const graphQLFormattedError = {
+            message: error.message,
+            code: error.extensions?.code || 'INTERNAL_SERVER_ERROR',
+            ...(configService.get('NODE_ENV') !== 'production' && {
+              stack: error.extensions?.exception?.['stacktrace'],
+            }),
+          };
+
+          return graphQLFormattedError;
+        },
+      }),
+    }),
     // ThrottlerModule.forRootAsync({
     //   imports: [ConfigModule],
     //   inject: [ConfigService],

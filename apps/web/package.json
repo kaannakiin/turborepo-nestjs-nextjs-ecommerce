@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start -p 3003",
     "lint": "next lint --max-warnings 0",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "codegen": "graphql-codegen --config gql-codegen.ts"
   },
   "dependencies": {
     "@ai-sdk/groq": "^2.0.25",
@@ -31,13 +32,17 @@
     "@repo/types": "*",
     "@tabler/icons-react": "^3.34.1",
     "@tailwindcss/postcss": "^4.1.12",
+    "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-virtual": "^3.13.13",
     "axios": "^1.12.2",
+    "clsx": "^2.1.1",
     "dayjs": "^1.11.18",
     "embla-carousel": "^8.6.0",
     "embla-carousel-auto-height": "^8.6.0",
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-fade": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
+    "graphql-request": "^7.3.5",
     "htmlparser2": "^10.0.0",
     "next": "^16.0.7",
     "react": "19.2.0",
@@ -46,10 +51,13 @@
     "react-international-phone": "^4.6.0",
     "schema-dts": "^1.1.5",
     "set-cookie-parser": "^2.7.1",
+    "swiper": "^12.0.3",
     "tailwindcss": "^4.1.12",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@graphql-codegen/cli": "^6.1.0",
+    "@graphql-codegen/client-preset": "^5.2.1",
     "@repo/eslint-config": "*",
     "@repo/typescript-config": "*",
     "@types/node": "^22.15.3",
@@ -62,6 +70,6 @@
     "postcss": "^8.4.31",
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
-    "typescript": "5.9.2"
+    "typescript": "^5.9.2"
   }
 }

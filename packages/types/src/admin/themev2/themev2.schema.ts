@@ -7,8 +7,10 @@ import {
   AspectRatio,
   MantineFontWeight,
   MantineSize,
+  TextAlign,
   ThemeComponents,
 } from "../../shared/shared-enum";
+import { HeaderSchema } from "./component-schemas/header-schema";
 
 export const SlideSchema = z
   .object({
@@ -205,7 +207,6 @@ export const MarqueeComponentSchema = z.object({
           }
         })
     )
-
     .min(1, { error: "Marquee en az bir öğe içermelidir." }),
   options: z.object({
     backgroundColor: colorHex.nullish(),
@@ -228,6 +229,7 @@ export const MarqueeComponentSchema = z.object({
     isReverse: z.boolean(),
   }),
 });
+
 export const CarouselItemSchema = z
   .object({
     itemId: z.cuid2(),
@@ -265,10 +267,10 @@ export const CarouselConfigSchema = z.object({
 });
 
 export const ProductCarouselComponentSchema = z.object({
+  type: z.literal<ThemeComponents>("PRODUCT_CAROUSEL"),
   componentId: z.cuid2({
     error: "Geçerli bir component ID'si giriniz.",
   }),
-  type: z.literal("PRODUCT_CAROUSEL"),
   order: z.number({ error: "Sıralama zorunludur." }).int().min(0),
   title: z.string({ error: "Başlık zorunludur." }).max(100).optional(),
   description: z.string({ error: "Açıklama zorunludur." }).max(300).optional(),
@@ -287,7 +289,14 @@ export const ThemeComponentSchema = z.discriminatedUnion("type", [
   ProductCarouselComponentSchema,
 ]);
 
+const FooterSchema = z.object({
+  type: z.literal<ThemeComponents>("FOOTER"),
+  componentId: z.cuid2(),
+});
+
 export const ThemeSchema = z.object({
+  header: HeaderSchema.nullish(),
+  footer: FooterSchema.nullish(),
   components: z.array(ThemeComponentSchema).refine(
     (components) => {
       const orders = components.map((component) => component.order);

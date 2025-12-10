@@ -27,7 +27,7 @@ import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import { useState } from "react";
 import { notifications } from "@mantine/notifications";
 import TableAsset from "@/(admin)/components/TableAsset";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { $Enums } from "@repo/database/client";
 import { Route } from "next";
 const BrandsTable = () => {

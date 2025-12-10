@@ -756,3 +756,12 @@ const visibleCauseConfigs: Record<$Enums.inVisibleCause, { label: string }> = {
 export function getInvisibleCauseLabel(cause: $Enums.inVisibleCause): string {
   return visibleCauseConfigs[cause]?.label || "Bilinmeyen";
 }
+
+export const getDiscountRateLabel = (
+  price: number,
+  discountedPrice: number
+) => {
+  if (price <= 0 || discountedPrice >= price) return "0%";
+  const discountRate = ((price - discountedPrice) / price) * 100;
+  return `${Math.round(discountRate)}%`;
+};

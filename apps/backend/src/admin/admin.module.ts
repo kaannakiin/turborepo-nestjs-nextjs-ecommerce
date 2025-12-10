@@ -10,6 +10,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { OrdersModule } from './orders/orders.module';
 import { CartsModule } from './carts/carts.module';
 import { Themev2Module } from './themev2/themev2.module';
+import { ProductsGqlModule } from './products-gql/products-gql.module';
 
 @Module({
   controllers: [AdminController],
@@ -24,6 +25,7 @@ import { Themev2Module } from './themev2/themev2.module';
     OrdersModule,
     CartsModule,
     Themev2Module,
+    ProductsGqlModule,
   ],
 })
 export class AdminModule {}

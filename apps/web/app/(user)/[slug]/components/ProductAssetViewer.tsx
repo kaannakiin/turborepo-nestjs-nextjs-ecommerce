@@ -1,6 +1,6 @@
 "use client";
 import { Carousel } from "@mantine/carousel";
-import { AspectRatio, Image, Modal, SimpleGrid, Stack } from "@mantine/core";
+import { AspectRatio, Modal, SimpleGrid, Stack } from "@mantine/core";
 import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { $Enums } from "@repo/database/client";
 import { IconX } from "@tabler/icons-react";
@@ -150,15 +150,13 @@ const ProductAssetViewer = ({ assets }: ProductAssetViewerProps) => {
                   className="flex items-center justify-center "
                 >
                   {item.type === "IMAGE" ? (
-                    <Image
+                    <CustomImage
                       src={item.url}
                       alt={`Product ${index + 1}`}
-                      className="max-w-full max-h-full"
+                      className="max-w-full max-h-full h-full w-full"
                       style={{
                         objectFit: "contain",
                         aspectRatio: "1/1",
-                        width: "auto",
-                        height: "auto",
                       }}
                     />
                   ) : (

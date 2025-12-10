@@ -1,4 +1,3 @@
-// src/common/guards/roles.guard.ts
 import {
   CanActivate,
   ExecutionContext,
@@ -6,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { GqlExecutionContext } from '@nestjs/graphql';
 import { $Enums } from '@repo/database';
 import { Observable } from 'rxjs';
 import { IS_PUBLIC_KEY } from 'src/user/reflectors/public.decorator';
@@ -18,14 +18,13 @@ export class RolesGuard implements CanActivate {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
-    // Public endpoint kontrolü - en başta yapıyoruz
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
 
     if (isPublic) {
-      return true; // Public endpoint ise direkt geç
+      return true;
     }
 
     const requiredRoles = this.reflector.getAllAndOverride<$Enums.UserRole[]>(
@@ -37,19 +36,24 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
-    const user = request.user;
+    let user;
 
+    if (context.getType() === 'http') {
+      const request = context.switchToHttp().getRequest();
+      user = request.user;
+    } else {
+      const ctx = GqlExecutionContext.create(context);
+      const request = ctx.getContext().req;
+      user = request.user;
+    }
     if (!user) {
       throw new UnauthorizedException('User not authenticated');
     }
 
-    // TEK ROLE KONTROLÜ (user.role)
     if (!user.role) {
       throw new UnauthorizedException('User has no role assigned');
     }
 
-    // Tek role'ü required roles array'inde ara
     const hasPermission = requiredRoles.includes(user.role);
 
     if (!hasPermission) {

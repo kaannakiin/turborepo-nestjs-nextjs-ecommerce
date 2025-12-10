@@ -13,6 +13,7 @@ import {
   DiscountItem,
   FlatItem,
 } from '@repo/types';
+import { LocaleService } from 'src/common/services/locale.service';
 import { MinioService } from 'src/minio/minio.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -21,6 +22,7 @@ export class BrandsService {
   constructor(
     private prismaService: PrismaService,
     private minio: MinioService,
+    private readonly localeService: LocaleService,
   ) {}
 
   async createOrUpdateBrand(data: Omit<Brand, 'image'>) {
@@ -466,7 +468,9 @@ export class BrandsService {
       },
     });
   }
+
   async getAllBrandsOnlyIdAndName(): Promise<BrandIdAndName[]> {
+    const locale = this.localeService.getLocale();
     const brands = await this.prismaService.brand.findMany({
       select: {
         id: true,
@@ -478,10 +482,11 @@ export class BrandsService {
         },
       },
     });
+
     return brands.map((brand) => ({
       id: brand.id,
       name:
-        brand.translations.find((t) => t.locale === 'TR')?.name ||
+        brand.translations.find((t) => t.locale === locale)?.name ||
         brand.translations[0]?.name ||
         'İsimsiz Marka',
     }));

@@ -3,7 +3,7 @@
 import GlobalDropzone from "@/components/GlobalDropzone";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import GlobalSeoCard from "@/components/GlobalSeoCard";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 
 import {
   Button,
