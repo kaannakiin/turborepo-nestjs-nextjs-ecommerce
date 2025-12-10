@@ -23,7 +23,7 @@ import { useState } from "react";
 import CustomSearchInput from "@/components/CustomSearchInput";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import TableAsset from "@/(admin)/components/TableAsset";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { Route } from "next";
 
 // Response type

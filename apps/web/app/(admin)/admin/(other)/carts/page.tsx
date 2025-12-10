@@ -2,7 +2,7 @@
 import CustomPagination from "@/components/CustomPagination";
 import CustomSearchInput from "@/components/CustomSearchInput";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper, { ApiError } from "@lib/fetchWrapper";
+import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
 import { getCartStatusColor, getCartStatusLabel } from "@lib/helpers";
 import {
   Badge,

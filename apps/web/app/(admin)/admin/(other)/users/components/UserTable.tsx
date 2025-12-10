@@ -3,7 +3,7 @@
 import CustomPagination from "@/components/CustomPagination";
 import CustomSearchInput from "@/components/CustomSearchInput";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { getSortAdminUserTableLabels, getUserRoleLabels } from "@lib/helpers";
 import {
   Badge,

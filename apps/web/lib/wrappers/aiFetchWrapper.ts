@@ -1,4 +1,4 @@
-import fetchWrapper from "./fetchWrapper";
+import { csrfManager } from "./csrf-manager";
 
 export const createAIProxyFetch = (proxyBaseUrl: string) => {
   const aiFetch = async (
@@ -15,7 +15,7 @@ export const createAIProxyFetch = (proxyBaseUrl: string) => {
     const headers = new Headers(init?.headers);
 
     if (needsCsrf) {
-      const csrfToken = await fetchWrapper.getValidCsrfToken();
+      const csrfToken = await csrfManager.getToken();
       if (csrfToken) {
         headers.set("X-CSRF-Token", csrfToken);
       } else {

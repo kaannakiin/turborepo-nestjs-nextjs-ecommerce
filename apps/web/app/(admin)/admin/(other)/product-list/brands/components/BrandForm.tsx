@@ -25,7 +25,7 @@ import GlobalDropzone from "@/components/GlobalDropzone";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import GlobalSeoCard from "@/components/GlobalSeoCard";
 import CustomBrandSelect from "./CustomBrandSelect";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 
 interface BrandFormProps {
   defaultValues?: Brand;

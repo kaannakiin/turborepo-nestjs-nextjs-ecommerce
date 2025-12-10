@@ -1,7 +1,7 @@
 "use client";
 
 import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { Carousel } from "@mantine/carousel";
 import { Stack, Title } from "@mantine/core";
 import { useQuery } from "@repo/shared";

@@ -40,7 +40,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import ShippingLocationDrawer from "./ShippingLocationDrawer";
 import ShippingRuleDrawer from "./ShippingRuleDrawer";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 
 interface ShippingFormProps {
   defaultValues?: CargoZoneType;

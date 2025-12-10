@@ -1,7 +1,7 @@
 "use client";
 import FooterComponent from "@/(admin)/admin/(theme)/components/FooterComponent";
 import { CartProviderV3 } from "@/context/cart-context/CartContextV3";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { ActionIcon, AppShell, Drawer, Group, Stack } from "@mantine/core";
 import { useDisclosure, useHeadroom } from "@mantine/hooks";
 import { useQuery } from "@repo/shared";

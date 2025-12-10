@@ -1,7 +1,7 @@
 "use client";
 import AdminThemeViewer from "@/(admin)/admin/(theme)/components/AdminThemeViewer";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { useQuery } from "@repo/shared";
 import { FontFamily, MainPageComponentsType } from "@repo/types";
 

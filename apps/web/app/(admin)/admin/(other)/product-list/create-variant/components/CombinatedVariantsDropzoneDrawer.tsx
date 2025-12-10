@@ -1,13 +1,19 @@
 "use client";
 
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { Drawer, DrawerProps, Stack } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { Control, UseFormGetValues, UseFormSetValue, useWatch } from "@repo/shared";
+import {
+  Control,
+  UseFormGetValues,
+  UseFormSetValue,
+  useWatch,
+} from "@repo/shared";
 import { VariantProductZodType } from "@repo/types";
 import ProductDropzone from "../../components/ProductDropzone";
 
-interface CombinatedVariantsDropzoneDrawerProps extends Pick<DrawerProps, "opened" | "onClose"> {
+interface CombinatedVariantsDropzoneDrawerProps
+  extends Pick<DrawerProps, "opened" | "onClose"> {
   selectedIndexs: number[];
   selectedIndex: number;
   control: Control<VariantProductZodType>;
@@ -37,23 +43,31 @@ const CombinatedVariantsDropzoneDrawer = ({
     }) || [];
 
   const handleAddImages = (files: File[]) => {
-    const targetIndices = selectedIndexs.length > 0 ? selectedIndexs : [selectedIndex];
+    const targetIndices =
+      selectedIndexs.length > 0 ? selectedIndexs : [selectedIndex];
 
     targetIndices.forEach((index) => {
-      const currentExisting = getValues(`combinatedVariants.${index}.existingImages`) || [];
-      const currentNewImages = getValues(`combinatedVariants.${index}.images`) || [];
+      const currentExisting =
+        getValues(`combinatedVariants.${index}.existingImages`) || [];
+      const currentNewImages =
+        getValues(`combinatedVariants.${index}.images`) || [];
 
-      const currentTotalCount = currentExisting.length + currentNewImages.length;
+      const currentTotalCount =
+        currentExisting.length + currentNewImages.length;
 
       const newFormattedImages = files.map((file, i) => ({
         file,
         order: currentTotalCount + i,
       }));
 
-      setValue(`combinatedVariants.${index}.images`, [...currentNewImages, ...newFormattedImages], {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
+      setValue(
+        `combinatedVariants.${index}.images`,
+        [...currentNewImages, ...newFormattedImages],
+        {
+          shouldDirty: true,
+          shouldValidate: true,
+        }
+      );
     });
 
     if (targetIndices.length > 1) {
@@ -66,7 +80,8 @@ const CombinatedVariantsDropzoneDrawer = ({
   };
 
   const handleRemoveNewImage = (file: File) => {
-    const currentImages = getValues(`combinatedVariants.${selectedIndex}.images`) || [];
+    const currentImages =
+      getValues(`combinatedVariants.${selectedIndex}.images`) || [];
     const filteredImages = currentImages.filter((img) => img.file !== file);
 
     setValue(`combinatedVariants.${selectedIndex}.images`, filteredImages, {
@@ -77,19 +92,28 @@ const CombinatedVariantsDropzoneDrawer = ({
 
   const handleRemoveExistingImage = async (imageUrl: string) => {
     try {
-      const deleteResponse = await fetchWrapper.delete(`/admin/products/delete-product-image?imageUrl=${imageUrl}`);
+      const deleteResponse = await fetchWrapper.delete(
+        `/admin/products/delete-product-image?imageUrl=${imageUrl}`
+      );
 
       if (!deleteResponse.success) {
         throw new Error("Silme başarısız");
       }
 
-      const currentExisting = getValues(`combinatedVariants.${selectedIndex}.existingImages`) || [];
-      const filteredExisting = currentExisting.filter((img) => img.url !== imageUrl);
+      const currentExisting =
+        getValues(`combinatedVariants.${selectedIndex}.existingImages`) || [];
+      const filteredExisting = currentExisting.filter(
+        (img) => img.url !== imageUrl
+      );
 
-      setValue(`combinatedVariants.${selectedIndex}.existingImages`, filteredExisting, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
+      setValue(
+        `combinatedVariants.${selectedIndex}.existingImages`,
+        filteredExisting,
+        {
+          shouldDirty: true,
+          shouldValidate: true,
+        }
+      );
     } catch (error) {
       notifications.show({
         title: "Hata",
@@ -108,8 +132,10 @@ const CombinatedVariantsDropzoneDrawer = ({
       isNew: boolean;
     }>
   ) => {
-    const currentExisting = getValues(`combinatedVariants.${selectedIndex}.existingImages`) || [];
-    const currentImages = getValues(`combinatedVariants.${selectedIndex}.images`) || [];
+    const currentExisting =
+      getValues(`combinatedVariants.${selectedIndex}.existingImages`) || [];
+    const currentImages =
+      getValues(`combinatedVariants.${selectedIndex}.images`) || [];
 
     const updatedExistingImages: typeof existingImages = [];
     const updatedNewImages: typeof images = [];
@@ -131,10 +157,14 @@ const CombinatedVariantsDropzoneDrawer = ({
       }
     });
 
-    setValue(`combinatedVariants.${selectedIndex}.existingImages`, updatedExistingImages, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
+    setValue(
+      `combinatedVariants.${selectedIndex}.existingImages`,
+      updatedExistingImages,
+      {
+        shouldDirty: true,
+        shouldValidate: true,
+      }
+    );
     setValue(`combinatedVariants.${selectedIndex}.images`, updatedNewImages, {
       shouldDirty: true,
       shouldValidate: true,
@@ -147,7 +177,11 @@ const CombinatedVariantsDropzoneDrawer = ({
       onClose={onClose}
       position="right"
       size="xl"
-      title={selectedIndexs.length > 1 ? `Medya Yükle (${selectedIndexs.length} varyant seçili)` : "Medya Yükle"}
+      title={
+        selectedIndexs.length > 1
+          ? `Medya Yükle (${selectedIndexs.length} varyant seçili)`
+          : "Medya Yükle"
+      }
     >
       <Stack>
         <ProductDropzone

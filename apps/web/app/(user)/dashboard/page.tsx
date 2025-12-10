@@ -1,7 +1,7 @@
 "use client";
 
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { Button, Card, Group, SimpleGrid, TextInput } from "@mantine/core";
 import {
   Controller,

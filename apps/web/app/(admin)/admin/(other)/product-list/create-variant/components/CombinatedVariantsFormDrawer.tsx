@@ -2,7 +2,7 @@
 
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import GlobalSeoCard from "@/components/GlobalSeoCard";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
   Button,
   Drawer,
@@ -17,18 +17,28 @@ import {
   Title,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { Control, Controller, UseFormGetValues, UseFormSetValue, useWatch } from "@repo/shared";
+import {
+  Control,
+  Controller,
+  UseFormGetValues,
+  UseFormSetValue,
+  useWatch,
+} from "@repo/shared";
 import { VariantProductZodType } from "@repo/types";
 import dynamic from "next/dynamic";
 import ProductDropzone from "../../components/ProductDropzone";
 import ProductPriceNumberInput from "./ProductPriceNumberInput";
 
-const GlobalTextEditor = dynamic(() => import("../../../../../../components/GlobalTextEditor"), {
-  ssr: false,
-  loading: () => <GlobalLoadingOverlay />,
-});
+const GlobalTextEditor = dynamic(
+  () => import("../../../../../../components/GlobalTextEditor"),
+  {
+    ssr: false,
+    loading: () => <GlobalLoadingOverlay />,
+  }
+);
 
-interface CombinatedVariantsFormDrawerProps extends Pick<DrawerProps, "opened" | "onClose"> {
+interface CombinatedVariantsFormDrawerProps
+  extends Pick<DrawerProps, "opened" | "onClose"> {
   control: Control<VariantProductZodType>;
   selectedIndex: number;
   onSave?: () => void;
@@ -65,8 +75,10 @@ const CombinatedVariantsFormDrawer = ({
 
   const handleAddImages = (files: File[]) => {
     // Ekleme yaparken de en güncel veriyi baz almak daha güvenlidir
-    const currentExisting = getValues(`combinatedVariants.${selectedIndex}.existingImages`) || [];
-    const currentImages = getValues(`combinatedVariants.${selectedIndex}.images`) || [];
+    const currentExisting =
+      getValues(`combinatedVariants.${selectedIndex}.existingImages`) || [];
+    const currentImages =
+      getValues(`combinatedVariants.${selectedIndex}.images`) || [];
 
     const currentTotalCount = currentExisting.length + currentImages.length;
 
@@ -75,21 +87,31 @@ const CombinatedVariantsFormDrawer = ({
       order: currentTotalCount + index,
     }));
 
-    setValue(`combinatedVariants.${selectedIndex}.images`, [...currentImages, ...newFormattedImages], {
+    setValue(
+      `combinatedVariants.${selectedIndex}.images`,
+      [...currentImages, ...newFormattedImages],
+      {
+        shouldValidate: true,
+        shouldDirty: true,
+      }
+    );
+  };
+
+  const handleRemoveNewImage = (file: File) => {
+    const currentImages =
+      getValues(`combinatedVariants.${selectedIndex}.images`) || [];
+    const filteredImages = currentImages.filter((img) => img.file !== file);
+
+    setValue(`combinatedVariants.${selectedIndex}.images`, filteredImages, {
       shouldValidate: true,
       shouldDirty: true,
     });
   };
 
-  const handleRemoveNewImage = (file: File) => {
-    const currentImages = getValues(`combinatedVariants.${selectedIndex}.images`) || [];
-    const filteredImages = currentImages.filter((img) => img.file !== file);
-
-    setValue(`combinatedVariants.${selectedIndex}.images`, filteredImages, { shouldValidate: true, shouldDirty: true });
-  };
-
   const handleRemoveExistingImage = async (imageUrl: string) => {
-    const deleteResponse = await fetchWrapper.delete(`/admin/products/delete-product-image?imageUrl=${imageUrl}`);
+    const deleteResponse = await fetchWrapper.delete(
+      `/admin/products/delete-product-image?imageUrl=${imageUrl}`
+    );
 
     if (!deleteResponse.success) {
       notifications.show({
@@ -101,13 +123,20 @@ const CombinatedVariantsFormDrawer = ({
       throw new Error("Silme başarısız");
     }
 
-    const currentExisting = getValues(`combinatedVariants.${selectedIndex}.existingImages`) || [];
-    const filteredExisting = currentExisting.filter((img) => img.url !== imageUrl);
+    const currentExisting =
+      getValues(`combinatedVariants.${selectedIndex}.existingImages`) || [];
+    const filteredExisting = currentExisting.filter(
+      (img) => img.url !== imageUrl
+    );
 
-    setValue(`combinatedVariants.${selectedIndex}.existingImages`, filteredExisting, {
-      shouldValidate: true,
-      shouldDirty: true,
-    });
+    setValue(
+      `combinatedVariants.${selectedIndex}.existingImages`,
+      filteredExisting,
+      {
+        shouldValidate: true,
+        shouldDirty: true,
+      }
+    );
   };
 
   // --- KRİTİK DÜZELTME BURADA ---
@@ -121,8 +150,10 @@ const CombinatedVariantsFormDrawer = ({
   ) => {
     // 1. Verinin en güncel halini "getValues" ile alıyoruz.
     // useWatch, closure içinde eski veriyi tutuyor olabilir.
-    const currentExistingImages = getValues(`combinatedVariants.${selectedIndex}.existingImages`) || [];
-    const currentImages = getValues(`combinatedVariants.${selectedIndex}.images`) || [];
+    const currentExistingImages =
+      getValues(`combinatedVariants.${selectedIndex}.existingImages`) || [];
+    const currentImages =
+      getValues(`combinatedVariants.${selectedIndex}.images`) || [];
 
     const updatedExistingImages: typeof existingImages = [];
     const updatedNewImages: typeof images = [];
@@ -137,7 +168,9 @@ const CombinatedVariantsFormDrawer = ({
         });
       } else {
         // Mevcut resimler için orijinal objeyi bulup order'ını güncelliyoruz
-        const originalImg = currentExistingImages.find((img) => img.url === item.url);
+        const originalImg = currentExistingImages.find(
+          (img) => img.url === item.url
+        );
 
         if (originalImg) {
           updatedExistingImages.push({
@@ -151,11 +184,15 @@ const CombinatedVariantsFormDrawer = ({
     });
 
     // 3. SetValue options ile render'ı zorluyoruz
-    setValue(`combinatedVariants.${selectedIndex}.existingImages`, updatedExistingImages, {
-      shouldValidate: true,
-      shouldDirty: true,
-      shouldTouch: true,
-    });
+    setValue(
+      `combinatedVariants.${selectedIndex}.existingImages`,
+      updatedExistingImages,
+      {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true,
+      }
+    );
 
     setValue(`combinatedVariants.${selectedIndex}.images`, updatedNewImages, {
       shouldValidate: true,
@@ -237,7 +274,11 @@ const CombinatedVariantsFormDrawer = ({
               control={control}
               name={`combinatedVariants.${selectedIndex}.prices.0.price`}
               render={({ field, fieldState }) => (
-                <ProductPriceNumberInput label="Satış Fiyatı" error={fieldState.error?.message} {...field} />
+                <ProductPriceNumberInput
+                  label="Satış Fiyatı"
+                  error={fieldState.error?.message}
+                  {...field}
+                />
               )}
             />
 
@@ -284,7 +325,9 @@ const CombinatedVariantsFormDrawer = ({
                   onRemoveExistingImage={handleRemoveExistingImage}
                   onReorder={handleReorder}
                 />
-                {fieldState.error?.message && <InputError>{fieldState.error?.message}</InputError>}
+                {fieldState.error?.message && (
+                  <InputError>{fieldState.error?.message}</InputError>
+                )}
               </>
             )}
           />

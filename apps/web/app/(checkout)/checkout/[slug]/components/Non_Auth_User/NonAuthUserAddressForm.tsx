@@ -2,7 +2,7 @@
 import CustomPhoneInput from "@/(user)/components/CustomPhoneInput";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import { TURKEY_DB_ID } from "@lib/constants";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
   Button,
   Checkbox,

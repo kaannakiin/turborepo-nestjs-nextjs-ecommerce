@@ -1,6 +1,6 @@
 "use client";
 
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
   ActionIcon,
   Button,

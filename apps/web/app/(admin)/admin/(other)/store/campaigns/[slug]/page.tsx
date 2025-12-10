@@ -1,6 +1,6 @@
 "use client";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper, { ApiError } from "@lib/fetchWrapper";
+import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
 import { useQuery } from "@repo/shared";
 import { CampaignZodType } from "@repo/types";
 import { useParams } from "next/navigation";

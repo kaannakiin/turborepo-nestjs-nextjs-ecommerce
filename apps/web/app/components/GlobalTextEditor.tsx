@@ -17,7 +17,7 @@ import {
   createAIExtension,
   getAISlashMenuItems,
 } from "@blocknote/xl-ai";
-import { createAIProxyFetch } from "@lib/aiFetchWrapper";
+import { createAIProxyFetch } from "@lib/wrappers/aiFetchWrapper";
 import { InputError, InputLabel, Stack } from "@mantine/core";
 import { useEffect, useRef } from "react";
 import { tr } from "../../lib/tr-dictionary";

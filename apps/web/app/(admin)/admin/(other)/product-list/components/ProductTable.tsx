@@ -33,7 +33,7 @@ import CustomPagination from "../../../../../components/CustomPagination";
 import CustomSearchInput from "../../../../../components/CustomSearchInput";
 import GlobalLoadingOverlay from "../../../../../components/GlobalLoadingOverlay";
 import TableAsset from "../../../../components/TableAsset";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { Route } from "next";
 
 type ProductsResponse = {

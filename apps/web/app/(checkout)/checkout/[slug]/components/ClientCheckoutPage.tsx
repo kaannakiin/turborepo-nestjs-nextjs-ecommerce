@@ -1,6 +1,6 @@
 "use client";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { Group, Text } from "@mantine/core";
 import { useQuery } from "@repo/shared";
 import { GetCartClientCheckoutReturnType, TokenPayload } from "@repo/types";

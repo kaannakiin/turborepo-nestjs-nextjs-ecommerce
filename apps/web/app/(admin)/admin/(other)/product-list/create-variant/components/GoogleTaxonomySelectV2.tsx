@@ -1,5 +1,5 @@
 import GlobalLoader from "@/components/GlobalLoader";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
   Accordion,
   Checkbox,

@@ -1,6 +1,6 @@
 import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { Carousel } from "@mantine/carousel";
 import { Box, Container, Stack, Text, Title } from "@mantine/core";
 import { keepPreviousData, useQuery, useQueryClient } from "@repo/shared";

@@ -4,7 +4,7 @@ import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import GlobalLoader from "@/components/GlobalLoader";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import { LOCALE_CART_COOKIE, TURKEY_DB_ID } from "@lib/constants";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { getCartAssociationUrl } from "@lib/helpers";
 import {
   Avatar,

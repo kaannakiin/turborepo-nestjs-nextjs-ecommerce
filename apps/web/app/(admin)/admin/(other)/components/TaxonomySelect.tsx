@@ -1,4 +1,4 @@
-import fetchWrapper, { ApiError } from "@lib/fetchWrapper";
+import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
 import {
   ActionIcon,
   Box,

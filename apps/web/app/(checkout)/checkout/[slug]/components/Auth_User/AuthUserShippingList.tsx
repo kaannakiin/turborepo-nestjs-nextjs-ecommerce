@@ -3,7 +3,7 @@
 import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
   Button,
   Divider,

@@ -1,7 +1,7 @@
 "use client";
 
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper from "@lib/fetchWrapper";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { queryClient } from "@lib/serverQueryClient";
 import {
   Button,
