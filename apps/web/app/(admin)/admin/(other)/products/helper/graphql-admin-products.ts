@@ -103,7 +103,7 @@ const mapUiFiltersToGqlInput = (
 };
 
 interface FetchProductsParams {
-  pageParam?: number;
+  page?: number;
   filters: ProductFilterFormValues;
   search: string;
   limit?: number;
@@ -111,7 +111,7 @@ interface FetchProductsParams {
 }
 
 export const fetchProducts = async ({
-  pageParam = 1,
+  page = 1,
   filters,
   search,
   limit,
@@ -129,7 +129,7 @@ export const fetchProducts = async ({
       locale?: Locale;
     }
   >(GET_PRODUCTS_QUERY, {
-    page: pageParam,
+    page: page || 1,
     limit: limit || 10,
     filter: gqlFilter,
     sort: sort || {

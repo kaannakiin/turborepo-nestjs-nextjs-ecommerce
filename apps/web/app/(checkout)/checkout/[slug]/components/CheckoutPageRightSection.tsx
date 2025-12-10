@@ -32,7 +32,7 @@ interface CheckoutPageRightSectionProps {
 // Cart Item Component
 const CartItem = ({ item }: { item: CartV3["items"][0] }) => (
   <div className="flex gap-3 w-full">
-    <div className="relative flex-shrink-0">
+    <div className="relative shrink-0">
       <Avatar
         size="xl"
         radius="xs"
@@ -85,7 +85,7 @@ const CartItem = ({ item }: { item: CartV3["items"][0] }) => (
           )}
       </div>
 
-      <div className="flex flex-col gap-1 items-end flex-shrink-0">
+      <div className="flex flex-col gap-1 items-end shrink-0">
         {item.discountedPrice ? (
           <>
             <ProductPriceFormatter

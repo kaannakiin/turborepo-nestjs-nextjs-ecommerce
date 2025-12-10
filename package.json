@@ -6,7 +6,6 @@
     "@repo/database": "^0.0.0",
     "@repo/shared": "^0.0.0",
     "@tanstack/react-table": "^8.21.3",
-    "@tanstack/react-virtual": "^3.13.13",
     "bcryptjs": "^3.0.2",
     "date-fns": "^4.1.0",
     "ioredis": "^5.8.0",

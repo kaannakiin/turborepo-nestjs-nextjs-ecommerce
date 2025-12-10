@@ -1,15 +1,15 @@
-import { CodegenConfig } from "@graphql-codegen/cli";
+import type { CodegenConfig } from "@graphql-codegen/cli";
 
 const config: CodegenConfig = {
-  schema: "http://localhost:3001" + "/graphql",
+  overwrite: true,
+  // URL yerine dosya yolunu veriyoruz.
+  // apps/web klasöründen iki kere geri çıkıp backend'e gidiyoruz.
+  schema: "../backend/apps/backend/src/schema.gql",
   documents: ["src/**/*.tsx", "src/**/*.ts"],
   generates: {
     "./src/gql/": {
       preset: "client",
       plugins: [],
-      presetConfig: {
-        gqlTagName: "gql",
-      },
     },
   },
   ignoreNoDocuments: true,

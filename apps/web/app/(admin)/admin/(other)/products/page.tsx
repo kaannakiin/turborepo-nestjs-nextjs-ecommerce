@@ -1,22 +1,25 @@
 "use client";
 
-import TableAsset from "@/(admin)/components/TableAsset";
-import GlobalLoader from "@/components/GlobalLoader";
+import CustomImage from "@/components/CustomImage";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import {
   ActionIcon,
   Alert,
+  AspectRatio,
   Badge,
-  Box,
   Button,
   Group,
   Indicator,
+  Pagination,
+  Skeleton,
   Stack,
+  Table,
   Text,
   TextInput,
   Title,
 } from "@mantine/core";
 import { useDebouncedState, useDisclosure } from "@mantine/hooks";
-import { keepPreviousData, useInfiniteQuery } from "@repo/shared";
+import { keepPreviousData, useQuery } from "@repo/shared";
 import {
   productFilterDefaultValues,
   ProductFilterFormValues,
@@ -28,22 +31,26 @@ import {
   IconFileArrowRight,
   IconFilter2Bolt,
   IconSearch,
+  IconSortAscending,
+  IconSortDescending,
   IconX,
 } from "@tabler/icons-react";
 import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useState } from "react";
 import { ProductGqlModel } from "../../../../../src/gql/graphql";
 import FilterModal from "./components/FilterModal";
 import { fetchProducts } from "./helper/graphql-admin-products";
 
-export const getProductDisplayImage = (product: ProductGqlModel) => {
+const getProductDisplayImage = (product: ProductGqlModel): string | null => {
   if (product.assets && product.assets.length > 0) {
     return product.assets[0].asset.url;
   }
@@ -55,10 +62,10 @@ export const getProductDisplayImage = (product: ProductGqlModel) => {
       return variantWithImage.assets[0].asset.url;
     }
   }
-  return "/placeholder-image.png";
+  return null;
 };
 
-export const getProductStockStatus = (product: ProductGqlModel) => {
+const getProductStockStatus = (product: ProductGqlModel) => {
   if (!product.isVariant) {
     return product.stock > 0 ? product.stock : "Tükendi";
   }
@@ -76,74 +83,54 @@ export const getProductStockStatus = (product: ProductGqlModel) => {
 };
 
 const AdminProductsPage = () => {
+  const [sorting, setSorting] = useState<SortingState>([]);
   const searchParams = useSearchParams();
-
   const [search, setSearch] = useDebouncedState<string>(
     searchParams.get("search") || "",
     500
   );
-
-  const initialPage = Number(searchParams.get("page") as string) || 1;
-
-  const [limit] = useState<number>(
-    Number(searchParams.get("limit") as string) || 20
+  const [page, setPage] = useState<number>(
+    Number(searchParams.get("page") as string) || 1
   );
-
+  const [limit, setLimit] = useState<number>(
+    Number(searchParams.get("limit") as string) || 50
+  );
   const [filters, setFilters] = useState<ProductFilterFormValues>(
     productFilterDefaultValues
   );
 
   const [opened, { open, close }] = useDisclosure(false);
 
-  const {
-    data,
-    fetchNextPage,
-    fetchPreviousPage,
-    hasNextPage,
-    hasPreviousPage,
-    isFetchingNextPage,
-    isFetchingPreviousPage,
-    isLoading,
-    isError,
-    error,
-  } = useInfiniteQuery({
-    queryKey: ["admin-products", filters, search],
-    queryFn: ({ pageParam }) =>
-      fetchProducts({ pageParam: pageParam as number, filters, search, limit }),
-    initialPageParam: initialPage,
-    getPreviousPageParam: (firstPage) => {
-      if (firstPage.pagination.currentPage > 1) {
-        return firstPage.pagination.currentPage - 1;
-      }
-      return undefined;
-    },
-    getNextPageParam: (lastPage) => {
-      if (lastPage.pagination.currentPage < lastPage.pagination.totalPages) {
-        return lastPage.pagination.currentPage + 1;
-      }
-      return undefined;
-    },
+  const { data, isLoading, isError, error, isFetching } = useQuery({
+    queryKey: ["admin-products", filters, search, page, limit],
+    queryFn: () => fetchProducts({ page, filters, search, limit }),
     placeholderData: keepPreviousData,
   });
-
-  const flatData = data?.pages.flatMap((page) => page.items) || [];
 
   const columns: ColumnDef<ProductGqlModel>[] = [
     {
       accessorKey: "assets",
       header: "Görsel",
-      size: 80,
       cell: (info) => {
         const product = info.row.original;
         const imageUrl = getProductDisplayImage(product);
-        return "";
-        // return <TableAsset type="IMAGE" url={imageUrl} />;
+        return (
+          <AspectRatio ratio={1} maw={40}>
+            <CustomImage
+              className="w-full h-full"
+              src={
+                imageUrl
+                  ? imageUrl
+                  : "https://placehold.co/600x400?text=Placeholder"
+              }
+            />
+          </AspectRatio>
+        );
       },
     },
     {
       accessorKey: "name",
       header: "Ürün Adı",
-      size: 300,
       cell: (info) => {
         const product = info.row.original;
         const name = product.translations?.[0]?.name || "-";
@@ -183,55 +170,6 @@ const AdminProductsPage = () => {
     },
   ];
 
-  const table = useReactTable({
-    data: flatData,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  });
-
-  const tableContainerRef = useRef<HTMLDivElement>(null);
-  const { rows } = table.getRowModel();
-
-  const rowVirtualizer = useVirtualizer({
-    count: rows.length,
-    getScrollElement: () => tableContainerRef.current,
-    estimateSize: () => 70,
-    overscan: 5,
-  });
-
-  const virtualItems = rowVirtualizer.getVirtualItems();
-  useEffect(() => {
-    if (!virtualItems.length) return;
-
-    const firstItem = virtualItems[0];
-    const lastItem = virtualItems[virtualItems.length - 1];
-
-    if (firstItem.index === 0 && hasPreviousPage && !isFetchingPreviousPage) {
-      setTimeout(() => {
-        fetchPreviousPage();
-      }, 0);
-    }
-
-    if (
-      lastItem.index >= flatData.length - 1 &&
-      hasNextPage &&
-      !isFetchingNextPage
-    ) {
-      setTimeout(() => {
-        fetchNextPage();
-      }, 0);
-    }
-  }, [
-    virtualItems,
-    hasPreviousPage,
-    hasNextPage,
-    fetchPreviousPage,
-    fetchNextPage,
-    isFetchingPreviousPage,
-    isFetchingNextPage,
-    flatData.length,
-  ]);
-
   const handleClear = () => {
     setFilters(productFilterDefaultValues);
     setSearch("");
@@ -255,7 +193,25 @@ const AdminProductsPage = () => {
       (filters.isSavedFilter === true && !!filters.saveFilterName)
     );
   };
+
   const hasActiveFilter = isFilterActive(filters);
+
+  const table = useReactTable<ProductGqlModel>({
+    data: data?.items || [],
+    columns,
+    manualPagination: true,
+    state: {
+      pagination: {
+        pageIndex: data?.pagination?.currentPage
+          ? data.pagination.currentPage - 1
+          : 0,
+        pageSize: limit,
+      },
+    },
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+  });
 
   return (
     <>
@@ -330,94 +286,81 @@ const AdminProductsPage = () => {
         )}
 
         {!isError && (
-          <Box
-            className="flex-1 border border-gray-200 rounded-md bg-white overflow-hidden flex flex-col"
-            style={{ minHeight: "600px" }}
-          >
-            <Box
-              component="div"
-              className="grid bg-gray-50 border-b border-gray-200"
-              style={{
-                gridTemplateColumns: columns
-                  .map((c) =>
-                    typeof c.size === "number" ? `${c.size}px` : "1fr"
-                  )
-                  .join(" "),
-                paddingRight: "8px",
-              }}
-            >
-              {table.getHeaderGroups().map((headerGroup) =>
-                headerGroup.headers.map((header) => (
-                  <Box
-                    key={header.id}
-                    className="p-3 text-sm font-semibold text-gray-600 truncate"
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                  </Box>
-                ))
-              )}
-            </Box>
-
-            <div
-              ref={tableContainerRef}
-              style={{
-                overflow: "auto",
-                height: "600px",
-                position: "relative",
-              }}
-            >
-              {isFetchingPreviousPage && <GlobalLoader />}
-
-              <div
-                style={{
-                  height: `${rowVirtualizer.getTotalSize()}px`,
-                  width: "100%",
-                  position: "relative",
-                }}
+          <>
+            {isFetching && !isLoading && <GlobalLoadingOverlay />}
+            {isLoading ? (
+              <Stack>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Group key={i} justify="space-between">
+                    <Skeleton height={50} width="10%" radius="xl" />
+                    <Skeleton height={50} width="40%" radius="xl" />
+                    <Skeleton height={50} width="20%" radius="xl" />
+                    <Skeleton height={50} width="20%" radius="xl" />
+                  </Group>
+                ))}
+              </Stack>
+            ) : (
+              <Table
+                stickyHeader
+                striped
+                highlightOnHover
+                highlightOnHoverColor="admin.0"
               >
-                {isLoading && rows.length === 0 ? (
-                  <GlobalLoader />
-                ) : (
-                  rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                    const row = rows[virtualRow.index];
-                    return (
-                      <Box
-                        key={row.id}
-                        className="grid hover:bg-gray-50 transition-colors border-b border-gray-100 items-center"
-                        style={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          width: "100%",
-                          height: `${virtualRow.size}px`,
-                          transform: `translateY(${virtualRow.start}px)`,
-                          gridTemplateColumns: columns
-                            .map((c) =>
-                              typeof c.size === "number" ? `${c.size}px` : "1fr"
-                            )
-                            .join(" "),
-                        }}
-                      >
-                        {row.getVisibleCells().map((cell) => (
-                          <Box key={cell.id} className="px-3 truncate">
+                <Table.Thead>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <Table.Tr key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <Table.Th
+                          key={header.id}
+                          colSpan={header.colSpan}
+                          className={
+                            header.column.getCanSort()
+                              ? "cursor-pointer select-none"
+                              : ""
+                          }
+                          onClick={header.column.getToggleSortingHandler()}
+                        >
+                          <Group gap={"xs"} align="center" justify="flex-start">
                             {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext()
+                              header.column.columnDef.header,
+                              header.getContext()
                             )}
-                          </Box>
-                        ))}
-                      </Box>
-                    );
-                  })
-                )}
-              </div>
-
-              {isFetchingNextPage && <GlobalLoader />}
-            </div>
-          </Box>
+                            {{
+                              asc: <IconSortAscending />,
+                              desc: <IconSortDescending />,
+                            }[header.column.getIsSorted() as string] ?? null}
+                          </Group>
+                        </Table.Th>
+                      ))}
+                    </Table.Tr>
+                  ))}
+                </Table.Thead>
+                <Table.Tbody>
+                  {table.getRowModel().rows?.map((row) => (
+                    <Table.Tr key={row.id}>
+                      {row.getVisibleCells().map((cell) => (
+                        <Table.Td key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </Table.Td>
+                      ))}
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            )}
+          </>
+        )}
+        {data?.pagination && (
+          <Pagination
+            value={data?.pagination?.currentPage}
+            onChange={(value) => {
+              setPage(value);
+            }}
+            total={data?.pagination.totalPages}
+          />
         )}
       </Stack>
 

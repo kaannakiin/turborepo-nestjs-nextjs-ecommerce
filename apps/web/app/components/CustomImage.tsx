@@ -41,6 +41,7 @@ const CustomImage = ({
   if (isIgnoredHost) {
     return (
       <MantineImage
+        key={src}
         src={src}
         alt={alt}
         style={style}
@@ -70,7 +71,7 @@ const CustomImage = ({
   const showThumbnail = thumbnailSrc !== null;
 
   return (
-    <div className={`relative w-full ${className}`} onClick={onClick}>
+    <div key={src} className={`relative w-full ${className}`} onClick={onClick}>
       {showThumbnail && (
         <NextImage
           alt={alt}
