@@ -1,5 +1,4 @@
 "use client";
-import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 import { useCartV3 } from "@/context/cart-context/CartContextV3";
 import {
@@ -25,6 +24,7 @@ import {
 } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import CustomImage from "./CustomImage";
+import { useTheme } from "@/context/theme-context/ThemeContext";
 
 const ShoppingBagDrawerV2 = () => {
   const [opened, { close, toggle }] = useDisclosure();
@@ -72,7 +72,7 @@ const ShoppingBagDrawerV2 = () => {
       >
         <Drawer.Overlay />
         <Drawer.Content className="overflow-y-hidden">
-          <Drawer.Header className="border-b border-b-[var(--mantine-color-dimmed)] ">
+          <Drawer.Header className="border-b border-b-(--mantine-color-dimmed) ">
             <Drawer.Title fz={"h3"} fw={700}>
               Sepet
             </Drawer.Title>
@@ -111,7 +111,7 @@ const ShoppingBagDrawerV2 = () => {
             ) : (
               <>
                 <ScrollArea.Autosize
-                  className="max-w-[100%] w-full"
+                  className="max-w-full w-full"
                   type="scroll"
                   py={"md"}
                   style={{ height: "calc(100% - 115px)" }}
@@ -282,7 +282,7 @@ const ShoppingBagDrawerV2 = () => {
                 </ScrollArea.Autosize>
 
                 <Box
-                  className="sticky bottom-0 border-t border-t-[var(--mantine-color-dimmed)] bg-white flex flex-col gap-3"
+                  className="sticky bottom-0 border-t border-t-(--mantine-color-dimmed) bg-white flex flex-col gap-3"
                   px={"xs"}
                   py={"lg"}
                 >

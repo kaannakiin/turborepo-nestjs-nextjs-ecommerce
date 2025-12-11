@@ -2,7 +2,7 @@
 
 import ProductsCarousels from "@/(user)/components/ProductsCarousels";
 import { Stack } from "@mantine/core";
-import { $Enums } from "@repo/database/client";
+import { AssetType } from "@repo/database/client";
 import { GetProductPageReturnType } from "@repo/types";
 import { useSearchParams } from "next/navigation";
 import ProductAssetViewer from "./ProductAssetViewer";
@@ -118,7 +118,7 @@ const VariantProductClient = ({ productData }: VariantProductClientProps) => {
     searchParams
   );
 
-  const productMedia: Array<{ url: string; type: $Enums.AssetType }> = [
+  const productMedia: Array<{ url: string; type: AssetType }> = [
     ...(selectedCombination?.assets.map((asset) => ({
       url: asset.asset.url,
       type: asset.asset.type,

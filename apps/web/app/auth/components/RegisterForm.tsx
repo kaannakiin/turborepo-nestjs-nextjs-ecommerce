@@ -1,6 +1,5 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
   Button,
@@ -11,7 +10,7 @@ import {
   TextInput,
   UnstyledButton,
 } from "@mantine/core";
-import { Controller, SubmitHandler, useForm } from "@repo/shared";
+import { Controller, SubmitHandler, useForm, zodResolver } from "@repo/shared";
 import { RegisterSchema, RegisterSchemaType } from "@repo/types";
 import { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";

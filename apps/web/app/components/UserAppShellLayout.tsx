@@ -1,11 +1,10 @@
 "use client";
-import FooterComponent from "@/(admin)/admin/(theme)/components/FooterComponent";
 import { CartProviderV3 } from "@/context/cart-context/CartContextV3";
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { ActionIcon, AppShell, Drawer, Group, Stack } from "@mantine/core";
 import { useDisclosure, useHeadroom } from "@mantine/hooks";
+import { Locale } from "@repo/database/client";
 import { useQuery } from "@repo/shared";
-import { $Enums } from "@repo/database/client";
 import {
   CategoryHeaderData,
   MainPageComponentsType,
@@ -31,7 +30,7 @@ const UserAppShellLayout = ({
 }) => {
   const pinned = useHeadroom({ fixedAt: 160 });
   const [opened, { open, close }] = useDisclosure();
-  const locale: $Enums.Locale = "TR";
+  const locale: Locale = "TR";
   const { push } = useRouter();
   const { data, isLoading, isFetching, isPending } = useQuery({
     queryKey: ["footer-data"],
@@ -73,7 +72,7 @@ const UserAppShellLayout = ({
             align="center"
           >
             <Group align="center" h={"100%"} gap={"xl"} py={0}>
-              <Link href={"/"} className="min-h-full  aspect-[2/1] relative">
+              <Link href={"/"} className="min-h-full  aspect-2/1 relative">
                 <Image src={logo} fill alt="HEADER LOGO" sizes="100vw" />
               </Link>
               <Group
@@ -134,7 +133,7 @@ const UserAppShellLayout = ({
           <Drawer.Content>
             <Drawer.Header py={"0"}>
               <Drawer.Title h={"100%"}>
-                <div className="min-h-full h-12 aspect-[2/1] relative">
+                <div className="min-h-full h-12 aspect-2/1 relative">
                   <Image src={logo} fill alt="HEADER LOGO" sizes="100vw" />
                 </div>
               </Drawer.Title>
@@ -145,10 +144,7 @@ const UserAppShellLayout = ({
         </Drawer.Root>
 
         <AppShell.Main pt={"80px"}>
-          <Stack style={{ flexGrow: 1 }}>
-            {children}
-            {data?.footer && <FooterComponent footerData={data.footer} />}
-          </Stack>
+          <Stack style={{ flexGrow: 1 }}>{children}</Stack>
         </AppShell.Main>
       </AppShell>
     </CartProviderV3>

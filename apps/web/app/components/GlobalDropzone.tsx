@@ -13,7 +13,7 @@ import {
   Text,
 } from "@mantine/core";
 import { Dropzone, DropzoneProps, FileRejection } from "@mantine/dropzone";
-import { $Enums, AssetType } from "@repo/database/client";
+import { AssetType } from "@repo/database/client";
 import { MIME_TYPES } from "@repo/types";
 import {
   IconAlertCircle,
@@ -37,9 +37,9 @@ interface PreviewFile extends File {
 
 interface GlobalDropzoneProps
   extends Pick<DropzoneProps, "onDrop" | "maxSize" | "maxFiles" | "multiple"> {
-  existingImages?: { url: string; type: $Enums.AssetType }[];
+  existingImages?: { url: string; type: AssetType }[];
   existingImagesDelete?: (url: string) => Promise<void>;
-  accept?: $Enums.AssetType[] | $Enums.AssetType;
+  accept?: AssetType[] | AssetType;
   cols?: SimpleGridProps["cols"];
   error?: string;
   value: File[] | File | null | undefined;
@@ -276,7 +276,7 @@ const GlobalDropzone = ({
   };
 
   const renderExistingImage = (
-    image: { url: string; type: $Enums.AssetType },
+    image: { url: string; type: AssetType },
     index: number
   ) => {
     const uniqueKey = `existing-${index}-${image.url}`;
@@ -416,19 +416,19 @@ const GlobalDropzone = ({
             </Dropzone.Reject>
 
             <Dropzone.Idle>
-              {acceptedTypes.includes($Enums.AssetType.IMAGE) ? (
+              {acceptedTypes.includes(AssetType.IMAGE) ? (
                 <IconPhoto
                   size={52}
                   color="var(--mantine-color-dimmed)"
                   stroke={1.5}
                 />
-              ) : acceptedTypes.includes($Enums.AssetType.VIDEO) ? (
+              ) : acceptedTypes.includes(AssetType.VIDEO) ? (
                 <IconVideo
                   size={52}
                   color="var(--mantine-color-dimmed)"
                   stroke={1.5}
                 />
-              ) : acceptedTypes.includes($Enums.AssetType.AUDIO) ? (
+              ) : acceptedTypes.includes(AssetType.AUDIO) ? (
                 <IconMusic
                   size={52}
                   color="var(--mantine-color-dimmed)"

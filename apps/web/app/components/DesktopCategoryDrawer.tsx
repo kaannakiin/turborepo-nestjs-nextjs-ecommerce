@@ -8,14 +8,14 @@ import {
   Text,
 } from "@mantine/core";
 import { CategoryHeaderData } from "@repo/types";
-import { $Enums } from "@repo/database/client";
+import { Locale } from "@repo/database/client";
 import Link from "next/link";
 import CustomImage from "./CustomImage";
 import { Route } from "next";
 
 interface DesktopCategoryDrawerProps {
   category: CategoryHeaderData;
-  locale: $Enums.Locale;
+  locale: Locale;
 }
 
 const DesktopCategoryDrawer = ({
@@ -49,7 +49,7 @@ const DesktopCategoryDrawer = ({
                 <Text
                   fz={"md"}
                   fw={700}
-                  className="transition-colors duration-200 group-hover:text-[var(--mantine-primary-color-5)] group-hover:underline group-hover:underline-offset-8"
+                  className="transition-colors duration-200 group-hover:text-(--mantine-primary-color-5) group-hover:underline group-hover:underline-offset-8"
                 >
                   {translation.name}
                 </Text>
@@ -79,7 +79,7 @@ const DesktopCategoryDrawer = ({
                             <Text
                               fz={"md"}
                               fw={500}
-                              className="transition-colors duration-200 hover:text-[var(--mantine-primary-color-5)] hover:underline hover:underline-offset-8"
+                              className="transition-colors duration-200 hover:text-(--mantine-primary-color-5) hover:underline hover:underline-offset-8"
                             >
                               {translation.name}
                             </Text>
@@ -107,7 +107,7 @@ const DesktopCategoryDrawer = ({
             <Text
               fz={"md"}
               fw={700}
-              className="transition-colors duration-200 group-hover:text-[var(--mantine-primary-color-5)] group-hover:underline group-hover:underline-offset-8"
+              className="transition-colors duration-200 group-hover:text-(--mantine-primary-color-5) group-hover:underline group-hover:underline-offset-8"
             >
               {translation.name}
             </Text>

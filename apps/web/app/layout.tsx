@@ -1,9 +1,9 @@
 import "@blocknote/mantine/blocknoteStyles.css";
 import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
-import ThemeProvider from "./(admin)/admin/(theme)/ThemeContexts/ThemeContext";
+import { ReactNode } from "react";
 import LayoutProviderWrapper from "./components/LayoutProviderWrapper";
 import "./globals.css";
-import { ReactNode } from "react";
+import ThemeProvider from "./context/theme-context/ThemeContext";
 
 export default function RootLayout({
   children,

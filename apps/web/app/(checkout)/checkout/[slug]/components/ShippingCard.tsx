@@ -9,14 +9,14 @@ import {
   ThemeIcon,
   UnstyledButton,
 } from "@mantine/core";
-import { $Enums } from "@repo/database/client";
+import { Currency } from "@repo/database/client";
 import { IconCheck } from "@tabler/icons-react";
 interface ShippingCardProps {
   onEdit: () => void;
   cartData: {
     price: number;
     methodTitle: string;
-    currency: $Enums.Currency;
+    currency: Currency;
   };
 }
 const ShippingCard = ({ onEdit, cartData }: ShippingCardProps) => {

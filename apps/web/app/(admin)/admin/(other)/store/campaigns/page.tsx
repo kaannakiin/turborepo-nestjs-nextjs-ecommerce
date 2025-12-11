@@ -18,7 +18,7 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { $Enums, CampaignStatus } from "@repo/database/client";
+import { CampaignStatus } from "@repo/database/client";
 import { DateFormatter, useQuery } from "@repo/shared";
 import { GetCampaignsReturnType } from "@repo/types";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -28,7 +28,7 @@ const AdminCampaignPage = () => {
   const searchParams = useSearchParams();
   const page = parseInt(searchParams.get("page") || "1", 10);
   const search = searchParams.get("search") || "";
-  const type = (searchParams.get("type") as $Enums.CampaignStatus) || null;
+  const type = (searchParams.get("type") as CampaignStatus) || null;
   const { replace, push } = useRouter();
 
   const hasSearchParams = useMemo(() => {

@@ -1,6 +1,5 @@
 "use client";
 
-import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 import {
   Accordion,
@@ -22,6 +21,7 @@ import { CartV3, CheckoutCargoRule } from "@repo/types";
 import { IconInfoCircleFilled } from "@tabler/icons-react";
 import { useState } from "react";
 import { CheckoutStep } from "../page";
+import { useTheme } from "@/context/theme-context/ThemeContext";
 
 interface CheckoutPageRightSectionProps {
   step: CheckoutStep;
@@ -32,7 +32,7 @@ interface CheckoutPageRightSectionProps {
 // Cart Item Component
 const CartItem = ({ item }: { item: CartV3["items"][0] }) => (
   <div className="flex gap-3 w-full">
-    <div className="relative flex-shrink-0">
+    <div className="relative shrink-0">
       <Avatar
         size="xl"
         radius="xs"
@@ -85,7 +85,7 @@ const CartItem = ({ item }: { item: CartV3["items"][0] }) => (
           )}
       </div>
 
-      <div className="flex flex-col gap-1 items-end flex-shrink-0">
+      <div className="flex flex-col gap-1 items-end shrink-0">
         {item.discountedPrice ? (
           <>
             <ProductPriceFormatter

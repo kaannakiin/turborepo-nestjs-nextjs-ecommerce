@@ -32,7 +32,7 @@ import {
 import { DateTimePicker } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import {
-  $Enums,
+  DiscountType,
   AllowedDiscountedItemsBy,
   CampaignStatus,
   Currency,
@@ -77,7 +77,7 @@ interface DiscountFormProps {
 }
 type BaseType = "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_SHIPPING";
 
-const getIcon = (type: $Enums.DiscountType) => {
+const getIcon = (type: DiscountType) => {
   switch (type) {
     case "PERCENTAGE":
     case "PERCENTAGE_GROW_QUANTITY":
@@ -92,7 +92,7 @@ const getIcon = (type: $Enums.DiscountType) => {
   }
 };
 
-const getInitialStates = (type: $Enums.DiscountType) => {
+const getInitialStates = (type: DiscountType) => {
   if (type === "PERCENTAGE") {
     return {
       baseType: "PERCENTAGE" as const,
@@ -142,7 +142,7 @@ const getDiscountType = (
   base: BaseType,
   mode: DiscountMode,
   tiered: TieredBy
-): $Enums.DiscountType => {
+): DiscountType => {
   if (base === "PERCENTAGE") {
     if (mode === "simple") {
       return "PERCENTAGE";
@@ -335,7 +335,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
               control={control}
               name="status"
               render={({ field, fieldState }) => (
-                <div className="flex flex-col gap-[2px]">
+                <div className="flex flex-col gap-0.5">
                   <SegmentedControl
                     {...field}
                     radius="xl"
@@ -385,9 +385,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                     key={type}
                     value={type}
                     className={`border border-gray-400 rounded-xl ${
-                      baseType === type
-                        ? "bg-[var(--mantine-primary-color-1)]"
-                        : ""
+                      baseType === type ? "bg-(--mantine-primary-color-1)" : ""
                     }`}
                     p="md"
                   >
@@ -423,7 +421,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                   value="simple"
                   className={`border border-gray-400 rounded-xl ${
                     discountMode === "simple"
-                      ? "bg-[var(--mantine-primary-color-1)]"
+                      ? "bg-(--mantine-primary-color-1)"
                       : ""
                   }`}
                   p="md"
@@ -451,7 +449,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                   value="tiered"
                   className={`border border-gray-400 rounded-xl ${
                     discountMode === "tiered"
-                      ? "bg-[var(--mantine-primary-color-1)]"
+                      ? "bg-(--mantine-primary-color-1)"
                       : ""
                   }`}
                   p="md"
@@ -703,7 +701,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                 <SimpleGrid cols={{ base: 1, md: 4 }}>
                   <Radio.Card
                     className={`border border-gray-400 rounded-xl ${
-                      field.value ? "bg-[var(--mantine-primary-color-1)]" : ""
+                      field.value ? "bg-(--mantine-primary-color-1)" : ""
                     }`}
                     p="md"
                     value="all"
@@ -725,7 +723,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                   </Radio.Card>
                   <Radio.Card
                     className={`border border-gray-400 rounded-xl ${
-                      !field.value ? "bg-[var(--mantine-primary-color-1)]" : ""
+                      !field.value ? "bg-(--mantine-primary-color-1)" : ""
                     }`}
                     p="md"
                     value="specific"

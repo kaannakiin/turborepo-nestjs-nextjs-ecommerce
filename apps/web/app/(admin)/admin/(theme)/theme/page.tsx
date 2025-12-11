@@ -1,180 +1,149 @@
 "use client";
-import GlobalLoader from "@/components/GlobalLoader";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
-import { notifications } from "@mantine/notifications";
-import { SubmitHandler, useQuery } from "@repo/shared";
-import { FontFamily, MainPageComponentsType } from "@repo/types";
-import AdminThemeLayoutShell from "../components/AdminThemeLayoutShell";
+import { Media, useTheme } from "@/context/theme-context/ThemeContext";
+import { AppShell, ScrollArea } from "@mantine/core";
+import { useDisclosure, useLocalStorage } from "@mantine/hooks";
+import { useForm, zodResolver } from "@repo/shared";
+import {
+  ThemeComponents,
+  ThemeInputType,
+  ThemeSchema,
+  createDefaultTheme,
+} from "@repo/types";
+import {
+  IconCarouselHorizontalFilled,
+  IconDeviceImac,
+  IconDeviceIpadHorizontal,
+  IconDeviceMobile,
+  IconMarquee2,
+} from "@tabler/icons-react";
+import { ReactNode } from "react";
+import AsideFormsTable from "./components/AsideFormsTable";
+import ThemeEditorHeader from "./components/theme-editor/ThemeEditorHeader";
+import ThemeSidebar from "./components/theme-editor/ThemeSidebar";
+export type CreatebleSelectType = {
+  type: ThemeComponents;
+  label: string;
+  description: string;
+  icon: ReactNode;
+};
+export type ThemeIconsType = {
+  key: Media;
+  icon: ReactNode;
+  label: string;
+  width: string;
+};
+
+const themeIcons: Array<ThemeIconsType> = [
+  {
+    icon: <IconDeviceImac />,
+    key: "desktop",
+    label: "Masaüstü",
+    width: "100%",
+  },
+  {
+    icon: <IconDeviceIpadHorizontal />,
+    key: "tablet",
+    label: "Tablet",
+    width: "768px",
+  },
+  {
+    icon: <IconDeviceMobile />,
+    key: "mobile",
+    label: "Mobil",
+    width: "375px",
+  },
+];
+
+const createbleSelect: Array<CreatebleSelectType> = [
+  {
+    type: "SLIDER",
+    label: "Slider",
+    description: "Resim ve video slayt gösterisi",
+    icon: <IconCarouselHorizontalFilled size={32} />,
+  },
+  {
+    type: "MARQUEE",
+    label: "Marquee",
+    description: "Kayan yazı bandı",
+    icon: <IconMarquee2 size={32} />,
+  },
+  {
+    type: "PRODUCT_CAROUSEL",
+    label: "Ürün Görseli",
+    description: "Ürün Görseli",
+    icon: <IconCarouselHorizontalFilled size={32} />,
+  },
+];
+
+const headerHeight = 60;
+const footerHeight = 60;
 
 const ThemePage = () => {
-  const { data, isLoading, isFetching, isPending, refetch } = useQuery({
-    queryKey: ["get-layout"],
-    queryFn: async () => {
-      const res = await fetchWrapper.get<{
-        components: MainPageComponentsType["components"];
-        footer: MainPageComponentsType["footer"] | null;
-      } | null>(`/admin/theme/get-layout?footer=true`, {});
-      if (!res.success) {
-        throw new Error("Layout verisi alınamadı");
-      }
-      return res.data;
-    },
+  const [adminSidebar, setAdminSidebar] = useLocalStorage({
+    key: "themeV2-admin-sidebar",
+    defaultValue: true,
   });
 
-  if (isLoading || isFetching || isPending) {
-    return <GlobalLoader />;
-  }
+  const [opened, { toggle }] = useDisclosure(adminSidebar, {
+    onClose: () => setAdminSidebar(false),
+    onOpen: () => setAdminSidebar(true),
+  });
 
-  const onSubmit: SubmitHandler<MainPageComponentsType> = async (data) => {
-    try {
-      if (data.components && data.components.length > 0) {
-        const currentSliders = data.components.find(
-          (component) => component.type === "SLIDER"
-        );
+  const { media } = useTheme();
 
-        const defaultSliders = data?.components
-          ?.filter(Boolean)
-          .find((component) => component.type === "SLIDER");
+  const forms = useForm<ThemeInputType>({
+    resolver: zodResolver(ThemeSchema),
+    defaultValues: createDefaultTheme(),
+  });
 
-        // SLIDER İŞLEMLERİ
-        if (currentSliders && currentSliders.data.length >= 0) {
-          let slidersToDelete: string[] = [];
-
-          if (defaultSliders?.data) {
-            const currentSliderIds = currentSliders.data.map((s) => s.uniqueId);
-            const defaultSliderIds = defaultSliders.data.map((s) => s.uniqueId);
-            slidersToDelete = defaultSliderIds.filter(
-              (defaultId) => !currentSliderIds.includes(defaultId)
-            );
-          }
-
-          // Slider silme
-          if (slidersToDelete.length > 0) {
-            await fetchWrapper.post(`/admin/theme/delete-sliders`, {
-              uniqueIds: slidersToDelete,
-            });
-          }
-
-          // Yeni slider ekleme/güncelleme
-          let successCount = 0;
-          let errorCount = 0;
-
-          for (const [index, slider] of currentSliders.data.entries()) {
-            if (!slider.desktopAsset && !slider.mobileAsset) {
-              continue;
-            }
-
-            const formData = new FormData();
-
-            if (slider.desktopAsset) {
-              formData.append("desktopAsset", slider.desktopAsset);
-            }
-            if (slider.mobileAsset) {
-              formData.append("mobileAsset", slider.mobileAsset);
-            }
-
-            formData.append("order", (index + 1).toString());
-            formData.append("customLink", slider.customLink || "");
-            formData.append("uniqueId", slider.uniqueId);
-
-            try {
-              const res = await fetchWrapper.postFormData<{
-                success: boolean;
-                message?: string;
-              }>(`/admin/theme/create-slider`, formData);
-
-              if (!res.success) {
-                throw new Error(`HTTP error! status: ${res.status}`);
-              }
-
-              const result = res.data;
-
-              if (result.success) {
-                successCount++;
-              } else {
-                errorCount++;
-                console.error(`Slider ${index + 1} hatası:`, result.message);
-              }
-            } catch (error) {
-              errorCount++;
-              console.error(`Slider ${index + 1} yükleme hatası:`, error);
-            }
-          }
-
-          // Slider işlem bildirimi
-          let message = "";
-          if (slidersToDelete.length > 0) {
-            message += `${slidersToDelete.length} slider silindi`;
-          }
-          if (successCount > 0) {
-            if (message) message += ", ";
-            message += `${successCount} slider eklendi`;
-          }
-          if (errorCount > 0) {
-            if (message) message += ", ";
-            message += `${errorCount} hata`;
-          }
-
-          if (message) {
-            notifications.show({
-              title: errorCount > 0 ? "Kısmi Başarı" : "Başarılı",
-              message: message,
-              color: errorCount > 0 ? "yellow" : "green",
-              autoClose: 5000,
-            });
-          }
-        }
-
-        // DİĞER COMPONENTLER VE FOOTER GÜNCELLEME
-        const otherComponents = data.components.filter(
-          (component) => component.type !== "SLIDER"
-        );
-
-        const otherCompRes = await fetchWrapper.post(
-          `/admin/theme/update-layout`,
-          {
-            components: otherComponents,
-            footer: data.footer || undefined,
-          }
-        );
-
-        if (!otherCompRes.success) {
-          console.error("Diğer bileşenler güncelleme hatası:");
-          throw new Error("Layout güncelleme başarısız");
-        }
-      }
-
-      notifications.show({
-        title: "Başarılı",
-        message: "Tüm değişiklikler kaydedildi",
-        color: "green",
-        autoClose: 3000,
-      });
-
-      refetch();
-    } catch (error) {
-      console.error("İşlem hatası:", error);
-      notifications.show({
-        title: "Hata",
-        message: "Değişiklikler kaydedilirken hata oluştu",
-        color: "red",
-        autoClose: 5000,
-      });
-    }
-  };
+  const currentWidth =
+    themeIcons.find((icon) => icon.key === media)?.width ?? "100%";
 
   return (
     <>
-      <AdminThemeLayoutShell
-        defaultValues={{
-          components: data?.components || [],
-          footer: data?.footer || null,
-          primaryColor: "#f06e27",
-          secondaryColor: "#6672af",
-          fontFamily: FontFamily.mantineDefault,
+      <AppShell
+        transitionDuration={300}
+        transitionTimingFunction="linear"
+        header={{ height: headerHeight }}
+        footer={{ height: footerHeight }}
+        navbar={{
+          width: 300,
+          breakpoint: "sm",
+          collapsed: { mobile: !opened, desktop: !opened },
         }}
-        onSubmit={onSubmit}
-      />
+        aside={{
+          breakpoint: "md",
+          width: 300,
+          collapsed: { mobile: !opened, desktop: !opened },
+        }}
+        padding="md"
+      >
+        <AppShell.Header>
+          <ThemeEditorHeader
+            opened={opened}
+            themeIcons={themeIcons}
+            toggle={toggle}
+          />
+        </AppShell.Header>
+        <AppShell.Navbar bg={"gray.0"}>
+          <ThemeSidebar createbleSelect={createbleSelect} forms={forms} />
+        </AppShell.Navbar>
+        <AppShell.Main className="flex flex-col" bg={"gray.2"}>
+          <div
+            style={{ maxWidth: currentWidth }}
+            className={`mx-auto flex-1 transition-all w-full duration-300 ease-in-out bg-white`}
+          >
+            {/* <ThemeSorter control={forms.control} /> */}
+          </div>
+        </AppShell.Main>
+
+        <AppShell.Aside bg={"gray.0"} p="md">
+          <ScrollArea pr={"md"} scrollbarSize={6}>
+            <AsideFormsTable forms={forms} />
+          </ScrollArea>
+        </AppShell.Aside>
+        <AppShell.Footer p="md">Footer</AppShell.Footer>
+      </AppShell>
     </>
   );
 };

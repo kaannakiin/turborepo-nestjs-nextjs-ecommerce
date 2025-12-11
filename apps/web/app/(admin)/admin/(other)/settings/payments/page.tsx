@@ -2,7 +2,7 @@
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
 import { Alert, Button, Group, Stack, Text, Title } from "@mantine/core";
-import { $Enums, PaymentProvider } from "@repo/database/client";
+import { PaymentProvider } from "@repo/database/client";
 import { useQuery } from "@repo/shared";
 import { PaymentMethodType } from "@repo/types";
 import { IconInfoCircle } from "@tabler/icons-react";

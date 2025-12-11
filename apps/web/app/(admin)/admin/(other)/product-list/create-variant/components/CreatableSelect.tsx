@@ -8,7 +8,7 @@ import {
   InputBaseProps,
   useCombobox,
 } from "@mantine/core";
-import { $Enums } from "@repo/database/client";
+import { VariantGroupType,Locale} from "@repo/database/client";
 import {
   createId,
   slugify,
@@ -66,7 +66,7 @@ const CreatableSelect = ({
     );
   }, [allVariants]);
 
-  // Search query'e göre filtreleme yap
+ 
   const filteredVariants = useMemo(() => {
     if (!allVariants || !search.trim()) return [];
 
@@ -77,7 +77,7 @@ const CreatableSelect = ({
     });
   }, [allVariants, search]);
 
-  // Exact match kontrolü (case-insensitive)
+ 
   const exactMatch = useMemo(() => {
     if (!allVariants || !search.trim()) return null;
 
@@ -88,7 +88,7 @@ const CreatableSelect = ({
     });
   }, [allVariants, search]);
 
-  // Case-insensitive duplicate kontrolü - exactMatch varsa duplicate sayma
+ 
   const isDuplicate = useMemo(() => {
     const searchTrimmed = search.trim();
     if (!searchTrimmed || exactMatch) return false;
@@ -96,7 +96,7 @@ const CreatableSelect = ({
     return existingNames.has(searchTrimmed.toLowerCase());
   }, [existingNames, search, exactMatch]);
 
-  // Dropdown seçenekleri
+ 
   const options = filteredVariants.map((item) => {
     const trTranslation = item.translations.find((t) => t.locale === "TR");
     const displayName =
@@ -134,15 +134,15 @@ const CreatableSelect = ({
   const handleCreateNew = () => {
     const searchTrimmed = search.trim();
 
-    // Boş isim kontrolü
+   
     if (!searchTrimmed) {
       alert("Variant grup adı boş olamaz.");
       return;
     }
 
-    // Case-insensitive duplicate kontrolü
+   
     if (isDuplicate) {
-      // Case farklı ama aynı isim
+     
       const existingVariant = allVariants?.find((variant) => {
         const trTranslation = variant.translations.find(
           (t) => t.locale === "TR"
@@ -164,14 +164,14 @@ const CreatableSelect = ({
       return;
     }
 
-    // Yeni variant group oluştur
+   
     reset({
-      type: "LIST" as $Enums.VariantGroupType,
+      type: "LIST" as VariantGroupType,
       uniqueId: createId(),
       options: [],
       translations: [
         {
-          locale: "TR" as $Enums.Locale,
+          locale: "TR" as Locale,
           name: searchTrimmed,
           slug: slugify(searchTrimmed),
         },
@@ -204,7 +204,7 @@ const CreatableSelect = ({
             combobox.updateSelectedOptionIndex();
             onChange?.(newValue);
 
-            // Form'u real-time güncelle sadece yeni oluşturma için
+           
             const trimmedValue = newValue.trim();
             if (trimmedValue && !exactMatch) {
               setValue("translations.0.name", trimmedValue);

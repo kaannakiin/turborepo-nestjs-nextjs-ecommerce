@@ -10,7 +10,7 @@ import {
   Title,
   Typography,
 } from "@mantine/core";
-import { $Enums } from "@repo/database/client";
+import { AssetType } from "@repo/database/client";
 import { GetProductPageReturnType } from "@repo/types";
 
 interface BasicProductRightSectionProps {
@@ -18,7 +18,7 @@ interface BasicProductRightSectionProps {
     GetProductPageReturnType["data"],
     "variantCombinations" | "variantGroups" | "assets"
   >;
-  asset: { url: string; type: $Enums.AssetType } | null;
+  asset: { url: string; type: AssetType } | null;
 }
 const BasicProductRightSection = ({
   otherDetails,

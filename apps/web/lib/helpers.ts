@@ -1,5 +1,19 @@
 import { MantineColor, MantineColorsTuple } from "@mantine/core";
-import { $Enums } from "@repo/database/client";
+import {
+  CampaignOfferTargetPage,
+  CampaignStatus,
+  CampaignType,
+  CardAssociation,
+  CartStatus,
+  Currency,
+  DiscountType,
+  Locale,
+  OrderStatus,
+  PaymentStatus,
+  PaymentType,
+  ProductType,
+  UserRole,
+} from "@repo/database/client";
 import {
   AspectRatio,
   FontFamily,
@@ -10,9 +24,11 @@ import {
   ShippingRuleType,
   SortAdminUserTable,
   TextAlign,
+  ThemePages,
   VariantProductZodType,
 } from "@repo/types";
-export function getUserRoleLabels(role: $Enums.UserRole) {
+
+export function getUserRoleLabels(role: UserRole) {
   switch (role) {
     case "ADMIN":
       return "Admin";
@@ -72,7 +88,7 @@ export function getSortAdminUserTableLabels(sort: SortAdminUserTable) {
   }
 }
 
-export function getProductTypeLabel(type: $Enums.ProductType) {
+export function getProductTypeLabel(type: ProductType) {
   switch (type) {
     case "PHYSICAL":
       return "Fiziksel";
@@ -82,7 +98,7 @@ export function getProductTypeLabel(type: $Enums.ProductType) {
       return "Fiziksel";
   }
 }
-export function getCurrencyLabel(currency: $Enums.Currency) {
+export function getCurrencyLabel(currency: Currency) {
   switch (currency) {
     case "TRY":
       return "Türk Lirası (₺)";
@@ -97,7 +113,7 @@ export function getCurrencyLabel(currency: $Enums.Currency) {
   }
 }
 
-export function getCurrencySymbol(currency: $Enums.Currency) {
+export function getCurrencySymbol(currency: Currency) {
   switch (currency) {
     case "TRY":
       return "₺";
@@ -112,7 +128,7 @@ export function getCurrencySymbol(currency: $Enums.Currency) {
   }
 }
 
-export function getCurrencyIntlFormat(currency: $Enums.Currency) {
+export function getCurrencyIntlFormat(currency: Currency) {
   switch (currency) {
     case "TRY":
       return "tr-TR";
@@ -130,7 +146,7 @@ export function getCurrencyIntlFormat(currency: $Enums.Currency) {
 export function buildVariantOrProductUrl(
   productInfos: ProductPageDataType["translations"],
   variantInfos?: ProductPageDataType["variantCombinations"][number]["options"][number][],
-  locale: $Enums.Locale = "TR"
+  locale: Locale = "TR"
 ) {
   const productTranslation =
     productInfos.find((tr) => tr.locale === locale) || productInfos[0];
@@ -346,7 +362,7 @@ export function returnCombinateVariant({
           barcode: `BAR-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`,
           prices: [
             {
-              currency: "TRY" as $Enums.Currency,
+              currency: "TRY" as Currency,
               price: 0,
               discountPrice: null,
               buyedPrice: null,
@@ -358,7 +374,7 @@ export function returnCombinateVariant({
           images: null,
           translations: [
             {
-              locale: "TR" as $Enums.Locale,
+              locale: "TR" as Locale,
               description: null,
               slug: combinationName.toLowerCase().replace(/[^a-z0-9]/g, "-"),
               metaTitle: null,
@@ -710,7 +726,7 @@ export function calculateDiscountRate(
 }
 
 export const cartStatusConfig: Record<
-  $Enums.CartStatus,
+  CartStatus,
   { label: string; color: MantineColor }
 > = {
   ABANDONED: { label: "Terkedilmiş", color: "red" },
@@ -719,15 +735,15 @@ export const cartStatusConfig: Record<
   MERGED: { label: "Birleştirilmiş", color: "gray" },
 };
 
-export function getCartStatusLabel(status: $Enums.CartStatus): string {
+export function getCartStatusLabel(status: CartStatus): string {
   return cartStatusConfig[status].label;
 }
 
-export function getCartStatusColor(status: $Enums.CartStatus): MantineColor {
+export function getCartStatusColor(status: CartStatus): MantineColor {
   return cartStatusConfig[status].color;
 }
 
-export function getCartAssociationUrl(type: $Enums.CardAssociation) {
+export function getCartAssociationUrl(type: CardAssociation) {
   switch (type) {
     case "VISA":
       return "/visa.svg";
@@ -740,7 +756,7 @@ export function getCartAssociationUrl(type: $Enums.CardAssociation) {
   }
 }
 
-export function getOrderStatusInfos(status: $Enums.OrderStatus): string {
+export function getOrderStatusInfos(status: OrderStatus): string {
   switch (status) {
     case "CANCELLED":
       return "Kargolanmadı";
@@ -758,7 +774,7 @@ export function getOrderStatusInfos(status: $Enums.OrderStatus): string {
       return "İade Edildi";
   }
 }
-export function getOrderStatusColor(status: $Enums.OrderStatus): MantineColor {
+export function getOrderStatusColor(status: OrderStatus): MantineColor {
   switch (status) {
     case "CANCELLED":
       return "red.5";
@@ -777,7 +793,7 @@ export function getOrderStatusColor(status: $Enums.OrderStatus): MantineColor {
   }
 }
 
-export function getDiscountTypeLabel(type: $Enums.DiscountType): string {
+export function getDiscountTypeLabel(type: DiscountType): string {
   switch (type) {
     case "FIXED_AMOUNT":
       return "Sabit Tutar";
@@ -796,7 +812,7 @@ export function getDiscountTypeLabel(type: $Enums.DiscountType): string {
   }
 }
 
-export function getCampaignStatusLabel(status: $Enums.CampaignStatus): string {
+export function getCampaignStatusLabel(status: CampaignStatus): string {
   switch (status) {
     case "ACTIVE":
       return "Aktif";
@@ -809,7 +825,7 @@ export function getCampaignStatusLabel(status: $Enums.CampaignStatus): string {
   }
 }
 
-export function getCampaignTypeLabel(type: $Enums.CampaignType): string {
+export function getCampaignTypeLabel(type: CampaignType): string {
   switch (type) {
     case "CROSS_SELLING":
       return "(Cross Sell) Çapraz Satış";
@@ -819,7 +835,7 @@ export function getCampaignTypeLabel(type: $Enums.CampaignType): string {
 }
 
 export function getCampaignOfferPageLabel(
-  type: $Enums.CampaignOfferTargetPage
+  type: CampaignOfferTargetPage
 ): string {
   switch (type) {
     case "CHECKOUT_PAGE":
@@ -832,7 +848,7 @@ export function getCampaignOfferPageLabel(
 }
 
 const PaymentStatusInfos: Record<
-  $Enums.PaymentStatus,
+  PaymentStatus,
   { label: string; color: MantineColor }
 > = {
   FAILED: { label: "Başarısız", color: "red.5" },
@@ -841,12 +857,12 @@ const PaymentStatusInfos: Record<
   PAID: { label: "Ödendi", color: "green.5" },
 };
 
-export function getPaymentStatusLabel(status: $Enums.PaymentStatus): string {
+export function getPaymentStatusLabel(status: PaymentStatus): string {
   return PaymentStatusInfos[status].label;
 }
 
 const PaymentTypeConfigs: Record<
-  $Enums.PaymentType,
+  PaymentType,
   { label: string; color: MantineColor }
 > = {
   CREDIT_CARD: { label: "Kredi Kartı", color: "blue.5" },
@@ -868,7 +884,7 @@ const PaymentTypeConfigs: Record<
   OTHER: { label: "Diğer", color: "dark.3" },
 };
 
-export function getPaymentTypeLabel(type: $Enums.PaymentType): string {
+export function getPaymentTypeLabel(type: PaymentType): string {
   return PaymentTypeConfigs[type]?.label || "Bilinmeyen";
 }
 
@@ -900,3 +916,22 @@ export const getAspectRatioLabel = (ratio: AspectRatio): string => {
 export const getAspectRatioValue = (ratio: AspectRatio): number => {
   return AspectRatioConfigs[ratio]?.value || 0;
 };
+
+export const ThemePageConfigs: Record<
+  ThemePages,
+  { label: string; value: ThemePages }
+> = {
+  HOMEPAGE: { label: "Anasayfa", value: "HOMEPAGE" },
+  PRODUCT: {
+    label: "Ürün Sayfası",
+    value: "PRODUCT",
+  },
+};
+
+export function getThemePageLabel(page: ThemePages): string {
+  return ThemePageConfigs[page]?.label || "Bilinmeyen";
+}
+
+export function getThemePageValue(page: ThemePages): ThemePages {
+  return ThemePageConfigs[page]?.value || "HOMEPAGE";
+}

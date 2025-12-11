@@ -1,6 +1,5 @@
 "use client";
 
-import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
@@ -23,6 +22,7 @@ import { IconCheck } from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import AddressCard from "../AddressCard";
+import { useTheme } from "@/context/theme-context/ThemeContext";
 
 interface AuthUserShippingListProps {
   cart: Pick<GetCartClientCheckoutReturnType, "cart">;

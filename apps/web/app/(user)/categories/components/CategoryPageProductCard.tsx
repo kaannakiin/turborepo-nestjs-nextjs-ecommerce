@@ -3,7 +3,7 @@ import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 import CustomImage from "@/components/CustomImage";
 import { AspectRatio, Badge, Card, Stack, Text } from "@mantine/core";
 import { useHover } from "@mantine/hooks";
-import { $Enums } from "@repo/database/client";
+import { AssetType } from "@repo/database/client";
 import { GetCategoryProductsResponse } from "@repo/types";
 import { useRouter } from "next/navigation";
 
@@ -51,7 +51,7 @@ const CategoryPageProductCard = ({ product }: CategoryPageProductCardProps) => {
   const renderMedia = (asset: {
     order: number;
     url: string;
-    type: $Enums.AssetType;
+    type: AssetType;
   }) => {
     if (asset.type === "VIDEO") {
       return (

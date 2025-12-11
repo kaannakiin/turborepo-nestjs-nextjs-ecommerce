@@ -16,7 +16,7 @@ import {
   UnstyledButton,
   rem,
 } from "@mantine/core";
-import { $Enums } from "@repo/database/client";
+import { AssetType } from "@repo/database/client";
 import { GetProductPageReturnType } from "@repo/types";
 import { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -31,7 +31,7 @@ interface ProductRightSectionProps {
     GetProductPageReturnType["data"],
     "variantCombinations" | "variantGroups" | "assets"
   >;
-  firstAsset: { url: string; type: $Enums.AssetType } | null;
+  firstAsset: { url: string; type: AssetType } | null;
 
   availableCombinations: GetProductPageReturnType["data"]["variantCombinations"];
   selectedOptionIdsFromUrl: Set<string>;

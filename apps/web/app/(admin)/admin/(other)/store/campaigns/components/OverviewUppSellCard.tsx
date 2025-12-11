@@ -1,11 +1,7 @@
 "use client";
 import CustomImage from "@/components/CustomImage";
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
-import {
-  $Enums,
-  AllowedDiscountedItemsBy,
-  DiscountType,
-} from "@repo/database/client";
+import { AllowedDiscountedItemsBy, DiscountType } from "@repo/database/client";
 import { useQuery } from "@repo/shared";
 import { UppSellOfferZodType, UpSellProductReturnType } from "@repo/types";
 import { useEffect, useState } from "react";

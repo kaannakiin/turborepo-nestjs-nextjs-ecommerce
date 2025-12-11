@@ -28,7 +28,7 @@ import { useState } from "react";
 import { notifications } from "@mantine/notifications";
 import TableAsset from "@/(admin)/components/TableAsset";
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
-import { $Enums } from "@repo/database/client";
+import { Locale } from "@repo/database/client";
 import { Route } from "next";
 const BrandsTable = () => {
   const searchParams = useSearchParams();
@@ -63,11 +63,10 @@ const BrandsTable = () => {
       return result.data;
     },
     refetchOnWindowFocus: false,
-    gcTime: 1000 * 60 * 5, // 5 minutes
-    staleTime: 1000 * 30, // 30 seconds
+    gcTime: 1000 * 60 * 5,
+    staleTime: 1000 * 30,
   });
 
-  // Delete mutation
   const deleteBrandMutation = useMutation({
     mutationFn: async (brandId: string) => {
       const result = await fetchWrapper.delete<{ message: string }>(
@@ -81,13 +80,11 @@ const BrandsTable = () => {
       return result.data;
     },
     onSuccess: (data, brandId) => {
-      // Close popover
       setOpenedDeletePopover((prev) => ({
         ...prev,
         [brandId]: false,
       }));
 
-      // Show success notification
       notifications.show({
         title: "Başarılı",
         message: data.message || "Marka başarıyla silindi",
@@ -95,7 +92,6 @@ const BrandsTable = () => {
         autoClose: 3000,
       });
 
-      // Invalidate and refetch brands
       queryClient.invalidateQueries({
         queryKey: ["admin-brands"],
       });
@@ -106,7 +102,6 @@ const BrandsTable = () => {
         [brandId]: false,
       }));
 
-      // Show error notification
       notifications.show({
         title: "Hata",
         message: error.message || "Marka silinirken bir hata oluştu",
@@ -120,7 +115,7 @@ const BrandsTable = () => {
     brand:
       | Pick<AdminBrandTableData, "translations">
       | Pick<AdminBrandTableData["parentBrand"], "translations">,
-    locale: $Enums.Locale = "TR"
+    locale: Locale = "TR"
   ) => {
     if (!brand || !brand.translations) return "İsimsiz Marka";
     const translation = brand.translations.find((t) => t.locale === locale);

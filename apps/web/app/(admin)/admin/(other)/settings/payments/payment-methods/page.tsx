@@ -3,7 +3,7 @@ import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { Card, SimpleGrid, Stack, Text, Title } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { $Enums } from "@repo/database/client";
+import { PaymentProvider } from "@repo/database/client";
 import { useQuery } from "@repo/shared";
 import {
   GetPaymentMethodResponseType,
@@ -22,7 +22,7 @@ const PayTRform = dynamic(() => import("./components/PayTrForm"), {
   loading: () => <GlobalLoadingOverlay />,
 });
 interface PaymentMethodInfo {
-  type: $Enums.PaymentProvider;
+  type: PaymentProvider;
   name: string;
   description: string;
   logo: string;
@@ -50,11 +50,12 @@ const PaymentMethods = ({
   renderPayments,
 }: {
   renderTitle?: boolean;
-  renderPayments?: $Enums.PaymentProvider[];
+  renderPayments?: PaymentProvider[];
 }) => {
   const [opened, { open, close: mantineClose }] = useDisclosure();
-  const [selectedMethod, setSelectedMethod] =
-    useState<$Enums.PaymentProvider | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<PaymentProvider | null>(
+    null
+  );
 
   const {
     data: queryResponse,
@@ -79,7 +80,7 @@ const PaymentMethods = ({
     refetchOnWindowFocus: false,
   });
 
-  const onClickCards = (type: $Enums.PaymentProvider) => {
+  const onClickCards = (type: PaymentProvider) => {
     setSelectedMethod(type);
     open();
   };
@@ -108,7 +109,7 @@ const PaymentMethods = ({
                   onClickCards(method.type);
                 }}
                 padding="md"
-                className="cursor-pointer hover:bg-[var(--mantine-primary-color-0)] transition-colors duration-200"
+                className="cursor-pointer hover:bg-(--mantine-primary-color-0) transition-colors duration-200"
               >
                 <Stack gap="sm" align="center">
                   <div className="relative w-full h-16 flex items-center justify-center rounded-md p-3">

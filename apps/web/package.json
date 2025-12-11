@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start -p 3003",
     "lint": "next lint --max-warnings 0",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "prerender-debug": "next build --debug-prerender"
   },
   "dependencies": {
     "@ai-sdk/groq": "^2.0.25",
@@ -48,6 +49,7 @@
     "react-international-phone": "^4.6.0",
     "schema-dts": "^1.1.5",
     "set-cookie-parser": "^2.7.1",
+    "swiper": "^12.0.3",
     "tailwindcss": "^4.1.12",
     "zustand": "^5.0.8"
   },
