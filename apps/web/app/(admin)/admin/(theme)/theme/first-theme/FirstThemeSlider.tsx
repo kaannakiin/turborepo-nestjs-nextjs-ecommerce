@@ -7,7 +7,7 @@ import { useTheme } from "@/context/theme-context/ThemeContext";
 import { getAspectRatioValue } from "@lib/helpers";
 import { convertAssetToRenderImage } from "@lib/theme-helpers";
 import { AspectRatio } from "@mantine/core";
-import type { AssetType } from "@repo/database";
+import { AssetType } from "@repo/database";
 import { SliderComponentOutputType } from "@repo/types";
 import { useEffect, useMemo, useState } from "react";
 
