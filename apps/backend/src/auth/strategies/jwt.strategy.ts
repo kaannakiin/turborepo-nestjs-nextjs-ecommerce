@@ -34,7 +34,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     const { password, ...userWithoutPassword } = user;
 
-    // jti'yi user objesine ekle ve direkt return et
     return {
       ...userWithoutPassword,
       jti: payload.jti,

@@ -88,6 +88,7 @@ const CustomPhoneInput = ({
       disabled={disabled}
       leftSection={
         <Combobox
+          disabled={disabled}
           store={combobox}
           withinPortal={true}
           onOptionSubmit={(value) => {
@@ -129,9 +130,9 @@ const CustomPhoneInput = ({
           <Combobox.Dropdown
             style={{
               zIndex: 1000,
-              width: "300px", // Sabit genişlik ver
-              minWidth: "300px", // Minimum genişlik
-              maxWidth: "400px", // Maximum genişlik
+              width: "300px",
+              minWidth: "300px",
+              maxWidth: "400px",
             }}
           >
             <Combobox.Search
@@ -140,7 +141,6 @@ const CustomPhoneInput = ({
               onChange={(value) => {
                 setSearchValue(value.currentTarget.value.trim());
               }}
-              // ✅ Search input'un width'ini düzelt
               style={{
                 width: "100%",
               }}
@@ -148,7 +148,6 @@ const CustomPhoneInput = ({
             <ScrollArea.Autosize
               mah={200}
               style={{
-                // ✅ ScrollArea width düzeltmesi
                 width: "100%",
               }}
             >
@@ -160,11 +159,10 @@ const CustomPhoneInput = ({
                       key={parsedCountry.iso2}
                       value={parsedCountry.iso2}
                       style={{
-                        // ✅ Option width'ini düzelt
                         width: "100%",
-                        whiteSpace: "nowrap", // Tek satırda tut
+                        whiteSpace: "nowrap",
                         overflow: "hidden",
-                        textOverflow: "ellipsis", // Uzun metinleri kes
+                        textOverflow: "ellipsis",
                       }}
                     >
                       <Group gap="xs" align="center" wrap="nowrap">
@@ -172,7 +170,7 @@ const CustomPhoneInput = ({
                           style={{
                             width: 24,
                             height: 16,
-                            flexShrink: 0, // Flag'in küçülmesini engelle
+                            flexShrink: 0,
                           }}
                         >
                           <FlagImage
@@ -187,9 +185,8 @@ const CustomPhoneInput = ({
                         <Text
                           fz="sm"
                           style={{
-                            // ✅ Text width düzeltmesi
                             flex: 1,
-                            minWidth: 0, // Text'in küçülmesine izin ver
+                            minWidth: 0,
                             whiteSpace: "nowrap",
                             overflow: "hidden",
                             textOverflow: "ellipsis",

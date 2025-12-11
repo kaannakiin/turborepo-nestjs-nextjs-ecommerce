@@ -53,6 +53,7 @@ model RefreshTokens {
   hashedRefreshToken String         @unique
   userAgent          String?
   os                 String?
+  browser            String?
   deviceType         String?
   ipAddress          String?
   userId             String

@@ -1,6 +1,6 @@
 import { TokenPayload } from "@repo/types";
-import { cookies, headers } from "next/headers";
-import { cache } from "react";
+import { cookies } from "next/headers";
+import { jwtVerify } from "jose";
 
 export const getSession = async (): Promise<TokenPayload | null> => {
   try {
@@ -9,16 +9,14 @@ export const getSession = async (): Promise<TokenPayload | null> => {
 
     if (!token) return null;
 
-    const payloadFetch = await fetch(`${process.env.BACKEND_URL}/auth/me`, {
-      method: "GET",
-      headers: { Cookie: `token=${token}` },
-      credentials: "include",
-      cache: "no-store",
-    });
+    const JWT_ACCESS_TOKEN_SECRET = new TextEncoder().encode(
+      process.env.JWT_ACCESS_TOKEN_SECRET || "secret-yoksa-patlar"
+    );
 
-    if (!payloadFetch.ok) return null;
-    return await payloadFetch.json();
-  } catch {
+    const { payload } = await jwtVerify(token, JWT_ACCESS_TOKEN_SECRET);
+
+    return payload as TokenPayload;
+  } catch (error) {
     return null;
   }
 };
