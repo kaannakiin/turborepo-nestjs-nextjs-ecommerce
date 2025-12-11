@@ -43,7 +43,6 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
       });
       return createdUser;
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...result } = user;
     return result;
   }

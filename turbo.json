@@ -10,7 +10,12 @@
     },
     "web#build": {
       "dependsOn": ["^build"],
-      "env": ["BACKEND_URL", "NEXT_PUBLIC_BACKEND_URL", "NEXT_PUBLIC_BASE_URL"],
+      "env": [
+        "BACKEND_URL",
+        "NEXT_PUBLIC_BACKEND_URL",
+        "NEXT_PUBLIC_BASE_URL",
+        "JWT_ACCESS_TOKEN_SECRET"
+      ],
       "outputs": [".next/**", "!.next/cache/**"]
     },
     "backend#build": {

@@ -36,7 +36,7 @@ const CheckoutDesktopHeader = () => {
       justify="space-between"
       align="center"
     >
-      <Link href={"/"} className="min-h-full aspect-[2/1] relative">
+      <Link href={"/"} className="min-h-full aspect-2/1 relative">
         <Image src={logo} fill alt="HEADER LOGO" sizes="100vw" />
       </Link>
       <Text>Giriş Yap</Text>
@@ -52,7 +52,7 @@ const CheckoutMobileDrawer = () => {
       justify="space-between"
       align="center"
     >
-      <Link href={"/"} className="min-h-full aspect-[2/1] relative">
+      <Link href={"/"} className="min-h-full aspect-2/1 relative">
         <Image src={logo} fill alt="HEADER LOGO" sizes="100vw" />
       </Link>
       <Text>Giriş Yap</Text>

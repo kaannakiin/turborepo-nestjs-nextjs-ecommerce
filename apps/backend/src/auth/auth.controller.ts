@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
   Req,
   Res,
@@ -27,6 +29,7 @@ import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
+import { RealIP } from 'nestjs-real-ip';
 
 @Controller('auth')
 export class AuthController {
@@ -53,8 +56,9 @@ export class AuthController {
     @CurrentUser() user: User,
     @Res({ passthrough: true }) response: Response,
     @Req() req: Request,
+    @RealIP() ip: string,
   ) {
-    return await this.authService.login(user, response, false, false, req);
+    return await this.authService.login(user, response, false, req, ip);
   }
 
   @Post('refresh')
@@ -66,8 +70,9 @@ export class AuthController {
     @CurrentUser() user: User,
     @Res({ passthrough: true }) response: Response,
     @Req() req: Request,
+    @RealIP() ip: string,
   ) {
-    return await this.authService.login(user, response, false, false, req);
+    return await this.authService.login(user, response, false, req, ip);
   }
 
   @Get('google')
@@ -80,10 +85,9 @@ export class AuthController {
     @CurrentUser() user: User,
     @Req() req: Request,
     @Res() response: Response,
+    @RealIP() ip: string,
   ) {
-    const userAgent = req.headers['user-agent'];
-    const isMobile = userAgent?.includes('Mobile') ?? false;
-    await this.authService.login(user, response, true, isMobile, req);
+    await this.authService.login(user, response, true, req, ip);
   }
 
   @Get('facebook')
@@ -96,10 +100,9 @@ export class AuthController {
     @CurrentUser() user: User,
     @Req() req: Request,
     @Res() response: Response,
+    @RealIP() ip: string,
   ) {
-    const userAgent = req.headers['user-agent'];
-    const isMobile = userAgent?.includes('Mobile') ?? false;
-    await this.authService.login(user, response, true, isMobile, req);
+    await this.authService.login(user, response, true, req, ip);
   }
 
   @Get('me')
@@ -128,6 +131,24 @@ export class AuthController {
       message: 'CSRF token başarıyla oluşturuldu.',
     };
   }
+
+  @Get('sessions')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async getSessions(@CurrentUser() user: User) {
+    return this.authService.getActiveSessions(user.id);
+  }
+
+  @Delete('sessions/:sessionId')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async revokeSession(
+    @CurrentUser() user: User,
+    @Param('sessionId') sessionId: string,
+  ) {
+    return this.authService.revokeSession(user.id, sessionId);
+  }
+
   // FORGOT PASSWORD - 'auth-strict' throttler (3 istek/5dk)
   // @Post('forgot-password')
   // @HttpCode(HttpStatus.OK)

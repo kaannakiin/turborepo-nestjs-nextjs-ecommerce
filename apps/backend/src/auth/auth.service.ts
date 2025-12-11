@@ -59,7 +59,7 @@ export class AuthService {
       return {
         success: false,
         message:
-          'Bu kullanıcı zaten mevcut. Lütfen giriş yaparak tekrar devem ediniz.',
+          'Bu kullanıcı zaten mevcut. Lütfen giriş yaparak tekrar devam ediniz.',
       };
     }
 
@@ -86,7 +86,7 @@ export class AuthService {
     } catch (error) {
       return {
         success: false,
-        message: ' Kullanıcı oluşturulamadı. Lütfen tekrar deneyin.',
+        message: 'Kullanıcı oluşturulamadı. Lütfen tekrar deneyin.',
       };
     }
   }
@@ -95,8 +95,8 @@ export class AuthService {
     user: User,
     response: Response,
     redirect: boolean = false,
-    isMobile: boolean = false,
     req: Request,
+    ip: string,
   ) {
     const accessTokenExpirationMs = parseInt(
       this.configService.getOrThrow<string>('JWT_ACCESS_TOKEN_EXPIRATION_MS'),
@@ -106,40 +106,11 @@ export class AuthService {
       this.configService.getOrThrow<string>('JWT_REFRESH_TOKEN_EXPIRATION_MS'),
     );
 
-    const expiresAccessToken = new Date();
-    expiresAccessToken.setTime(
-      expiresAccessToken.getTime() + accessTokenExpirationMs,
-    );
-
-    const expiresRefreshToken = new Date();
-    expiresRefreshToken.setTime(
-      expiresRefreshToken.getTime() + refreshTokenExpirationMs,
-    );
-    const currentRefreshToken = req.cookies?.refresh_token;
-    if (currentRefreshToken) {
-      try {
-        const oldPayload = this.jwtService.verify(currentRefreshToken, {
-          secret: this.configService.getOrThrow('JWT_REFRESH_TOKEN_SECRET'),
-        }) as TokenPayload;
-
-        await this.prismaService.refreshTokens.update({
-          where: {
-            id: oldPayload.jti,
-            userId: user.id,
-            revokedAt: null,
-          },
-          data: {
-            revokedAt: new Date(),
-          },
-        });
-      } catch (error) {
-        console.warn('Could not revoke old token:', error.message);
-      }
-    }
+    const jti = createId();
 
     const tokenPayload: TokenPayload = {
       id: user.id,
-      jti: createId(),
+      jti: jti,
       name: `${this.capitalize(user.name)} ${this.capitalize(user.surname)}`,
       role: user.role,
       ...(user.email ? { email: user.email } : {}),
@@ -147,41 +118,68 @@ export class AuthService {
       ...(user.imageUrl ? { imageUrl: user.imageUrl } : {}),
     };
 
+    const currentRefreshToken = req.cookies?.refresh_token;
+
+    if (currentRefreshToken) {
+      try {
+        const oldPayload = this.jwtService.verify(currentRefreshToken, {
+          secret: this.configService.getOrThrow('JWT_REFRESH_TOKEN_SECRET'),
+        }) as TokenPayload;
+
+        await this.prismaService.refreshTokens.updateMany({
+          where: {
+            id: oldPayload.jti,
+            userId: user.id,
+          },
+          data: {
+            revokedAt: new Date(),
+            replacedByTokenId: jti,
+          },
+        });
+      } catch (error) {
+        console.warn('Could not revoke old token during login:', error.message);
+      }
+    }
+
     const accessToken = await this.jwtService.signAsync(tokenPayload, {
       secret: this.configService.getOrThrow('JWT_ACCESS_TOKEN_SECRET'),
-      expiresIn: Math.floor(accessTokenExpirationMs / 1000), // Saniyeye çevir
+      expiresIn: Math.floor(accessTokenExpirationMs / 1000),
     });
 
     const refreshToken = this.jwtService.sign(tokenPayload, {
       secret: this.configService.getOrThrow('JWT_REFRESH_TOKEN_SECRET'),
-      expiresIn: Math.floor(refreshTokenExpirationMs / 1000), // Saniyeye çevir
+      expiresIn: Math.floor(refreshTokenExpirationMs / 1000),
     });
+
     const hashedRefreshToken = await hash(refreshToken);
 
-    // await this.prismaService.user.update({
-    //   where: { id: user.id },
-    //   data: {
-    //     refreshTokens: {
-    //       create: {
-    //         id: tokenPayload.jti,
-    //         expiresAt: expiresRefreshToken,
-    //         hashedRefreshToken: hashedRefreshToken,
-    //         browser: req.useragent.browser || 'Unknown',
-    //         browserVersion: req.useragent.version || 'Unknown',
-    //         os: req.useragent.os || 'Unknown',
-    //         deviceName: req.useragent.platform || 'Unknown',
-    //         deviceType: req.useragent.isMobile
-    //           ? 'MOBILE'
-    //           : req.useragent.isTablet
-    //             ? 'TABLET'
-    //             : 'DESKTOP',
-    //         ipAddress: req.socket.remoteAddress || req.ip || 'Unknown',
-    //         osVersion: req.useragent.os || 'Unknown',
-    //         userAgent: req.useragent.source || 'Unknown',
-    //       },
-    //     },
-    //   },
-    // });
+    const ua = req.useragent;
+
+    let deviceType = 'DESKTOP';
+    if (ua?.isMobile) deviceType = 'MOBILE';
+    else if (ua?.isTablet) deviceType = 'TABLET';
+    else if (ua?.isSmartTV) deviceType = 'SMART_TV';
+
+    const expiresRefreshToken = new Date();
+    expiresRefreshToken.setTime(
+      expiresRefreshToken.getTime() + refreshTokenExpirationMs,
+    );
+
+    await this.prismaService.refreshTokens.create({
+      data: {
+        id: jti,
+        hashedRefreshToken: hashedRefreshToken,
+        userId: user.id,
+        expiresAt: expiresRefreshToken,
+
+        ipAddress: ip,
+        userAgent: ua?.source || req.headers['user-agent'] || 'Unknown',
+        os: ua?.os || 'Unknown',
+        browser: ua?.browser || 'Unknown',
+        deviceType: deviceType,
+      },
+    });
+
     response.cookie('token', accessToken, {
       httpOnly: true,
       secure: this.configService.get('NODE_ENV') === 'production',
@@ -203,7 +201,7 @@ export class AuthService {
     });
 
     if (redirect) {
-      if (isMobile) {
+      if (ua?.isMobile) {
         response.redirect(this.configService.getOrThrow('MOBILE_UI_REDIRECT'));
       } else {
         response.redirect(this.configService.getOrThrow('WEB_UI_REDIRECT'));
@@ -246,5 +244,53 @@ export class AuthService {
     }
 
     return tokenRecord.user;
+  }
+
+  async revokeSession(userId: string, sessionId: string) {
+    // Önce oturumun gerçekten bu kullanıcıya mı ait olduğunu kontrol et
+    const session = await this.prismaService.refreshTokens.findUnique({
+      where: { id: sessionId },
+    });
+
+    if (!session) {
+      throw new BadRequestException('Oturum bulunamadı.');
+    }
+
+    if (session.userId !== userId) {
+      throw new BadRequestException('Bu işlem için yetkiniz yok.');
+    }
+
+    // Oturumu iptal et (revokedAt ekle)
+    await this.prismaService.refreshTokens.update({
+      where: { id: sessionId },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
+
+    return { success: true, message: 'Oturum başarıyla sonlandırıldı.' };
+  }
+
+  // Hazır elin değmişken tüm oturumları listeleme metodunu da ekleyelim
+  async getActiveSessions(userId: string) {
+    return await this.prismaService.refreshTokens.findMany({
+      where: {
+        userId: userId,
+        revokedAt: null, // Sadece aktif olanlar
+        expiresAt: { gt: new Date() }, // Süresi dolmamış olanlar
+      },
+      select: {
+        id: true,
+        deviceType: true,
+        browser: true,
+        os: true,
+        ipAddress: true,
+        createdAt: true,
+        // hashedRefreshToken'ı asla client'a gönderme!
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
   }
 }
