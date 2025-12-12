@@ -22,8 +22,8 @@ import {
   ThemeInputType,
 } from "@repo/types";
 import { IconPlus } from "@tabler/icons-react";
-import { useThemeStore } from "../../store/theme-store";
-import { SortableListRow } from "../common/SortableListRow";
+import { useThemeStore } from "../../../../store/theme-store";
+import { SortableListRow } from "../../../common/SortableListRow";
 
 interface SliderFormProps {
   control: Control<ThemeInputType>;
@@ -32,7 +32,7 @@ interface SliderFormProps {
   field: SliderComponentInputType;
 }
 
-const LeftSideSliderList = ({
+const NavbarSliderList = ({
   control,
   componentIndex,
   index,
@@ -76,8 +76,7 @@ const LeftSideSliderList = ({
           {fields.map((slideField, slideIndex) => {
             const isSelected =
               selection?.type === "SLIDE" &&
-              selection.sliderId === slideField.sliderId &&
-              selection.componentIndex === componentIndex;
+              selection.sliderId === slideField.sliderId;
 
             return (
               <SortableListRow
@@ -88,8 +87,7 @@ const LeftSideSliderList = ({
                   selectSlide(
                     field.componentId,
                     slideField.sliderId,
-                    slideField.id,
-                    componentIndex
+                    slideField.id
                   )
                 }
                 onDelete={() => {
@@ -135,4 +133,4 @@ const LeftSideSliderList = ({
   );
 };
 
-export default LeftSideSliderList;
+export default NavbarSliderList;

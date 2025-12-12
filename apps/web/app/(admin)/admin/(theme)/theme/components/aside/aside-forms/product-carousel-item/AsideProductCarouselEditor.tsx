@@ -2,10 +2,11 @@
 import { Control } from "@repo/shared";
 import { ProductCarouselComponentInputType, ThemeInputType } from "@repo/types";
 import { IconInfoCircle } from "@tabler/icons-react";
-import { EditorSelection, useThemeStore } from "../../store/theme-store";
-import { AsideFormLayout } from "../layout/AsideFormLayout";
-import { EmptyState } from "../layout/EmptyState";
-import ProductCarouselItemForm from "../right-side-forms/product-carousel/ProductCarouselItemForm";
+
+import AsideProductCarouselItemForm from "./AsideProductCarouselItemForm";
+import { EditorSelection, useThemeStore } from "../../../../store/theme-store";
+import { AsideEmptyState } from "../../AsideEmptyState";
+import { AsideFormLayout } from "../../AsideFormLayout";
 
 interface ProductCarouselEditorProps {
   component: ProductCarouselComponentInputType;
@@ -15,7 +16,7 @@ interface ProductCarouselEditorProps {
   control: Control<ThemeInputType>;
 }
 
-const ProductCarouselEditor = ({
+const AsideProductCarouselEditor = ({
   component,
   control,
   selection,
@@ -25,7 +26,7 @@ const ProductCarouselEditor = ({
   const { clearSelection } = useThemeStore();
   if (component.type !== "PRODUCT_CAROUSEL") {
     return (
-      <EmptyState
+      <AsideEmptyState
         clearAction={clearSelection}
         icon={IconInfoCircle}
         title="Geçersiz Seçim"
@@ -40,7 +41,7 @@ const ProductCarouselEditor = ({
 
   if (itemIndex === -1) {
     return (
-      <EmptyState
+      <AsideEmptyState
         clearAction={clearSelection}
         icon={IconInfoCircle}
         title="Öğe Bulunamadı"
@@ -56,7 +57,7 @@ const ProductCarouselEditor = ({
       subtitle={`${itemIndex + 1}. öğe`}
       onClose={clearSelection}
     >
-      <ProductCarouselItemForm
+      <AsideProductCarouselItemForm
         index={itemIndex}
         control={control}
         componentIndex={componentIndex}
@@ -66,4 +67,4 @@ const ProductCarouselEditor = ({
   );
 };
 
-export default ProductCarouselEditor;
+export default AsideProductCarouselEditor;

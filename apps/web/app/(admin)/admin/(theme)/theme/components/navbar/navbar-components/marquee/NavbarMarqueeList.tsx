@@ -17,8 +17,7 @@ import { Button, Stack, ThemeIcon } from "@mantine/core";
 import { Control, createId, useFieldArray, useWatch } from "@repo/shared";
 import { MarqueeComponentInputType, ThemeInputType } from "@repo/types";
 import { IconPlus } from "@tabler/icons-react";
-import { useThemeStore } from "../../../store/theme-store";
-import MarqueeItemRow from "./MarqueeItemRow";
+import NavbarMarqueeItemRow from "./NavbarMarqueeItemRow";
 
 interface LeftSideMarqueeListProps {
   control: Control<ThemeInputType>;
@@ -27,14 +26,12 @@ interface LeftSideMarqueeListProps {
   field: MarqueeComponentInputType;
 }
 
-const LeftSideMarqueeList = ({
+const NavbarMarqueeList = ({
   control,
   actualPageIndex,
   componentIndex,
   field,
 }: LeftSideMarqueeListProps) => {
-  const activePage = useThemeStore((state) => state.activePage);
-
   const itemsPath =
     `pages.${actualPageIndex}.components.${componentIndex}.items` as const;
 
@@ -84,14 +81,13 @@ const LeftSideMarqueeList = ({
           {items.map((item, itemIndex) => {
             const itemData = item as unknown as (typeof field.items)[number];
             return (
-              <MarqueeItemRow
+              <NavbarMarqueeItemRow
                 key={item.rhf_item_id}
                 id={item.rhf_item_id}
                 itemId={itemData.itemId}
                 text={itemData.text || (itemData.image ? "[Resim]" : "")}
                 index={itemIndex}
                 componentId={componentId}
-                activePage={activePage}
                 onRemove={() => remove(itemIndex)}
               />
             );
@@ -135,4 +131,4 @@ const LeftSideMarqueeList = ({
   );
 };
 
-export default LeftSideMarqueeList;
+export default NavbarMarqueeList;

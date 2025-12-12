@@ -10,7 +10,7 @@ interface SliderFormValues {
   pageIndex: number;
   componentIndex: number;
 }
-const SliderForm = ({
+const AsideSliderForm = ({
   control,
   pageIndex,
   componentIndex,
@@ -118,4 +118,4 @@ const SliderForm = ({
   );
 };
 
-export default SliderForm;
+export default AsideSliderForm;

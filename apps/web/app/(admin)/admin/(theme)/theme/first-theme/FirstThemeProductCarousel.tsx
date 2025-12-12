@@ -1,16 +1,18 @@
-import { useTheme } from "@/context/theme-context/ThemeContext";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import { useTheme } from "@/context/theme-context/ThemeContext";
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
-import { Carousel } from "@mantine/carousel";
 import { Box, Container, Stack, Text, Title } from "@mantine/core";
 import { keepPreviousData, useQuery, useQueryClient } from "@repo/shared";
 import { ProductCarouselComponentInputType, ProductCart } from "@repo/types";
-import Autoplay from "embla-carousel-autoplay";
-import Fade from "embla-carousel-fade";
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
+import { Autoplay, Navigation, Pagination } from "swiper/modules";
+import { Swiper, SwiperSlide } from "swiper/react";
 import FirstThemeProductCart from "./FirstThemeProductCart";
-import classes from "./modules/ProductCarousel.module.css";
-import AutoHeight from "embla-carousel-auto-height";
+
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+
 interface FirstThemeProductCarouselProps {
   data: ProductCarouselComponentInputType;
 }
@@ -20,24 +22,16 @@ const FirstThemeProductCarousel = ({
 }: FirstThemeProductCarouselProps) => {
   const queryClient = useQueryClient();
   const { config, title, description } = data;
+
   const { media } = useTheme();
-  const autoplay = useRef(
-    Autoplay({ delay: config.autoplaySpeed, stopOnInteraction: false })
-  );
-
-  const { productIds, variantIds } = useMemo(() => {
-    const pIds = data.items
-      .filter((item) => item.productId && !item.variantId)
-      .map((item) => item.productId!)
-      .sort();
-
-    const vIds = data.items
-      .filter((item) => item.variantId)
-      .map((item) => item.variantId!)
-      .sort();
-
-    return { productIds: pIds, variantIds: vIds };
-  }, [data.items]);
+  const productIds = data.items
+    .filter((item) => item.productId && !item.variantId)
+    .map((item) => item.productId!)
+    .sort();
+  const variantIds = data.items
+    .filter((item) => item.variantId)
+    .map((item) => item.variantId!)
+    .sort();
 
   const queryKey = [
     "theme-carousel",
@@ -122,6 +116,16 @@ const FirstThemeProductCarousel = ({
     })[];
   }, [productsData, data.items]);
 
+  const currentSlidesPerView =
+    media === "desktop"
+      ? config.slidesPerViewDesktop
+      : media === "tablet"
+        ? config.slidesPerViewTablet
+        : config.slidesPerViewMobile;
+
+  const currentSpaceBetween =
+    media === "desktop" ? 24 : media === "tablet" ? 20 : 16;
+
   if (isLoading) return <GlobalLoadingOverlay />;
   if (slides.length === 0) return null;
 
@@ -151,53 +155,37 @@ const FirstThemeProductCarousel = ({
           </Stack>
         )}
 
-        <Carousel
-          withIndicators={config.showDots}
-          className="items-start"
-          withControls={config.showArrows}
-          emblaOptions={{
-            loop: config.loop,
-            align: "start",
-            slidesToScroll:
-              media === "desktop"
-                ? config.slidesPerViewDesktop
-                : media === "tablet"
-                  ? config.slidesPerViewTablet
-                  : config.slidesPerViewMobile,
-          }}
-          slideSize={
-            media === "desktop"
-              ? `${100 / config.slidesPerViewDesktop}%`
-              : media === "tablet"
-                ? `${100 / config.slidesPerViewTablet}%`
-                : `${100 / config.slidesPerViewMobile}%`
+        <Swiper
+          modules={[Navigation, Autoplay, Pagination]}
+          slidesPerView={currentSlidesPerView}
+          spaceBetween={currentSpaceBetween}
+          loop={config.loop}
+          navigation={config.showArrows}
+          pagination={
+            config.showDots ? { clickable: true, dynamicBullets: true } : false
           }
-          slideGap={{ base: "md", md: "lg" }}
-          plugins={
+          autoplay={
             config.autoplay
-              ? [autoplay.current, Fade(), AutoHeight()]
-              : [Fade(), AutoHeight()]
+              ? {
+                  delay: config.autoplaySpeed,
+                  disableOnInteraction: false,
+                  pauseOnMouseEnter: true,
+                }
+              : false
           }
-          onMouseEnter={config.autoplay ? autoplay.current.stop : undefined}
-          onMouseLeave={config.autoplay ? autoplay.current.reset : undefined}
-          classNames={{
-            root: classes.root,
-            controls: classes.controls,
-            control: classes.control,
-            indicator: classes.indicator,
-          }}
-          controlsOffset={"xs"}
+          style={{ paddingBottom: config.showDots ? "40px" : "0" }}
+          key={media}
         >
           {slides.map((product) => (
-            <Carousel.Slide key={product.id}>
+            <SwiperSlide key={product.id} style={{ height: "auto" }}>
               <FirstThemeProductCart
                 data={product}
                 aspectRatio={config.aspectRatio}
                 showAddToCartButton={config.showAddToCartButton}
               />
-            </Carousel.Slide>
+            </SwiperSlide>
           ))}
-        </Carousel>
+        </Swiper>
       </Container>
     </Box>
   );

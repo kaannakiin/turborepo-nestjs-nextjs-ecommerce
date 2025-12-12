@@ -3,7 +3,7 @@ import { Control, useFieldArray } from "@repo/shared";
 import { ThemeInputType } from "@repo/types";
 import { IconPlus } from "@tabler/icons-react";
 import React from "react";
-import NavbarComponentTable from "../NavbarComponentTable";
+import NavbarComponentTable from "../navbar/NavbarComponentTable";
 
 interface SectionListProps {
   control: Control<ThemeInputType>;

@@ -19,7 +19,7 @@ interface SlideFormProps {
   pageIndex: number;
 }
 
-const SlideForm = ({
+const AsideSlideForm = ({
   control,
   componentIndex,
   slideIndex,
@@ -165,4 +165,4 @@ const SlideForm = ({
   );
 };
 
-export default SlideForm;
+export default AsideSlideForm;

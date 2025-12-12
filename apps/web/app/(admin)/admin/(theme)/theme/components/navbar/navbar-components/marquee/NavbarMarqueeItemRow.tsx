@@ -1,9 +1,8 @@
 import { Text } from "@mantine/core";
 import { useShallow } from "zustand/react/shallow";
 
-import { ThemePages } from "@repo/types";
-import { useThemeStore } from "../../../store/theme-store";
-import { SortableListRow } from "../../common/SortableListRow";
+import { useThemeStore } from "../../../../store/theme-store";
+import { SortableListRow } from "../../../common/SortableListRow";
 
 interface MarqueeItemRowProps {
   id: string;
@@ -11,17 +10,15 @@ interface MarqueeItemRowProps {
   text: string;
   index: number;
   componentId: string;
-  activePage: ThemePages;
   onRemove: () => void;
 }
 
-const MarqueeItemRow = ({
+const NavbarMarqueeItemRow = ({
   id,
   itemId,
   text,
   index,
   componentId,
-  activePage,
   onRemove,
 }: MarqueeItemRowProps) => {
   const { isSelected, selectMarqueeItem, clearSelection } = useThemeStore(
@@ -38,7 +35,7 @@ const MarqueeItemRow = ({
   const displayText = text || `Öğe ${index + 1}`;
 
   const handleClick = () => {
-    selectMarqueeItem(componentId, itemId, activePage);
+    selectMarqueeItem(componentId, itemId);
   };
 
   const handleDelete = () => {
@@ -60,4 +57,4 @@ const MarqueeItemRow = ({
   );
 };
 
-export default MarqueeItemRow;
+export default NavbarMarqueeItemRow;

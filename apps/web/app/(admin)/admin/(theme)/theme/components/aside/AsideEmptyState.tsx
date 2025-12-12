@@ -10,7 +10,7 @@ interface EmptyStateProps {
   clearAction?: () => void;
 }
 
-export const EmptyState = ({
+export const AsideEmptyState = ({
   icon: Icon,
   title,
   description,

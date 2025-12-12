@@ -23,9 +23,9 @@ import {
   ThemeInputType,
 } from "@repo/types";
 import { useMemo } from "react";
-import LeftSideProductForm from "./left-side-components/LeftSideProductForm";
-import LeftSideSliderList from "./left-side-components/LeftSideSliderList";
-import LeftSideMarqueeList from "./left-side-components/marquee/LeftSideMarqueeList";
+import NavbarProductCarouselList from "./navbar-components/product-carousel/NavbarProductCarouselList";
+import NavbarSliderList from "./navbar-components/slider/NavbarSliderList";
+import NavbarMarqueeList from "./navbar-components/marquee/NavbarMarqueeList";
 import SortableNavbarComponent from "./SortableNavbarComponent";
 
 const getTitle = (type: ThemeComponents, index: number) => {
@@ -120,12 +120,11 @@ const NavbarComponentTable = ({
                 key={field.rhf_id}
                 rhfId={field.rhf_id}
                 componentId={field.componentId}
-                componentIndex={actualIndex}
                 title={getTitle(field.type, sortedIndex)}
                 onDelete={() => handleDelete(field.rhf_id)}
               >
                 {field.type === "SLIDER" && (
-                  <LeftSideSliderList
+                  <NavbarSliderList
                     key={field.rhf_id}
                     componentIndex={actualIndex}
                     control={control}
@@ -138,7 +137,7 @@ const NavbarComponentTable = ({
                   />
                 )}
                 {field.type === "MARQUEE" && (
-                  <LeftSideMarqueeList
+                  <NavbarMarqueeList
                     key={field.rhf_id}
                     control={control}
                     actualPageIndex={activePageIndex}
@@ -151,7 +150,7 @@ const NavbarComponentTable = ({
                   />
                 )}
                 {field.type === "PRODUCT_CAROUSEL" && (
-                  <LeftSideProductForm
+                  <NavbarProductCarouselList
                     key={field.rhf_id}
                     control={control}
                     actualPageIndex={activePageIndex}

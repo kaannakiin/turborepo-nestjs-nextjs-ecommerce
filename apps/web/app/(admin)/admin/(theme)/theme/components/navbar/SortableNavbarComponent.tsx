@@ -17,7 +17,7 @@ import {
   IconTrash,
 } from "@tabler/icons-react";
 import { ReactNode, useEffect } from "react";
-import { useThemeStore } from "../store/theme-store";
+import { useThemeStore } from "../../store/theme-store";
 
 interface SortableNavbarComponentProps {
   componentId: string;
@@ -26,7 +26,6 @@ interface SortableNavbarComponentProps {
   children: ReactNode;
   onDelete?: () => void;
   defaultOpened?: boolean;
-  componentIndex: number;
 }
 
 const SortableNavbarComponent = ({
@@ -36,11 +35,10 @@ const SortableNavbarComponent = ({
   title,
   onDelete,
   defaultOpened,
-  componentIndex,
 }: SortableNavbarComponentProps) => {
   const [opened, { toggle, close }] = useDisclosure(defaultOpened);
   const { hovered, ref: hoverRef } = useHover();
-  const { selection, selectComponent } = useThemeStore();
+  const { selection, selectComponent, activePage } = useThemeStore();
 
   const {
     attributes,
@@ -66,9 +64,7 @@ const SortableNavbarComponent = ({
   };
 
   const isComponentSelected =
-    selection?.type === "COMPONENT" &&
-    selection.componentId === componentId &&
-    selection.componentIndex === componentIndex;
+    selection?.type === "COMPONENT" && selection.componentId === componentId;
 
   return (
     <Box
@@ -92,7 +88,7 @@ const SortableNavbarComponent = ({
         className="cursor-pointer hover:bg-gray-50 transition-colors duration-200"
         onClick={(event) => {
           event.preventDefault();
-          selectComponent(componentId, componentIndex);
+          selectComponent(componentId, activePage);
           toggle();
         }}
       >

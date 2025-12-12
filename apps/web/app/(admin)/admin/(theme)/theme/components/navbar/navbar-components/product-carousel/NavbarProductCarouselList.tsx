@@ -27,8 +27,8 @@ import {
 } from "@repo/types";
 import { IconPlus } from "@tabler/icons-react";
 import { useMemo } from "react";
-import { useThemeStore } from "../../store/theme-store";
-import { SortableListRow } from "../common/SortableListRow";
+import { useThemeStore } from "../../../../store/theme-store";
+import { SortableListRow } from "../../../common/SortableListRow";
 import { TruncatedText } from "@/components/TruncatedText";
 
 interface LeftSideProductFormProps {
@@ -38,7 +38,7 @@ interface LeftSideProductFormProps {
   field: ProductCarouselComponentInputType;
 }
 
-const LeftSideProductForm = ({
+const NavbarProductCarouselList = ({
   actualPageIndex,
   componentIndex,
   field,
@@ -137,9 +137,7 @@ const LeftSideProductForm = ({
 
               const isSelected =
                 selection?.type === "PRODUCT_CAROUSEL_ITEM" &&
-                selection.itemId === itemData.itemId &&
-                selection.componentIndex === componentIndex;
-
+                selection.itemId === itemData.itemId;
               return (
                 <SortableListRow
                   key={item.id}
@@ -148,8 +146,7 @@ const LeftSideProductForm = ({
                   onClick={() => {
                     selectProductCarouselItem(
                       field.componentId,
-                      itemData.itemId,
-                      componentIndex
+                      itemData.itemId
                     );
                   }}
                   onDelete={() => {
@@ -204,4 +201,4 @@ const LeftSideProductForm = ({
   );
 };
 
-export default LeftSideProductForm;
+export default NavbarProductCarouselList;

@@ -1,3 +1,4 @@
+import { Media } from "@/context/theme-context/ThemeContext";
 import { MantineColor, MantineColorsTuple } from "@mantine/core";
 import {
   CampaignOfferTargetPage,
@@ -934,4 +935,14 @@ export function getThemePageLabel(page: ThemePages): string {
 
 export function getThemePageValue(page: ThemePages): ThemePages {
   return ThemePageConfigs[page]?.value || "HOMEPAGE";
+}
+
+const MediaConfigs: Record<Media, { breakpoint: number }> = {
+  desktop: { breakpoint: 1024 },
+  tablet: { breakpoint: 768 },
+  mobile: { breakpoint: 0 },
+};
+
+export function getMediaBreakpoint(media: Media): number {
+  return MediaConfigs[media]?.breakpoint || 0;
 }

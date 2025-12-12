@@ -10,7 +10,7 @@ interface MarqueeFormProps {
   componentIndex: number;
 }
 
-const MarqueeForm = ({
+const AsideMarqueeForm = ({
   control,
   pageIndex,
   componentIndex,
@@ -119,4 +119,4 @@ const MarqueeForm = ({
   );
 };
 
-export default MarqueeForm;
+export default AsideMarqueeForm;

@@ -23,7 +23,7 @@ export const useActiveComponentData = (control: Control<ThemeInputType>) => {
   if (pageIndex === -1) {
     return {
       isValid: false,
-      selection: null,
+      selection,
       component: null,
       pageIndex: -1,
       componentIndex: -1,
@@ -32,29 +32,32 @@ export const useActiveComponentData = (control: Control<ThemeInputType>) => {
 
   let componentIndex = -1;
 
-  if (
-    selection.type === "COMPONENT" ||
-    selection.type === "SLIDE" ||
-    selection.type === "MARQUEE_ITEM" ||
-    selection.type === "PRODUCT_CAROUSEL_ITEM"
-  ) {
-    if (typeof selection.componentIndex === "number") {
-      componentIndex = selection.componentIndex;
-    } else {
-      componentIndex = allPages[pageIndex].components.findIndex(
-        (c) => c.componentId === selection.componentId
-      );
-    }
+  if ("componentId" in selection) {
+    componentIndex = allPages[pageIndex].components.findIndex(
+      (c) => c.componentId === selection.componentId
+    );
   }
 
   const component = allPages[pageIndex].components[componentIndex];
 
-  if (componentIndex === -1 || !component) {
+  const isComponentSelection = "componentId" in selection;
+
+  if (isComponentSelection && (componentIndex === -1 || !component)) {
     return {
       isValid: false,
       selection,
       component: null,
       pageIndex: -1,
+      componentIndex: -1,
+    };
+  }
+
+  if (!isComponentSelection) {
+    return {
+      isValid: true,
+      selection,
+      component: null,
+      pageIndex,
       componentIndex: -1,
     };
   }

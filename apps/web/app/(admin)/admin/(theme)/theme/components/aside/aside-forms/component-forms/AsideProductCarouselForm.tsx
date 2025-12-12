@@ -18,7 +18,7 @@ interface ProductCarouselFormProps {
   componentIndex: number;
 }
 
-const ProductCarouselConfigForm = ({
+const AsideProductCarouselForm = ({
   control,
   pageIndex,
   componentIndex,
@@ -209,4 +209,4 @@ const ProductCarouselConfigForm = ({
   );
 };
 
-export default ProductCarouselConfigForm;
+export default AsideProductCarouselForm;

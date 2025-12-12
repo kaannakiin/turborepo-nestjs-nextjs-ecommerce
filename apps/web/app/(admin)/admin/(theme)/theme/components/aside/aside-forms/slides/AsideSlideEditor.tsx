@@ -2,10 +2,10 @@
 import { Control, UseFormSetValue } from "@repo/shared";
 import { SliderComponentInputType, ThemeInputType } from "@repo/types";
 import { IconInfoCircle } from "@tabler/icons-react";
-import { EditorSelection, useThemeStore } from "../../store/theme-store";
-import { AsideFormLayout } from "../layout/AsideFormLayout";
-import { EmptyState } from "../layout/EmptyState";
-import SlideForm from "../right-side-forms/sliders/SlideForm";
+import { EditorSelection, useThemeStore } from "../../../../store/theme-store";
+import { AsideFormLayout } from "../../../aside/AsideFormLayout";
+import { AsideEmptyState } from "../../../aside/AsideEmptyState";
+import AsideSlideForm from "./AsideSlideForm";
 
 interface SlideEditorProps {
   component: SliderComponentInputType;
@@ -16,7 +16,7 @@ interface SlideEditorProps {
   componentIndex: number;
 }
 
-export const SlideEditor = ({
+export const AsideSlideEditor = ({
   component,
   pageIndex,
   selection,
@@ -28,7 +28,7 @@ export const SlideEditor = ({
 
   if (component.type !== "SLIDER") {
     return (
-      <EmptyState
+      <AsideEmptyState
         clearAction={clearSelection}
         icon={IconInfoCircle}
         title="Geçersiz Seçim"
@@ -44,7 +44,7 @@ export const SlideEditor = ({
 
   if (slideIndex === -1) {
     return (
-      <EmptyState
+      <AsideEmptyState
         clearAction={clearSelection}
         icon={IconInfoCircle}
         title="Slayt Bulunamadı"
@@ -62,7 +62,7 @@ export const SlideEditor = ({
       subtitle={`Sıra: ${slide.order + 1}`}
       onClose={clearSelection}
     >
-      <SlideForm
+      <AsideSlideForm
         key={slideIndex}
         componentIndex={componentIndex}
         pageIndex={pageIndex}

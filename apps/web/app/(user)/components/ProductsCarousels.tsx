@@ -33,9 +33,6 @@ const ProductsCarousels = ({
 
       return res.data;
     },
-    refetchOnWindowFocus: false,
-    gcTime: 5 * 60 * 1000, // 5 minutes
-    staleTime: 60 * 1000, // 1 minute
   });
 
   return (

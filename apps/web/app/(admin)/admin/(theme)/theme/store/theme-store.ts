@@ -9,20 +9,17 @@ export type EditorSelection =
   | { type: "COMPONENT"; componentId: string; activePage: ThemePages }
   | {
       type: "SLIDE";
-      activePage: ThemePages;
       componentId: string;
       sliderId: string;
       slideId: string;
     }
   | {
       type: "MARQUEE_ITEM";
-      activePage: ThemePages;
       componentId: string;
       itemId: string;
     }
   | {
       type: "PRODUCT_CAROUSEL_ITEM";
-      activePage: ThemePages;
       componentId: string;
       itemId: string;
     }
@@ -37,22 +34,9 @@ interface EditorState {
   setSidebarView: (view: SidebarView) => void;
   selection: EditorSelection;
   selectComponent: (componentId: string, activePage: ThemePages) => void;
-  selectSlide: (
-    componentId: string,
-    sliderId: string,
-    slideId: string,
-    activePage: ThemePages
-  ) => void;
-  selectMarqueeItem: (
-    componentId: string,
-    itemId: string,
-    activePage: ThemePages
-  ) => void;
-  selectProductCarouselItem: (
-    componentId: string,
-    itemId: string,
-    activePage: ThemePages
-  ) => void;
+  selectSlide: (componentId: string, sliderId: string, slideId: string) => void;
+  selectMarqueeItem: (componentId: string, itemId: string) => void;
+  selectProductCarouselItem: (componentId: string, itemId: string) => void;
   selectHeader: () => void;
   selectFooter: () => void;
   selectPageSettings: () => void;
@@ -71,34 +55,31 @@ export const useThemeStore = create<EditorState>()(
     selectComponent: (componentId, activePage) =>
       set({ selection: { type: "COMPONENT", componentId, activePage } }),
 
-    selectSlide: (componentId, sliderId, slideId, activePage) =>
+    selectSlide: (componentId, sliderId, slideId) =>
       set({
         selection: {
           type: "SLIDE",
           componentId,
           sliderId,
           slideId,
-          activePage,
         },
       }),
 
-    selectMarqueeItem: (componentId, itemId, activePage) =>
+    selectMarqueeItem: (componentId, itemId) =>
       set({
         selection: {
           type: "MARQUEE_ITEM",
           componentId,
           itemId,
-          activePage,
         },
       }),
 
-    selectProductCarouselItem: (componentId, itemId, activePage) =>
+    selectProductCarouselItem: (componentId, itemId) =>
       set({
         selection: {
           type: "PRODUCT_CAROUSEL_ITEM",
           componentId,
           itemId,
-          activePage,
         },
       }),
 

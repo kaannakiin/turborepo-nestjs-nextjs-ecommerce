@@ -2,11 +2,11 @@
 import { Text } from "@mantine/core";
 import { Control } from "@repo/shared";
 import { ThemeComponents, ThemeInputType } from "@repo/types";
-import { useThemeStore } from "../../store/theme-store";
-import { AsideFormLayout } from "../layout/AsideFormLayout";
-import MarqueeForm from "../right-side-forms/marquee/MarqueeForm";
-import ProductCarouselForm from "../right-side-forms/product-carousel/ProductCarouselForm";
-import SliderForm from "../right-side-forms/sliders/SliderForm";
+import AsideMarqueeForm from "./AsideMarqueeForm";
+import ProductCarouselForm from "./AsideProductCarouselForm";
+import AsideSliderForm from "./AsideSliderForm";
+import { AsideFormLayout } from "../../AsideFormLayout";
+import { useThemeStore } from "../../../../store/theme-store";
 
 const titleMap: Record<ThemeComponents, string> = {
   SLIDER: "Slider Ayarları",
@@ -21,7 +21,7 @@ interface ComponentEditorProps {
   control: Control<ThemeInputType>;
 }
 
-export const ComponentEditor = ({
+export const AsideComponentEditor = ({
   component,
   pageIndex,
   componentIndex,
@@ -31,7 +31,7 @@ export const ComponentEditor = ({
     switch (component.type) {
       case "SLIDER":
         return (
-          <SliderForm
+          <AsideSliderForm
             control={control}
             pageIndex={pageIndex}
             componentIndex={componentIndex}
@@ -40,7 +40,7 @@ export const ComponentEditor = ({
 
       case "MARQUEE":
         return (
-          <MarqueeForm
+          <AsideMarqueeForm
             control={control}
             pageIndex={pageIndex}
             componentIndex={componentIndex}

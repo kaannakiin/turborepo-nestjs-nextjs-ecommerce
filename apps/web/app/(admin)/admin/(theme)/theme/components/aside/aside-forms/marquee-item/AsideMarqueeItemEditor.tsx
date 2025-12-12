@@ -1,11 +1,12 @@
 "use client";
 import { MarqueeComponentInputType, ThemeInputType } from "@repo/types";
 import { IconInfoCircle } from "@tabler/icons-react";
-import { EditorSelection, useThemeStore } from "../../store/theme-store";
-import { AsideFormLayout } from "../layout/AsideFormLayout";
-import { EmptyState } from "../layout/EmptyState";
-import MarqueeItemForm from "../right-side-forms/marquee/MarqueeItemForm";
+
+import AsideMarqueeItemForm from "./AsideMarqueeItemForm";
 import { Control } from "@repo/shared";
+import { EditorSelection, useThemeStore } from "../../../../store/theme-store";
+import { AsideEmptyState } from "../../AsideEmptyState";
+import { AsideFormLayout } from "../../AsideFormLayout";
 
 interface MarqueeItemEditorProps {
   component: MarqueeComponentInputType;
@@ -15,7 +16,7 @@ interface MarqueeItemEditorProps {
   pageIndex: number;
 }
 
-export const MarqueeItemEditor = ({
+export const AsideMarqueeItemEditor = ({
   component,
   selection,
   control,
@@ -26,7 +27,7 @@ export const MarqueeItemEditor = ({
 
   if (component.type !== "MARQUEE") {
     return (
-      <EmptyState
+      <AsideEmptyState
         clearAction={clearSelection}
         icon={IconInfoCircle}
         title="Geçersiz Seçim"
@@ -42,7 +43,7 @@ export const MarqueeItemEditor = ({
 
   if (itemIndex === -1) {
     return (
-      <EmptyState
+      <AsideEmptyState
         clearAction={clearSelection}
         icon={IconInfoCircle}
         title="Öğe Bulunamadı"
@@ -58,7 +59,7 @@ export const MarqueeItemEditor = ({
       subtitle={`${itemIndex + 1}. öğe`}
       onClose={clearSelection}
     >
-      <MarqueeItemForm
+      <AsideMarqueeItemForm
         key={itemIndex}
         index={itemIndex}
         control={control}

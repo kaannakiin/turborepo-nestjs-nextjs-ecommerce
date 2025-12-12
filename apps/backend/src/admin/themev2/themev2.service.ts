@@ -192,11 +192,6 @@ export class Themev2Service {
           include: variantQueryIncludeV2,
         }),
       ]);
-      console.log(
-        'Fetched products and variants for carousel.',
-        products.length,
-        variants.length,
-      );
 
       return {
         success: true,

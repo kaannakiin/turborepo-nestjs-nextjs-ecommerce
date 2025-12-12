@@ -7,13 +7,13 @@ import {
   ThemeInputType,
 } from "@repo/types";
 import { IconClick, IconInfoCircle } from "@tabler/icons-react";
-import { useThemeStore } from "../store/theme-store";
-import { useActiveComponentData } from "./hooks/useActiveComponentData";
-import { EmptyState } from "./layout/EmptyState";
-import { ComponentEditor } from "./renderers/ComponentEditor";
-import { MarqueeItemEditor } from "./renderers/MarqueeItemEditor";
-import ProductCarouselEditor from "./renderers/ProductCarouselEditor";
-import { SlideEditor } from "./renderers/SlideEditor";
+import { useThemeStore } from "../../store/theme-store";
+import { useActiveComponentData } from "../hooks/useActiveComponentData";
+import { AsideEmptyState } from "./AsideEmptyState";
+import { AsideComponentEditor } from "./aside-forms/component-forms/AsideComponentEditor";
+import { AsideSlideEditor } from "./aside-forms/slides/AsideSlideEditor";
+import { AsideMarqueeItemEditor } from "./aside-forms/marquee-item/AsideMarqueeItemEditor";
+import AsideProductCarouselEditor from "./aside-forms/product-carousel-item/AsideProductCarouselEditor";
 
 interface AsideFormsTableProps {
   forms: UseFormReturn<ThemeInputType>;
@@ -29,7 +29,7 @@ const AsideFormsTable = ({
 
   if (!selection) {
     return (
-      <EmptyState
+      <AsideEmptyState
         clearAction={clearSelection}
         icon={IconClick}
         title="Bir öğe seçin"
@@ -47,7 +47,7 @@ const AsideFormsTable = ({
 
   if (isComponentDependent && (!isValid || !component)) {
     return (
-      <EmptyState
+      <AsideEmptyState
         clearAction={clearSelection}
         icon={IconInfoCircle}
         title="Öğe Bulunamadı"
@@ -62,7 +62,7 @@ const AsideFormsTable = ({
       case "COMPONENT":
         if (!component) return null;
         return (
-          <ComponentEditor
+          <AsideComponentEditor
             control={control}
             component={component}
             pageIndex={pageIndex}
@@ -72,7 +72,7 @@ const AsideFormsTable = ({
 
       case "SLIDE":
         return (
-          <SlideEditor
+          <AsideSlideEditor
             control={control}
             setValue={setValue}
             pageIndex={pageIndex}
@@ -84,7 +84,7 @@ const AsideFormsTable = ({
 
       case "MARQUEE_ITEM":
         return (
-          <MarqueeItemEditor
+          <AsideMarqueeItemEditor
             control={control}
             pageIndex={pageIndex}
             component={component as MarqueeComponentInputType}
@@ -95,7 +95,7 @@ const AsideFormsTable = ({
 
       case "PRODUCT_CAROUSEL_ITEM":
         return (
-          <ProductCarouselEditor
+          <AsideProductCarouselEditor
             control={control}
             pageIndex={pageIndex}
             componentIndex={componentIndex}
@@ -115,7 +115,7 @@ const AsideFormsTable = ({
 
       default:
         return (
-          <EmptyState
+          <AsideEmptyState
             clearAction={clearSelection}
             icon={IconInfoCircle}
             title="Editör Bulunamadı"

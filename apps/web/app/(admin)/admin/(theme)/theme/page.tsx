@@ -17,7 +17,7 @@ import {
   IconMarquee2,
 } from "@tabler/icons-react";
 import { ReactNode } from "react";
-import AsideFormsTable from "./components/AsideFormsTable";
+import AsideFormsTable from "./components/aside/AsideFormsTable";
 import ThemeEditorHeader from "./components/theme-editor/ThemeEditorHeader";
 import ThemeSidebar from "./components/theme-editor/ThemeSidebar";
 import ThemeSorter from "./ThemeSorter";
