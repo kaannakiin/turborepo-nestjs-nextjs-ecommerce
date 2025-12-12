@@ -14,7 +14,7 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { $Enums, CartStatus } from "@repo/database/client";
+import { CartStatus } from "@repo/database/client";
 import {
   DateFormatter,
   getCartStatusByValue,
@@ -106,7 +106,7 @@ const AdminCartsPage = () => {
 
                 params.set(
                   "status",
-                  getCartStatusSortValue(e as $Enums.CartStatus).toString()
+                  getCartStatusSortValue(e as CartStatus).toString()
                 );
 
                 replace(`?${params.toString()}`);
@@ -150,7 +150,7 @@ const AdminCartsPage = () => {
 
                 params.set(
                   "status",
-                  getCartStatusSortValue(e as $Enums.CartStatus).toString()
+                  getCartStatusSortValue(e as CartStatus).toString()
                 );
 
                 replace(`?${params.toString()}`);
@@ -196,7 +196,7 @@ const AdminCartsPage = () => {
 
               params.set(
                 "status",
-                getCartStatusSortValue(e as $Enums.CartStatus).toString()
+                getCartStatusSortValue(e as CartStatus).toString()
               );
 
               replace(`?${params.toString()}`);

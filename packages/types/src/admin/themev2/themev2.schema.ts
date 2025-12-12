@@ -8,6 +8,7 @@ import {
   MantineFontWeight,
   MantineSize,
   ThemeComponents,
+  ThemePages,
 } from "../../shared/shared-enum";
 
 export const SlideSchema = z
@@ -175,6 +176,7 @@ export const MarqueeComponentSchema = z.object({
             })
             .nullish(),
         })
+
         .check(({ value: item, issues }) => {
           const hasText = item.text != null && item.text.trim() !== "";
           const hasNewImage = item.image != null;
@@ -268,7 +270,7 @@ export const ProductCarouselComponentSchema = z.object({
   componentId: z.cuid2({
     error: "Geçerli bir component ID'si giriniz.",
   }),
-  type: z.literal("PRODUCT_CAROUSEL"),
+  type: z.literal<ThemeComponents>("PRODUCT_CAROUSEL"),
   order: z.number({ error: "Sıralama zorunludur." }).int().min(0),
   title: z.string({ error: "Başlık zorunludur." }).max(100).optional(),
   description: z.string({ error: "Açıklama zorunludur." }).max(300).optional(),
@@ -287,7 +289,9 @@ export const ThemeComponentSchema = z.discriminatedUnion("type", [
   ProductCarouselComponentSchema,
 ]);
 
-export const ThemeSchema = z.object({
+export const PageSchema = z.object({
+  pageId: z.cuid2(),
+  pageType: z.enum(ThemePages, { error: "Geçerli bir sayfa türü seçiniz." }),
   components: z.array(ThemeComponentSchema).refine(
     (components) => {
       const orders = components.map((component) => component.order);
@@ -298,6 +302,30 @@ export const ThemeSchema = z.object({
       error: "Component sıralamaları benzersiz olmalıdır.",
     }
   ),
+});
+
+export const ThemeSchema = z.object({
+  id: z.cuid2({ error: "Geçerli bir theme ID'si giriniz." }),
+  name: z.string({ error: "Tema adı zorunludur." }).min(1),
+  isActive: z.boolean(),
+  pages: z
+    .array(PageSchema)
+    .min(1, "Temada en az bir sayfa bulunmalıdır.")
+    .refine(
+      (pages) => {
+        const types = pages.map((p) => p.pageType);
+        const uniqueTypes = new Set(types);
+        return types.length === uniqueTypes.size;
+      },
+      {
+        message:
+          "Bir temada her sayfa türünden (Örn: Homepage) sadece bir tane bulunabilir.",
+      }
+    ),
+});
+
+export const ThemeCollectionSchema = z.array(ThemeSchema, {
+  error: "Tema koleksiyonu zorunludur.",
 });
 
 //Slider Schemalar
@@ -329,5 +357,11 @@ export type ProductCarouselComponentOutputType = z.infer<
 export type ThemeComponentInputType = z.input<typeof ThemeComponentSchema>;
 export type ThemeComponentOutputType = z.infer<typeof ThemeComponentSchema>;
 
+export type PageInputType = z.input<typeof PageSchema>;
+export type PageOutputType = z.infer<typeof PageSchema>;
+
 export type ThemeInputType = z.input<typeof ThemeSchema>;
 export type ThemeOutputType = z.infer<typeof ThemeSchema>;
+
+export type ThemeCollectionInputType = z.input<typeof ThemeCollectionSchema>;
+export type ThemeCollectionOutputType = z.infer<typeof ThemeCollectionSchema>;

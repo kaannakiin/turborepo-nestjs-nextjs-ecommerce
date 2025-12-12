@@ -11,7 +11,7 @@ import {
   Text,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { $Enums, FilterOperator } from "@repo/database/client";
+import { FilterOperator, DiscountConditionType } from "@repo/database/client";
 import { Control, Controller, useFieldArray, useQuery } from "@repo/shared";
 import { DiscountItem, MainDiscount } from "@repo/types";
 import { IconEdit, IconTrash } from "@tabler/icons-react";
@@ -19,7 +19,7 @@ import { useMemo, useState } from "react";
 import DiscountModal from "./DiscountModal";
 
 const getSelectDataLabel = (
-  value: $Enums.DiscountConditionType,
+  value: DiscountConditionType,
   type: "select" | "button"
 ) => {
   if (type === "button") {
@@ -43,7 +43,7 @@ const getSelectDataLabel = (
 };
 
 const fetchDiscountData = async (
-  type: $Enums.DiscountConditionType
+  type: DiscountConditionType
 ): Promise<DiscountItem[]> => {
   const endpoints: Record<"CATEGORY" | "BRAND" | "PRODUCT", string> = {
     CATEGORY: "/admin/products/categories/get-all-category-and-its-subs",
@@ -64,17 +64,18 @@ interface DiscountConditionFormProps {
 
 const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
   const [selectData, setSelectData] =
-    useState<$Enums.DiscountConditionType>("PRODUCT");
+    useState<DiscountConditionType>("PRODUCT");
   const [opened, { open, close }] = useDisclosure(false);
-  const [activeType, setActiveType] =
-    useState<$Enums.DiscountConditionType | null>(null);
+  const [activeType, setActiveType] = useState<DiscountConditionType | null>(
+    null
+  );
 
   const { fields, append, update, remove } = useFieldArray({
     control,
     name: "conditions.conditions",
   });
 
-  const useDiscountData = (type: $Enums.DiscountConditionType) => {
+  const useDiscountData = (type: DiscountConditionType) => {
     return useQuery({
       queryKey: ["discount-data", type],
       queryFn: () => fetchDiscountData(type),
@@ -100,7 +101,7 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
   }, [productData]);
 
   const getDataForType = (
-    type: $Enums.DiscountConditionType | null
+    type: DiscountConditionType | null
   ): DiscountItem[] | undefined => {
     if (!type) return undefined;
     switch (type) {
@@ -115,9 +116,7 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
     }
   };
 
-  const getIsLoadingForType = (
-    type: $Enums.DiscountConditionType | null
-  ): boolean => {
+  const getIsLoadingForType = (type: DiscountConditionType | null): boolean => {
     if (!type) return false;
     switch (type) {
       case "PRODUCT":
@@ -207,9 +206,7 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
     return Array.from(optimized);
   };
 
-  const findConditionIndexByType = (
-    type: $Enums.DiscountConditionType
-  ): number => {
+  const findConditionIndexByType = (type: DiscountConditionType): number => {
     return fields.findIndex((field) => field.type === type);
   };
 
@@ -278,7 +275,7 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
 
   const renderBreadcrumbs = (
     field: (typeof fields)[number],
-    type: $Enums.DiscountConditionType
+    type: DiscountConditionType
   ) => {
     const dataForType = getDataForType(type);
 
@@ -360,24 +357,23 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
 
   const existingTypes = fields.map((f) => f.type);
   const availableSelectData: Array<{
-    value: $Enums.DiscountConditionType;
+    value: DiscountConditionType;
     label: string;
   }> = [
     {
-      value: "PRODUCT" as $Enums.DiscountConditionType,
+      value: "PRODUCT" as DiscountConditionType,
       label: getSelectDataLabel("PRODUCT", "select"),
     },
     {
-      value: "CATEGORY" as $Enums.DiscountConditionType,
+      value: "CATEGORY" as DiscountConditionType,
       label: getSelectDataLabel("CATEGORY", "select"),
     },
     {
-      value: "BRAND" as $Enums.DiscountConditionType,
+      value: "BRAND" as DiscountConditionType,
       label: getSelectDataLabel("BRAND", "select"),
     },
   ].filter(
-    (item) =>
-      !existingTypes.includes(item.value as $Enums.DiscountConditionType)
+    (item) => !existingTypes.includes(item.value as DiscountConditionType)
   );
 
   return (
@@ -391,7 +387,7 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
                 data={availableSelectData}
                 value={selectData}
                 onChange={(value) =>
-                  setSelectData(value as $Enums.DiscountConditionType)
+                  setSelectData(value as DiscountConditionType)
                 }
                 placeholder="Koşul türü seçin"
                 style={{ flex: 1 }}
@@ -443,9 +439,7 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
                       <ActionIcon
                         variant="subtle"
                         onClick={() => {
-                          setActiveType(
-                            field.type as $Enums.DiscountConditionType
-                          );
+                          setActiveType(field.type as DiscountConditionType);
                           open();
                         }}
                       >

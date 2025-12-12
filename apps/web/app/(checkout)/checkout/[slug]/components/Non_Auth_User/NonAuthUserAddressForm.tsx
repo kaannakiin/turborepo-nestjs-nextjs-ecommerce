@@ -439,10 +439,8 @@ const NonAuthUserAddressForm = ({
                     <Select
                       {...field}
                       onChange={(selectedCityId: string | null) => {
-                        // 1. ÖNCE react-hook-form'un kendi onChange'ini çağır
                         field.onChange(selectedCityId);
 
-                        // 2. SONRA kendi ek mantığını çalıştır
                         setValue("districtId", null);
                         setValue("stateId", null);
                       }}

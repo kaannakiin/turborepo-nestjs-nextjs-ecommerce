@@ -3,7 +3,7 @@
 import ProductsCarousels from "@/(user)/components/ProductsCarousels";
 import { Stack } from "@mantine/core";
 import { GetProductPageReturnType } from "@repo/types";
-import { $Enums } from "@repo/database/client";
+import { AssetType } from "@repo/database/client";
 import ProductAssetViewer from "./ProductAssetViewer";
 import BasicProductRightSection from "./BasicProductRightSection";
 
@@ -12,7 +12,7 @@ interface BasicProductClientProps {
 }
 const BasicProductClient = ({ productData }: BasicProductClientProps) => {
   const { assets, ...otherDetails } = productData;
-  const productMedia: Array<{ url: string; type: $Enums.AssetType }> = assets
+  const productMedia: Array<{ url: string; type: AssetType }> = assets
     .sort((a, b) => a.order - b.order)
     .filter((asset) => asset.asset.url && asset.asset.type)
     .map((asset) => ({

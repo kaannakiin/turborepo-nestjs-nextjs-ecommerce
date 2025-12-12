@@ -37,7 +37,6 @@ interface GlobalTextEditorProps {
   renderLabel?: boolean;
 }
 
-// ... FormattingToolbarWithAI ve SuggestionMenuWithAI (değişiklik yok) ...
 function FormattingToolbarWithAI() {
   return (
     <FormattingToolbarController

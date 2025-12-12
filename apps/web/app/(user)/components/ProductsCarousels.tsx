@@ -1,6 +1,5 @@
 "use client";
 
-import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { Carousel } from "@mantine/carousel";
 import { Stack, Title } from "@mantine/core";
@@ -8,6 +7,7 @@ import { useQuery } from "@repo/shared";
 import { ProductPageDataType } from "@repo/types";
 import ProductCard from "./ProductCard";
 import styles from "./ProductCarousel.module.css";
+import { useTheme } from "@/context/theme-context/ThemeContext";
 
 interface ProductsCarouselsProps {
   title: string;
@@ -33,9 +33,6 @@ const ProductsCarousels = ({
 
       return res.data;
     },
-    refetchOnWindowFocus: false,
-    gcTime: 5 * 60 * 1000, // 5 minutes
-    staleTime: 60 * 1000, // 1 minute
   });
 
   return (

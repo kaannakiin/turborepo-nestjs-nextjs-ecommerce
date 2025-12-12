@@ -7,13 +7,13 @@ import { useRouter } from "next/navigation";
 import { buildVariantOrProductUrl } from "../../../lib/helpers";
 import CustomImage from "../../components/CustomImage";
 import ProductPriceFormatter from "./ProductPriceFormatter";
-import { $Enums } from "@repo/database/client";
+import { Locale, Currency, AssetType } from "@repo/database/client";
 import { Route } from "next";
 
 const ProductCard = ({ product }: { product: ProductPageDataType }) => {
   const { hovered, ref } = useHover();
-  const locale: $Enums.Locale = "TR";
-  const currency: $Enums.Currency = "TRY";
+  const locale: Locale = "TR";
+  const currency: Currency = "TRY";
   const { push } = useRouter();
   const productTranslation =
     product.translations.find((tr) => tr.locale === locale) ||
@@ -32,7 +32,7 @@ const ProductCard = ({ product }: { product: ProductPageDataType }) => {
   const getImages = () => {
     let assetList: {
       url: string;
-      type: $Enums.AssetType;
+      type: AssetType;
     }[] = [];
 
     if (product.isVariant && product.variantCombinations?.length > 0) {

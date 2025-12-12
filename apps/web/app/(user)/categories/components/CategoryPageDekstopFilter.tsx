@@ -4,14 +4,14 @@ import {
   getSortProductPageLabel,
   ProductPageSortOption,
 } from "@repo/shared";
-import { $Enums } from "@repo/database/client";
+import { Locale } from "@repo/database/client";
 import { CategoryPagePreparePageReturnData } from "@repo/types";
 import { IconSortDescending, IconX } from "@tabler/icons-react";
 import { ReadonlyURLSearchParams, useRouter } from "next/navigation";
 
 interface CategoryPageDekstopFilterProps {
   variantGroups: CategoryPagePreparePageReturnData["variantGroups"];
-  locale: $Enums.Locale;
+  locale: Locale;
   pageSearchParams: ReadonlyURLSearchParams;
 }
 

@@ -1,11 +1,7 @@
 "use client";
 
 import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
-import {
-  getConditionText,
-  getCurrencyLabel,
-  getCurrencySymbol,
-} from "@lib/helpers";
+import { getConditionText, getCurrencyLabel } from "@lib/helpers";
 import {
   Button,
   Card,
@@ -19,6 +15,7 @@ import {
   Text,
   TextInput,
 } from "@mantine/core";
+import { Currency } from "@repo/database/client";
 import {
   Controller,
   createId,
@@ -30,7 +27,6 @@ import { ShippingRuleSchema, ShippingRuleType } from "@repo/types";
 import { IconPackage } from "@tabler/icons-react";
 import { useEffect } from "react";
 import ProductPriceNumberInput from "../../../product-list/create-variant/components/ProductPriceNumberInput";
-import { $Enums, Currency } from "@repo/database/client";
 interface ShippingRuleDrawerProps {
   openedRuleModal: boolean;
   closeRuleModal: () => void;

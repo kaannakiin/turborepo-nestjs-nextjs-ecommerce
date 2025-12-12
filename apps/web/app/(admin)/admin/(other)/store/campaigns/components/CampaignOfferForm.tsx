@@ -17,11 +17,7 @@ import {
   UnstyledButton,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import {
-  $Enums,
-  AllowedDiscountedItemsBy,
-  DiscountType,
-} from "@repo/database/client";
+import { AllowedDiscountedItemsBy, DiscountType } from "@repo/database/client";
 import {
   Control,
   Controller,
@@ -31,9 +27,9 @@ import {
 } from "@repo/shared";
 import { CampaignZodType, ProductModalData } from "@repo/types";
 import { useState } from "react";
+import FormCard from "../../discounts/components/FormCard";
 import OverviewUppSellCard from "./OverviewUppSellCard";
 import SearchableProductModal from "./SearchableProductModal";
-import FormCard from "../../discounts/components/FormCard";
 
 interface CampaignOfferFormProps {
   control: Control<CampaignZodType>;

@@ -10,7 +10,7 @@ import {
   UnstyledButton,
 } from "@mantine/core";
 import { CategoryPagePreparePageReturnData } from "@repo/types";
-import { $Enums } from "@repo/database/client";
+import { Locale } from "@repo/database/client";
 import { IconX } from "@tabler/icons-react";
 import { ReadonlyURLSearchParams, useRouter } from "next/navigation";
 
@@ -54,7 +54,7 @@ const CategoryPageDesktopFiltersSection = ({
   variantGroups,
   searchParams,
 }: CategoryPageFiltersSectionProps) => {
-  const locale: $Enums.Locale = "TR";
+  const locale: Locale = "TR";
   const { replace } = useRouter();
 
   const allFilterKeys = [

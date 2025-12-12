@@ -61,7 +61,6 @@ import { CSS } from "@dnd-kit/utilities";
 import CreatableSelect from "./CreatableSelect";
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
-  $Enums,
   VariantGroupRenderType,
   VariantGroupType,
 } from "@repo/database/client";
@@ -81,7 +80,7 @@ interface SortableVariantItemProps {
   control: Control<VariantGroupZodType>;
   onEdit: () => void;
   onDelete: () => void;
-  type: $Enums.VariantGroupType;
+  type: VariantGroupType;
 }
 
 const SortableVariantItem = ({
@@ -511,7 +510,7 @@ const VariantGroupDrawer = ({
                       <Radio.Group
                         {...field}
                         onChange={(value) => {
-                          field.onChange(value as $Enums.VariantGroupType);
+                          field.onChange(value as VariantGroupType);
                         }}
                         error={fieldState.error?.message}
                         label="Seçim Stili"
@@ -589,7 +588,7 @@ const VariantGroupDrawer = ({
                     <Radio.Group
                       {...field}
                       onChange={(value) => {
-                        field.onChange(value as $Enums.VariantGroupRenderType);
+                        field.onChange(value as VariantGroupRenderType);
                       }}
                       error={fieldState.error?.message}
                       label="Gösterim Şekli"

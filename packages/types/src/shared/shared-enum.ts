@@ -95,6 +95,13 @@ export const ThemeComponents = {
 export type ThemeComponents =
   (typeof ThemeComponents)[keyof typeof ThemeComponents];
 
+export const ThemePages = {
+  HOMEPAGE: "HOMEPAGE",
+  PRODUCT: "PRODUCT",
+} as const;
+
+export type ThemePages = (typeof ThemePages)[keyof typeof ThemePages];
+
 export const AspectRatio = {
   AUTO: "auto",
   SQUARE: "1/1",

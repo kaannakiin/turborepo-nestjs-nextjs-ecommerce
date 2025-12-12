@@ -1,8 +1,8 @@
 "use client";
 
-import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import GlobalLoader from "@/components/GlobalLoader";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import { useTheme } from "@/context/theme-context/ThemeContext";
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
   Button,

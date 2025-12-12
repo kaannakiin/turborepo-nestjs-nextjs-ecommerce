@@ -28,7 +28,7 @@ import {
   FooterLinkType,
 } from "@repo/types";
 import { useState } from "react";
-import { $Enums } from "@repo/database/client";
+import { AssetType } from "@repo/database/client";
 type AddType = "brand" | "category" | "product" | "custom";
 
 interface FooterLinkFormProps {
@@ -87,7 +87,7 @@ const FooterLinkForm = ({
       const response = await fetchWrapper.get<
         Array<
           BrandIdAndName & {
-            image: { url: string; type: $Enums.AssetType } | null;
+            image: { url: string; type: AssetType } | null;
           }
         >
       >(`/admin/products/brands/get-all-brands-only-id-name-image`, {});
@@ -110,7 +110,7 @@ const FooterLinkForm = ({
       const res = await fetchWrapper.get<
         Array<
           CategoryIdAndName & {
-            image: { url: string; type: $Enums.AssetType } | null;
+            image: { url: string; type: AssetType } | null;
           }
         >
       >(`/admin/products/categories/get-all-categories-only-id-name-image`, {});
@@ -134,7 +134,7 @@ const FooterLinkForm = ({
         Array<{
           id: string;
           name: string;
-          image: { url: string; type: $Enums.AssetType } | null;
+          image: { url: string; type: AssetType } | null;
         }>
       >(`/admin/products/get-all-products-id-name-image`, {});
       if (!res.success) {

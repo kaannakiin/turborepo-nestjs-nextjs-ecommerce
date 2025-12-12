@@ -14,7 +14,7 @@ import {
   Table,
   Title,
 } from "@mantine/core";
-import { $Enums, DiscountType } from "@repo/database/client";
+import { DiscountType } from "@repo/database/client";
 import { DateFormatter, useQuery } from "@repo/shared";
 import { GetAllDiscountReturnType } from "@repo/types";
 import { IconEdit, IconTrash } from "@tabler/icons-react";
@@ -23,7 +23,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 const AdminDiscountsPage = () => {
   const searchParams = useSearchParams();
   const { push, replace } = useRouter();
-  const typeParam = searchParams.get("type") as $Enums.DiscountType | null;
+  const typeParam = searchParams.get("type") as DiscountType | null;
   const page = parseInt(searchParams.get("page") || "1", 10);
   const { data, isLoading } = useQuery({
     queryKey: [

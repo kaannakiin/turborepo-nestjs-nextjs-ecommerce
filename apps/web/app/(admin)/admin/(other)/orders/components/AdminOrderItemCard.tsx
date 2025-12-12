@@ -9,14 +9,14 @@ import {
   Text,
 } from "@mantine/core";
 import { OrderItemWithSnapshot } from "@repo/types";
-import { $Enums } from "@repo/database/client";
+import { Locale, Currency } from "@repo/database/client";
 import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 import CustomImage from "@/components/CustomImage";
 
 interface AdminOrderItemCardProps {
   item: OrderItemWithSnapshot;
-  locale?: $Enums.Locale;
-  currency?: $Enums.Currency;
+  locale?: Locale;
+  currency?: Currency;
 }
 
 const AdminOrderItemCard = ({

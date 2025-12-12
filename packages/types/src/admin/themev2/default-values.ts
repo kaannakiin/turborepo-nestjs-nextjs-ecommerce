@@ -2,13 +2,39 @@ import { createId } from "@repo/shared";
 import { ThemeComponents } from "../../shared/shared-enum";
 import {
   MarqueeComponentInputType,
+  PageInputType,
   ProductCarouselComponentInputType,
   SliderComponentInputType,
-  SliderInputType,
   ThemeInputType,
 } from "./themev2.schema";
 
-export const minimalValidSlide: Omit<SliderInputType, "order" | "sliderId"> = {
+const PLACEHOLDER_BASE = "https://placehold.co";
+
+const COLORS = {
+  primary: "6E44FF",
+  secondary: "FF6B6B",
+  tertiary: "4ECDC4",
+  dark: "111111",
+  light: "FFFFFF",
+  success: "2ecc71",
+  warning: "f1c40f",
+};
+
+const getPlaceholderUrl = (
+  width: number,
+  height: number,
+  text: string,
+  bgColor = COLORS.primary
+) => {
+  const encodedText = encodeURIComponent(text);
+  return `${PLACEHOLDER_BASE}/${width}x${height}/${bgColor}/${COLORS.light}.webp?text=${encodedText}`;
+};
+
+export const createSlide = (
+  sliderId: string = createId()
+): SliderComponentInputType["sliders"][number] => ({
+  order: 0,
+  sliderId,
   conditionDates: {
     addEndDate: false,
     addStartDate: false,
@@ -18,20 +44,28 @@ export const minimalValidSlide: Omit<SliderInputType, "order" | "sliderId"> = {
   desktopView: {
     file: null,
     existingAsset: {
-      url: "https://placehold.co/1920x1080/6E44FF/FFFFFF.webp?text=YENI+SLAYT",
+      url: getPlaceholderUrl(1920, 800, "MASAÜSTÜ GÖRSEL"),
       type: "IMAGE",
     },
   },
-  mobileView: null,
-};
+  mobileView: {
+    file: null,
+    existingAsset: {
+      url: getPlaceholderUrl(800, 1000, "MOBİL GÖRSEL"),
+      type: "IMAGE",
+    },
+  },
+});
 
-export const getDefaultSlider = (order: number): SliderComponentInputType => ({
+export const createSliderComponent = (
+  order: number
+): SliderComponentInputType => ({
   componentId: createId(),
   type: "SLIDER",
   order,
   options: {
-    aspectRatio: "16/9",
-    mobileAspectRatio: null,
+    aspectRatio: "21/9",
+    mobileAspectRatio: "4/5",
     autoPlay: true,
     autoPlayInterval: 5000,
     loop: true,
@@ -39,23 +73,12 @@ export const getDefaultSlider = (order: number): SliderComponentInputType => ({
     showArrows: true,
   },
   sliders: [
-    {
-      order: 0,
-      sliderId: createId(),
-      ...minimalValidSlide,
-      desktopView: {
-        file: null,
-        existingAsset: {
-          url: "https://placehold.co/1920x1080/6E44FF/FFFFFF.webp?text=YENI+SLAYT+(16:9)",
-          type: "IMAGE",
-        },
-      },
-      mobileView: null,
-    },
+    { ...createSlide(), order: 0 },
+    { ...createSlide(), order: 1 },
   ],
 });
 
-export const getDefaultMarquee = (
+export const createMarqueeComponent = (
   order: number
 ): MarqueeComponentInputType => ({
   componentId: createId(),
@@ -64,39 +87,46 @@ export const getDefaultMarquee = (
   items: [
     {
       itemId: createId(),
-      text: "Yeni Duyuru Metni",
+      text: "KARGO BEDAVA",
       link: null,
       image: null,
       existingImage: null,
     },
     {
       itemId: createId(),
-      text: "İkinci Duyuru Metni",
+      text: "%50 İNDİRİM",
+      link: null,
+      image: null,
+      existingImage: null,
+    },
+    {
+      itemId: createId(),
+      text: "YENİ SEZON",
       link: null,
       image: null,
       existingImage: null,
     },
   ],
   options: {
-    speed: 60,
+    speed: 50,
     pauseOnHover: true,
     isReverse: false,
-    backgroundColor: "#F8F9FA",
-    textColor: "#343A40",
+    backgroundColor: `#${COLORS.dark}`,
+    textColor: `#${COLORS.light}`,
     fontSize: "md",
     paddingY: "sm",
-    fontWeight: "normal",
+    fontWeight: "bold",
   },
 });
 
-export const getDefaultProductCarousel = (
+export const createProductCarouselComponent = (
   order: number
 ): ProductCarouselComponentInputType => ({
   componentId: createId(),
   type: "PRODUCT_CAROUSEL",
   order,
-  title: "Öne Çıkan Ürünler",
-  description: "Sezonun en popüler ürünlerini keşfedin.",
+  title: "Çok Satanlar",
+  description: "Bu ayın en popüler ürünlerini inceleyin",
   config: {
     slidesPerViewDesktop: 4,
     slidesPerViewTablet: 2,
@@ -104,8 +134,8 @@ export const getDefaultProductCarousel = (
     autoplay: false,
     autoplaySpeed: 3000,
     loop: true,
-    descriptionTextColor: "#555555",
-    titleTextColor: "#111111",
+    descriptionTextColor: "#666",
+    titleTextColor: "#000",
     showArrows: true,
     showDots: true,
     showAddToCartButton: true,
@@ -116,14 +146,14 @@ export const getDefaultProductCarousel = (
       itemId: createId(),
       productId: createId(),
       variantId: null,
-      customTitle: "Örnek Ürün Başlığı",
-      badgeText: "YENİ",
+      customTitle: "Örnek Ürün 1",
+      badgeText: "HOT",
     },
     {
       itemId: createId(),
       productId: createId(),
       variantId: null,
-      customTitle: "İkinci Ürün",
+      customTitle: "Örnek Ürün 2",
     },
   ],
 });
@@ -131,252 +161,85 @@ export const getDefaultProductCarousel = (
 export const createComponent = (order: number, type: ThemeComponents) => {
   switch (type) {
     case "SLIDER":
-      return getDefaultSlider(order);
+      return createSliderComponent(order);
     case "MARQUEE":
-      return getDefaultMarquee(order);
+      return createMarqueeComponent(order);
     case "PRODUCT_CAROUSEL":
-      return getDefaultProductCarousel(order);
-
+      return createProductCarouselComponent(order);
     default:
       const _exhaustiveCheck: never = type;
       throw new Error(`Bilinmeyen component türü: ${_exhaustiveCheck}`);
   }
 };
 
-export const ThemeV2DefaultValues: ThemeInputType = {
-  components: [
-    {
-      componentId: createId(),
-      type: "SLIDER",
-      order: 0,
-      options: {
-        aspectRatio: "21/9",
-        mobileAspectRatio: "9/16",
-        autoPlay: true,
-        autoPlayInterval: 5000,
-        loop: true,
-        showIndicators: true,
-        showArrows: true,
-      },
-      sliders: [
-        {
-          order: 0,
-          sliderId: createId(),
-          ...minimalValidSlide,
-          desktopView: {
-            file: null,
-            existingAsset: {
-              url: "https://placehold.co/1920x823/6E44FF/FFFFFF.webp?text=SLIDER+1+(21:9)",
-              type: "IMAGE",
-            },
-          },
-          mobileView: {
-            file: null,
-            existingAsset: {
-              url: "https://placehold.co/720x1280/6E44FF/FFFFFF.webp?text=SLAYT+1+MOBIL+(9:16)",
-              type: "IMAGE",
-            },
-          },
-        },
-        {
-          order: 1,
-          sliderId: createId(),
-          ...minimalValidSlide,
-          desktopView: {
-            file: null,
-            existingAsset: {
-              url: "https://placehold.co/1920x823/FF6B6B/FFFFFF.webp?text=SLIDER+1+(21:9)",
-              type: "IMAGE",
-            },
-          },
-          mobileView: {
-            file: null,
-            existingAsset: {
-              url: "https://placehold.co/720x1280/FF6B6B/FFFFFF.webp?text=SLAYT+2+MOBIL+(9:16)",
-              type: "IMAGE",
-            },
-          },
-        },
-        {
-          order: 2,
-          sliderId: createId(),
-          ...minimalValidSlide,
-          desktopView: {
-            file: null,
-            existingAsset: {
-              url: "https://placehold.co/1920x823/4ECDC4/FFFFFF.webp?text=SLIDER+1+(21:9)",
-              type: "IMAGE",
-            },
-          },
-          mobileView: null,
-        },
-      ],
-    } as SliderComponentInputType,
+export const createDefaultHomePage = (): PageInputType => {
+  const heroSlider = createSliderComponent(0);
 
-    {
-      componentId: createId(),
-      type: "MARQUEE",
-      order: 1,
-      items: [
-        {
-          itemId: createId(),
-          text: "✨ FIRSATLARI KAÇIRMA",
-          link: "https://example.com/firsatlar",
-          image: null,
-          existingImage: null,
-        },
-        {
-          itemId: createId(),
-          text: "🚀 HIZLI KARGO",
-          link: "https://example.com/kargo",
-          image: null,
-          existingImage: null,
-        },
-        {
-          itemId: createId(),
-          text: "💳 GÜVENLİ ÖDEME",
-          image: null,
-          existingImage: null,
-        },
-        {
-          itemId: createId(),
-          text: "🎉 YENİ SEZON GELDİ",
-          link: "https://example.com/yeni-sezon",
-          image: null,
-          existingImage: null,
-        },
-      ],
-      options: {
-        speed: 40,
-        pauseOnHover: true,
-        isReverse: false,
-        backgroundColor: "#111111",
-        textColor: "#FFFFFF",
-        fontSize: "sm",
-        fontWeight: "bold",
-        paddingY: "xs",
-      },
-    } as MarqueeComponentInputType,
+  const campaignMarquee = createMarqueeComponent(1);
 
-    {
-      componentId: createId(),
-      type: "SLIDER",
-      order: 2,
-      options: {
-        aspectRatio: "16/9",
-        mobileAspectRatio: null,
-        autoPlay: true,
-        autoPlayInterval: 5000,
-        loop: true,
-        showIndicators: true,
-        showArrows: true,
-      },
-      sliders: [
-        {
-          order: 0,
-          sliderId: createId(),
-          ...minimalValidSlide,
-          desktopView: {
-            file: null,
-            existingAsset: {
-              url: "https://placehold.co/1920x1080/F06595/FFFFFF.webp?text=SLIDER+2+(16:9)",
-              type: "IMAGE",
-            },
-          },
-          mobileView: {
-            file: null,
-            existingAsset: {
-              url: "https://placehold.co/720x405/F06595/FFFFFF.webp?text=SLAYT+1+MOBIL+(16:9)",
-              type: "IMAGE",
-            },
-          },
-        },
-        {
-          order: 1,
-          sliderId: createId(),
-          ...minimalValidSlide,
-          desktopView: {
-            file: null,
-            existingAsset: {
-              url: "https://placehold.co/1920x1080/A61E4D/FFFFFF.webp?text=SLIDER+2+(16:9)",
-              type: "IMAGE",
-            },
-          },
-          mobileView: null,
-        },
-      ],
-    } as SliderComponentInputType,
+  const bestSellers = createProductCarouselComponent(2);
+  bestSellers.title = "Haftanın Yıldızları";
+  bestSellers.description = "En çok tercih edilen ürünlerimizi keşfedin.";
 
-    {
-      componentId: createId(),
-      type: "MARQUEE",
-      order: 3,
-      items: [
-        {
-          itemId: createId(),
-          text: "%50 İNDİRİM",
-          image: null,
-          existingImage: null,
-        },
-        {
-          itemId: createId(),
-          text: "SON GÜN 30 KASIM",
-          image: null,
-          existingImage: null,
-        },
-        {
-          itemId: createId(),
-          text: "BLACK FRIDAY",
-          image: null,
-          existingImage: null,
-        },
-      ],
-      options: {
-        speed: 60,
-        pauseOnHover: false,
-        isReverse: true,
-        backgroundColor: "#F8F9FA",
-        textColor: "#343A40",
-        fontSize: "md",
-        paddingY: "sm",
-        fontWeight: "normal",
-      },
-    } as MarqueeComponentInputType,
-
-    {
-      componentId: createId(),
-      type: "SLIDER",
-      order: 4,
-      options: {
-        aspectRatio: "1/1",
-        mobileAspectRatio: "4/5",
-        autoPlay: false,
-        autoPlayInterval: 5000,
-        loop: true,
-        showIndicators: true,
-        showArrows: true,
-      },
-      sliders: [
-        {
-          order: 0,
-          sliderId: createId(),
-          ...minimalValidSlide,
-          desktopView: {
-            file: null,
-            existingAsset: {
-              url: "https://placehold.co/1080x1080/12B886/FFFFFF.webp?text=SLIDER+3+(1:1)",
-              type: "IMAGE",
-            },
-          },
-          mobileView: {
-            file: null,
-            existingAsset: {
-              url: "https://placehold.co/720x900/12B886/FFFFFF.webp?text=SLAYT+1+MOBIL+(4:5)",
-              type: "IMAGE",
-            },
-          },
-        },
-      ],
-    } as SliderComponentInputType,
-  ],
+  return {
+    pageId: createId(),
+    pageType: "HOMEPAGE",
+    components: [heroSlider, campaignMarquee, bestSellers],
+  };
 };
+
+export const createDefaultProductPage = (): PageInputType => {
+  const trustBadges = createMarqueeComponent(0);
+  trustBadges.options.backgroundColor = `#${COLORS.success}`;
+  trustBadges.options.speed = 30;
+  trustBadges.items = [
+    {
+      itemId: createId(),
+      text: "💯 MÜŞTERİ MEMNUNİYETİ",
+      link: null,
+      image: null,
+      existingImage: null,
+    },
+    {
+      itemId: createId(),
+      text: "🚚 AYNI GÜN KARGO",
+      link: null,
+      image: null,
+      existingImage: null,
+    },
+    {
+      itemId: createId(),
+      text: "🔒 GÜVENLİ ÖDEME",
+      link: null,
+      image: null,
+      existingImage: null,
+    },
+    {
+      itemId: createId(),
+      text: "↩️ 14 GÜN İADE",
+      link: null,
+      image: null,
+      existingImage: null,
+    },
+  ];
+
+  const similarProducts = createProductCarouselComponent(1);
+  similarProducts.title = "Benzer Ürünler";
+  similarProducts.description = "Bu ürüne bakanlar bunları da inceledi";
+  similarProducts.config.slidesPerViewDesktop = 5;
+  similarProducts.config.showAddToCartButton = false;
+  similarProducts.config.aspectRatio = "1/1";
+
+  return {
+    pageId: createId(),
+    pageType: "PRODUCT",
+    components: [trustBadges, similarProducts],
+  };
+};
+
+export const createDefaultTheme = (): ThemeInputType => ({
+  id: createId(),
+  name: "Modern E-Ticaret Teması",
+  isActive: false,
+  pages: [createDefaultHomePage(), createDefaultProductPage()],
+});

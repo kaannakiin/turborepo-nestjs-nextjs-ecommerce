@@ -1,6 +1,5 @@
 "use client";
 
-import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import GlobalLoader from "@/components/GlobalLoader";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import { LOCALE_CART_COOKIE, TURKEY_DB_ID } from "@lib/constants";
@@ -42,6 +41,7 @@ import { useEffect, useRef, useState } from "react";
 import { IMaskInput } from "react-imask";
 import AddressCard from "./AddressCard";
 import ShippingCard from "./ShippingCard";
+import { useTheme } from "@/context/theme-context/ThemeContext";
 
 const BillingAddressForm = dynamic(() => import("./BillingAddressForm"), {
   ssr: false,

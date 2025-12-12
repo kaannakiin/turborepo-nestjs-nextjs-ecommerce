@@ -1,5 +1,5 @@
 "use client";
-import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
+import { useTheme } from "@/context/theme-context/ThemeContext";
 import { Accordion, Group, Stack, Text, UnstyledButton } from "@mantine/core";
 import { Route } from "next";
 import { usePathname, useRouter } from "next/navigation";

@@ -1,10 +1,9 @@
 "use client";
 
-import { useTheme } from "@/(admin)/admin/(theme)/ThemeContexts/ThemeContext";
 import { Breadcrumbs, Grid, Stack, Text } from "@mantine/core";
 import { CategoryPagePreparePageReturnData } from "@repo/types";
 import { IconChevronRight } from "@tabler/icons-react";
-import { $Enums } from "@repo/database/client";
+import { Locale } from "@repo/database/client";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import CategoryPageDekstopFilter from "./CategoryPageDekstopFilter";
@@ -12,6 +11,7 @@ import CategoryPageDesktopFiltersSection from "./CategoryPageDesktopFiltersSecti
 import CategoryPageMobileFiltersSection from "./CategoryPageMobileFiltersSection";
 import CategoryProductList from "./CategoryProductList";
 import { Route } from "next";
+import { useTheme } from "@/context/theme-context/ThemeContext";
 
 interface CategoryClientPageProps {
   id: string;
@@ -29,7 +29,7 @@ const CategoryClientPage = ({
   id,
 }: CategoryClientPageProps) => {
   const { media } = useTheme();
-  const locale: $Enums.Locale = "TR";
+  const locale: Locale = "TR";
   const pageSearchParams = useSearchParams();
 
   return (

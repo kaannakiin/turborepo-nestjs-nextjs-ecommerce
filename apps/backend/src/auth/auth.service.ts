@@ -118,29 +118,6 @@ export class AuthService {
       ...(user.imageUrl ? { imageUrl: user.imageUrl } : {}),
     };
 
-    const currentRefreshToken = req.cookies?.refresh_token;
-
-    if (currentRefreshToken) {
-      try {
-        const oldPayload = this.jwtService.verify(currentRefreshToken, {
-          secret: this.configService.getOrThrow('JWT_REFRESH_TOKEN_SECRET'),
-        }) as TokenPayload;
-
-        await this.prismaService.refreshTokens.updateMany({
-          where: {
-            id: oldPayload.jti,
-            userId: user.id,
-          },
-          data: {
-            revokedAt: new Date(),
-            replacedByTokenId: jti,
-          },
-        });
-      } catch (error) {
-        console.warn('Could not revoke old token during login:', error.message);
-      }
-    }
-
     const accessToken = await this.jwtService.signAsync(tokenPayload, {
       secret: this.configService.getOrThrow('JWT_ACCESS_TOKEN_SECRET'),
       expiresIn: Math.floor(accessTokenExpirationMs / 1000),
@@ -164,7 +141,6 @@ export class AuthService {
     expiresRefreshToken.setTime(
       expiresRefreshToken.getTime() + refreshTokenExpirationMs,
     );
-
     await this.prismaService.refreshTokens.create({
       data: {
         id: jti,
@@ -179,7 +155,28 @@ export class AuthService {
         deviceType: deviceType,
       },
     });
+    const currentRefreshToken = req.cookies?.refresh_token;
 
+    if (currentRefreshToken) {
+      try {
+        const oldPayload = this.jwtService.verify(currentRefreshToken, {
+          secret: this.configService.getOrThrow('JWT_REFRESH_TOKEN_SECRET'),
+        }) as TokenPayload;
+
+        await this.prismaService.refreshTokens.updateMany({
+          where: {
+            id: oldPayload.jti,
+            userId: user.id,
+          },
+          data: {
+            revokedAt: new Date(),
+            replacedByTokenId: jti,
+          },
+        });
+      } catch (error) {
+        console.warn('Could not revoke old token during login:', error.message);
+      }
+    }
     response.cookie('token', accessToken, {
       httpOnly: true,
       secure: this.configService.get('NODE_ENV') === 'production',
