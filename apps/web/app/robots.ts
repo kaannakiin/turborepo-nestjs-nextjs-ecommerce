@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const ALLOW_INDEXING = false;
+const ALLOW_INDEXING = process.env.INDEX_PAGE === "true";
 
 export default function robots(): MetadataRoute.Robots {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";

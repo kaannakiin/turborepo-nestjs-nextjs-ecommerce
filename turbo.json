@@ -14,7 +14,8 @@
         "BACKEND_URL",
         "NEXT_PUBLIC_BACKEND_URL",
         "NEXT_PUBLIC_BASE_URL",
-        "JWT_ACCESS_TOKEN_SECRET"
+        "JWT_ACCESS_TOKEN_SECRET",
+        "INDEX_PAGE"
       ],
       "outputs": [".next/**", "!.next/cache/**"]
     },
@@ -91,7 +92,13 @@
     "web#start": {
       "cache": false,
       "persistent": true,
-      "env": ["BACKEND_URL", "NEXT_PUBLIC_BACKEND_URL", "NEXT_PUBLIC_BASE_URL"]
+      "env": [
+        "BACKEND_URL",
+        "NEXT_PUBLIC_BACKEND_URL",
+        "NEXT_PUBLIC_BASE_URL",
+        "JWT_ACCESS_TOKEN_SECRET",
+        "INDEX_PAGE"
+      ]
     },
     "database#build": {
       "dependsOn": ["^build"],
