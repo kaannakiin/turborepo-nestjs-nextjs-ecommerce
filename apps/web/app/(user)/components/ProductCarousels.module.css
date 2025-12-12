@@ -1,0 +1,54 @@
+/* ProductCarousel.module.css */
+
+.carouselWrapper {
+  position: relative;
+  padding: 0 var(--mantine-spacing-md);
+}
+
+.swiper {
+  width: 100%;
+  overflow: hidden;
+}
+
+.slide {
+  height: auto;
+}
+
+/* Navigation Controls */
+.control {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: white;
+  border: 1px solid var(--mantine-color-gray-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.control:hover:not([data-inactive]) {
+  background-color: var(--mantine-primary-color-filled);
+  color: white;
+  border-color: var(--mantine-primary-color-filled);
+}
+
+.control[data-inactive] {
+  opacity: 0;
+  cursor: default;
+  pointer-events: none;
+}
+
+.controlPrev {
+  left: 0;
+}
+
+.controlNext {
+  right: 0;
+}

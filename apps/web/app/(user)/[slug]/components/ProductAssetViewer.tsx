@@ -1,12 +1,18 @@
 "use client";
-import { Carousel } from "@mantine/carousel";
 import { AspectRatio, Image, Modal, SimpleGrid, Stack } from "@mantine/core";
 import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { AssetType } from "@repo/database/client";
-import { IconX } from "@tabler/icons-react";
-import Fade from "embla-carousel-fade";
+import { IconChevronLeft, IconChevronRight, IconX } from "@tabler/icons-react";
 import { useState } from "react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation, Pagination, EffectFade } from "swiper/modules";
+import type { Swiper as SwiperType } from "swiper";
 import CustomImage from "../../../components/CustomImage";
+
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+import "swiper/css/effect-fade";
 import styles from "./Carousel.module.css";
 
 interface ProductAssetViewerProps {
@@ -17,6 +23,7 @@ const ProductAssetViewer = ({ assets }: ProductAssetViewerProps) => {
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [selectedAssetIndex, setSelectedAssetIndex] = useState(0);
   const [opened, { open, close }] = useDisclosure();
+  const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
 
   if (!assets || assets.length === 0) {
     return <div>No assets available</div>;
@@ -34,30 +41,31 @@ const ProductAssetViewer = ({ assets }: ProductAssetViewerProps) => {
         className="w-full h-full relative"
       >
         {isMobile ? (
-          <Carousel
-            withIndicators
-            withControls={false}
-            className="w-full h-full"
-            slideSize="100%"
-            initialSlide={0}
-            emblaOptions={{
-              loop: true,
-              startIndex: selectedAssetIndex,
+          <Swiper
+            modules={[Pagination]}
+            pagination={{
+              clickable: true,
+              el: `.${styles.indicators}`,
+              bulletClass: styles.indicator,
+              bulletActiveClass: styles.indicatorActive,
             }}
-            onSlideChange={(index) => setSelectedAssetIndex(index)}
-            classNames={styles}
+            loop={true}
+            initialSlide={selectedAssetIndex}
+            onSlideChange={(swiper) => setSelectedAssetIndex(swiper.realIndex)}
+            className="w-full h-full"
           >
             {assets.map((asset, index) => (
-              <Carousel.Slide key={index}>
+              <SwiperSlide key={index}>
                 <AspectRatio ratio={1} pos={"relative"}>
                   <CustomImage
                     src={asset.url}
                     alt={`Product image ${index + 1}`}
                   />
                 </AspectRatio>
-              </Carousel.Slide>
+              </SwiperSlide>
             ))}
-          </Carousel>
+            <div className={styles.indicators} />
+          </Swiper>
         ) : (
           <Stack gap="md">
             <div className="cursor-pointer" onClick={() => handleImageClick(0)}>
@@ -114,40 +122,50 @@ const ProductAssetViewer = ({ assets }: ProductAssetViewerProps) => {
               type="button"
               onClick={() => {
                 close();
-                setSelectedAssetIndex(null);
+                setSelectedAssetIndex(0);
               }}
               className="absolute top-4 right-4 z-10 bg-white rounded-full w-10 h-10 flex items-center justify-center"
               aria-label="Close"
             >
               <IconX />
             </button>
-            <Carousel
-              withIndicators={false}
-              withControls={true}
-              height={"100%"}
-              slideSize="100%"
-              plugins={[Fade()]}
+
+            {/* Custom Navigation Buttons */}
+            <button
+              type="button"
+              className={`${styles.modalControl} ${styles.modalControlPrev}`}
+              onClick={() => swiperInstance?.slidePrev()}
+              aria-label="Previous"
+            >
+              <IconChevronLeft />
+            </button>
+            <button
+              type="button"
+              className={`${styles.modalControl} ${styles.modalControlNext}`}
+              onClick={() => swiperInstance?.slideNext()}
+              aria-label="Next"
+            >
+              <IconChevronRight />
+            </button>
+
+            <Swiper
+              modules={[Navigation, EffectFade]}
+              effect="fade"
+              fadeEffect={{ crossFade: true }}
               initialSlide={selectedAssetIndex}
-              classNames={{
-                control: styles.modalControl,
-                controls: styles.modalControls,
-              }}
-              styles={{
-                root: {
-                  height: "100%",
-                },
-                slide: {
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  height: "100%",
-                },
-              }}
+              onSwiper={setSwiperInstance}
+              className="h-full"
+              style={{ height: "100%" }}
             >
               {assets.map((item, index) => (
-                <Carousel.Slide
+                <SwiperSlide
                   key={index}
-                  className="flex items-center justify-center "
+                  className="flex items-center justify-center"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
                   {item.type === "IMAGE" ? (
                     <Image
@@ -178,9 +196,9 @@ const ProductAssetViewer = ({ assets }: ProductAssetViewerProps) => {
                       }}
                     />
                   )}
-                </Carousel.Slide>
+                </SwiperSlide>
               ))}
-            </Carousel>
+            </Swiper>
           </div>
         </Modal>
       )}

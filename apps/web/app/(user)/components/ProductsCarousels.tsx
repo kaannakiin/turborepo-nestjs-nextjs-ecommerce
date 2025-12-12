@@ -1,25 +1,36 @@
 "use client";
-
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
-import { Carousel } from "@mantine/carousel";
 import { Stack, Title } from "@mantine/core";
 import { useQuery } from "@repo/shared";
 import { ProductPageDataType } from "@repo/types";
+import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
+import { useState } from "react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation } from "swiper/modules";
+import type { Swiper as SwiperType } from "swiper";
 import ProductCard from "./ProductCard";
-import styles from "./ProductCarousel.module.css";
 import { useTheme } from "@/context/theme-context/ThemeContext";
+
+import "swiper/css";
+import "swiper/css/navigation";
+import styles from "./ProductCarousels.module.css";
 
 interface ProductsCarouselsProps {
   title: string;
   stackClassName?: string;
   productId: string;
 }
+
 const ProductsCarousels = ({
   title,
   stackClassName,
   productId,
 }: ProductsCarouselsProps) => {
   const { media } = useTheme();
+  const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
+  const [isBeginning, setIsBeginning] = useState(true);
+  const [isEnd, setIsEnd] = useState(false);
+
   const { data, isError } = useQuery({
     queryKey: ["products", "similar-products", productId],
     queryFn: async () => {
@@ -30,10 +41,15 @@ const ProductsCarousels = ({
       if (!res.success) {
         return null;
       }
-
       return res.data;
     },
   });
+
+  const getSlidesPerView = () => {
+    if (media === "mobile") return 2;
+    if (media === "tablet") return 3;
+    return 5;
+  };
 
   return (
     <Stack gap={"lg"} mt={"xl"} className={stackClassName} bg={"primary.0"}>
@@ -42,19 +58,49 @@ const ProductsCarousels = ({
           <Title order={4} pt={"md"} px={"md"}>
             {title}
           </Title>
-          <Carousel
-            classNames={styles}
-            slideSize={
-              media === "mobile" ? "50%" : media === "tablet" ? "33.33%" : "20%"
-            }
-            controlsOffset={"md"}
-          >
-            {data.products.map((product) => (
-              <Carousel.Slide key={product.id}>
-                <ProductCard product={product} />
-              </Carousel.Slide>
-            ))}
-          </Carousel>
+
+          <div className={styles.carouselWrapper}>
+            <button
+              type="button"
+              className={`${styles.control} ${styles.controlPrev}`}
+              onClick={() => swiperInstance?.slidePrev()}
+              disabled={isBeginning}
+              data-inactive={isBeginning || undefined}
+              aria-label="Previous"
+            >
+              <IconChevronLeft size={20} />
+            </button>
+            <button
+              type="button"
+              className={`${styles.control} ${styles.controlNext}`}
+              onClick={() => swiperInstance?.slideNext()}
+              disabled={isEnd}
+              data-inactive={isEnd || undefined}
+              aria-label="Next"
+            >
+              <IconChevronRight size={20} />
+            </button>
+
+            <Swiper
+              modules={[Navigation]}
+              slidesPerView={getSlidesPerView()}
+              spaceBetween={16}
+              onSwiper={setSwiperInstance}
+              onSlideChange={(swiper) => {
+                setIsBeginning(swiper.isBeginning);
+                setIsEnd(swiper.isEnd);
+              }}
+              onReachBeginning={() => setIsBeginning(true)}
+              onReachEnd={() => setIsEnd(true)}
+              className={styles.swiper}
+            >
+              {data.products.map((product) => (
+                <SwiperSlide key={product.id} className={styles.slide}>
+                  <ProductCard product={product} />
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </div>
         </div>
       )}
     </Stack>
