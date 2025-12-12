@@ -95,6 +95,12 @@ export const ThemeComponents = {
 export type ThemeComponents =
   (typeof ThemeComponents)[keyof typeof ThemeComponents];
 
+export const ThemeSections = {
+  HEADER: "HEADER",
+  FOOTER: "FOOTER",
+};
+export type ThemeSections = (typeof ThemeSections)[keyof typeof ThemeSections];
+
 export const ThemePages = {
   HOMEPAGE: "HOMEPAGE",
   PRODUCT: "PRODUCT",
@@ -118,3 +124,51 @@ export const AspectRatio = {
 } as const;
 
 export type AspectRatio = (typeof AspectRatio)[keyof typeof AspectRatio];
+
+export const FontType = {
+  Inter: "Inter",
+  Roboto: "Roboto",
+  Open_Sans: "Open Sans",
+  Lato: "Lato",
+  Poppins: "Poppins",
+  Montserrat: "Montserrat",
+  Nunito: "Nunito",
+  Nunito_Sans: "Nunito Sans",
+  Raleway: "Raleway",
+  Work_Sans: "Work Sans",
+  Outfit: "Outfit",
+  Manrope: "Manrope",
+  Plus_Jakarta_Sans: "Plus Jakarta Sans",
+  DM_Sans: "DM Sans",
+  Space_Grotesk: "Space Grotesk",
+  Geist: "Geist",
+  // Serif
+  Playfair_Display: "Playfair Display",
+  Merriweather: "Merriweather",
+  Lora: "Lora",
+  Crimson_Text: "Crimson Text",
+  Libre_Baskerville: "Libre Baskerville",
+  Source_Serif_4: "Source Serif 4",
+  Cormorant: "Cormorant",
+  // Monospace
+  Roboto_Mono: "Roboto Mono",
+  Fira_Code: "Fira Code",
+  JetBrains_Mono: "JetBrains Mono",
+  Source_Code_Pro: "Source Code Pro",
+  IBM_Plex_Mono: "IBM Plex Mono",
+  Geist_Mono: "Geist Mono",
+  // Display
+  Oswald: "Oswald",
+  Bebas_Neue: "Bebas Neue",
+  Anton: "Anton",
+  Archivo_Black: "Archivo Black",
+  // Turkish Support
+  Ubuntu: "Ubuntu",
+  Rubik: "Rubik",
+  Quicksand: "Quicksand",
+  Comfortaa: "Comfortaa",
+} as const;
+
+export type FontType = (typeof FontType)[keyof typeof FontType];
+// Zod enum için
+export const fontKeys = Object.keys(FontType) as [string, ...string[]];

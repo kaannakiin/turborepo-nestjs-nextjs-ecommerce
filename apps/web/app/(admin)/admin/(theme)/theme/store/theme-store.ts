@@ -25,7 +25,12 @@ export type EditorSelection =
     }
   | null;
 
-export type SidebarView = "SECTIONS_LIST" | "ADD_LIBRARY";
+export type SidebarView =
+  | "SECTIONS_LIST"
+  | "ADD_LIBRARY"
+  | "THEME_SETTINGS"
+  | "HEADER"
+  | "FOOTER";
 
 interface EditorState {
   activePage: ThemePages;

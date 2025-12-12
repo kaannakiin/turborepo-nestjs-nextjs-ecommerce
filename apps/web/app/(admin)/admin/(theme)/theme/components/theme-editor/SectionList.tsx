@@ -9,12 +9,14 @@ interface SectionListProps {
   control: Control<ThemeInputType>;
   onAddClick: () => void;
   activePageIndex: number;
+  disabled?: boolean;
 }
 
 const SectionList = ({
   onAddClick,
   control,
   activePageIndex,
+  disabled = false,
 }: SectionListProps) => {
   const componentsFieldArray = useFieldArray({
     control: control,
@@ -23,12 +25,10 @@ const SectionList = ({
   });
 
   return (
-    <Stack gap={4} px="sm" pb="xl">
-      <Group justify="space-between" px="xs" py={4}>
-        <Text size="xs" fw={700} c="dimmed">
-          BÖLÜMLER ({componentsFieldArray.fields?.length})
-        </Text>
-      </Group>
+    <Stack gap={"xs"} px="sm">
+      <Text size="xs" fw={700} c="dimmed">
+        BÖLÜMLER ({componentsFieldArray.fields?.length})
+      </Text>
 
       <NavbarComponentTable
         key={activePageIndex}
@@ -45,6 +45,7 @@ const SectionList = ({
         onClick={onAddClick}
         color="blue"
         radius="md"
+        disabled={disabled}
       >
         Bölüm Ekle
       </Button>

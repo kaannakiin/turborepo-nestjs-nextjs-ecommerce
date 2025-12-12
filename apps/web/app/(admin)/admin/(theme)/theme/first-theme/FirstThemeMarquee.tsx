@@ -22,7 +22,7 @@ const FirstThemeMarquee = ({ data }: FirstThemeMarqueeProps) => {
 
   useEffect(() => {
     const baseProcessed: ProcessedItem[] = items
-      .map((item): ProcessedItem | null => {
+      ?.map((item): ProcessedItem | null => {
         if (item.image) {
           const url = URL.createObjectURL(item.image);
           return {
@@ -140,7 +140,7 @@ const FirstThemeMarquee = ({ data }: FirstThemeMarqueeProps) => {
       duration={options.speed}
       pauseOnHover={options.pauseOnHover}
       reverse={options.isReverse}
-      py={options.paddingY || 'md'}
+      py={options.paddingY || "md"}
       gap="xl"
     >
       {processedItems.map((item, index) => renderItem(item, index))}

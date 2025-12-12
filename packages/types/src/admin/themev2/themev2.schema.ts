@@ -10,6 +10,8 @@ import {
   ThemeComponents,
   ThemePages,
 } from "../../shared/shared-enum";
+import { HeaderSchema } from "./theme-section-schemas/header-schema";
+import { mantineThemeSchema } from "./theme-section-schemas/mantine-theme-schema";
 
 export const SlideSchema = z
   .object({
@@ -308,6 +310,8 @@ export const ThemeSchema = z.object({
   id: z.cuid2({ error: "Geçerli bir theme ID'si giriniz." }),
   name: z.string({ error: "Tema adı zorunludur." }).min(1),
   isActive: z.boolean(),
+  header: HeaderSchema.nullish(),
+  settings: mantineThemeSchema.nullish(),
   pages: z
     .array(PageSchema)
     .min(1, "Temada en az bir sayfa bulunmalıdır.")

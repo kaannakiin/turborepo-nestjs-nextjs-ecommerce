@@ -110,7 +110,7 @@ export const variantQueryIncludeV2 = {
       translations: true,
     },
   },
-} as const satisfies Prisma.ProductVariantCombinationInclude;
+} satisfies Prisma.ProductVariantCombinationInclude;
 
 export const productQueryIncludeV2 = {
   assets: {

@@ -18,6 +18,7 @@ import {
 import {
   AspectRatio,
   FontFamily,
+  FontType,
   LocationType,
   MantineFontWeight,
   MantineSize,
@@ -25,7 +26,9 @@ import {
   ShippingRuleType,
   SortAdminUserTable,
   TextAlign,
+  ThemeComponents,
   ThemePages,
+  ThemeSections,
   VariantProductZodType,
 } from "@repo/types";
 
@@ -918,14 +921,19 @@ export const getAspectRatioValue = (ratio: AspectRatio): number => {
   return AspectRatioConfigs[ratio]?.value || 0;
 };
 
-export const ThemePageConfigs: Record<
+const ThemePageConfigs: Record<
   ThemePages,
-  { label: string; value: ThemePages }
+  { label: string; value: ThemePages; createbleComponents?: ThemeComponents[] }
 > = {
-  HOMEPAGE: { label: "Anasayfa", value: "HOMEPAGE" },
+  HOMEPAGE: {
+    label: "Anasayfa",
+    value: "HOMEPAGE",
+    createbleComponents: ["MARQUEE", "PRODUCT_CAROUSEL", "SLIDER"],
+  },
   PRODUCT: {
     label: "Ürün Sayfası",
     value: "PRODUCT",
+    createbleComponents: ["MARQUEE"],
   },
 };
 
@@ -937,6 +945,15 @@ export function getThemePageValue(page: ThemePages): ThemePages {
   return ThemePageConfigs[page]?.value || "HOMEPAGE";
 }
 
+export function getThemePageCreatebleComponents(
+  page: ThemePages
+): ThemeComponents[] {
+  const createbleComponentSet = new Set(
+    ThemePageConfigs[page]?.createbleComponents
+  );
+  return [...createbleComponentSet];
+}
+
 const MediaConfigs: Record<Media, { breakpoint: number }> = {
   desktop: { breakpoint: 1024 },
   tablet: { breakpoint: 768 },
@@ -945,4 +962,156 @@ const MediaConfigs: Record<Media, { breakpoint: number }> = {
 
 export function getMediaBreakpoint(media: Media): number {
   return MediaConfigs[media]?.breakpoint || 0;
+}
+
+const ThemeSectionConfigs: Record<
+  ThemeSections,
+  { label: string; value: ThemeSections }
+> = {
+  HEADER: { label: "Header", value: "HEADER" },
+  FOOTER: { label: "Footer", value: "FOOTER" },
+};
+
+export const getThemeSectionLabel = (section: ThemeSections): string => {
+  return ThemeSectionConfigs[section]?.label || "Bilinmeyen";
+};
+
+export const getThemeSectionValue = (section: ThemeSections): ThemeSections => {
+  return ThemeSectionConfigs[section]?.value || "HEADER";
+};
+
+// Select için data
+export const fontSelectData = Object.entries(FontType).map(([key, label]) => ({
+  value: key,
+  label: label,
+}));
+
+/**
+ * Tek bir hex renkten 10 shade'lik Mantine color tuple üretir
+ * Mantine'in colors-generator mantığına benzer
+ */
+export function generateColorTuple(baseColor: string): MantineColorsTuple {
+  const hex = baseColor.replace("#", "");
+
+  // Hex'i RGB'ye çevir
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+
+  // RGB'yi HSL'ye çevir
+  const { h, s, l } = rgbToHsl(r, g, b);
+
+  // 10 shade üret (0 = en açık, 9 = en koyu)
+  const shades: string[] = [];
+
+  // Lightness değerleri - Mantine'in kullandığı yaklaşık değerler
+  const lightnessSteps = [
+    0.95, // 0 - çok açık
+    0.9, // 1
+    0.8, // 2
+    0.7, // 3
+    0.6, // 4
+    0.5, // 5 - orta (genelde base color buraya yakın)
+    0.4, // 6
+    0.3, // 7
+    0.2, // 8
+    0.1, // 9 - çok koyu
+  ];
+
+  for (let i = 0; i < 10; i++) {
+    // Saturation'ı da ayarla - çok açık ve çok koyu tonlarda saturation düşer
+    const adjustedSaturation =
+      s * (1 - Math.abs(lightnessSteps[i] - 0.5) * 0.5);
+    const newL = lightnessSteps[i];
+
+    const rgb = hslToRgb(h, adjustedSaturation, newL);
+    shades.push(rgbToHex(rgb.r, rgb.g, rgb.b));
+  }
+
+  return shades as [
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+  ];
+}
+
+function rgbToHsl(
+  r: number,
+  g: number,
+  b: number
+): { h: number; s: number; l: number } {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+    switch (max) {
+      case r:
+        h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+        break;
+      case g:
+        h = ((b - r) / d + 2) / 6;
+        break;
+      case b:
+        h = ((r - g) / d + 4) / 6;
+        break;
+    }
+  }
+
+  return { h, s, l };
+}
+
+// Helper: HSL to RGB
+function hslToRgb(
+  h: number,
+  s: number,
+  l: number
+): { r: number; g: number; b: number } {
+  let r, g, b;
+
+  if (s === 0) {
+    r = g = b = l;
+  } else {
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+
+    r = hue2rgb(p, q, h + 1 / 3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1 / 3);
+  }
+
+  return {
+    r: Math.round(r * 255),
+    g: Math.round(g * 255),
+    b: Math.round(b * 255),
+  };
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  return `#${[r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("")}`;
 }

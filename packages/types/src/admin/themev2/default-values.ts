@@ -240,6 +240,12 @@ export const createDefaultProductPage = (): PageInputType => {
 export const createDefaultTheme = (): ThemeInputType => ({
   id: createId(),
   name: "Modern E-Ticaret Teması",
+  settings: {
+    primaryColor: "#6E44FF",
+    secondaryColor: "#FF6B6B",
+    primaryShade: 6,
+    font: "Anton",
+  },
   isActive: false,
   pages: [createDefaultHomePage(), createDefaultProductPage()],
 });
