@@ -20,6 +20,7 @@ import { ReactNode } from "react";
 import AsideFormsTable from "./components/AsideFormsTable";
 import ThemeEditorHeader from "./components/theme-editor/ThemeEditorHeader";
 import ThemeSidebar from "./components/theme-editor/ThemeSidebar";
+import ThemeSorter from "./ThemeSorter";
 export type CreatebleSelectType = {
   type: ThemeComponents;
   label: string;
@@ -133,7 +134,7 @@ const ThemePage = () => {
             style={{ maxWidth: currentWidth }}
             className={`mx-auto flex-1 transition-all w-full duration-300 ease-in-out bg-white`}
           >
-            {/* <ThemeSorter control={forms.control} /> */}
+            <ThemeSorter control={forms.control} />
           </div>
         </AppShell.Main>
 
