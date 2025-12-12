@@ -6,10 +6,26 @@ export type EditorSelection =
   | { type: "PAGE_SETTINGS" }
   | { type: "HEADER" }
   | { type: "FOOTER" }
-  | { type: "COMPONENT"; componentId: string }
-  | { type: "SLIDE"; componentId: string; sliderId: string; slideId: string }
-  | { type: "MARQUEE_ITEM"; componentId: string; itemId: string }
-  | { type: "PRODUCT_CAROUSEL_ITEM"; componentId: string; itemId: string }
+  | { type: "COMPONENT"; componentId: string; activePage: ThemePages }
+  | {
+      type: "SLIDE";
+      activePage: ThemePages;
+      componentId: string;
+      sliderId: string;
+      slideId: string;
+    }
+  | {
+      type: "MARQUEE_ITEM";
+      activePage: ThemePages;
+      componentId: string;
+      itemId: string;
+    }
+  | {
+      type: "PRODUCT_CAROUSEL_ITEM";
+      activePage: ThemePages;
+      componentId: string;
+      itemId: string;
+    }
   | null;
 
 export type SidebarView = "SECTIONS_LIST" | "ADD_LIBRARY";
@@ -20,10 +36,23 @@ interface EditorState {
   sidebarView: SidebarView;
   setSidebarView: (view: SidebarView) => void;
   selection: EditorSelection;
-  selectComponent: (componentId: string) => void;
-  selectSlide: (componentId: string, sliderId: string, slideId: string) => void;
-  selectMarqueeItem: (componentId: string, itemId: string) => void;
-  selectProductCarouselItem: (componentId: string, itemId: string) => void;
+  selectComponent: (componentId: string, activePage: ThemePages) => void;
+  selectSlide: (
+    componentId: string,
+    sliderId: string,
+    slideId: string,
+    activePage: ThemePages
+  ) => void;
+  selectMarqueeItem: (
+    componentId: string,
+    itemId: string,
+    activePage: ThemePages
+  ) => void;
+  selectProductCarouselItem: (
+    componentId: string,
+    itemId: string,
+    activePage: ThemePages
+  ) => void;
   selectHeader: () => void;
   selectFooter: () => void;
   selectPageSettings: () => void;
@@ -38,15 +67,39 @@ export const useThemeStore = create<EditorState>()(
     setActivePage: (page) =>
       set({ activePage: page, selection: null, sidebarView: "SECTIONS_LIST" }),
     setSidebarView: (view) => set({ sidebarView: view }),
-    selectComponent: (componentId) =>
-      set({ selection: { type: "COMPONENT", componentId } }),
-    selectSlide: (componentId, sliderId, slideId) =>
-      set({ selection: { type: "SLIDE", componentId, sliderId, slideId } }),
-    selectMarqueeItem: (componentId, itemId) =>
-      set({ selection: { type: "MARQUEE_ITEM", componentId, itemId } }),
-    selectProductCarouselItem: (componentId, itemId) =>
+
+    selectComponent: (componentId, activePage) =>
+      set({ selection: { type: "COMPONENT", componentId, activePage } }),
+
+    selectSlide: (componentId, sliderId, slideId, activePage) =>
       set({
-        selection: { type: "PRODUCT_CAROUSEL_ITEM", componentId, itemId },
+        selection: {
+          type: "SLIDE",
+          componentId,
+          sliderId,
+          slideId,
+          activePage,
+        },
+      }),
+
+    selectMarqueeItem: (componentId, itemId, activePage) =>
+      set({
+        selection: {
+          type: "MARQUEE_ITEM",
+          componentId,
+          itemId,
+          activePage,
+        },
+      }),
+
+    selectProductCarouselItem: (componentId, itemId, activePage) =>
+      set({
+        selection: {
+          type: "PRODUCT_CAROUSEL_ITEM",
+          componentId,
+          itemId,
+          activePage,
+        },
       }),
 
     selectHeader: () => set({ selection: { type: "HEADER" } }),

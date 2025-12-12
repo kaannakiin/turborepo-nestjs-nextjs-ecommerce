@@ -63,6 +63,7 @@ export const SlideEditor = ({
       onClose={clearSelection}
     >
       <SlideForm
+        key={slideIndex}
         componentIndex={componentIndex}
         pageIndex={pageIndex}
         slideIndex={slideIndex}

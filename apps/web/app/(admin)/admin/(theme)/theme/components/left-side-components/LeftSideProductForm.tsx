@@ -137,7 +137,8 @@ const LeftSideProductForm = ({
 
               const isSelected =
                 selection?.type === "PRODUCT_CAROUSEL_ITEM" &&
-                selection.itemId === itemData.itemId;
+                selection.itemId === itemData.itemId &&
+                selection.componentIndex === componentIndex;
 
               return (
                 <SortableListRow
@@ -147,7 +148,8 @@ const LeftSideProductForm = ({
                   onClick={() => {
                     selectProductCarouselItem(
                       field.componentId,
-                      itemData.itemId
+                      itemData.itemId,
+                      componentIndex
                     );
                   }}
                   onDelete={() => {

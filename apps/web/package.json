@@ -39,6 +39,7 @@
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-fade": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
+    "fix-react2shell-next": "^1.1.4",
     "htmlparser2": "^10.0.0",
     "jose": "^6.1.3",
     "nestjs-real-ip": "^3.0.1",

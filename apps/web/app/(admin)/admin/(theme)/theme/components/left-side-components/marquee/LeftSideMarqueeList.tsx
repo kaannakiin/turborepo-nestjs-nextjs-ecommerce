@@ -1,5 +1,3 @@
-"use client";
-
 import {
   closestCenter,
   DndContext,
@@ -15,12 +13,12 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Button, Stack, Text, ThemeIcon } from "@mantine/core";
-import { Control, createId, useFieldArray } from "@repo/shared";
+import { Button, Stack, ThemeIcon } from "@mantine/core";
+import { Control, createId, useFieldArray, useWatch } from "@repo/shared";
 import { MarqueeComponentInputType, ThemeInputType } from "@repo/types";
 import { IconPlus } from "@tabler/icons-react";
-import { useThemeStore } from "../../store/theme-store";
-import { SortableListRow } from "../common/SortableListRow";
+import { useThemeStore } from "../../../store/theme-store";
+import MarqueeItemRow from "./MarqueeItemRow";
 
 interface LeftSideMarqueeListProps {
   control: Control<ThemeInputType>;
@@ -35,7 +33,8 @@ const LeftSideMarqueeList = ({
   componentIndex,
   field,
 }: LeftSideMarqueeListProps) => {
-  const { selection, selectMarqueeItem, clearSelection } = useThemeStore();
+  const activePage = useThemeStore((state) => state.activePage);
+
   const itemsPath =
     `pages.${actualPageIndex}.components.${componentIndex}.items` as const;
 
@@ -51,28 +50,24 @@ const LeftSideMarqueeList = ({
   });
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-
     if (over && active.id !== over.id) {
       const oldIndex = items.findIndex((f) => f.rhf_item_id === active.id);
       const newIndex = items.findIndex((f) => f.rhf_item_id === over.id);
-
-      if (oldIndex !== -1 && newIndex !== -1) {
-        move(oldIndex, newIndex);
-      }
+      if (oldIndex !== -1 && newIndex !== -1) move(oldIndex, newIndex);
     }
   };
+
+  const componentId = useWatch({
+    control,
+    name: `pages.${actualPageIndex}.components.${componentIndex}.componentId`,
+    defaultValue: field.componentId,
+  });
 
   return (
     <DndContext
@@ -88,33 +83,17 @@ const LeftSideMarqueeList = ({
         <Stack gap={0}>
           {items.map((item, itemIndex) => {
             const itemData = item as unknown as (typeof field.items)[number];
-
-            const isSelected =
-              selection?.type === "MARQUEE_ITEM" &&
-              selection.componentId === field.componentId &&
-              selection.itemId === itemData.itemId;
-
-            const displayText =
-              itemData.text ||
-              (itemData.image ? "[Resim]" : `Öğe ${itemIndex + 1}`);
-
             return (
-              <SortableListRow
+              <MarqueeItemRow
                 key={item.rhf_item_id}
                 id={item.rhf_item_id}
-                isSelected={isSelected}
-                onClick={() =>
-                  selectMarqueeItem(field.componentId, itemData.itemId)
-                }
-                onDelete={() => {
-                  remove(itemIndex);
-                  if (isSelected) clearSelection();
-                }}
-              >
-                <Text size="sm" truncate>
-                  {displayText}
-                </Text>
-              </SortableListRow>
+                itemId={itemData.itemId}
+                text={itemData.text || (itemData.image ? "[Resim]" : "")}
+                index={itemIndex}
+                componentId={componentId}
+                activePage={activePage}
+                onRemove={() => remove(itemIndex)}
+              />
             );
           })}
         </Stack>
@@ -127,6 +106,14 @@ const LeftSideMarqueeList = ({
         onClick={() => {
           append({
             itemId: createId(),
+            text: "Yeni Duyuru",
+            link: null,
+            image: null,
+            existingImage: null,
+            badgeText: null,
+            customTitle: null,
+            productId: null,
+            variantId: null,
           });
         }}
         leftSection={

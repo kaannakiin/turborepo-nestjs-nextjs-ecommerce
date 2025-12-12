@@ -59,6 +59,7 @@ export const MarqueeItemEditor = ({
       onClose={clearSelection}
     >
       <MarqueeItemForm
+        key={itemIndex}
         index={itemIndex}
         control={control}
         componentIndex={componentIndex}

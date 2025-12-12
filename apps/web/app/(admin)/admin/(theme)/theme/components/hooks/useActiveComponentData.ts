@@ -38,9 +38,13 @@ export const useActiveComponentData = (control: Control<ThemeInputType>) => {
     selection.type === "MARQUEE_ITEM" ||
     selection.type === "PRODUCT_CAROUSEL_ITEM"
   ) {
-    componentIndex = allPages[pageIndex].components.findIndex(
-      (c) => c.componentId === selection.componentId
-    );
+    if (typeof selection.componentIndex === "number") {
+      componentIndex = selection.componentIndex;
+    } else {
+      componentIndex = allPages[pageIndex].components.findIndex(
+        (c) => c.componentId === selection.componentId
+      );
+    }
   }
 
   const component = allPages[pageIndex].components[componentIndex];

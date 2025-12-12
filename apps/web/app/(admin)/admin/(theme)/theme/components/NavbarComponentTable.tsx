@@ -23,9 +23,9 @@ import {
   ThemeInputType,
 } from "@repo/types";
 import { useMemo } from "react";
-import LeftSideMarqueeList from "./left-side-components/LeftSideMarqueeList";
 import LeftSideProductForm from "./left-side-components/LeftSideProductForm";
 import LeftSideSliderList from "./left-side-components/LeftSideSliderList";
+import LeftSideMarqueeList from "./left-side-components/marquee/LeftSideMarqueeList";
 import SortableNavbarComponent from "./SortableNavbarComponent";
 
 const getTitle = (type: ThemeComponents, index: number) => {
@@ -60,6 +60,7 @@ const NavbarComponentTable = ({
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
   const sortedFields = useMemo(() => {
     return [...fields].sort((a, b) => a.order - b.order);
   }, [fields]);
@@ -113,16 +114,19 @@ const NavbarComponentTable = ({
               (f) => f.rhf_id === field.rhf_id
             );
 
+            if (actualIndex === -1) return null;
             return (
               <SortableNavbarComponent
                 key={field.rhf_id}
                 rhfId={field.rhf_id}
                 componentId={field.componentId}
+                componentIndex={actualIndex}
                 title={getTitle(field.type, sortedIndex)}
                 onDelete={() => handleDelete(field.rhf_id)}
               >
                 {field.type === "SLIDER" && (
                   <LeftSideSliderList
+                    key={field.rhf_id}
                     componentIndex={actualIndex}
                     control={control}
                     index={activePageIndex}
@@ -135,6 +139,7 @@ const NavbarComponentTable = ({
                 )}
                 {field.type === "MARQUEE" && (
                   <LeftSideMarqueeList
+                    key={field.rhf_id}
                     control={control}
                     actualPageIndex={activePageIndex}
                     componentIndex={actualIndex}
@@ -147,6 +152,7 @@ const NavbarComponentTable = ({
                 )}
                 {field.type === "PRODUCT_CAROUSEL" && (
                   <LeftSideProductForm
+                    key={field.rhf_id}
                     control={control}
                     actualPageIndex={activePageIndex}
                     componentIndex={actualIndex}
