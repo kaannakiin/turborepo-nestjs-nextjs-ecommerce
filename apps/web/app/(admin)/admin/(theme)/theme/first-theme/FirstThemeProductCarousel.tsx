@@ -23,7 +23,7 @@ const FirstThemeProductCarousel = ({
   const queryClient = useQueryClient();
   const { config, title, description } = data;
 
-  const { media } = useTheme();
+  const { actualMedia: media } = useTheme();
   const productIds = data.items
     .filter((item) => item.productId && !item.variantId)
     .map((item) => item.productId!)
@@ -126,15 +126,20 @@ const FirstThemeProductCarousel = ({
   const currentSpaceBetween =
     media === "desktop" ? 24 : media === "tablet" ? 20 : 16;
 
+  // Başlık ve açıklama gösterim kontrolü
+  const shouldShowTitle = config.showTitle && title;
+  const shouldShowDescription = config.showDescription && description;
+  const shouldShowHeader = shouldShowTitle || shouldShowDescription;
+
   if (isLoading) return <GlobalLoadingOverlay />;
   if (slides.length === 0) return null;
 
   return (
     <Box component="section" py="xl">
       <Container size="xl">
-        {(title || description) && (
+        {shouldShowHeader && (
           <Stack mb="xl" align="center" gap="xs">
-            {title && (
+            {shouldShowTitle && (
               <Title
                 order={2}
                 style={{ color: config.titleTextColor || "inherit" }}
@@ -143,7 +148,7 @@ const FirstThemeProductCarousel = ({
                 {title}
               </Title>
             )}
-            {description && (
+            {shouldShowDescription && (
               <Text
                 c={config.descriptionTextColor || "dimmed"}
                 ta="center"
@@ -182,6 +187,9 @@ const FirstThemeProductCarousel = ({
                 data={product}
                 aspectRatio={config.aspectRatio}
                 showAddToCartButton={config.showAddToCartButton}
+                showDiscountBadge={config.showDiscountBadge}
+                badgeBackgroundColor={config.badgeBackgroundColor}
+                badgeTextColor={config.badgeTextColor}
               />
             </SwiperSlide>
           ))}

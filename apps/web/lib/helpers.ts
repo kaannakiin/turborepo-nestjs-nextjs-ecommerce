@@ -1,3 +1,4 @@
+import { getFontFamily } from "@/components/hooks/useGoogleFont";
 import { Media } from "@/context/theme-context/ThemeContext";
 import { MantineColor, MantineColorsTuple } from "@mantine/core";
 import {
@@ -980,11 +981,47 @@ export const getThemeSectionValue = (section: ThemeSections): ThemeSections => {
   return ThemeSectionConfigs[section]?.value || "HEADER";
 };
 
-// Select için data
-export const fontSelectData = Object.entries(FontType).map(([key, label]) => ({
-  value: key,
-  label: label,
-}));
+export const fontSelectData = [
+  {
+    group: "Sans Serif (Modern & Temiz)",
+    items: [
+      { value: FontType.Inter, label: "Inter" },
+      { value: FontType.Roboto, label: "Roboto" },
+      { value: FontType.Open_Sans, label: "Open Sans" },
+      { value: FontType.Lato, label: "Lato" },
+      { value: FontType.Poppins, label: "Poppins" },
+      { value: FontType.Montserrat, label: "Montserrat" },
+      { value: FontType.Nunito, label: "Nunito" },
+      { value: FontType.Geist, label: "Geist" },
+    ],
+  },
+  {
+    group: "Serif (Klasik & Şık)",
+    items: [
+      { value: FontType.Playfair_Display, label: "Playfair Display" },
+      { value: FontType.Merriweather, label: "Merriweather" },
+      { value: FontType.Lora, label: "Lora" },
+      { value: FontType.Crimson_Text, label: "Crimson Text" },
+    ],
+  },
+  {
+    group: "Monospace (Kod & Teknik)",
+    items: [
+      { value: FontType.Roboto_Mono, label: "Roboto Mono" },
+      { value: FontType.Fira_Code, label: "Fira Code" },
+      { value: FontType.JetBrains_Mono, label: "JetBrains Mono" },
+      { value: FontType.Geist_Mono, label: "Geist Mono" },
+    ],
+  },
+  {
+    group: "Display & Diğerleri",
+    items: [
+      { value: FontType.Oswald, label: "Oswald" },
+      { value: FontType.Bebas_Neue, label: "Bebas Neue" },
+      { value: FontType.Anton, label: "Anton" },
+    ],
+  },
+];
 
 /**
  * Tek bir hex renkten 10 shade'lik Mantine color tuple üretir

@@ -20,7 +20,8 @@
     "next-env.d.ts",
     ".next/types/**/*.ts",
     "next.config.js",
-    "app/globals.d.ts"
+    "app/globals.d.ts",
+    "app/(admin)/components/ActionPopoverrtsx"
   ],
   "exclude": ["node_modules"]
 }

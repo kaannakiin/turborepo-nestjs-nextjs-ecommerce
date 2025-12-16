@@ -30,7 +30,7 @@ const ShoppingBagDrawerV2 = () => {
   const [opened, { close, toggle }] = useDisclosure();
   const { cart, decreaseItem, increaseItem, removeItem } = useCartV3();
   const isEmpty = !cart || cart.items.length === 0;
-  const { media } = useTheme();
+  const { actualMedia: media } = useTheme();
   const { push } = useRouter();
 
   return (

@@ -117,7 +117,7 @@ const ThemeSidebar = ({ forms, createbleSelect }: ThemeSidebarProps) => {
                 {sidebarView === "THEME_SETTINGS" && (
                   <ThemeSettingsComponent control={forms.control} />
                 )}
-                {sidebarView === "HEADER" && <HeaderComponent />}
+                {sidebarView === "HEADER" && <HeaderComponent forms={forms} />}
 
                 {sidebarView === "FOOTER" && (
                   <div className="p-4">
@@ -146,7 +146,7 @@ const LayoutSectionButton = ({
     <UnstyledButton
       onClick={onClick}
       mx="sm"
-      my="xs"
+      my="4px"
       px="md"
       py="sm"
       className="w-[calc(100%-24px)] rounded-lg border border-gray-200 bg-white 

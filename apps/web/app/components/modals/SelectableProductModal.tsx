@@ -16,14 +16,17 @@ import {
 } from "@mantine/core";
 import { useDebouncedState } from "@mantine/hooks";
 import { useQuery } from "@repo/shared";
-import { SearchableProductModalResponseType } from "@repo/types";
+import {
+  ProductSelectResult,
+  SearchableProductModalResponseType,
+} from "@repo/types";
 import {
   IconCheck,
   IconChevronDown,
   IconChevronRight,
   IconSearch,
 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import GlobalLoader from "../GlobalLoader";
 
 interface SelectableProductModalProps {
@@ -31,10 +34,8 @@ interface SelectableProductModalProps {
   opened: boolean;
   onClose: () => void;
   props?: Omit<ModalProps, "opened" | "onClose">;
-  selectedIds?: string[];
-  onSubmit: (
-    selectedProducts: SearchableProductModalResponseType["data"][number][]
-  ) => void;
+  selectedItems?: ProductSelectResult[]; // selectedIds yerine selectedItems
+  onSubmit: (selectedProducts: ProductSelectResult[]) => void;
 }
 
 const SelectableProductModal = ({
@@ -42,20 +43,20 @@ const SelectableProductModal = ({
   onClose,
   opened,
   props,
-  selectedIds = [],
+  selectedItems = [],
   onSubmit,
 }: SelectableProductModalProps) => {
   const [page, setPage] = useState<number>(1);
   const [limit] = useState<number>(10);
   const [search, setSearch] = useDebouncedState<string>("", 500);
 
-  const [localSelected, setLocalSelected] = useState<
-    SearchableProductModalResponseType["data"][number][]
-  >([]);
+  const [localSelected, setLocalSelected] = useState<ProductSelectResult[]>([]);
+
+  const initializedRef = useRef(false);
 
   const [expandedParents, setExpandedParents] = useState<string[]>([]);
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["selectable-products-modal", { page, limit, search }],
     queryFn: async () => {
       const res = await fetchWrapper.get<SearchableProductModalResponseType>(
@@ -71,14 +72,54 @@ const SelectableProductModal = ({
     enabled: opened,
   });
 
+  // Modal açıldığında selectedItems'ı direkt localSelected'a set et
+  useEffect(() => {
+    if (opened && !initializedRef.current) {
+      setLocalSelected(selectedItems);
+      initializedRef.current = true;
+    }
+  }, [opened, selectedItems]);
+
+  // Data yüklendiğinde, localSelected'daki eksik bilgileri güncelle
+  useEffect(() => {
+    if (!data?.data) return;
+
+    setLocalSelected((prev) => {
+      return prev.map((selected) => {
+        // Eğer zaten tam verisi varsa dokunma
+        if (selected.name) return selected;
+
+        // Data içinde bu ID'yi bul ve güncelle
+        for (const product of data.data) {
+          if (product.variants && product.variants.length > 0) {
+            const variant = product.variants.find((v) => v.id === selected.id);
+            if (variant) return variant;
+          } else if (product.id === selected.id) {
+            return product;
+          }
+        }
+
+        return selected;
+      });
+    });
+  }, [data?.data]);
+
+  // Modal kapandığında state'leri resetle
+  useEffect(() => {
+    if (!opened) {
+      setLocalSelected([]);
+      setExpandedParents([]);
+      setPage(1);
+      initializedRef.current = false;
+    }
+  }, [opened]);
+
   useEffect(() => {
     setPage(1);
   }, [search]);
 
   const isSelected = (id: string) => {
-    return (
-      selectedIds.includes(id) || localSelected.some((item) => item.id === id)
-    );
+    return localSelected.some((item) => item.id === id);
   };
 
   const toggleExpand = (id: string) => {
@@ -87,9 +128,7 @@ const SelectableProductModal = ({
     );
   };
 
-  const handleSingleSelect = (
-    product: SearchableProductModalResponseType["data"][number]
-  ) => {
+  const handleSingleSelect = (product: ProductSelectResult) => {
     setLocalSelected((prev) => {
       const exists = prev.find((p) => p.id === product.id);
 
@@ -102,10 +141,8 @@ const SelectableProductModal = ({
     });
   };
 
-  const handleParentSelect = (
-    parent: SearchableProductModalResponseType["data"][number]
-  ) => {
-    if (!parent.variants) return;
+  const handleParentSelect = (parent: ProductSelectResult) => {
+    if (!parent.variants || parent.variants.length === 0) return;
 
     if (!multiple) {
       toggleExpand(parent.id);
@@ -113,11 +150,13 @@ const SelectableProductModal = ({
     }
 
     const allVariantIds = parent.variants.map((v) => v.id);
-    const selectedVariantIds = localSelected.map((p) => p.id);
+    const selectedVariantIds = localSelected
+      .filter((p) => allVariantIds.includes(p.id))
+      .map((p) => p.id);
 
-    const isAllSelected = allVariantIds.every((id) =>
-      selectedVariantIds.includes(id)
-    );
+    const isAllSelected =
+      allVariantIds.length > 0 &&
+      allVariantIds.every((id) => selectedVariantIds.includes(id));
 
     setLocalSelected((prev) => {
       if (isAllSelected) {
@@ -132,33 +171,36 @@ const SelectableProductModal = ({
   };
 
   const handleSubmit = () => {
+    // Tüm seçili ürünleri gönder (eski + yeni)
     onSubmit(localSelected);
     onClose();
   };
 
-  const renderRow = (
-    item: SearchableProductModalResponseType["data"][number],
-    isChild = false
-  ) => {
+  const renderRow = (item: ProductSelectResult, isChild = false) => {
     const hasVariants = item.variants && item.variants.length > 0;
-    const itemIsSelected = isSelected(item.id);
     const isExpanded = expandedParents.includes(item.id);
 
-    const isSelectable = multiple || !hasVariants;
+    let checkboxChecked = false;
+    let checkboxIndeterminate = false;
 
-    let parentChecked = false;
-    let parentIndeterminate = false;
-
-    if (hasVariants && multiple) {
+    if (hasVariants) {
       const totalVariants = item.variants!.length;
       const selectedCount = item.variants!.filter((v) =>
         isSelected(v.id)
       ).length;
-      parentChecked = totalVariants > 0 && totalVariants === selectedCount;
-      parentIndeterminate = selectedCount > 0 && selectedCount < totalVariants;
+
+      checkboxChecked = totalVariants > 0 && totalVariants === selectedCount;
+      checkboxIndeterminate =
+        selectedCount > 0 && selectedCount < totalVariants;
     } else {
-      parentChecked = itemIsSelected;
+      checkboxChecked = isSelected(item.id);
     }
+
+    const handleRowClick = () => {
+      if (!hasVariants) {
+        handleSingleSelect(item);
+      }
+    };
 
     return (
       <div
@@ -167,22 +209,28 @@ const SelectableProductModal = ({
           isChild ? "bg-gray-50/50" : ""
         }`}
       >
-        <Group p="xs" wrap="nowrap" align="center">
-          {isSelectable ? (
-            <Checkbox
-              checked={parentChecked}
-              indeterminate={parentIndeterminate}
-              onChange={() =>
-                hasVariants
-                  ? handleParentSelect(item)
-                  : handleSingleSelect(item)
+        <Group
+          p="xs"
+          wrap="nowrap"
+          align="center"
+          onClick={handleRowClick}
+          style={{ cursor: hasVariants ? "default" : "pointer" }}
+        >
+          <Checkbox
+            checked={checkboxChecked}
+            indeterminate={checkboxIndeterminate}
+            onChange={(e) => {
+              e.stopPropagation();
+              if (hasVariants) {
+                handleParentSelect(item);
+              } else {
+                handleSingleSelect(item);
               }
-              radius="sm"
-              className="cursor-pointer"
-            />
-          ) : (
-            <div className="w-5" />
-          )}
+            }}
+            onClick={(e) => e.stopPropagation()}
+            radius="sm"
+            className="cursor-pointer"
+          />
 
           <Avatar
             src={item.image?.url}
@@ -190,23 +238,27 @@ const SelectableProductModal = ({
             size={isChild ? "sm" : "md"}
             className="bg-gray-100"
           >
-            {item.name.charAt(0)}
+            {item.name?.charAt(0) || "?"}
           </Avatar>
 
           <div className="flex-1 min-w-0">
             <Text size="sm" fw={500} lineClamp={1}>
-              {item.name}
+              {item.name || "Yükleniyor..."}
             </Text>
             <Group gap="xs">
-              {item.variants?.length === 0 && (
-                <Text size="xs" c="dimmed">
-                  SKU: {item.sku || "-"}
-                </Text>
+              {!hasVariants && (
+                <>
+                  <Text size="xs" c="dimmed">
+                    SKU: {item.sku || "-"}
+                  </Text>
+                  <Text size="xs" c={item.stock > 0 ? "teal" : "red"}>
+                    Stok: {item.stock}
+                  </Text>
+                </>
               )}
-
-              {item.variants?.length === 0 && (
-                <Text size="xs" c={item.stock > 0 ? "teal" : "red"}>
-                  Stok: {item.stock}
+              {hasVariants && (
+                <Text size="xs" c="dimmed">
+                  {item.variants!.length} varyant
                 </Text>
               )}
             </Group>
@@ -216,7 +268,10 @@ const SelectableProductModal = ({
             <ActionIcon
               variant="subtle"
               color="gray"
-              onClick={() => toggleExpand(item.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleExpand(item.id);
+              }}
             >
               {isExpanded ? (
                 <IconChevronDown size={18} />

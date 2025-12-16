@@ -26,7 +26,7 @@ const ProductsCarousels = ({
   stackClassName,
   productId,
 }: ProductsCarouselsProps) => {
-  const { media } = useTheme();
+  const { actualMedia: media } = useTheme();
   const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);

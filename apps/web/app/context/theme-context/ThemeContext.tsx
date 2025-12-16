@@ -12,8 +12,8 @@ import {
 export type Media = "mobile" | "tablet" | "desktop";
 
 interface ThemeContextType {
-  media: Media;
-  changeMedia: (newMedia: Media) => void;
+  actualMedia: Media;
+  changeActualMedia: (newMedia: Media) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -39,9 +39,9 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     setMedia(newMedia);
   };
 
-  const value = {
-    media,
-    changeMedia,
+  const value: ThemeContextType = {
+    actualMedia: media,
+    changeActualMedia: changeMedia,
   };
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import ActionPopover from "@/(admin)/components/ActionPopoverr";
+import ActionPopover from "@/(admin)/components/ActionPopover";
 import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
 import GlobalLoader from "@/components/GlobalLoader";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";

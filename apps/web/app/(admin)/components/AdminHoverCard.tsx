@@ -23,7 +23,6 @@ export interface AdminHoverCardProps {
   gradient?: string;
 }
 
-// Ayrı component olarak tanımlıyoruz
 const AdminCard = ({ item }: { item: AdminHoverCardProps }) => {
   const { hovered, ref } = useHover();
   const { push } = useRouter();

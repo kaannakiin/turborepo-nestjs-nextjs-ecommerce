@@ -1,22 +1,28 @@
 "use client";
 
+import { useTheme } from "@/context/theme-context/ThemeContext";
 import { ActionIcon, Burger, Button, Group, Tooltip } from "@mantine/core";
 import { UseDisclosureHandlers } from "@mantine/hooks";
+import { SubmitHandler, UseFormHandleSubmit } from "@repo/shared";
+import { ThemeInputType } from "@repo/types";
 import { ThemeIconsType } from "../../page";
-import { useTheme } from "@/context/theme-context/ThemeContext";
 
 interface AppShellHeaderProps {
   opened: boolean;
   toggle: UseDisclosureHandlers["toggle"];
   themeIcons: Array<ThemeIconsType>;
+  onSubmit: SubmitHandler<ThemeInputType>;
+  handleSubmit: UseFormHandleSubmit<ThemeInputType>;
 }
 
 const ThemeEditorHeader = ({
   opened,
   toggle,
   themeIcons,
+  onSubmit,
+  handleSubmit,
 }: AppShellHeaderProps) => {
-  const { media, changeMedia } = useTheme();
+  const { actualMedia: media, changeActualMedia: changeMedia } = useTheme();
   return (
     <Group h="100%" px="md" align="center" justify="space-between">
       <Group h="100%" align="center">
@@ -46,7 +52,9 @@ const ThemeEditorHeader = ({
       </Group>
       <Group visibleFrom="sm" gap={"md"} align="center">
         <Button variant="outline">Vazgeç</Button>
-        <Button variant="filled">Kaydet</Button>
+        <Button variant="filled" type="button" onClick={handleSubmit(onSubmit)}>
+          Kaydet
+        </Button>
       </Group>
     </Group>
   );

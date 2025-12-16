@@ -1,11 +1,10 @@
 "use client";
-
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
-  MultiSelect,
-  Select,
   Loader,
+  MultiSelect,
   MultiSelectProps,
+  Select,
   SelectProps,
 } from "@mantine/core";
 import { useQuery } from "@repo/shared";
@@ -26,12 +25,14 @@ const fetchTags = async () => {
   return response.data;
 };
 
+export interface SelectOption {
+  value: string;
+  label: string;
+}
+
 interface AdminTagDataSelectProps {
   multiple?: boolean;
-  onChange?: (
-    value: ProductTagIdAndName | ProductTagIdAndName[] | null
-  ) => void;
-
+  onChange: (value: string | string[] | null, options?: SelectOption[]) => void;
   value?: string | string[] | null;
   props?: Partial<MultiSelectProps | SelectProps>;
 }
@@ -73,11 +74,10 @@ const AdminTagDataSelect = ({
   else if (isEmpty) dynamicPlaceholder = "Tanımlı etiket bulunmuyor";
 
   const isComponentDisabled = isError || (isEmpty && !isLoading);
-
   const isReady = !isLoading && !isError && data && data.length > 0;
   const safeValue = isReady ? value : multiple ? [] : null;
 
-  const selectData =
+  const selectData: SelectOption[] =
     data?.map((item) => ({
       value: String(item.id),
       label: item.name,
@@ -104,10 +104,11 @@ const AdminTagDataSelect = ({
         {...(props as MultiSelectProps)}
         {...logicProps}
         value={safeValue as string[]}
-        onChange={(values) => {
-          const selectedObjects =
-            data?.filter((item) => values.includes(String(item.id))) || [];
-          onChange?.(selectedObjects);
+        onChange={(val) => {
+          const selectedOptions = selectData.filter((opt) =>
+            val.includes(opt.value)
+          );
+          onChange(val, selectedOptions);
         }}
       />
     );
@@ -119,10 +120,9 @@ const AdminTagDataSelect = ({
       {...(props as SelectProps)}
       {...logicProps}
       value={safeValue as string | null}
-      onChange={(value) => {
-        const selectedObject =
-          data?.find((item) => String(item.id) === value) || null;
-        onChange?.(selectedObject);
+      onChange={(val) => {
+        const selectedOption = selectData.find((opt) => opt.value === val);
+        onChange(val, selectedOption ? [selectedOption] : []);
       }}
     />
   );

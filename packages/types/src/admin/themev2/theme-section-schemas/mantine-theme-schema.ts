@@ -11,7 +11,9 @@ export const mantineThemeSchema = z.object({
     })
     .min(0, { error: "En az 0" })
     .max(9, { error: "En fazla 9" }),
-  font: z.literal<FontType>(FontType.Anton),
+  font: z.enum(Object.values(FontType), {
+    error: "Font türünü belirtin",
+  }),
 });
 
 export type MantineThemeSchema = z.infer<typeof mantineThemeSchema>;

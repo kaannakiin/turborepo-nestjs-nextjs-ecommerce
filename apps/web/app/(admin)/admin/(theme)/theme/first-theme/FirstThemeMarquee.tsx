@@ -86,7 +86,6 @@ const FirstThemeMarquee = ({ data }: FirstThemeMarqueeProps) => {
     const content =
       item.type === "text" ? (
         <Text
-          component="span"
           size={options.fontSize || "md"}
           fw={options.fontWeight || "normal"}
           c={options.textColor || undefined}

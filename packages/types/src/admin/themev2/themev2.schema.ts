@@ -245,6 +245,7 @@ export const CarouselItemSchema = z
       if (!data.productId && !data.variantId) {
         return false;
       }
+      return true;
     },
     {
       error: "Ürün veya Varyant ID'si zorunludur.",
@@ -256,7 +257,12 @@ export const CarouselConfigSchema = z.object({
   slidesPerViewTablet: z.number().min(1).max(4),
   slidesPerViewMobile: z.number().min(1).max(2),
   autoplay: z.boolean(),
-  autoplaySpeed: z.number().min(1000),
+  autoplaySpeed: z
+    .number({ error: "Lütfen bir sayı giriniz." })
+    .min(1000, { error: "Otomatik oynatma hızı en az 1000 ms olmalıdır." })
+    .max(60000, {
+      error: "Otomatik oynatma hızı en fazla 60000 ms olmalıdır.",
+    }),
   loop: z.boolean(),
   showArrows: z.boolean(),
   showDots: z.boolean(),
@@ -264,26 +270,58 @@ export const CarouselConfigSchema = z.object({
   aspectRatio: z.enum(AspectRatio, {
     error: "Geçerli bir aspect ratio değeri seçiniz.",
   }),
+  showDescription: z.boolean(),
+  showTitle: z.boolean(),
+  showDiscountBadge: z.boolean(),
+  badgeBackgroundColor: colorHex.nullish(),
+  badgeTextColor: colorHex.nullish(),
   titleTextColor: colorHex.nullish(),
   descriptionTextColor: colorHex.nullish(),
 });
 
-export const ProductCarouselComponentSchema = z.object({
-  componentId: z.cuid2({
-    error: "Geçerli bir component ID'si giriniz.",
-  }),
-  type: z.literal<ThemeComponents>("PRODUCT_CAROUSEL"),
-  order: z.number({ error: "Sıralama zorunludur." }).int().min(0),
-  title: z.string({ error: "Başlık zorunludur." }).max(100).optional(),
-  description: z.string({ error: "Açıklama zorunludur." }).max(300).optional(),
-  config: CarouselConfigSchema,
-  items: z
-    .array(CarouselItemSchema, {
-      error: "Carousel öğeleri zorunludur.",
-    })
-    .min(1, { error: "Carousel içinde en az 1 ürün olmalıdır." })
-    .max(50, { error: "Carousel içine en fazla 50 ürün ekleyebilirsiniz." }),
-});
+export const ProductCarouselComponentSchema = z
+  .object({
+    componentId: z.cuid2({
+      message: "Geçerli bir component ID'si giriniz.",
+    }),
+    type: z.literal<ThemeComponents>("PRODUCT_CAROUSEL"),
+    order: z.number({ message: "Sıralama zorunludur." }).int().min(0),
+    title: z.string().max(100).optional().nullable(),
+    description: z.string().max(300).optional().nullable(),
+    config: CarouselConfigSchema,
+    items: z
+      .array(CarouselItemSchema, {
+        message: "Carousel öğeleri zorunludur.",
+      })
+      .min(1, { message: "Carousel içinde en az 1 ürün olmalıdır." })
+      .max(50, {
+        message: "Carousel içine en fazla 50 ürün ekleyebilirsiniz.",
+      }),
+  })
+  .refine(
+    (data) => {
+      if (data.config.showTitle && !data.title?.trim()) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: "Başlık gösterilecekse başlık alanı zorunludur.",
+      path: ["title"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.config.showDescription && !data.description?.trim()) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: "Açıklama gösterilecekse açıklama alanı zorunludur.",
+      path: ["description"],
+    }
+  );
 
 export const ThemeComponentSchema = z.discriminatedUnion("type", [
   SliderComponentSchema,
@@ -310,7 +348,7 @@ export const ThemeSchema = z.object({
   id: z.cuid2({ error: "Geçerli bir theme ID'si giriniz." }),
   name: z.string({ error: "Tema adı zorunludur." }).min(1),
   isActive: z.boolean(),
-  header: HeaderSchema.nullish(),
+  header: HeaderSchema,
   settings: mantineThemeSchema.nullish(),
   pages: z
     .array(PageSchema)
