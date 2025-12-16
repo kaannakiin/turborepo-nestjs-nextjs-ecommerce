@@ -1,5 +1,6 @@
 "use client";
 import SelectableProductModal from "@/components/modals/SelectableProductModal";
+import { TruncatedText } from "@/components/TruncatedText";
 import {
   closestCenter,
   DndContext,
@@ -15,21 +16,19 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Button, Stack, Text, ThemeIcon } from "@mantine/core";
+import { Button, Stack, ThemeIcon } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Control, createId, useFieldArray, useWatch } from "@repo/shared";
 import {
   CarouselItemInputType,
   ProductCarouselComponentInputType,
   ProductSelectResult,
-  PageInputType,
   ThemeInputType,
 } from "@repo/types";
 import { IconPlus } from "@tabler/icons-react";
-import { useMemo } from "react";
 import { useThemeStore } from "../../../../store/theme-store";
 import { SortableListRow } from "../../../common/SortableListRow";
-import { TruncatedText } from "@/components/TruncatedText";
+import { diffCarouselItems } from "@/components/modals/selectable-product-modal.helper";
 
 interface LeftSideProductFormProps {
   control: Control<ThemeInputType>;
@@ -77,45 +76,27 @@ const NavbarProductCarouselList = ({
     name: productPaths,
   });
 
-  const currentSelectedIds = useMemo(() => {
-    const items = watchedItems || fields;
-
-    return items
-      .map(
-        (item: CarouselItemInputType) => item.variantId || item.productId || ""
-      )
-      .filter((id: string) => Boolean(id));
-  }, [watchedItems, fields]);
+  const currentSelectedItems: ProductSelectResult[] = (watchedItems ?? fields)
+    .map((item: CarouselItemInputType) => ({
+      id: item.variantId || item.productId || "",
+      name: item.customTitle || "",
+      isVariant: Boolean(item.variantId),
+      stock: 0,
+      sku: null,
+      variantCombinations: [],
+    }))
+    .filter((item) => Boolean(item.id));
 
   const handleModalSubmit = (selectedProducts: ProductSelectResult[]) => {
-    const selectedIdsSet = new Set(selectedProducts.map((p) => p.id));
-
-    const indexesToRemove: number[] = [];
-    fields.forEach((fieldItem: CarouselItemInputType, idx) => {
-      const currentId = fieldItem.variantId || fieldItem.productId;
-      if (currentId && !selectedIdsSet.has(currentId)) {
-        indexesToRemove.push(idx);
-      }
-    });
-
-    if (indexesToRemove.length > 0) {
-      indexesToRemove.sort((a, b) => b - a).forEach((idx) => remove(idx));
-    }
-
-    const newItems = selectedProducts.filter(
-      (p) => !currentSelectedIds.includes(p.id)
+    const { toRemoveIndexes, toAppend } = diffCarouselItems(
+      fields as CarouselItemInputType[],
+      selectedProducts
     );
 
-    const itemsToAppend = newItems.map((product) => ({
-      itemId: createId(),
-      productId: product.isVariant ? null : product.id,
-      variantId: product.isVariant ? product.id : null,
-      customTitle: product.name,
-      badgeText: "",
-    }));
+    toRemoveIndexes.forEach((idx) => remove(idx));
 
-    if (itemsToAppend.length > 0) {
-      append(itemsToAppend);
+    if (toAppend.length > 0) {
+      append(toAppend);
     }
   };
 
@@ -191,7 +172,7 @@ const NavbarProductCarouselList = ({
         onClose={close}
         multiple={true}
         onSubmit={handleModalSubmit}
-        selectedIds={currentSelectedIds}
+        selectedItems={currentSelectedItems}
         props={{
           title: "Ürün Seçimi",
           size: "lg",

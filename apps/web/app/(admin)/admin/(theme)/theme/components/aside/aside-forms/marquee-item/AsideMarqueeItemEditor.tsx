@@ -37,7 +37,7 @@ export const AsideMarqueeItemEditor = ({
     );
   }
 
-  const itemIndex = (component as MarqueeComponentInputType).items.findIndex(
+  const itemIndex = (component as MarqueeComponentInputType).items?.findIndex(
     (item) => item.itemId === selection.itemId
   );
 

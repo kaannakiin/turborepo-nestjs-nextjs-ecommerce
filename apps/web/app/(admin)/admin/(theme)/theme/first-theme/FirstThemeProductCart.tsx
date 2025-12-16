@@ -1,5 +1,4 @@
 "use client";
-
 import CustomImage from "@/components/CustomImage";
 import {
   AspectRatio,
@@ -22,15 +21,20 @@ interface FirstThemeProductCartProps {
   data: ProductCart;
   aspectRatio: AspectType;
   showAddToCartButton: boolean;
+  showDiscountBadge?: boolean;
+  badgeBackgroundColor?: string | null;
+  badgeTextColor?: string | null;
 }
 
 const FirstThemeProductCart = ({
   data,
   aspectRatio = "3/4",
   showAddToCartButton = true,
+  showDiscountBadge = true,
+  badgeBackgroundColor,
+  badgeTextColor,
 }: FirstThemeProductCartProps) => {
   const theme = useMantineTheme();
-
   const { hovered, ref } = useHover();
 
   const primaryImage = data.images[0]?.url;
@@ -54,6 +58,10 @@ const FirstThemeProductCart = ({
     return 3 / 4;
   }, [aspectRatio]);
 
+  // İndirim badge'i gösterilecek mi?
+  const shouldShowDiscountBadge =
+    showDiscountBadge && data.discountPrice !== null;
+
   if (!primaryImage) return null;
 
   return (
@@ -71,13 +79,18 @@ const FirstThemeProductCart = ({
             />
           </AspectRatio>
 
-          {data.discountPrice && (
+          {shouldShowDiscountBadge && (
             <Badge
               pos="absolute"
               top={theme.spacing.xs}
               right={theme.spacing.xs}
-              color="red"
               radius="sm"
+              styles={{
+                root: {
+                  backgroundColor: badgeBackgroundColor || theme.colors.red[6],
+                  color: badgeTextColor || "white",
+                },
+              }}
             >
               İndirim
             </Badge>
@@ -94,7 +107,6 @@ const FirstThemeProductCart = ({
               className="opacity-0 transition-opacity duration-300 group-hover:opacity-100"
               onClick={(e) => {
                 e.preventDefault();
-
                 console.log("Adding to cart:", data.id);
               }}
             >
@@ -107,7 +119,6 @@ const FirstThemeProductCart = ({
           <Text fw={500} lineClamp={1} size="sm" title={data.name}>
             {data.name}
           </Text>
-
           <Group gap={8}>
             {data.discountPrice ? (
               <>

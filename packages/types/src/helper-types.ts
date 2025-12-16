@@ -101,3 +101,8 @@ export type CheckoutPageCartType = Prisma.CartGetPayload<{
     user: true;
   };
 }>;
+
+export interface SelectOption {
+  value: string;
+  label: string;
+}

@@ -64,7 +64,7 @@ interface BinCheckResponse {
 const PaymentStep = ({ cart }: PaymentStepProps) => {
   const { replace, push } = useRouter();
   const searchParams = useSearchParams();
-  const { media } = useTheme();
+  const { actualMedia: media } = useTheme();
   const [errorMessage, setErrorMessage] = useState<string | null>(
     searchParams.get("error") || null
   );

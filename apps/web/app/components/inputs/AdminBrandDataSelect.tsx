@@ -1,5 +1,4 @@
 "use client";
-
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
   Loader,
@@ -22,9 +21,14 @@ const fetchBrands = async () => {
   return response.data;
 };
 
+export interface SelectOption {
+  value: string;
+  label: string;
+}
+
 interface AdminBrandDataSelectProps {
   multiple?: boolean;
-  onChange: (value: string | string[] | null) => void;
+  onChange: (value: string | string[] | null, options?: SelectOption[]) => void;
   props?: Partial<MultiSelectProps | SelectProps>;
   value?: string | string[] | null;
 }
@@ -64,11 +68,10 @@ const AdminBrandDataSelect = ({
   else if (isEmpty) dynamicPlaceholder = "Tanımlı marka bulunmuyor";
 
   const isComponentDisabled = isError || (isEmpty && !isLoading);
-
   const isReady = !isLoading && !isError && data && data.length > 0;
   const safeValue = isReady ? value : multiple ? [] : null;
 
-  const selectData =
+  const selectData: SelectOption[] =
     data?.map((brand: BrandIdAndName) => ({
       value: String(brand.id),
       label: brand.name,
@@ -95,7 +98,12 @@ const AdminBrandDataSelect = ({
         {...(props as MultiSelectProps)}
         {...logicProps}
         value={safeValue as string[]}
-        onChange={(val) => onChange(val)}
+        onChange={(val) => {
+          const selectedOptions = selectData.filter((opt) =>
+            val.includes(opt.value)
+          );
+          onChange(val, selectedOptions);
+        }}
       />
     );
   }
@@ -106,7 +114,10 @@ const AdminBrandDataSelect = ({
       {...(props as SelectProps)}
       {...logicProps}
       value={safeValue as string | null}
-      onChange={(val) => onChange(val)}
+      onChange={(val) => {
+        const selectedOption = selectData.find((opt) => opt.value === val);
+        onChange(val, selectedOption ? [selectedOption] : []);
+      }}
     />
   );
 };

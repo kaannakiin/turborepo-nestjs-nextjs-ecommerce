@@ -304,7 +304,7 @@ const CheckoutPageRightSection = ({
 }: CheckoutPageRightSectionProps) => {
   const [openNote, setOpenNote] = useState(false);
   const [openDiscount, setOpenDiscount] = useState(false);
-  const { media } = useTheme();
+  const { actualMedia: media } = useTheme();
 
   const summaryProps = {
     cartItems,

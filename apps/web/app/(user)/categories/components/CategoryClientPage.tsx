@@ -28,7 +28,7 @@ const CategoryClientPage = ({
   variantGroups,
   id,
 }: CategoryClientPageProps) => {
-  const { media } = useTheme();
+  const { actualMedia: media } = useTheme();
   const locale: Locale = "TR";
   const pageSearchParams = useSearchParams();
 

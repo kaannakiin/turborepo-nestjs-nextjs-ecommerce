@@ -2,7 +2,7 @@
 import { Media, useTheme } from "@/context/theme-context/ThemeContext";
 import { AppShell, ScrollArea } from "@mantine/core";
 import { useDisclosure, useLocalStorage } from "@mantine/hooks";
-import { useForm, zodResolver } from "@repo/shared";
+import { SubmitHandler, useForm, zodResolver } from "@repo/shared";
 import {
   ThemeComponents,
   ThemeInputType,
@@ -90,7 +90,7 @@ const ThemePage = () => {
     onOpen: () => setAdminSidebar(true),
   });
 
-  const { media } = useTheme();
+  const { actualMedia: media } = useTheme();
 
   const forms = useForm<ThemeInputType>({
     resolver: zodResolver(ThemeSchema),
@@ -99,6 +99,10 @@ const ThemePage = () => {
 
   const currentWidth =
     themeIcons.find((icon) => icon.key === media)?.width ?? "100%";
+
+  const onSubmit: SubmitHandler<ThemeInputType> = (data) => {
+    console.log("Theme Data:", data);
+  };
 
   return (
     <>
@@ -124,6 +128,8 @@ const ThemePage = () => {
             opened={opened}
             themeIcons={themeIcons}
             toggle={toggle}
+            onSubmit={onSubmit}
+            handleSubmit={forms.handleSubmit}
           />
         </AppShell.Header>
         <AppShell.Navbar bg={"gray.0"}>

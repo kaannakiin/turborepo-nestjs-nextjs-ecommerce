@@ -1,5 +1,5 @@
 "use client";
-import ActionPopover from "@/(admin)/components/ActionPopoverr";
+import ActionPopover from "@/(admin)/components/ActionPopover";
 import CustomImage from "@/components/CustomImage";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import {

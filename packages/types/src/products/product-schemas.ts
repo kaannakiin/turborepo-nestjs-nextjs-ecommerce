@@ -15,7 +15,13 @@ import * as z from "zod";
  * Her asset tipi için izin verilen dosya formatlarının MIME type listesi.
  */
 export const MIME_TYPES = {
-  IMAGE: ["image/jpeg", "image/png", "image/webp", "image/gif"] as string[],
+  IMAGE: [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/svg+xml",
+  ] as string[],
   VIDEO: ["video/webm"] as string[],
   AUDIO: ["audio/mpeg", "audio/mp4"] as string[],
   DOCUMENT: [

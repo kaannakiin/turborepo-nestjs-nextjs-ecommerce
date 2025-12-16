@@ -13,7 +13,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
     { label: "Beğendiğim Ürünler", url: "/dashboard/wishlist" },
   ];
   const pathname = usePathname();
-  const { media } = useTheme();
+  const { actualMedia: media } = useTheme();
   const { push } = useRouter();
   return (
     <Stack gap={"xl"} className="flex-1 w-full lg:mx-auto max-w-[1500px]  px-4">

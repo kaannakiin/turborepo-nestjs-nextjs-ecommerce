@@ -37,7 +37,7 @@ const AsideProductCarouselEditor = ({
   }
   const itemIndex = (
     component as ProductCarouselComponentInputType
-  ).items.findIndex((item) => item.itemId === selection.itemId);
+  ).items?.findIndex((item) => item.itemId === selection.itemId);
 
   if (itemIndex === -1) {
     return (

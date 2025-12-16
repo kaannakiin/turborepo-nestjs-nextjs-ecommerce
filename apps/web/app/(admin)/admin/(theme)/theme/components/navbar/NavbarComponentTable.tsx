@@ -104,7 +104,7 @@ const NavbarComponentTable = ({
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
     >
-      <Stack gap="xs" py="md">
+      <Stack gap="xs">
         <SortableContext
           items={sortedFields.map((f) => f.rhf_id)}
           strategy={verticalListSortingStrategy}

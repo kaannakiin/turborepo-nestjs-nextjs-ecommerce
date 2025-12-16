@@ -16,7 +16,7 @@ interface FirstThemeSliderProps {
 }
 
 const FirstThemeSlider = ({ data }: FirstThemeSliderProps) => {
-  const { media } = useTheme();
+  const { actualMedia: media } = useTheme();
   const { options } = data;
 
   const [assets, setAssets] = useState<Array<{

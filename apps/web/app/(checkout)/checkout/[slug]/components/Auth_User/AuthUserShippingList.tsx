@@ -28,7 +28,7 @@ interface AuthUserShippingListProps {
   cart: Pick<GetCartClientCheckoutReturnType, "cart">;
 }
 const AuthUserShippingList = ({ cart }: AuthUserShippingListProps) => {
-  const { media } = useTheme();
+  const { actualMedia: media } = useTheme();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
   const [selectedCargoRuleId, setSelectedCargoRuleId] = useState<string | null>(

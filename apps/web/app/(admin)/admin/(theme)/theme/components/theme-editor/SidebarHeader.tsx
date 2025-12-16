@@ -1,17 +1,18 @@
-import React from "react";
-import { SidebarView } from "../../store/theme-store";
-import {
-  AppShell,
-  Select,
-  Stack,
-  Group,
-  ActionIcon,
-  Text,
-  Divider,
-} from "@mantine/core";
-import { IconLayoutSidebar, IconArrowLeft } from "@tabler/icons-react";
 import { getThemePageLabel } from "@lib/helpers";
+import { ActionIcon, AppShell, Group, Select, Text } from "@mantine/core";
 import { ThemePages } from "@repo/types";
+import { IconArrowLeft, IconLayoutSidebar } from "@tabler/icons-react";
+import { SidebarView } from "../../store/theme-store";
+
+const viewConfig: Record<
+  Exclude<SidebarView, "SECTIONS_LIST">,
+  { title: string }
+> = {
+  ADD_LIBRARY: { title: "Yeni Bölüm Ekle" },
+  HEADER: { title: "Header Ayarları" },
+  FOOTER: { title: "Footer Ayarları" },
+  THEME_SETTINGS: { title: "Tema Ayarları" },
+};
 
 const SidebarHeader = ({
   currentView,
@@ -24,15 +25,17 @@ const SidebarHeader = ({
   selectedPage: string;
   onPageChange: (val: string | null) => void;
 }) => {
+  const isMainView = currentView === "SECTIONS_LIST";
+
   return (
     <AppShell.Section
       p="md"
-      mb={"xs"}
+      mb="xs"
       classNames={{
         section: "border-b border-b-gray-300",
       }}
     >
-      {currentView === "SECTIONS_LIST" ? (
+      {isMainView ? (
         <Select
           value={selectedPage}
           onChange={onPageChange}
@@ -49,7 +52,7 @@ const SidebarHeader = ({
             <IconArrowLeft size={18} />
           </ActionIcon>
           <Text fw={600} size="sm">
-            {currentView === "ADD_LIBRARY" ? "Yeni Bölüm Ekle" : "Ayarlar"}
+            {viewConfig[currentView].title}
           </Text>
         </Group>
       )}

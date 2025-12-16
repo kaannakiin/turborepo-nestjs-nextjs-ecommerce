@@ -9,7 +9,7 @@ import {
   Textarea,
   TextInput,
 } from "@mantine/core";
-import { Control, Controller } from "@repo/shared";
+import { Control, Controller, useWatch } from "@repo/shared";
 import { AspectRatio, ThemeInputType } from "@repo/types";
 
 interface ProductCarouselFormProps {
@@ -24,48 +24,160 @@ const AsideProductCarouselForm = ({
   componentIndex,
 }: ProductCarouselFormProps) => {
   const prefix = `pages.${pageIndex}.components.${componentIndex}` as const;
+
+  const showTitle = useWatch({
+    control,
+    name: `${prefix}.config.showTitle`,
+  });
+
+  const showDescription = useWatch({
+    control,
+    name: `${prefix}.config.showDescription`,
+  });
+
+  const showDiscountBadge = useWatch({
+    control,
+    name: `${prefix}.config.showDiscountBadge`,
+  });
+
   return (
     <>
       <Controller
         control={control}
-        name={`${prefix}.title`}
-        render={({ field, fieldState }) => (
-          <TextInput
+        name={`${prefix}.config.showTitle`}
+        render={({ field: { value, ...field }, fieldState }) => (
+          <Switch
             {...field}
+            checked={value}
             error={fieldState.error?.message}
-            label="Başlık"
-            placeholder="Bölüm Başlığı"
+            label="Başlık Göster"
           />
         )}
       />
+
+      {showTitle && (
+        <>
+          <Controller
+            control={control}
+            name={`${prefix}.title`}
+            render={({ field, fieldState }) => (
+              <TextInput
+                {...field}
+                value={field.value ?? ""}
+                error={fieldState.error?.message}
+                label="Başlık"
+                placeholder="Bölüm Başlığı"
+                withAsterisk
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name={`${prefix}.config.titleTextColor`}
+            render={({ field: { value, onChange, ...field } }) => (
+              <ColorInput
+                {...field}
+                value={value ?? ""}
+                onChangeEnd={onChange}
+                label="Başlık Rengi"
+                placeholder="Renk seçiniz"
+              />
+            )}
+          />
+        </>
+      )}
+
       <Controller
         control={control}
-        name={`${prefix}.config.titleTextColor`}
-        render={({ field: { onChange, ...field } }) => (
-          <ColorInput {...field} onChangeEnd={onChange} />
-        )}
-      />
-      <Controller
-        control={control}
-        name={`${prefix}.description`}
-        render={({ field, fieldState }) => (
-          <Textarea
+        name={`${prefix}.config.showDescription`}
+        render={({ field: { value, ...field }, fieldState }) => (
+          <Switch
             {...field}
+            checked={value}
             error={fieldState.error?.message}
-            minRows={3}
-            maxRows={3}
-            label="Açıklama"
-            placeholder="Bölüm Açıklaması"
+            label="Açıklama Göster"
           />
         )}
       />
+
+      {showDescription && (
+        <>
+          <Controller
+            control={control}
+            name={`${prefix}.description`}
+            render={({ field, fieldState }) => (
+              <Textarea
+                {...field}
+                value={field.value ?? ""}
+                error={fieldState.error?.message}
+                minRows={3}
+                maxRows={3}
+                label="Açıklama"
+                placeholder="Bölüm Açıklaması"
+                withAsterisk
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name={`${prefix}.config.descriptionTextColor`}
+            render={({ field: { value, onChange, ...field } }) => (
+              <ColorInput
+                {...field}
+                value={value ?? ""}
+                onChangeEnd={onChange}
+                label="Açıklama Rengi"
+                placeholder="Renk seçiniz"
+              />
+            )}
+          />
+        </>
+      )}
+
       <Controller
         control={control}
-        name={`${prefix}.config.descriptionTextColor`}
-        render={({ field: { onChange, ...field } }) => (
-          <ColorInput {...field} onChangeEnd={onChange} />
+        name={`${prefix}.config.showDiscountBadge`}
+        render={({ field: { value, ...field }, fieldState }) => (
+          <Switch
+            {...field}
+            checked={value}
+            error={fieldState.error?.message}
+            label="İndirim Etiketi Göster"
+          />
         )}
       />
+
+      {showDiscountBadge && (
+        <>
+          <Controller
+            control={control}
+            name={`${prefix}.config.badgeBackgroundColor`}
+            render={({ field: { value, onChange, ...field } }) => (
+              <ColorInput
+                {...field}
+                value={value ?? ""}
+                onChangeEnd={onChange}
+                label="Etiket Arka Plan Rengi"
+                placeholder="Renk seçiniz"
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name={`${prefix}.config.badgeTextColor`}
+            render={({ field: { value, onChange, ...field } }) => (
+              <ColorInput
+                {...field}
+                value={value ?? ""}
+                onChangeEnd={onChange}
+                label="Etiket Yazı Rengi"
+                placeholder="Renk seçiniz"
+              />
+            )}
+          />
+        </>
+      )}
+
       <Controller
         control={control}
         name={`${prefix}.config.slidesPerViewDesktop`}
@@ -140,6 +252,7 @@ const AsideProductCarouselForm = ({
           />
         )}
       />
+
       <Controller
         control={control}
         name={`${prefix}.config.loop`}

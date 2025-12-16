@@ -57,7 +57,7 @@ const AuthUserAddressList = ({
     enabled: !!userInfo.id,
   });
 
-  const { media } = useTheme();
+  const { actualMedia: media } = useTheme();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
   const [view, setView] = useState<ViewType>("list");

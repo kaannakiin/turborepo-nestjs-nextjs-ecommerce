@@ -500,3 +500,15 @@ type SitemapFile = Array<{
   videos?: Videos[] | undefined;
 }>;
 export type Sitemap = SitemapFile;
+
+type HasDuplicate<T extends readonly unknown[]> = T extends readonly [
+  infer First,
+  ...infer Rest,
+]
+  ? First extends Rest[number]
+    ? true
+    : HasDuplicate<Rest>
+  : false;
+
+export type NoDuplicates<T extends readonly unknown[]> =
+  HasDuplicate<T> extends true ? never : T;
