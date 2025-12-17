@@ -2,12 +2,12 @@
 
 import { safeTransformDiscountType } from "@/(admin)/admin/(other)/store/discounts/helperDiscount";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
   getCampaignStatusLabel,
   getCurrencyLabel,
   getDiscountTypeLabel,
 } from "@lib/helpers";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
   ActionIcon,
   Button,
@@ -32,19 +32,19 @@ import {
 import { DateTimePicker } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import {
-  DiscountType,
   AllowedDiscountedItemsBy,
   CampaignStatus,
   Currency,
+  DiscountType,
 } from "@repo/database/client";
 import {
   Controller,
+  dateFns,
   FieldErrors,
   SubmitHandler,
   useFieldArray,
   useForm,
   zodResolver,
-  dateFns,
 } from "@repo/shared";
 import {
   DiscountUpsertResponse,
@@ -180,7 +180,6 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
     resolver: zodResolver(MainDiscountSchema),
     defaultValues: defaultValues || MainDiscountSchemaDefaultValue,
   });
-
   const discountType = watch("type");
   const isAllProducts = watch("conditions.isAllProducts");
   const allowDiscountedItems = watch("allowDiscountedItems");
@@ -291,6 +290,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
   };
   const { push } = useRouter();
   const onSubmit: SubmitHandler<MainDiscount> = async (data) => {
+
     const res = await fetchWrapper.post<DiscountUpsertResponse>(
       "/admin/discounts/upgrade-or-create",
       data

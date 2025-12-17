@@ -4,33 +4,14 @@ export const ProductAndVariantWhereInput: Prisma.ProductWhereInput = {
   OR: [
     {
       active: true,
-      isVariant: false,
-      stock: {
-        gt: 0,
-      },
-      prices: {
-        some: {
-          price: {
-            gt: 0,
-          },
-        },
-      },
     },
     {
       active: true,
-      isVariant: true,
-      variantCombinations: {
+      variants: {
         some: {
           active: true,
           stock: {
             gt: 0,
-          },
-          prices: {
-            some: {
-              price: {
-                gt: 0,
-              },
-            },
           },
         },
       },

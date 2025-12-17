@@ -2,10 +2,10 @@
   "extends": "@repo/typescript-config/nestjs.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "moduleResolution": "nodenext",
-    "module": "NodeNext",
     "paths": {
-      "src/*": ["./src/*"] // ← baseUrl yerine bunu kullan
+      "src/*": ["./src/*"]
     }
-  }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

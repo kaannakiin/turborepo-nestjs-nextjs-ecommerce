@@ -22,37 +22,37 @@ import { PaymentsService } from './payments.service';
 @Controller('payment')
 export class PaymentsController {
   constructor(private readonly paymentsV2Service: PaymentsService) {}
-  @Post('/:cartId')
-  @UseGuards(OptionalJwtAuthGuard)
-  async createPayment(
-    @Param('cartId') cartId: string,
-    @Body(new ZodValidationPipe(PaymentZodSchema)) data: PaymentZodType,
-    @CurrentUser() user: User | null,
-    @Req() req: Request,
-  ) {
-    return this.paymentsV2Service.createPayment({
-      cartId,
-      data,
-      user,
-      req,
-    });
-  }
+  // @Post('/:cartId')
+  // @UseGuards(OptionalJwtAuthGuard)
+  // async createPayment(
+  //   @Param('cartId') cartId: string,
+  //   @Body(new ZodValidationPipe(PaymentZodSchema)) data: PaymentZodType,
+  //   @CurrentUser() user: User | null,
+  //   @Req() req: Request,
+  // ) {
+  //   return this.paymentsV2Service.createPayment({
+  //     cartId,
+  //     data,
+  //     user,
+  //     req,
+  //   });
+  // }
 
-  @Post('payment-callback/:orderId')
-  async handlePaymentCallback(
-    @Param('orderId') orderId: string,
-    @Body() data: ThreeDCallback,
-    @Res() res: Response,
-  ) {
-    return this.paymentsV2Service.handlePaymentCallback({
-      orderId,
-      data,
-      res,
-    });
-  }
+  // @Post('payment-callback/:orderId')
+  // async handlePaymentCallback(
+  //   @Param('orderId') orderId: string,
+  //   @Body() data: ThreeDCallback,
+  //   @Res() res: Response,
+  // ) {
+  //   return this.paymentsV2Service.handlePaymentCallback({
+  //     orderId,
+  //     data,
+  //     res,
+  //   });
+  // }
 
-  @Post('webhook')
-  async handleWebhook(@Req() req: Request, @Res() res: Response) {
-    return this.paymentsV2Service.handleWebhook({ req, res });
-  }
+  // @Post('webhook')
+  // async handleWebhook(@Req() req: Request, @Res() res: Response) {
+  //   return this.paymentsV2Service.handleWebhook({ req, res });
+  // }
 }

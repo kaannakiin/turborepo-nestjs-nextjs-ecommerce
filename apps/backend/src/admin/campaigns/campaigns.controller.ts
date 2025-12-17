@@ -22,23 +22,23 @@ import { CampaignsService } from './campaigns.service';
 export class CampaignsController {
   constructor(private readonly campaignsService: CampaignsService) {}
 
-  @Post('create-or-update-campaign')
-  async createOrUpdateOffer(@Body() body: CampaignZodType) {
-    return this.campaignsService.createOrUpdateOffer(body);
-  }
+  // @Post('create-or-update-campaign')
+  // async createOrUpdateOffer(@Body() body: CampaignZodType) {
+  //   return this.campaignsService.createOrUpdateOffer(body);
+  // }
 
-  @Get('get-campaign/:id')
-  async getCampaign(@Param('id') id: string) {
-    return this.campaignsService.getCampaignByIdToFormValues(id);
-  }
+  // @Get('get-campaign/:id')
+  // async getCampaign(@Param('id') id: string) {
+  //   return this.campaignsService.getCampaignByIdToFormValues(id);
+  // }
 
-  @Get('campaigns')
-  async getCampaigns(
-    @Query('page', new ParseIntPipe()) page: number,
-    @Query('search') search?: string,
-    @Query('type', new ParseEnumPipe($Enums.CampaignStatus, { optional: true }))
-    type?: $Enums.CampaignStatus,
-  ) {
-    return this.campaignsService.getCampaigns(page, search, type);
-  }
+  // @Get('campaigns')
+  // async getCampaigns(
+  //   @Query('page', new ParseIntPipe()) page: number,
+  //   @Query('search') search?: string,
+  //   @Query('type', new ParseEnumPipe($Enums.CampaignStatus, { optional: true }))
+  //   type?: $Enums.CampaignStatus,
+  // ) {
+  //   return this.campaignsService.getCampaigns(page, search, type);
+  // }
 }

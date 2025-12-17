@@ -27,3 +27,5 @@ export * from "./shipping/shipping-schemas";
 export * from "./user-ui/helperPrismaQueries";
 export * from "./admin/themev2/api-types";
 export * from "./admin/themev2/theme-section-schemas/header-schema";
+export * from "./common/common-queries"
+export * from "./api/admin/products/product-api-types"

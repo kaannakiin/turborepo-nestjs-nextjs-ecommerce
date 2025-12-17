@@ -47,22 +47,7 @@ const variantOptionsOrderBy: Prisma.ProductVariantCombinationOptionOrderByWithRe
   ];
 
 export const GetCartItemForPaymentInclude = {
-  product: {
-    include: {
-      assets: {
-        // orderBy: {
-        //   order: "asc",
-        // },
-        select: {
-          asset: {
-            select: { url: true, type: true },
-          },
-        },
-      },
-      translations: true,
-      prices: true,
-    },
-  },
+
   variant: {
     include: {
       assets: {
@@ -136,11 +121,9 @@ export const GetCartForPaymentIncludeCartType: Prisma.CartInclude = {
         {
           variant: null,
           variantId: null,
-          product: { active: true, stock: { gt: 0 } },
         },
         {
           variant: { active: true, stock: { gt: 0 } },
-          product: { active: true },
         },
       ],
     },

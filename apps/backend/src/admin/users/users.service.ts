@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@repo/database';
+import { Prisma, User } from '@repo/database';
 import {
   AllUsersReturnType,
   GetUsersQueriesReturnType,
+  Pagination,
   SortAdminUserTable,
-  UserIdAndName,
 } from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -115,23 +115,6 @@ export class UsersService {
     };
   }
 
-  async getUsersIdAndName(): Promise<UserIdAndName[]> {
-    const users = await this.prismaService.user.findMany({
-      orderBy: {
-        createdAt: 'desc',
-      },
-      select: {
-        id: true,
-        name: true,
-        surname: true,
-      },
-    });
-    return users.map((user) => ({
-      id: user.id,
-      name: `${user.name} ${user.surname}`,
-    }));
-  }
-
   async getUserInfos(): Promise<AllUsersReturnType[]> {
     const user = await this.prismaService.user.findMany({
       select: {
@@ -148,5 +131,63 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  async getUserData(
+    page: number,
+    search: string | null,
+    take: number,
+  ): Promise<{ users: User[]; pagination?: Pagination }> {
+    const skip = (page - 1) * take;
+    const where: Prisma.UserWhereInput = search
+      ? {
+          OR: [
+            {
+              name: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              email: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              surname: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              phone: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        }
+      : {};
+    const [users, total] = await Promise.all([
+      this.prismaService.user.findMany({
+        where,
+        skip,
+        take,
+      }),
+      this.prismaService.user.count({
+        where,
+      }),
+    ]);
+
+    return {
+      users,
+      pagination: {
+        currentPage: page,
+        totalCount: total,
+        perPage: take,
+        totalPages: Math.ceil(total / take),
+      },
+    };
   }
 }

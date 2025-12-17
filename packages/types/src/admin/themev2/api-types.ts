@@ -63,7 +63,7 @@ export const productQueryInclude = {
     take: 1,
     include: { asset: { select: { url: true, type: true } } },
   },
-  variantCombinations: {
+  variants: {
     include: {
       assets: {
         where: { asset: { type: "IMAGE" } },
@@ -159,5 +159,4 @@ export const ThemeProductCarouselProductPayload = {
     },
   },
   translations: true,
-  prices: true,
 } as const satisfies Prisma.ProductInclude;

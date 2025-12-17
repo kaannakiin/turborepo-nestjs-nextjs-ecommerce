@@ -1,58 +1,31 @@
 "use client";
 import { CartProviderV3 } from "@/context/cart-context/CartContextV3";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { ActionIcon, AppShell, Drawer, Group, Stack } from "@mantine/core";
 import { useDisclosure, useHeadroom } from "@mantine/hooks";
 import { Locale } from "@repo/database/client";
-import { useQuery } from "@repo/shared";
 import {
-  CategoryHeaderData,
-  MainPageComponentsType,
-  TokenPayload,
+  TokenPayload
 } from "@repo/types";
 import { IconMenu2, IconUserCircle } from "@tabler/icons-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import logo from "../../public/logo.svg";
-import DesktopCategoryDrawer from "./DesktopCategoryDrawer";
-import GlobalLoadingOverlay from "./GlobalLoadingOverlay";
 import ShoppingBagDrawerV2 from "./ShoppingBagDrawerV2";
 
 const UserAppShellLayout = ({
   children,
-  headerCategoryData,
   session,
 }: {
   children: React.ReactNode;
-  headerCategoryData: CategoryHeaderData[] | null;
   session: TokenPayload | null;
 }) => {
   const pinned = useHeadroom({ fixedAt: 160 });
   const [opened, { open, close }] = useDisclosure();
   const locale: Locale = "TR";
   const { push } = useRouter();
-  const { data, isLoading, isFetching, isPending } = useQuery({
-    queryKey: ["footer-data"],
-    queryFn: async (): Promise<{
-      footer: MainPageComponentsType["footer"] | null;
-    }> => {
-      const footerReq = await fetchWrapper.get(`/admin/theme/get-footer`, {});
 
-      if (!footerReq.success) {
-        return { footer: null };
-      }
 
-      const footerData = footerReq.data as {
-        footer: MainPageComponentsType["footer"] | null;
-      };
-
-      return footerData;
-    },
-  });
-  if (isFetching || isPending || isLoading) {
-    return <GlobalLoadingOverlay />;
-  }
   return (
     <CartProviderV3>
       <AppShell
@@ -82,21 +55,12 @@ const UserAppShellLayout = ({
                 px={"xl"}
                 gap={"xl"}
               >
-                {headerCategoryData &&
-                  headerCategoryData.length > 0 &&
-                  headerCategoryData.map((category) => (
-                    <DesktopCategoryDrawer
-                      key={category.id}
-                      category={category}
-                      locale={locale}
-                    />
-                  ))}
+          
               </Group>
             </Group>
 
             <Group align="center" gap={"0"}>
               <ShoppingBagDrawerV2 />
-              {/* <ShoppingBagDrawer /> */}
               <ActionIcon
                 variant="transparent"
                 size={"xl"}

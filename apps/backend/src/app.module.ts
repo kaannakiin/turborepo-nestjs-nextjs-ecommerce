@@ -13,7 +13,6 @@ import { PaymentsModule } from './payments/payments.module';
 import { PrismaLoggerModule } from './prisma-logger/prisma-logger.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ShippingModule } from './shipping/shipping.module';
-import { UserPageModule } from './user-page/user-page.module';
 import { UserModule } from './user/user.module';
 @Module({
   imports: [
@@ -46,7 +45,6 @@ import { UserModule } from './user/user.module';
     }),
     MinioModule,
     LocationsModule,
-    UserPageModule,
     ShippingModule,
     SharedModule,
     CartV3Module,

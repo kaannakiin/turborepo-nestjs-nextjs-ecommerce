@@ -682,7 +682,7 @@ export type AdminProductTableData = Prisma.ProductGetPayload<{
   include: {
     _count: {
       select: {
-        variantCombinations: true;
+        variants: true;
       };
     };
     assets: {
@@ -975,7 +975,6 @@ export type GetProductPageReturnType = {
 
 export type ProductPageDataType = Prisma.ProductGetPayload<{
   include: {
-    prices: true;
     assets: {
       orderBy: {
         order: "asc";
@@ -1058,7 +1057,7 @@ export type ProductPageDataType = Prisma.ProductGetPayload<{
         };
       };
     };
-    variantCombinations: {
+    variants: {
       where: {
         AND: [
           {
