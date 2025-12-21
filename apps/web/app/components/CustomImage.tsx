@@ -72,7 +72,7 @@ const CustomImage = ({
           fill
           className={`
             object-contain 
-            filter blur-xl scale-110 
+            filter blur-xl 
             transition-opacity duration-700 ease-in-out
             ${isLoading ? "opacity-100" : "opacity-0"}
           `}

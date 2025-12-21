@@ -2,6 +2,7 @@ generator client {
   provider        = "prisma-client"
   output          = "../generated/prisma"
   runtime         = "nodejs"
+  previewFeatures = ["views"]
 }
 
 datasource db {
@@ -91,9 +92,9 @@ model Category {
   createdAt               DateTime               @default(now())
   updatedAt               DateTime               @updatedAt
   categoryGridComponentId String?
-  categoryGridComponent   CategoryGridComponent? @relation(fields: [categoryGridComponentId], references: [id])
-  image                   Asset?                 @relation(fields: [imageId], references: [id])
-  parentCategory          Category?              @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id])
+  categoryGridComponent   CategoryGridComponent? @relation(fields: [categoryGridComponentId], references: [id], onDelete: Cascade)
+  image                   Asset?                 @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  parentCategory          Category?              @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id], onDelete: SetNull)
   childCategories         Category[]             @relation("CategoryHierarchy")
   translations            CategoryTranslation[]
   discountConditions      DiscountCategory[]
@@ -161,8 +162,9 @@ model Brand {
   parentBrandId      String?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
+  deletedAt          DateTime?
   image              Asset?             @relation(fields: [imageId], references: [id])
-  parentBrand        Brand?             @relation("BrandHierarchy", fields: [parentBrandId], references: [id])
+  parentBrand        Brand?             @relation("BrandHierarchy", fields: [parentBrandId], references: [id], onDelete: SetNull)
   childBrands        Brand[]            @relation("BrandHierarchy")
   translations       BrandTranslation[]
   discountConditions DiscountBrand[]
@@ -256,7 +258,7 @@ model ProductPrice {
   price           Float
   buyedPrice      Float?
   discountedPrice Float?
-  variantId       String 
+  variantId       String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -270,8 +272,8 @@ model ProductAsset {
   id        String   @id @default(cuid())
   order     Int
   assetId   String
-  productId String? 
-  variantId String? 
+  productId String?
+  variantId String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -279,7 +281,6 @@ model ProductAsset {
   product Product?                   @relation(fields: [productId], references: [id], onDelete: Cascade)
   variant ProductVariantCombination? @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
-  
   @@index([productId, order])
   @@index([variantId, order])
 }
@@ -328,9 +329,12 @@ model Product {
   visibleAllCombinations Boolean     @default(false)
   createdAt              DateTime    @default(now())
   updatedAt              DateTime    @updatedAt
+  deletedAt              DateTime?
+  deletedBy              String?
+  deleteReason           String?
 
-  brand            Brand?                      @relation(fields: [brandId], references: [id])
-  taxonomyCategory TaxonomyCategory?           @relation(fields: [taxonomyCategoryId], references: [id])
+  brand            Brand?                      @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  taxonomyCategory TaxonomyCategory?           @relation(fields: [taxonomyCategoryId], references: [id], onDelete: SetNull)
   categories       ProductCategory[]
   tags             ProductTagOnProduct[]
   translations     ProductTranslation[]
@@ -339,7 +343,6 @@ model Product {
   assets           ProductAsset[]
   offerInCampaigns CampaignOffer[]
 
-  
   buyableInCampaigns   CampaignBuyableProduct[]
   conditionInCampaigns CampaignConditionProduct[]
   discountConditions   DiscountProduct[]
@@ -348,6 +351,8 @@ model Product {
   @@index([brandId])
   @@index([taxonomyCategoryId])
   @@index([active])
+  @@index([deletedAt])
+  @@index([active, deletedAt])
 }
 
 model ProductVariantGroup {
@@ -386,28 +391,27 @@ model ProductVariantOption {
 }
 
 model ProductVariantCombination {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   productId String
-  sku       String?  @unique 
-  barcode   String?  @unique 
-  stock     Int      @default(0)
-  active    Boolean  @default(true)
-  isDefault Boolean  @default(false) 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  sku       String?   @unique
+  barcode   String?   @unique
+  stock     Int       @default(0)
+  active    Boolean   @default(true)
+  isDefault Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   product      Product                           @relation(fields: [productId], references: [id], onDelete: Cascade)
   options      ProductVariantCombinationOption[]
   translations ProductVariantTranslation[]
 
-  
   prices           ProductPrice[]
   assets           ProductAsset[]
   cartItems        CartItem[]
   orderItems       OrderItemSchema[]
   productListItems ProductListCarouselItem[]
 
-  
   buyableInCampaigns   CampaignBuyableVariant[]
   conditionInCampaigns CampaignConditionVariant[]
   offerInCampaigns     CampaignOffer[]
@@ -418,6 +422,8 @@ model ProductVariantCombination {
   @@index([sku])
   @@index([barcode])
   @@index([productId, isDefault])
+  @@index([deletedAt])
+  @@index([productId, active, deletedAt])
 }
 
 model ProductVariantCombinationOption {
@@ -545,7 +551,7 @@ model CartItem {
   whereAdded   WhereAdded      @default(PRODUCT_PAGE)
   isVisible    Boolean         @default(true)
   visibleCause inVisibleCause?
-  variantId    String 
+  variantId    String
   cartId       String
   deletedAt    DateTime?
   createdAt    DateTime        @default(now())
@@ -1047,9 +1053,9 @@ model CampaignOffer {
   order                       Int
   title                       String
   description                 String
-  variantId                   String? 
-  applyToAllVariants          Boolean                  @default(false) 
-  productId                   String? 
+  variantId                   String?
+  applyToAllVariants          Boolean                  @default(false)
+  productId                   String?
   discountType                DiscountType
   discountValue               Float
   discountValueAppliedByPrice AllowedDiscountedItemsBy
@@ -1094,11 +1100,11 @@ model OrderItemSchema {
   totalFinalPrice Decimal
   discountAmount  Decimal?
   taxAmount       Decimal?
-  variantSnapshot Json 
+  variantSnapshot Json
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   status          OrderItemStatus @default(PENDING)
-  variantId       String 
+  variantId       String
   orderId         String
   shipmentId      String?
 
@@ -1210,7 +1216,6 @@ model PageTemplate {
   @@unique([themeId, pageType, name])
 }
 
-
 enum VariantGroupRenderType {
   DROPDOWN
   BADGE
@@ -1304,6 +1309,9 @@ enum inVisibleCause {
   OUT_OF_STOCK
   CURRENCY_MISMATCH
   LOCALE_MISMATCH
+  PRODUCT_DELETED
+  VARIANT_DELETED
+  PRODUCT_DEACTIVATED
 }
 
 enum RuleType {
@@ -1457,4 +1465,29 @@ enum PageType {
   PRODUCT
   BRAND
   OTHER
+}
+
+view ProductListingView {
+  productId               String
+  variantId               String
+  currency                Currency
+  finalPrice              Float
+  originalPrice           Float
+  discountPercentage      Float
+  brandId                 String?
+  createdAt               DateTime
+  stock                   Int
+  sku                     String?
+  categoryIds             String[]
+  categorySlugs           String[]
+  tagIds                  String[]
+  tagSlugs                String[]
+  variantOptionIds        String[]
+  brandSlugs              String[]
+  variantOptionSlugs      String[]
+  variantGroupOptionSlugs String[]
+  priceRank               Int
+
+  @@unique([productId, variantId, currency])
+  @@map("ProductListingView")
 }

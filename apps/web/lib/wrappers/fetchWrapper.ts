@@ -1,13 +1,141 @@
-import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
-import { csrfManager } from "./csrf-manager";
+import axios, {
+  AxiosError,
+  AxiosInstance,
+  AxiosRequestConfig,
+  InternalAxiosRequestConfig,
+} from "axios";
+
 type ApiSuccess<T> = { success: true; data: T; status: number };
 export type ApiError = { success: false; error: string; status: number };
 type ApiResponse<T> = ApiSuccess<T> | ApiError;
 
-class AxiosWrapper {
-  private api: AxiosInstance;
+type CookieStore = {
+  get(name: string): { value: string } | undefined;
+  getAll(): { name: string; value: string }[];
+};
 
-  private isRefreshing: boolean = false;
+const isServer = typeof window === "undefined";
+
+class ServerAxiosWrapper {
+  private cookieStore: CookieStore | null = null;
+
+  /**
+   * Server component'lerde kullanmadan önce cookie store'u set et
+   * const cookieStore = await cookies();
+   * serverFetch.setCookies(cookieStore);
+   */
+  setCookies(cookieStore: CookieStore) {
+    this.cookieStore = cookieStore;
+    return this;
+  }
+
+  private createInstance(): AxiosInstance {
+    const instance = axios.create({
+      baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+      if (this.cookieStore) {
+        const allCookies = this.cookieStore.getAll();
+        if (allCookies.length > 0) {
+          config.headers.Cookie = allCookies
+            .map((c) => `${c.name}=${c.value}`)
+            .join("; ");
+        }
+      }
+      return config;
+    });
+
+    return instance;
+  }
+
+  private formatError(error: unknown): ApiError {
+    if (axios.isAxiosError(error)) {
+      return {
+        success: false,
+        error:
+          error.response?.data?.message || error.message || "Bir hata oluştu.",
+        status: error.response?.status || 0,
+      };
+    }
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.",
+      status: 0,
+    };
+  }
+
+  async get<T>(
+    url: string,
+    config: AxiosRequestConfig = {}
+  ): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.createInstance().get<T>(url, config);
+      return { success: true, data: response.data, status: response.status };
+    } catch (error) {
+      return this.formatError(error);
+    }
+  }
+
+  async post<T>(
+    url: string,
+    data?: unknown,
+    config: AxiosRequestConfig = {}
+  ): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.createInstance().post<T>(url, data, config);
+      return { success: true, data: response.data, status: response.status };
+    } catch (error) {
+      return this.formatError(error);
+    }
+  }
+
+  async put<T>(
+    url: string,
+    data?: unknown,
+    config: AxiosRequestConfig = {}
+  ): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.createInstance().put<T>(url, data, config);
+      return { success: true, data: response.data, status: response.status };
+    } catch (error) {
+      return this.formatError(error);
+    }
+  }
+
+  async patch<T>(
+    url: string,
+    data?: unknown,
+    config: AxiosRequestConfig = {}
+  ): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.createInstance().patch<T>(url, data, config);
+      return { success: true, data: response.data, status: response.status };
+    } catch (error) {
+      return this.formatError(error);
+    }
+  }
+
+  async delete<T>(
+    url: string,
+    config: AxiosRequestConfig = {}
+  ): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.createInstance().delete<T>(url, config);
+      return { success: true, data: response.data, status: response.status };
+    } catch (error) {
+      return this.formatError(error);
+    }
+  }
+}
+
+class ClientAxiosWrapper {
+  private api: AxiosInstance;
+  private isRefreshing = false;
   private failedQueue: {
     resolve: (value: unknown) => void;
     reject: (reason?: unknown) => void;
@@ -29,19 +157,28 @@ class AxiosWrapper {
   }
 
   private hasRefreshToken(): boolean {
-    if (typeof document === "undefined") return false;
     return document.cookie.includes("refreshToken");
   }
 
-  private processQueue(error: Error | null, token: string | null = null) {
+  private processQueue(error: Error | null) {
     this.failedQueue.forEach((prom) => {
       if (error) {
         prom.reject(error);
       } else {
-        prom.resolve(token);
+        prom.resolve(undefined);
       }
     });
     this.failedQueue = [];
+  }
+
+  private async getCsrfToken(): Promise<string | null> {
+    const { csrfManager } = await import("./csrf-manager");
+    return csrfManager.getToken();
+  }
+
+  private async refreshCsrfToken(): Promise<string | null> {
+    const { csrfManager } = await import("./csrf-manager");
+    return csrfManager.refreshToken();
   }
 
   private initializeInterceptors() {
@@ -53,8 +190,7 @@ class AxiosWrapper {
         );
 
         if (needsCsrf) {
-          const token = await csrfManager.getToken();
-
+          const token = await this.getCsrfToken();
           if (token) {
             config.headers["X-CSRF-Token"] = token;
           }
@@ -69,20 +205,19 @@ class AxiosWrapper {
       async (error: AxiosError) => {
         const originalRequest = error.config as AxiosRequestConfig & {
           _retry?: boolean;
+          _csrfRetry?: boolean;
         };
 
         if (!error.response || !originalRequest) {
           return Promise.reject(error);
         }
 
-        if (error.response.status === 403 && !originalRequest._retry) {
-          originalRequest._retry = true;
+        if (error.response.status === 403 && !originalRequest._csrfRetry) {
+          originalRequest._csrfRetry = true;
           try {
-            await csrfManager.refreshToken();
-
+            await this.refreshCsrfToken();
             return this.api(originalRequest);
-          } catch (csrfError) {
-            console.error("CSRF token refresh failed:", csrfError);
+          } catch {
             return Promise.reject(error);
           }
         }
@@ -100,30 +235,20 @@ class AxiosWrapper {
           this.isRefreshing = true;
 
           if (!this.hasRefreshToken()) {
-            console.error("Refresh token bulunamadı.");
             this.isRefreshing = false;
-
             return Promise.reject(new Error("Refresh token bulunamadı."));
           }
 
-          return new Promise((resolve, reject) => {
-            this.api
-              .post("/auth/refresh", {})
-              .then(() => {
-                console.log("Access token refreshed.");
-                this.processQueue(null, "refreshed");
-                resolve(this.api(originalRequest));
-              })
-              .catch((refreshError) => {
-                console.error("Access token refresh failed:", refreshError);
-                this.processQueue(refreshError as Error, null);
-
-                reject(refreshError);
-              })
-              .finally(() => {
-                this.isRefreshing = false;
-              });
-          });
+          try {
+            await this.api.post("/auth/refresh", {});
+            this.processQueue(null);
+            return this.api(originalRequest);
+          } catch (refreshError) {
+            this.processQueue(refreshError as Error);
+            return Promise.reject(refreshError);
+          } finally {
+            this.isRefreshing = false;
+          }
         }
 
         return Promise.reject(error);
@@ -131,10 +256,7 @@ class AxiosWrapper {
     );
   }
 
-  /**
-   * Hataları standart 'ApiError' formatına çevirir.
-   */
-  private formatError<T>(error: unknown): ApiError {
+  private formatError(error: unknown): ApiError {
     if (axios.isAxiosError(error)) {
       return {
         success: false,
@@ -151,7 +273,7 @@ class AxiosWrapper {
     };
   }
 
-  public async get<T>(
+  async get<T>(
     url: string,
     config: AxiosRequestConfig = {}
   ): Promise<ApiResponse<T>> {
@@ -163,7 +285,7 @@ class AxiosWrapper {
     }
   }
 
-  public async post<T>(
+  async post<T>(
     url: string,
     data?: unknown,
     config: AxiosRequestConfig = {}
@@ -176,7 +298,7 @@ class AxiosWrapper {
     }
   }
 
-  public async put<T>(
+  async put<T>(
     url: string,
     data?: unknown,
     config: AxiosRequestConfig = {}
@@ -189,19 +311,7 @@ class AxiosWrapper {
     }
   }
 
-  public async delete<T>(
-    url: string,
-    config: AxiosRequestConfig = {}
-  ): Promise<ApiResponse<T>> {
-    try {
-      const response = await this.api.delete<T>(url, config);
-      return { success: true, data: response.data, status: response.status };
-    } catch (error) {
-      return this.formatError(error);
-    }
-  }
-
-  public async patch<T>(
+  async patch<T>(
     url: string,
     data?: unknown,
     config: AxiosRequestConfig = {}
@@ -214,15 +324,25 @@ class AxiosWrapper {
     }
   }
 
-  public async postFormData<T>(
+  async delete<T>(
+    url: string,
+    config: AxiosRequestConfig = {}
+  ): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.api.delete<T>(url, config);
+      return { success: true, data: response.data, status: response.status };
+    } catch (error) {
+      return this.formatError(error);
+    }
+  }
+
+  async postFormData<T>(
     url: string,
     formData: FormData
   ): Promise<ApiResponse<T>> {
     try {
       const response = await this.api.post<T>(url, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
       return { success: true, data: response.data, status: response.status };
     } catch (error) {
@@ -231,5 +351,17 @@ class AxiosWrapper {
   }
 }
 
-const fetchWrapper = new AxiosWrapper();
+export const createServerFetch = () => new ServerAxiosWrapper();
+
+let clientInstance: ClientAxiosWrapper | null = null;
+const getClientFetch = () => {
+  if (!clientInstance) {
+    clientInstance = new ClientAxiosWrapper();
+  }
+  return clientInstance;
+};
+
+const fetchWrapper = isServer ? createServerFetch() : getClientFetch();
 export default fetchWrapper;
+
+export type { ApiResponse, ApiSuccess };

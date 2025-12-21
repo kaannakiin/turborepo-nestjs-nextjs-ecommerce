@@ -1,5 +1,4 @@
 import {
-  $Enums,
   AssetType,
   Currency,
   Locale,
@@ -190,7 +189,7 @@ export const VariantOptionSchema = z.object({
     })
     .nullable()
     .optional(),
-  file: FileSchema({ type: "IMAGE" }).optional().nullable(),
+  file: FileSchema({ type: "IMAGE" }).nullish(),
   existingFile: z
     .url({ error: "Lütfen geçerli bir url giriniz" })
     .optional()
@@ -259,8 +258,7 @@ export const ProductPriceSchema = z
       .max(Number.MAX_SAFE_INTEGER, {
         error: "Fiyat çok büyük.",
       })
-      .optional()
-      .nullable(),
+      .nullish(),
     buyedPrice: z
       .number()
       .positive({ error: "Satın alınan fiyat 0'dan büyük olmalıdır." })
@@ -334,7 +332,8 @@ export const BaseProductSchema = z
       })
       .max(100, {
         error: "Barkod 100 karakterden uzun olamaz.",
-      }),
+      })
+      .nullish(),
     stock: z
       .number({ error: "Stok zorunludur." })
       .min(0, { error: "Stok 0'dan küçük olamaz." })
@@ -394,8 +393,7 @@ export const BaseProductSchema = z
           order: z.number().min(0),
         })
       )
-      .optional()
-      .nullable(),
+      .nullish(),
     images: z
       .array(
         z.object({
@@ -403,17 +401,15 @@ export const BaseProductSchema = z
           order: z.number().min(0),
         })
       )
-      .optional()
-      .nullable(),
-    brandId: z.cuid2({ error: "Geçersiz marka kimliği" }).optional().nullable(),
+      .nullish(),
+    brandId: z.cuid2({ error: "Geçersiz marka kimliği" }).nullish(),
+    tagIds: z.array(z.cuid2({ error: "Geçersiz etiket kimliği" })).nullish(),
     categories: z
       .array(z.cuid2({ error: "Geçersiz kategori kimliği" }))
-      .optional()
-      .nullable(),
+      .nullish(),
     googleTaxonomyId: z
       .cuid2({ error: "Geçersiz Google Taksonomi kimliği" })
-      .optional()
-      .nullable(),
+      .nullish(),
   })
   .check(({ issues, value }) => {
     const assetLimit = 10;
@@ -501,7 +497,8 @@ export const CombinatedVariantsSchema = z
       })
       .max(100, {
         error: "Barkod 100 karakterden uzun olamaz.",
-      }),
+      })
+      .nullish(),
     prices: z
       .array(ProductPriceSchema)
       .refine(
@@ -533,8 +530,7 @@ export const CombinatedVariantsSchema = z
           order: z.number().min(0),
         })
       )
-      .optional()
-      .nullable(),
+      .nullish(),
     images: z
       .array(
         z.object({
@@ -542,8 +538,7 @@ export const CombinatedVariantsSchema = z
           order: z.number().min(0),
         })
       )
-      .optional()
-      .nullable(),
+      .nullish(),
     translations: z
       .array(
         ProductTranslationSchema.omit({
@@ -652,6 +647,7 @@ export const VariantProductSchema = BaseProductSchema.omit({
   barcode: true,
   sku: true,
 }).safeExtend({
+  visibleAllCombinations: z.boolean(),
   existingVariants: z.array(VariantGroupSchema).min(1, {
     error: "En az bir varyant grubu eklemelisiniz.",
   }),
@@ -664,84 +660,26 @@ export const Cuid2Schema = z.cuid2({ error: "Geçersiz kimlik" });
 export const BodyCuid2Schema = z.object({
   id: Cuid2Schema,
 });
+
+export type BaseProductZodType = z.infer<typeof BaseProductSchema>;
 export type BodyCuid2ZodType = z.infer<typeof BodyCuid2Schema>;
+export type CombinatedVariantsZodType = z.infer<
+  typeof CombinatedVariantsSchema
+>;
 export type Cuid2ZodType = z.infer<typeof Cuid2Schema>;
-export type VariantProductZodType = z.infer<typeof VariantProductSchema>;
+export type ProductPriceZodType = z.infer<typeof ProductPriceSchema>;
+export type ProductTranslationZodType = z.infer<
+  typeof ProductTranslationSchema
+>;
 export type VariantGroupTranslationZodType = z.infer<
   typeof VariantGroupTranslationSchema
 >;
 export type VariantGroupZodType = z.infer<typeof VariantGroupSchema>;
-export type VariantOptionZodType = z.infer<typeof VariantOptionSchema>;
 export type VariantOptionTranslationZodType = z.infer<
   typeof VariantOptionTranslationSchema
 >;
-
-export type BaseProductZodType = z.infer<typeof BaseProductSchema>;
-
-export type AdminProductTableData = Prisma.ProductGetPayload<{
-  include: {
-    _count: {
-      select: {
-        variants: true;
-      };
-    };
-    assets: {
-      where: {
-        asset: { type: "IMAGE" };
-      };
-      take: 1;
-      orderBy: { order: "asc" };
-      select: {
-        asset: {
-          select: { url: true; type: true };
-        };
-      };
-    };
-    translations: {
-      where: { locale: "TR" };
-      select: {
-        name: true;
-      };
-    };
-    prices: {
-      where: { currency: "TRY" };
-      select: {
-        price: true;
-        discountedPrice: true;
-      };
-    };
-    variantCombinations: {
-      select: {
-        stock: true;
-        assets: {
-          where: {
-            asset: { type: "IMAGE" };
-          };
-          take: 1;
-          orderBy: { order: "asc" };
-          select: {
-            asset: {
-              select: { url: true; type: true };
-            };
-          };
-        };
-        prices: {
-          where: { currency: "TRY" };
-          select: {
-            price: true;
-            discountedPrice: true;
-          };
-        };
-      };
-    };
-  };
-}> & {
-  // Computed fields
-  priceDisplay: string;
-  stockDisplay: string;
-  finalImage: string | null;
-  finalImageType: AssetType | null;
-};
+export type VariantOptionZodType = z.infer<typeof VariantOptionSchema>;
+export type VariantProductZodType = z.infer<typeof VariantProductSchema>;
 
 export type GetProductPageReturnType = {
   success: boolean;
@@ -1185,28 +1123,3 @@ export type ProductPageDataType = Prisma.ProductGetPayload<{
     };
   };
 }>;
-
-export type ModalProductCardForAdmin = {
-  productId: string;
-  variantId: string | null;
-  productName: string;
-  productSlug: string;
-  brandName: string | null;
-  isVariant: boolean;
-  price: number;
-  discountedPrice: number | null;
-  currency: $Enums.Currency;
-  image: { url: string; type: $Enums.AssetType } | null;
-  variants:
-    | {
-        productVariantGroupId: string;
-        productVariantGroupName: string;
-        productVariantGroupSlug: string;
-        productVariantOptionId: string;
-        productVariantOptionName: string;
-        productVariantOptionSlug: string;
-        hexValue: string | null;
-        asset: { url: string; type: $Enums.AssetType } | null;
-      }[]
-    | null;
-};

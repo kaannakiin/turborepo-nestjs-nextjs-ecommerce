@@ -1,6 +1,5 @@
 "use client";
 import ActionPopover from "@/(admin)/components/ActionPopover";
-import CustomImage from "@/components/CustomImage";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import {
   closestCenter,
@@ -26,6 +25,7 @@ import {
   Badge,
   Box,
   Group,
+  Image,
   SimpleGrid,
   Stack,
   StyleProp,
@@ -101,7 +101,6 @@ const SortableItem = ({ id, media, index, onRemove }: SortableItemProps) => {
     <AspectRatio
       ref={setNodeRef}
       style={style}
-      maw={240}
       ratio={1}
       pos={"relative"}
       className="relative group"
@@ -114,22 +113,15 @@ const SortableItem = ({ id, media, index, onRemove }: SortableItemProps) => {
             controls={false}
           />
         ) : (
-          <CustomImage
+          <Image
+            className="object-contain w-full h-full"
             src={media.url}
             alt={`Product ${index + 1}`}
-            className="w-full h-full object-cover"
           />
         )}
 
-        <Box className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors pointer-events-none" />
-
         <Box className="absolute top-2 left-2 z-10">
-          <Badge
-            color="admin"
-            variant={media.isNew ? "filled" : "light"}
-            size="sm"
-            className="shadow-sm"
-          >
+          <Badge color="admin" variant="filled" size="sm" className="shadow-sm">
             {media.isNew ? "Yeni" : "Mevcut"} • {index + 1}
           </Badge>
         </Box>
@@ -384,7 +376,7 @@ const ProductDropzone = ({
             items={sortedMedia.map((media) => media.id)}
             strategy={rectSortingStrategy}
           >
-            <Group gap={"lg"} className="w-full">
+            <SimpleGrid cols={cols} spacing="lg">
               {sortedMedia.map((media, index) => (
                 <SortableItem
                   key={media.id}
@@ -394,7 +386,7 @@ const ProductDropzone = ({
                   onRemove={() => handleRemove(media)}
                 />
               ))}
-            </Group>
+            </SimpleGrid>
           </SortableContext>
         </DndContext>
       )}

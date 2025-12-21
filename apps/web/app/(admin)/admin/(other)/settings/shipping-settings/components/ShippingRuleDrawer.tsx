@@ -26,7 +26,7 @@ import {
 import { ShippingRuleSchema, ShippingRuleType } from "@repo/types";
 import { IconPackage } from "@tabler/icons-react";
 import { useEffect } from "react";
-import ProductPriceNumberInput from "../../../product-list/create-variant/components/ProductPriceNumberInput";
+import ProductPriceNumberInput from "../../../product-list/products/components/ProductPriceNumberInput";
 interface ShippingRuleDrawerProps {
   openedRuleModal: boolean;
   closeRuleModal: () => void;

@@ -21,6 +21,7 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 import segmentedClasses from "./styles/SegmentedControl.module.css";
+
 const primaryColor: MantineColorsTuple = [
   "#fff0e4",
   "#ffe0cf",
@@ -84,20 +85,20 @@ const LayoutProviderWrapper = ({ children }: { children: ReactNode }) => {
   });
   dayjs.extend(customParseFormat);
   return (
-    <QueryClientProvider client={queryClient}>
-      <DatesProvider
-        settings={{ locale: "tr", firstDayOfWeek: 1, weekendDays: [5, 6] }}
-      >
-        <MantineProvider
-          defaultColorScheme="light"
-          forceColorScheme="light"
-          theme={theme}
+    <MantineProvider
+      defaultColorScheme="light"
+      forceColorScheme="light"
+      theme={theme}
+    >
+      <Notifications position="bottom-right" />
+      <QueryClientProvider client={queryClient}>
+        <DatesProvider
+          settings={{ locale: "tr", firstDayOfWeek: 1, weekendDays: [5, 6] }}
         >
-          <Notifications position="bottom-right" />
           {children}
-        </MantineProvider>
-      </DatesProvider>
-    </QueryClientProvider>
+        </DatesProvider>
+      </QueryClientProvider>
+    </MantineProvider>
   );
 };
 

@@ -14,6 +14,7 @@ import { PrismaLoggerModule } from './prisma-logger/prisma-logger.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { UserModule } from './user/user.module';
+import { CategoriesModule } from './categories/categories.module';
 @Module({
   imports: [
     PrismaModule,
@@ -52,6 +53,7 @@ import { UserModule } from './user/user.module';
     PaymentsModule,
     OrdersModule,
     PrismaLoggerModule,
+    CategoriesModule,
     // ThrottlerModule.forRootAsync({
     //   imports: [ConfigModule],
     //   inject: [ConfigService],

@@ -21,11 +21,12 @@
     "@dnd-kit/modifiers": "^9.0.0",
     "@dnd-kit/sortable": "^10.0.0",
     "@gfazioli/mantine-marquee": "^2.5.5",
-    "@mantine/core": "^8.2.7",
-    "@mantine/dates": "^8.2.8",
-    "@mantine/dropzone": "^8.2.8",
-    "@mantine/hooks": "^8.2.7",
-    "@mantine/notifications": "^8.2.8",
+    "@mantine/core": "8.3.10",
+    "@mantine/dates": "8.3.10",
+    "@mantine/dropzone": "8.3.10",
+    "@mantine/hooks": "8.3.10",
+    "@mantine/notifications": "8.3.10",
+    "@mantine/spotlight": "8.3.10",
     "@repo/database": "*",
     "@repo/shared": "*",
     "@repo/types": "*",
@@ -61,5 +62,9 @@
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
     "typescript": "5.9.2"
+  },
+  "overrides": {
+    "@mantine/core": "$@mantine/core",
+    "@mantine/hooks": "$@mantine/hooks"
   }
 }

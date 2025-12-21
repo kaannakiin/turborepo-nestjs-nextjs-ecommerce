@@ -1,6 +1,6 @@
+import { Prisma } from "@repo/database/client";
 import * as z from "zod";
 import { SortAdminUserTable } from "../shared/shared-enum";
-import { Prisma } from "@repo/database/client";
 
 export const getUsersQueries = z.object({
   search: z.string().default(""), // default boş string

@@ -1,7 +1,11 @@
 "use client";
+import TableAsset from "@/(admin)/components/TableAsset";
+import CustomPagination from "@/components/CustomPagination";
+import CustomSearchInput from "@/components/CustomSearchInput";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
   ActionIcon,
-  Avatar,
   Badge,
   Button,
   Group,
@@ -11,25 +15,30 @@ import {
   Text,
   Title,
 } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import { Locale } from "@repo/database/client";
 import {
   DateFormatter,
   useMutation,
   useQuery,
   useQueryClient,
 } from "@repo/shared";
-import { AdminBrandTableData, BrandsResponse } from "@repo/types";
+import { AdminBrandTableData, BrandTableApiResponse } from "@repo/types";
 import { IconEdit, IconTrash } from "@tabler/icons-react";
+import { Route } from "next";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import CustomPagination from "@/components/CustomPagination";
-import CustomSearchInput from "@/components/CustomSearchInput";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import { useState } from "react";
-import { notifications } from "@mantine/notifications";
-import TableAsset from "@/(admin)/components/TableAsset";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
-import { Locale } from "@repo/database/client";
-import { Route } from "next";
+const getBrandName = (
+  brand:
+    | Pick<AdminBrandTableData, "translations">
+    | Pick<AdminBrandTableData["parentBrand"], "translations">,
+  locale: Locale = "TR"
+) => {
+  if (!brand || !brand.translations) return "İsimsiz Marka";
+  const translation = brand.translations.find((t) => t.locale === locale);
+  return translation?.name || brand.translations[0]?.name || "İsimsiz Marka";
+};
 const BrandsTable = () => {
   const searchParams = useSearchParams();
   const { push } = useRouter();
@@ -52,8 +61,8 @@ const BrandsTable = () => {
       if (search) params.set("search", search as string);
       params.set("page", page.toString());
 
-      const result = await fetchWrapper.get<BrandsResponse>(
-        `/admin/products/brands/get-all-brands?${params}`
+      const result = await fetchWrapper.get<BrandTableApiResponse>(
+        `/admin/products/brands?${params}`
       );
 
       if (!result.success) {
@@ -111,17 +120,6 @@ const BrandsTable = () => {
     },
   });
 
-  const getBrandName = (
-    brand:
-      | Pick<AdminBrandTableData, "translations">
-      | Pick<AdminBrandTableData["parentBrand"], "translations">,
-    locale: Locale = "TR"
-  ) => {
-    if (!brand || !brand.translations) return "İsimsiz Marka";
-    const translation = brand.translations.find((t) => t.locale === locale);
-    return translation?.name || brand.translations[0]?.name || "İsimsiz Marka";
-  };
-
   const handleDeleteBrand = (brandId: string) => {
     deleteBrandMutation.mutate(brandId);
   };
@@ -178,7 +176,7 @@ const BrandsTable = () => {
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {data?.data.map((brand) => (
+              {data?.brands?.map((brand) => (
                 <Table.Tr key={brand.id}>
                   <Table.Td
                     style={{ width: 120, maxHeight: 120, position: "relative" }}
@@ -191,7 +189,7 @@ const BrandsTable = () => {
                   </Table.Td>
 
                   <Table.Td>
-                    {brand.parentBrand ? (
+                    {brand.parentBrandId ? (
                       <Text size="sm" c="dimmed">
                         {getBrandName(brand.parentBrand, "TR")}
                       </Text>
@@ -315,7 +313,7 @@ const BrandsTable = () => {
                 </Table.Tr>
               ))}
 
-              {data?.data.length === 0 && (
+              {data?.brands.length === 0 && (
                 <Table.Tr>
                   <Table.Td colSpan={7}>
                     <Text ta="center" c="dimmed" py="xl">

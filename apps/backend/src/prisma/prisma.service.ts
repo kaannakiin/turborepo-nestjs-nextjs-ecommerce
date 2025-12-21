@@ -27,6 +27,10 @@ export class PrismaService
           password: true,
         },
       },
+      transactionOptions: {
+        maxWait: 10 * 1000,
+        timeout: 5 * 60 * 1000,
+      },
       log:
         process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
     });

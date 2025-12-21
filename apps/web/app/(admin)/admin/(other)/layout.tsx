@@ -1,13 +1,16 @@
+import AdminAppShellLayout from "@/(admin)/components/admin-layout/AdminAppShellLayout";
+import { getSession } from "@lib/auth";
+import { UserRole } from "@repo/database";
 import { notFound } from "next/navigation";
-import { ReactNode } from "react";
-import { getSession } from "../../../../lib/auth";
-import AdminAppShellLayout from "../../components/AdminAppShellLayout";
 
-const AdminLayout = async ({ children }: { children: ReactNode }) => {
+const AdminLayout = async ({ children }: { children: React.ReactNode }) => {
   const session = await getSession();
-
   if (!session) {
     return notFound();
+  }
+
+  if ((session.role as UserRole) === "USER") {
+    notFound();
   }
 
   return (

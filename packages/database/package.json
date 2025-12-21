@@ -27,8 +27,6 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:views": "ts-node src/seeds/applyViews.ts",
-    "db:deploy:full": "npm run db:deploy && npm run db:views",
     "db:prisma": "prisma studio"
   },
   "dependencies": {

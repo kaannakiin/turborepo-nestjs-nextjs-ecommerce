@@ -1,5 +1,7 @@
 "use client";
 
+import TableAsset from "@/(admin)/components/TableAsset";
+import CustomPagination from "@/components/CustomPagination";
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
   Alert,
@@ -9,15 +11,17 @@ import {
   Center,
   Group,
   List,
+  Modal,
+  SimpleGrid,
+  Skeleton,
   Stack,
   Table,
   Text,
   ThemeIcon,
   Title,
-  SimpleGrid,
-  Modal,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import { Locale } from "@repo/database";
 import { useQuery } from "@repo/shared";
 import { AdminProductTableProductData, Pagination } from "@repo/types";
 import {
@@ -26,13 +30,10 @@ import {
   IconPackage,
   IconPlus,
 } from "@tabler/icons-react";
-import { useSearchParams } from "next/navigation";
-import CustomSearchInput from "../../../../../components/CustomSearchInput";
-import TableAsset from "@/(admin)/components/TableAsset";
-import { Locale } from "@repo/database";
-import CustomPagination from "@/components/CustomPagination";
 import { Route } from "next";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import CustomSearchInput from "../../../../../components/CustomSearchInput";
 
 type ProductsResponse = {
   products: AdminProductTableProductData[];
@@ -41,15 +42,16 @@ type ProductsResponse = {
 
 const fetchProducts = async (
   search?: string,
-  page: number = 1
+  page: number = 1,
+  limit = 20
 ): Promise<ProductsResponse> => {
-  const params = new URLSearchParams();
-  if (search) params.append("search", search);
-  params.append("page", page.toString());
-
-  const response = await fetchWrapper.get<ProductsResponse>(
-    `/admin/products/get-products?${params.toString()}`
-  );
+  const response = await fetchWrapper.get<ProductsResponse>(`/admin/products`, {
+    params: {
+      search: search?.trim(),
+      page,
+      limit,
+    },
+  });
 
   if (!response.success) {
     throw new Error("Ürünler yüklenirken hata oluştu");
@@ -58,14 +60,38 @@ const fetchProducts = async (
   return response.data;
 };
 
+// Skeleton Row Component
+const SkeletonRow = () => (
+  <Table.Tr>
+    <Table.Td>
+      <Skeleton height={40} width={40} />
+    </Table.Td>
+    <Table.Td>
+      <Stack gap="xs">
+        <Skeleton height={16} width="60%" />
+        <Skeleton height={12} width="40%" />
+      </Stack>
+    </Table.Td>
+    <Table.Td>
+      <Skeleton height={16} width={80} />
+    </Table.Td>
+    <Table.Td>
+      <Skeleton height={16} width={40} />
+    </Table.Td>
+    <Table.Td>
+      <Skeleton height={16} width={100} />
+    </Table.Td>
+  </Table.Tr>
+);
+
 const ProductTable = () => {
   const [opened, { open, close }] = useDisclosure(false);
   const searchParams = useSearchParams();
-
+  const { push } = useRouter();
   const search = searchParams.get("search") || "";
   const page = parseInt(searchParams.get("page") || "1");
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, isFetching, error } = useQuery({
     queryKey: ["admin-products", search, page],
     queryFn: () => fetchProducts(search || undefined, page),
     staleTime: 1000 * 60 * 5,
@@ -104,8 +130,17 @@ const ProductTable = () => {
             <CustomSearchInput />
           </Group>
         </Group>
+
         <Table.ScrollContainer minWidth={800}>
-          <Table striped highlightOnHover highlightOnHoverColor="primary.0">
+          <Table
+            striped
+            highlightOnHover
+            highlightOnHoverColor="primary.0"
+            style={{
+              opacity: isFetching ? 0.6 : 1,
+              transition: "opacity 0.2s",
+            }}
+          >
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Görsel</Table.Th>
@@ -113,97 +148,123 @@ const ProductTable = () => {
                 <Table.Th>Fiyat</Table.Th>
                 <Table.Th>Stok</Table.Th>
                 <Table.Th>Tarih</Table.Th>
-                <Table.Th>İşlemler</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {data?.products.map((product) => {
-                const locale: Locale = "TR";
-                const currency = "TRY";
+              {isLoading
+                ? Array.from({ length: 5 }).map((_, index) => (
+                    <SkeletonRow key={index} />
+                  ))
+                : data?.products.map((product) => {
+                    const locale: Locale = "TR";
+                    const currency = "TRY";
 
-                const name =
-                  product.translations.find((t) => t.locale === locale)?.name ||
-                  product.translations[0]?.name ||
-                  "İsimsiz Ürün";
+                    const name =
+                      product.translations.find((t) => t.locale === locale)
+                        ?.name ||
+                      product.translations[0]?.name ||
+                      "İsimsiz Ürün";
 
-                const defaultVariant = product.variants.find(
-                  (v) => v.isDefault
-                );
-                const firstImageVariant = product.variants.find(
-                  (v) => v.assets.length > 0
-                );
+                    const defaultVariant = product.variants.find(
+                      (v) => v.isDefault
+                    );
+                    const firstImageVariant = product.variants.find(
+                      (v) => v.assets.length > 0
+                    );
 
-                const asset =
-                  product.assets[0]?.asset ||
-                  defaultVariant?.assets[0]?.asset ||
-                  firstImageVariant?.assets[0]?.asset ||
-                  null;
+                    const asset =
+                      product.assets[0]?.asset ||
+                      defaultVariant?.assets[0]?.asset ||
+                      firstImageVariant?.assets[0]?.asset ||
+                      null;
 
-                const activeVariants = product.variants.filter((v) => v.active);
+                    const allVariants = product.variants;
 
-                const variantsToCheck =
-                  activeVariants.length > 0 ? activeVariants : product.variants;
+                    const stocks = allVariants.map((v) => v.stock);
+                    const minStock =
+                      stocks.length > 0 ? Math.min(...stocks) : 0;
+                    const maxStock =
+                      stocks.length > 0 ? Math.max(...stocks) : 0;
 
-                const stocks = variantsToCheck.map((v) => v.stock);
-                const minStock = Math.min(...stocks);
-                const maxStock = Math.max(...stocks);
+                    const renderStock = () => {
+                      if (stocks.length === 0) return 0;
 
-                const prices = variantsToCheck
-                  .map(
-                    (v) => v.prices.find((p) => p.currency === currency)?.price
-                  )
-                  .filter((p): p is number => p !== undefined);
+                      if (minStock === maxStock) {
+                        return minStock;
+                      }
 
-                const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
-                const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+                      return `${minStock} - ${maxStock}`;
+                    };
 
-                const renderPrice = () => {
-                  if (prices.length === 0) return "-";
+                    const prices = allVariants
+                      .map(
+                        (v) =>
+                          v.prices.find((p) => p.currency === currency)?.price
+                      )
+                      .filter(
+                        (p): p is number => p !== undefined && p !== null
+                      );
 
-                  const format = (val: number) =>
-                    new Intl.NumberFormat(locale, {
-                      style: "currency",
-                      currency,
-                    }).format(val);
+                    const minPrice =
+                      prices.length > 0 ? Math.min(...prices) : 0;
+                    const maxPrice =
+                      prices.length > 0 ? Math.max(...prices) : 0;
 
-                  if (minPrice === maxPrice) {
-                    return format(minPrice);
-                  }
-                  return `${format(minPrice)} - ${format(maxPrice)}`;
-                };
+                    const renderPrice = () => {
+                      if (prices.length === 0) return "-";
 
-                const renderStock = () => {
+                      const format = (val: number) =>
+                        new Intl.NumberFormat(locale, {
+                          style: "currency",
+                          currency,
+                        }).format(val);
 
-                  if (stocks.length === 0) return 0;
-                  if (minStock === maxStock) {
-                    return minStock;
-                  }
-                  return `${minStock} - ${maxStock}`;
-                };
+                      if (minPrice === maxPrice) {
+                        return format(minPrice);
+                      }
+                      return `${format(minPrice)} - ${format(maxPrice)}`;
+                    };
 
-                return (
-                  <Table.Tr key={product.id}>
-                    <Table.Td>
-                      <AspectRatio ratio={1} maw={40}>
-                        <TableAsset
-                          type={asset?.type || "IMAGE"}
-                          url={asset?.url || "https://placehold.co/40x40"}
-                        />
-                      </AspectRatio>
-                    </Table.Td>
-                    <Table.Td>{name}</Table.Td>
-                    <Table.Td>{renderPrice()}</Table.Td>
-                    <Table.Td>{renderStock()}</Table.Td>
-                    <Table.Td>
-                      {new Date(product.createdAt).toLocaleDateString(locale)}
-                    </Table.Td>
-                    <Table.Td></Table.Td>
-                  </Table.Tr>
-                );
-              })}
+                    return (
+                      <Table.Tr
+                        key={product.id}
+                        style={{ cursor: "pointer" }}
+                        onClick={() => {
+                          push(
+                            `/admin/product-list/products/${product.id}` as Route
+                          );
+                        }}
+                      >
+                        <Table.Td onClick={(e) => e.stopPropagation()}>
+                          <AspectRatio ratio={1} maw={40}>
+                            <TableAsset
+                              type={asset?.type || "IMAGE"}
+                              url={asset?.url || "https://placehold.co/40x40"}
+                            />
+                          </AspectRatio>
+                        </Table.Td>
+                        <Table.Td>
+                          {name}
+                          {product?.variants?.length > 1 && (
+                            <Text fz={"xs"} c={"dimmed"}>
+                              {`${product.variants.length} Varyant`}
+                            </Text>
+                          )}
+                        </Table.Td>
+                        <Table.Td>{renderPrice()}</Table.Td>
+                        <Table.Td>{renderStock()}</Table.Td>
+                        <Table.Td>
+                          {new Date(product.createdAt).toLocaleDateString(
+                            locale
+                          )}
+                        </Table.Td>
+                      </Table.Tr>
+                    );
+                  })}
             </Table.Tbody>
           </Table>
-          {data?.products.length === 0 && !isLoading && (
+
+          {!isLoading && data?.products.length === 0 && (
             <Center py="xl">
               <Stack align="center" gap="md">
                 <IconPackage size={48} color="gray" />
@@ -216,10 +277,12 @@ const ProductTable = () => {
             </Center>
           )}
         </Table.ScrollContainer>
+
         {data?.pagination && data?.pagination.totalPages > 1 && (
           <CustomPagination total={data.pagination.totalPages} />
         )}
       </Stack>
+
       <Modal
         opened={opened}
         onClose={close}
@@ -245,7 +308,7 @@ const ProductTable = () => {
               radius="md"
               withBorder
               component={Link}
-              href={"/admin/product-list/create-basic/new" as Route}
+              href={"/admin/product-list/products/new" as Route}
               onClick={close}
               style={{
                 cursor: "pointer",
@@ -297,7 +360,7 @@ const ProductTable = () => {
               radius="md"
               withBorder
               component={Link}
-              href={"/admin/product-list/create-variant/new" as Route}
+              href={"/admin/product-list/products/new?variant=true" as Route}
               onClick={close}
               style={{
                 cursor: "pointer",

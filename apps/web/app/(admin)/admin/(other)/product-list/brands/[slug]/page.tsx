@@ -1,68 +1,81 @@
-import { notFound } from "next/navigation";
-import BrandForm from "../components/BrandForm";
-import { Brand } from "@repo/types";
-import { Button } from "@mantine/core";
+"use client";
+
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
+import { Alert, Button, Center, Group, Stack, Text } from "@mantine/core";
+import { useQuery } from "@repo/shared";
+import { BrandZodType } from "@repo/types";
+import { IconAlertCircle } from "@tabler/icons-react";
 import Link from "next/link";
-import { cookies } from "next/headers";
-import { Params } from "types/GlobalTypes";
+import { useParams, useRouter } from "next/navigation";
+import BrandForm from "../components/BrandForm";
 
-interface BrandFormPageProps {
-  params: Params;
-}
+const BrandFormPage = () => {
+  const params = useParams();
+  const router = useRouter();
 
-const BrandFormPage = async ({ params }: BrandFormPageProps) => {
-  const { slug } = await params;
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin-brand-form", params.slug],
+    queryFn: async () => {
+      const res = await fetchWrapper.get<BrandZodType>(
+        `/admin/products/brands/get-brand-form-value/${params.slug}`
+      );
 
-  if (!slug) return notFound();
-  if (slug !== "new" && typeof slug !== "string") return notFound();
+      if (!res.success) {
+        const error = res as ApiError;
+        throw new Error(error.error || "Failed to fetch brand data");
+      }
 
-  if (slug === "new") {
+      return res.data;
+    },
+    enabled: !!params.slug && params.slug !== "new",
+  });
+
+  if (params?.slug === "new") {
     return <BrandForm />;
   }
 
-  try {
-    const cookieStore = await cookies();
-    const brandResponse = await fetch(
-      `${process.env.BACKEND_URL}/admin/products/brands/get-brand/${slug}`,
-      {
-        method: "GET",
-        cache: "no-store",
-        credentials: "include",
-        headers: {
-          Cookie: `token=${cookieStore.get("token")?.value || ""}`,
-        },
-      }
-    );
-
-    if (!brandResponse.ok) {
-      if (brandResponse.status === 404) {
-        return notFound(); // Brand bulunamadı
-      }
-
-      // Diğer server hataları
-      throw new Error(`Failed to fetch brand: ${brandResponse.status}`);
-    }
-
-    const brandData: Brand = await brandResponse.json();
-
-    return <BrandForm defaultValues={brandData} />;
-  } catch (error) {
+  if (error) {
     return (
-      <div className="flex items-center justify-center min-h-64">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">
+      <Center h={400}>
+        <Stack align="center" gap="md" maw={500}>
+          <IconAlertCircle size={48} color="red" />
+          <Text size="xl" fw={600}>
             Marka Yüklenemedi
-          </h2>
-          <p className="text-gray-600 mb-4">
+          </Text>
+          <Text c="dimmed" ta="center">
             Marka bilgileri yüklenirken bir hata oluştu. Lütfen tekrar deneyin.
-          </p>
-          <Button component={Link} href="/admin/product-list/brands">
-            Markalar listesine dön
-          </Button>
-        </div>
-      </div>
+          </Text>
+
+          <Alert
+            color="red"
+            variant="light"
+            w="100%"
+            icon={<IconAlertCircle size={16} />}
+          >
+            {error instanceof Error
+              ? error.message
+              : "Bilinmeyen bir hata oluştu"}
+          </Alert>
+
+          <Group>
+            <Button variant="light" onClick={() => router.back()}>
+              Geri Dön
+            </Button>
+            <Button component={Link} href="/admin/product-list/brands">
+              Markalar Listesi
+            </Button>
+          </Group>
+        </Stack>
+      </Center>
     );
   }
+
+  if (isLoading) {
+    return <GlobalLoadingOverlay />;
+  }
+
+  return <BrandForm defaultValues={data} />;
 };
 
 export default BrandFormPage;

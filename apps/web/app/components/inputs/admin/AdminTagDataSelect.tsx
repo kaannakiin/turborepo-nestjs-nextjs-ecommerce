@@ -81,7 +81,7 @@ const AdminTagDataSelect = ({
     data?.map((item) => ({
       value: String(item.id),
       label: item.name,
-    })) || [];
+    })) || null;
 
   const logicProps = {
     data: selectData,

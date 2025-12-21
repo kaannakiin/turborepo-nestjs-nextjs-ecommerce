@@ -1,3 +1,4 @@
+import GlobalLoader from "@/components/GlobalLoader";
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
   ActionIcon,
@@ -27,7 +28,6 @@ import {
   IconSearch,
 } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
-import GlobalLoader from "../GlobalLoader";
 
 interface SelectableProductModalProps {
   multiple: boolean;

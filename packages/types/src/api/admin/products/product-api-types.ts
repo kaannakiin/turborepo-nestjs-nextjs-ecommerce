@@ -1,8 +1,8 @@
 import { Prisma } from "@repo/database";
 import {
-    commonProductAssetsQuery,
-    variantOptionsQuery,
-    variantsOptionsOrderByQuery,
+  commonProductAssetsQuery,
+  variantOptionsQuery,
+  variantsOptionsOrderByQuery,
 } from "../../../common/common-queries";
 
 export const adminProductTableQuery = {
