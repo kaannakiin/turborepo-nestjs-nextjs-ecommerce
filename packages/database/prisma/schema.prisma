@@ -1477,6 +1477,7 @@ view ProductListingView {
   brandId                 String?
   createdAt               DateTime
   stock                   Int
+  visibleAllCombinations  Boolean
   sku                     String?
   categoryIds             String[]
   categorySlugs           String[]

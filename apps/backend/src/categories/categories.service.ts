@@ -73,6 +73,7 @@ export class CategoriesService {
           where: { products: { some: baseProductWhere } },
           select: CateogoryPageBrandQuery,
         }),
+
         this.prismaService.productTag.findMany({
           where: { products: { some: { product: baseProductWhere } } },
           select: CategoryPageProductTagQuery,
@@ -175,11 +176,6 @@ export class CategoriesService {
           id: { in: items.map((i) => i.variantId) },
           stock: { gt: 0 },
           active: true,
-          translations: {
-            some: {
-              locale,
-            },
-          },
         },
       }),
     });

@@ -3,9 +3,7 @@ import { CartProviderV3 } from "@/context/cart-context/CartContextV3";
 import { ActionIcon, AppShell, Drawer, Group, Stack } from "@mantine/core";
 import { useDisclosure, useHeadroom } from "@mantine/hooks";
 import { Locale } from "@repo/database/client";
-import {
-  TokenPayload
-} from "@repo/types";
+import { TokenPayload } from "@repo/types";
 import { IconMenu2, IconUserCircle } from "@tabler/icons-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -22,9 +20,7 @@ const UserAppShellLayout = ({
 }) => {
   const pinned = useHeadroom({ fixedAt: 160 });
   const [opened, { open, close }] = useDisclosure();
-  const locale: Locale = "TR";
   const { push } = useRouter();
-
 
   return (
     <CartProviderV3>
@@ -54,9 +50,7 @@ const UserAppShellLayout = ({
                 h={"100%"}
                 px={"xl"}
                 gap={"xl"}
-              >
-          
-              </Group>
+              ></Group>
             </Group>
 
             <Group align="center" gap={"0"}>

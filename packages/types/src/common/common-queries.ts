@@ -104,7 +104,7 @@ export const uiProductInclude = ({
   variantWhere,
 }: {
   variantWhere?: Prisma.ProductVariantCombinationWhereInput;
-}): Prisma.ProductInclude => {
+}) => {
   return {
     translations: true,
     assets: commonProductAssetsQuery,
@@ -147,7 +147,7 @@ export const uiProductInclude = ({
         },
       },
     },
-  };
+  } as const satisfies Prisma.ProductInclude;
 };
 
 export type UiProductType = Prisma.ProductGetPayload<{

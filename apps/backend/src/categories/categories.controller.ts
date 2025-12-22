@@ -23,7 +23,7 @@ export class CategoriesController {
     @Query('sort', new ParseEnumPipe(ProductPageSortOption, { optional: true }))
     sort: ProductPageSortOption = ProductPageSortOption.NEWEST,
     @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 24,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 12,
     @Query('minPrice', new ParseIntPipe({ optional: true })) minPrice?: number,
     @Query('maxPrice', new ParseIntPipe({ optional: true })) maxPrice?: number,
     @Query(CATEGORY_PAGE_PRODUCT_TAGS_KEY_NAME) tags?: string,

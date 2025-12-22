@@ -9,7 +9,7 @@ type ApiSuccess<T> = { success: true; data: T; status: number };
 export type ApiError = { success: false; error: string; status: number };
 type ApiResponse<T> = ApiSuccess<T> | ApiError;
 
-type CookieStore = {
+export type CookieStore = {
   get(name: string): { value: string } | undefined;
   getAll(): { name: string; value: string }[];
 };
