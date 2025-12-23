@@ -146,10 +146,7 @@ const CartViewPage = () => {
 
   const totalItems = cart.items.length;
   const totalPrice = cart.items.reduce((sum, item) => {
-    const priceData =
-      item.variant && item.variantId
-        ? item.variant.prices
-        : item.product.prices;
+    const priceData = item.variant.prices;
     const localePrice = priceData.find((p) => p.currency === cart.currency);
     const itemPrice = localePrice?.discountedPrice ?? localePrice?.price ?? 0;
     return sum + itemPrice * item.quantity;
@@ -257,10 +254,7 @@ const CartViewPage = () => {
                 {cart.items.map((item) => {
                   const product = item.product;
                   const variant = item.variant;
-                  const priceData =
-                    item.variant && item.variantId
-                      ? item.variant.prices
-                      : item.product.prices;
+                  const priceData = item.variant.prices;
                   const localePrice = priceData.find(
                     (p) => p.currency === cart.currency
                   );
@@ -269,11 +263,9 @@ const CartViewPage = () => {
                   const finalPrice = discountedPrice ?? originalPrice;
                   const hasDiscount =
                     discountedPrice && discountedPrice < originalPrice;
-                  const productName =
-                    product?.translations?.[0]?.name || "İsimsiz Ürün";
-                  const imageUrl =
-                    product?.assets?.[0]?.asset?.url ||
-                    variant?.assets?.[0]?.asset?.url;
+                  //TODO
+                  const productName = "İsimsiz Ürün";
+                  const imageUrl = variant?.assets?.[0]?.asset?.url;
 
                   return (
                     <Paper
