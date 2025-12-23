@@ -3,6 +3,7 @@
 import TableAsset from "@/(admin)/components/TableAsset";
 import CustomSearchInput from "@/components/CustomSearchInput";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import { getQueryClient } from "@lib/serverQueryClient";
 import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
 import {
   ActionIcon,
@@ -92,7 +93,6 @@ const AdminCategoryTable = () => {
   );
 
   const searchParams = useSearchParams();
-  const queryClient = useQueryClient();
 
   const { data, isLoading, error, refetch } = useCategories(
     searchParams.get("search") || "",
@@ -116,7 +116,7 @@ const AdminCategoryTable = () => {
         autoClose: 3000,
       });
 
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      getQueryClient().invalidateQueries({ queryKey: ["categories"] });
 
       setDeletePopoverOpened(null);
     } catch (error) {

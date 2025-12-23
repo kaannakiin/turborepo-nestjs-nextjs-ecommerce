@@ -1,20 +1,28 @@
 import { AssetType, Currency, Locale, Prisma } from "@repo/database";
 import { ProductPageSortOption } from "@repo/shared";
+import { UiProductType as InfinityScrollPageProductType } from "../../common/common-queries";
 import { Pagination } from "../../shared-schema";
-import { UiProductType } from "../../common/common-queries";
-
-export interface CategoryTreeData {
-  categoryId: string;
-  categoryName: string;
-  categorySlug: string;
+export interface BaseNode {
+  id: string;
+  name: string;
+  slug: string;
   locale: Locale;
   description?: string;
   metaTitle?: string;
   metaDescription?: string;
   imageUrl?: string;
   imageType?: AssetType;
-  children?: CategoryTreeData[];
-  parentCategory?: CategoryTreeData;
+}
+
+export interface TreeNode extends BaseNode {
+  children?: TreeNode[];
+  parent?: TreeNode;
+}
+
+export interface ProductTagNode extends BaseNode {
+  color?: string;
+  icon?: string;
+  priority?: number;
 }
 
 export interface RawCategoryRow {
@@ -55,17 +63,17 @@ export interface ProductListingResponse<T> {
   pagination: Pagination;
 }
 
-export const CateogoryPageBrandQuery = {
+export const InfinityScrollPageFilterBrandQuery = {
   translations: true,
   id: true,
   image: { select: { url: true, type: true } },
 } as const satisfies Prisma.BrandSelect;
 
-export type CategoryPageBrandType = Prisma.BrandGetPayload<{
-  select: typeof CateogoryPageBrandQuery;
+export type InfinityScrollPageFilterBrandType = Prisma.BrandGetPayload<{
+  select: typeof InfinityScrollPageFilterBrandQuery;
 }>;
 
-export const CategoryPageProductTagQuery = {
+export const InfinityScrollPageFilterProducTagQuery = {
   id: true,
   translations: true,
   color: true,
@@ -73,11 +81,12 @@ export const CategoryPageProductTagQuery = {
   priority: true,
 } as const satisfies Prisma.ProductTagSelect;
 
-export type CategoryPageProductTagType = Prisma.ProductTagGetPayload<{
-  select: typeof CategoryPageProductTagQuery;
-}>;
+export type InfinityScrollPageFilterProducTagType =
+  Prisma.ProductTagGetPayload<{
+    select: typeof InfinityScrollPageFilterProducTagQuery;
+  }>;
 
-export const CategoryPageVariantGroupQuery = {
+export const InfinityScrollPageFilterVariantGroupQuery = {
   translations: true,
   type: true,
   id: true,
@@ -96,9 +105,49 @@ export const CategoryPageVariantGroupQuery = {
   },
 } as const satisfies Prisma.VariantGroupSelect;
 
-export type CategoryPageVariantGroupType = Prisma.VariantGroupGetPayload<{
-  select: typeof CategoryPageVariantGroupQuery;
+export type InfinityScrollPageFilterVariantGroupType =
+  Prisma.VariantGroupGetPayload<{
+    select: typeof InfinityScrollPageFilterVariantGroupQuery;
+  }>;
+
+export const InfinityScrollPageFilterCategoryQuery = {
+  translations: true,
+  image: { select: { url: true, type: true } },
+  id: true,
+} as const satisfies Prisma.CategorySelect;
+
+export type InfinityScrollPageFilterCategoryType = Prisma.CategoryGetPayload<{
+  select: typeof InfinityScrollPageFilterCategoryQuery;
 }>;
+
+export interface ProductViewInput {
+  sort: ProductPageSortOption;
+  page: number;
+  limit: number;
+  minPrice?: number;
+  maxPrice?: number;
+
+  categoryIds?: string[];
+  brandIds?: string[];
+  tagIds?: string[];
+
+  categorySlugs?: string[];
+  brandSlugs?: string[];
+  tagSlugs?: string[];
+  variantFilters?: Record<string, string | string[]>;
+}
+
+export interface ProductViewResult {
+  items: {
+    productId: string;
+    variantId: string;
+    finalPrice: number;
+    originalPrice: number;
+    discountPercentage: number;
+    stock: number;
+  }[];
+  pagination: Pagination;
+}
 
 export interface CategoryPageFilters {
   sort: ProductPageSortOption;
@@ -111,13 +160,14 @@ export interface CategoryPageFilters {
   variantFilters: Record<string, string | string[]>;
 }
 
-export type CategoryPageReturnType = {
-  category: CategoryTreeData;
-  products: UiProductType[];
+export type InfinityScrollPageReturnType = {
+  treeNode: TreeNode;
+  products: InfinityScrollPageProductType[];
   pagination: Pagination;
   filters: {
-    brands: CategoryPageBrandType[];
-    tags: CategoryPageProductTagType[];
-    variantGroups: CategoryPageVariantGroupType[];
+    brands: InfinityScrollPageFilterBrandType[];
+    tags: InfinityScrollPageFilterProducTagType[];
+    variantGroups: InfinityScrollPageFilterVariantGroupType[];
+    categories: InfinityScrollPageFilterCategoryType[];
   };
 };

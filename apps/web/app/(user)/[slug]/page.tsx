@@ -1,5 +1,5 @@
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import { queryClient } from "@lib/serverQueryClient";
+import { getQueryClient } from "@lib/serverQueryClient";
 import { GetProductPageReturnType } from "@repo/types";
 import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
@@ -21,7 +21,7 @@ const BasicProductClient = dynamic(
   }
 );
 
-const client = queryClient;
+const client = getQueryClient();
 
 const ProductPage = async ({ params }: { params: Params }) => {
   const { slug } = await params;
@@ -48,13 +48,13 @@ const ProductPage = async ({ params }: { params: Params }) => {
     return notFound();
   }
 
-  if (productMainData.isVariant) {
-    return <VariantProductClient productData={productMainData} />;
-  }
+  // if (productMainData.isVariant) {
+  //   return <VariantProductClient productData={productMainData} />;
+  // }
 
-  if (!productMainData.isVariant) {
-    return <BasicProductClient productData={productMainData} />;
-  }
+  // if (!productMainData.isVariant) {
+  //   return <BasicProductClient productData={productMainData} />;
+  // }
 
   return notFound();
 };

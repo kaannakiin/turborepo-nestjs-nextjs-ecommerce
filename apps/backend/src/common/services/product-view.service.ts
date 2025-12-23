@@ -1,37 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Currency, Prisma } from '@repo/database';
 import { ProductPageSortOption, RESERVED_KEYS } from '@repo/shared';
-import { Pagination } from '@repo/types';
+import { ProductViewInput, ProductViewResult, TreeNode } from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
-
-export interface ProductViewInput {
-  sort: ProductPageSortOption;
-  page: number;
-  limit: number;
-  minPrice?: number;
-  maxPrice?: number;
-
-  categoryIds?: string[];
-  brandIds?: string[];
-  tagIds?: string[];
-
-  categorySlugs?: string[];
-  brandSlugs?: string[];
-  tagSlugs?: string[];
-  variantFilters?: Record<string, string | string[]>;
-}
-
-export interface ProductViewResult {
-  items: {
-    productId: string;
-    variantId: string;
-    finalPrice: number;
-    originalPrice: number;
-    discountPercentage: number;
-    stock: number;
-  }[];
-  pagination: Pagination;
-}
 
 @Injectable()
 export class ProductViewService {
@@ -149,5 +120,17 @@ export class ProductViewService {
       default:
         return { createdAt: 'desc' };
     }
+  }
+
+  public collectAllIds(node: TreeNode): string[] {
+    const ids: string[] = [node.id];
+
+    if (node.children && node.children.length > 0) {
+      for (const child of node.children) {
+        ids.push(...this.collectAllIds(child));
+      }
+    }
+
+    return ids;
   }
 }

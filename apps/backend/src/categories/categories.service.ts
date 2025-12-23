@@ -2,17 +2,17 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Locale, Prisma } from '@repo/database';
 import { RESERVED_KEYS } from '@repo/shared';
 import {
-  CategoryPageBrandType,
   CategoryPageFilters,
-  CategoryPageProductTagQuery,
-  CategoryPageProductTagType,
-  CategoryPageReturnType,
-  CategoryPageVariantGroupQuery,
-  CategoryPageVariantGroupType,
-  CategoryTreeData,
-  CateogoryPageBrandQuery,
   commonProductWhereClause,
+  InfinityScrollPageFilterBrandQuery,
+  InfinityScrollPageFilterBrandType,
+  InfinityScrollPageFilterProducTagQuery,
+  InfinityScrollPageFilterProducTagType,
+  InfinityScrollPageFilterVariantGroupQuery,
+  InfinityScrollPageFilterVariantGroupType,
+  InfinityScrollPageReturnType,
   RawCategoryRow,
+  TreeNode,
   uiProductInclude,
 } from '@repo/types';
 import { CurrencyLocaleService } from 'src/common/services/currency-locale.service';
@@ -32,7 +32,8 @@ export class CategoriesService {
   async getCategoryPageBySlug(
     slug: string,
     filters: CategoryPageFilters,
-  ): Promise<CategoryPageReturnType> {
+  ): Promise<InfinityScrollPageReturnType> {
+    const isFirstPage = filters.page === 1;
     const locale = this.localeService.getLocale();
     const currency = this.currencyLocaleService.getCurrencyLocaleMap(locale);
 
@@ -55,7 +56,7 @@ export class CategoriesService {
       throw new BadRequestException('Kategori ağacı oluşturulamadı.');
     }
 
-    const allCategoryIds = this.collectAllCategoryIds(categoryTree);
+    const allCategoryIds = this.productViewService.collectAllIds(categoryTree);
     const commonProductWhere = commonProductWhereClause(currency, locale);
 
     const baseProductWhere: Prisma.ProductWhereInput = {
@@ -68,23 +69,26 @@ export class CategoriesService {
     const parsedFilters = this.parseFilters(filters);
 
     const [sidebarData, productResult] = await Promise.all([
-      Promise.all([
-        this.prismaService.brand.findMany({
-          where: { products: { some: baseProductWhere } },
-          select: CateogoryPageBrandQuery,
-        }),
+      isFirstPage
+        ? Promise.all([
+            this.prismaService.brand.findMany({
+              where: { products: { some: baseProductWhere } },
+              select: InfinityScrollPageFilterBrandQuery,
+            }),
 
-        this.prismaService.productTag.findMany({
-          where: { products: { some: { product: baseProductWhere } } },
-          select: CategoryPageProductTagQuery,
-        }),
-        this.prismaService.variantGroup.findMany({
-          where: {
-            productVariantGroups: { some: { product: baseProductWhere } },
-          },
-          select: CategoryPageVariantGroupQuery,
-        }),
-      ]),
+            this.prismaService.productTag.findMany({
+              where: { products: { some: { product: baseProductWhere } } },
+              select: InfinityScrollPageFilterProducTagQuery,
+            }),
+
+            this.prismaService.variantGroup.findMany({
+              where: {
+                productVariantGroups: { some: { product: baseProductWhere } },
+              },
+              select: InfinityScrollPageFilterVariantGroupQuery,
+            }),
+          ])
+        : [[], [], []],
 
       this.productViewService.getProducts(
         {
@@ -106,11 +110,12 @@ export class CategoriesService {
     const products = await this.getProductDetails(productResult.items, locale);
 
     return {
-      category: categoryTree,
+      treeNode: categoryTree,
       filters: {
         brands: this.mapBrands(brands, locale),
         tags: this.mapTags(tags, locale),
         variantGroups: this.mapVariantGroups(variantGroups, locale),
+        categories: [],
       },
       products,
       pagination: productResult.pagination,
@@ -184,27 +189,27 @@ export class CategoriesService {
   }
 
   private mapBrands(
-    brands: CategoryPageBrandType[],
+    brands: InfinityScrollPageFilterBrandType[],
     locale: Locale,
-  ): CategoryPageBrandType[] {
+  ): InfinityScrollPageFilterBrandType[] {
     return brands.filter((brand) =>
       brand.translations.some((t) => t.locale === locale),
     );
   }
 
   private mapTags(
-    tags: CategoryPageProductTagType[],
+    tags: InfinityScrollPageFilterProducTagType[],
     locale: Locale,
-  ): CategoryPageProductTagType[] {
+  ): InfinityScrollPageFilterProducTagType[] {
     return tags.filter((tag) =>
       tag.translations.some((t) => t.locale === locale),
     );
   }
 
   private mapVariantGroups(
-    variantGroups: CategoryPageVariantGroupType[],
+    variantGroups: InfinityScrollPageFilterVariantGroupType[],
     locale: Locale,
-  ): CategoryPageVariantGroupType[] {
+  ): InfinityScrollPageFilterVariantGroupType[] {
     return variantGroups
       .filter((vg) => vg.translations.some((t) => t.locale === locale))
       .map((vg) => ({
@@ -219,70 +224,70 @@ export class CategoriesService {
   private async getCategoryTreeWithRawSql(
     categoryId: string,
     locale: Locale,
-  ): Promise<CategoryTreeData | null> {
+  ): Promise<TreeNode | null> {
     const rows = await this.prismaService.$queryRaw<RawCategoryRow[]>`
-      WITH RECURSIVE 
-      ancestors AS (
-        SELECT id, "parentCategoryId", "imageId", 0 as depth 
-        FROM "Category" 
-        WHERE id = ${categoryId}
-        
-        UNION ALL
-        
-        SELECT c.id, c."parentCategoryId", c."imageId", a.depth - 1
-        FROM "Category" c
-        INNER JOIN ancestors a ON c.id = a."parentCategoryId"
-      ),
+    WITH RECURSIVE 
+    ancestors AS (
+      SELECT id, "parentCategoryId", "imageId", 0 as depth 
+      FROM "Category" 
+      WHERE id = ${categoryId}
       
-      descendants AS (
-        SELECT id, "parentCategoryId", "imageId", 0 as depth 
-        FROM "Category" 
-        WHERE id = ${categoryId}
-        
-        UNION ALL
-        
-        SELECT c.id, c."parentCategoryId", c."imageId", d.depth + 1
-        FROM "Category" c
-        INNER JOIN descendants d ON c."parentCategoryId" = d.id
-      ),
+      UNION ALL
+      
+      SELECT c.id, c."parentCategoryId", c."imageId", a.depth - 1
+      FROM "Category" c
+      INNER JOIN ancestors a ON c.id = a."parentCategoryId"
+    ),
+    
+    descendants AS (
+      SELECT id, "parentCategoryId", "imageId", 0 as depth 
+      FROM "Category" 
+      WHERE id = ${categoryId}
+      
+      UNION ALL
+      
+      SELECT c.id, c."parentCategoryId", c."imageId", d.depth + 1
+      FROM "Category" c
+      INNER JOIN descendants d ON c."parentCategoryId" = d.id
+    ),
 
-      all_nodes AS (
-        SELECT * FROM ancestors
-        UNION
-        SELECT * FROM descendants
-      )
+    all_nodes AS (
+      SELECT * FROM ancestors
+      UNION
+      SELECT * FROM descendants
+    )
 
-      SELECT 
-        an.id,
-        an."parentCategoryId" as "parentId",
-        an.depth,
-        ct.name,
-        ct.slug,
-        ct.description,
-        ct."metaTitle",
-        ct."metaDescription",
-        a.url as "imageUrl",
-        a.type as "imageType"
-      FROM all_nodes an
-      LEFT JOIN "CategoryTranslation" ct 
-        ON an.id = ct."categoryId" AND ct.locale = ${locale}::"Locale"
-      LEFT JOIN "Asset" a 
-        ON an."imageId" = a.id
-      ORDER BY an.depth ASC;
-    `;
+    SELECT 
+      an.id,
+      an."parentCategoryId" as "parentId",
+      an.depth,
+      ct.name,
+      ct.slug,
+      ct.description,
+      ct."metaTitle",
+      ct."metaDescription",
+      a.url as "imageUrl",
+      a.type as "imageType"
+    FROM all_nodes an
+    LEFT JOIN "CategoryTranslation" ct 
+      ON an.id = ct."categoryId" AND ct.locale = ${locale}::"Locale"
+    LEFT JOIN "Asset" a 
+      ON an."imageId" = a.id
+    ORDER BY an.depth ASC;
+  `;
 
     if (!rows || rows.length === 0) return null;
 
     const rootRow = rows.find((r) => r.depth === 0);
     if (!rootRow) return null;
 
-    const nodeMap = new Map<string, CategoryTreeData>();
+    const nodeMap = new Map<string, TreeNode>();
 
     rows.forEach((row) => {
       nodeMap.set(row.id, {
-        categoryId: row.id,
-        categoryName: row.name || '',
-        categorySlug: row.slug || '',
+        id: row.id,
+        name: row.name || '',
+        slug: row.slug || '',
         locale,
         description: row.description || undefined,
         metaTitle: row.metaTitle || undefined,
@@ -290,7 +295,7 @@ export class CategoriesService {
         imageUrl: row.imageUrl || undefined,
         imageType: row.imageType || 'IMAGE',
         children: [],
-        parentCategory: undefined,
+        parent: undefined,
       });
     });
 
@@ -310,23 +315,11 @@ export class CategoriesService {
       if (row.parentId) {
         const parentNode = nodeMap.get(row.parentId);
         if (parentNode && row.depth <= 0) {
-          currentNode.parentCategory = parentNode;
+          currentNode.parent = parentNode;
         }
       }
     });
 
     return rootNode;
-  }
-
-  private collectAllCategoryIds(node: CategoryTreeData): string[] {
-    const ids: string[] = [node.categoryId];
-
-    if (node.children && node.children.length > 0) {
-      for (const child of node.children) {
-        ids.push(...this.collectAllCategoryIds(child));
-      }
-    }
-
-    return ids;
   }
 }

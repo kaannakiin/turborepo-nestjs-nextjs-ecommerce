@@ -3,7 +3,7 @@
 import AdminBrandDataSelect from "@/components/inputs/admin/AdminBrandDataSelect";
 import AdminCategoryDataSelect from "@/components/inputs/admin/AdminCategoryDataSelect";
 import AdminTagDataSelect from "@/components/inputs/admin/AdminTagDataSelect";
-import { queryClient } from "@lib/serverQueryClient";
+import { getProductTypeLabel } from "@lib/helpers";
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
   Button,
@@ -18,10 +18,11 @@ import {
   Title,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { AssetType, ProductType } from "@repo/database/client";
+import { ProductType } from "@repo/database/client";
 import {
   Controller,
   createId,
+  MutationFunctionContext,
   slugify,
   SubmitHandler,
   useForm,
@@ -37,7 +38,6 @@ import GlobalSeoCard from "../../../../../../components/GlobalSeoCard";
 import TaxonomySelect from "../../../components/TaxonomySelect";
 import ProductDropzone from "../../components/ProductDropzone";
 import ExistingVariantCard from "./ExistingVariantCard";
-import { getProductTypeLabel } from "@lib/helpers";
 
 const GlobalTextEditor = dynamic(
   () => import("../../../../../../components/GlobalTextEditor"),
@@ -126,7 +126,7 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
       return { data, productId, combinations };
     },
 
-    onSuccess: async (result) => {
+    onSuccess: async (result, variables, _m, context) => {
       const { data, productId, combinations } = result;
 
       notifications.show({
@@ -137,9 +137,9 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
         color: "green",
       });
 
-      uploadAllImagesInBackground(data, productId, combinations);
+      uploadAllImagesInBackground(data, productId, combinations, context);
 
-      queryClient.invalidateQueries({
+      context.client.invalidateQueries({
         queryKey: ["admin-product", productId],
       });
 
@@ -167,7 +167,8 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
   const uploadAllImagesInBackground = async (
     formData: VariantProductZodType,
     productId: string,
-    updatedCombinations: { id: string; sku: string | null }[]
+    updatedCombinations: { id: string; sku: string | null }[],
+    context: MutationFunctionContext
   ) => {
     try {
       if (formData.images && formData.images.length > 0) {
@@ -229,11 +230,11 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
         }
       }
 
-      queryClient.invalidateQueries({
+      context.client.invalidateQueries({
         queryKey: ["admin-product", productId],
       });
 
-      queryClient.invalidateQueries({
+      context.client.invalidateQueries({
         queryKey: ["admin-products"],
       });
     } catch (error) {

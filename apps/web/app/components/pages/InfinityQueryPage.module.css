@@ -1,0 +1,27 @@
+/* InfinityQueryPage.module.css */
+
+.container {
+  display: flex;
+  gap: var(--mantine-spacing-xl);
+}
+
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  transition:
+    width 300ms ease,
+    opacity 300ms ease,
+    margin 300ms ease;
+  overflow: hidden;
+}
+
+.sidebar[data-opened="false"] {
+  width: 0;
+  opacity: 0;
+  margin-right: calc(-1 * var(--mantine-spacing-xl));
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}

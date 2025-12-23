@@ -1,6 +1,6 @@
 "use client";
 
-import { queryClient } from "@lib/serverQueryClient";
+import { getQueryClient } from "@lib/serverQueryClient";
 import {
   Combobox,
   createTheme,
@@ -48,6 +48,7 @@ const adminPrimaryColor: MantineColorsTuple = [
 ];
 
 const LayoutProviderWrapper = ({ children }: { children: ReactNode }) => {
+  const queryClient = getQueryClient();
   const pathname = usePathname();
   const theme = createTheme({
     colors: { primary: primaryColor, admin: adminPrimaryColor },

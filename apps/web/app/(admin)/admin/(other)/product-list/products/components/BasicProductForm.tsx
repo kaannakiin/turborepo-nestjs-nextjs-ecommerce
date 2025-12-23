@@ -2,7 +2,6 @@
 
 import {
   ActionIcon,
-  Box,
   Button,
   Grid,
   Group,
@@ -39,7 +38,7 @@ import AdminBrandDataSelect from "@/components/inputs/admin/AdminBrandDataSelect
 import AdminCategoryDataSelect from "@/components/inputs/admin/AdminCategoryDataSelect";
 import AdminTagDataSelect from "@/components/inputs/admin/AdminTagDataSelect";
 import { getProductTypeLabel } from "@lib/helpers";
-import { queryClient } from "@lib/serverQueryClient";
+import { getQueryClient } from "@lib/serverQueryClient";
 import { ProductType } from "@repo/database/client";
 import { IconPencilPlus } from "@tabler/icons-react";
 import ProductDropzone from "../../components/ProductDropzone";
@@ -123,7 +122,7 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
       };
     },
 
-    onSuccess: async (result) => {
+    onSuccess: async (result, variables, mutateResult, context) => {
       const { data, productId } = result;
 
       notifications.show({
@@ -137,7 +136,7 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
 
       uploadImagesInBackground(data.images, productId);
 
-      queryClient.invalidateQueries({
+      context.client.invalidateQueries({
         queryKey: ["admin-product", productId],
       });
 
@@ -191,11 +190,11 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
       });
     }
 
-    queryClient.invalidateQueries({
+    getQueryClient().invalidateQueries({
       queryKey: ["admin-product", productId],
     });
 
-    queryClient.invalidateQueries({
+    getQueryClient().invalidateQueries({
       queryKey: ["admin-products"],
     });
   };

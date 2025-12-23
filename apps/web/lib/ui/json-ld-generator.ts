@@ -1,65 +1,153 @@
-import {
-  WithContext,
-  CollectionPage,
-  ListItem,
-  BreadcrumbList,
-  Offer,
-  AggregateOffer,
-  Product as SchemaProduct,
-  ImageObject,
-} from "schema-dts";
 import { Currency, Locale } from "@repo/database";
 import {
-  CategoryPageReturnType,
-  CategoryTreeData,
+  InfinityScrollPageReturnType,
+  TreeNode,
   UiProductType,
 } from "@repo/types";
+import {
+  AggregateOffer,
+  BreadcrumbList,
+  CollectionPage,
+  ListItem,
+  Offer,
+  Product as SchemaProduct,
+  WithContext,
+} from "schema-dts";
 
-/**
- * Bu fonksiyon Category Page verisini alır ve Google uyumlu JSON-LD döndürür.
- * * @param data - Senin hazırladığın CategoryPageReturnType verisi
- * @param baseUrl - Sitenin kök adresi (örn: https://mysite.com)
- * @param currency - Aktif para birimi (Fiyat hesaplaması için)
- * @param locale - Aktif dil
- */
-export const generateCategoryJsonLd = (
-  data: CategoryPageReturnType,
-  baseUrl: string,
-  currency: Currency,
-  locale: Locale
-): WithContext<CollectionPage> => {
-  const { category, products } = data;
+export type PageType = "category" | "brand" | "tag";
 
-  const breadcrumbList = buildBreadcrumbList(category, baseUrl, locale);
+interface JsonLdGeneratorOptions {
+  data: InfinityScrollPageReturnType;
+  baseUrl: string;
+  currency: Currency;
+  locale: Locale;
+  pageType: PageType;
+}
 
-  const productListItems: ListItem[] = products.map((product, index) => {
-    return {
-      "@type": "ListItem",
-      position: index + 1,
-      item: mapProductToSchema(product, baseUrl, currency, locale),
-    };
-  });
+export const generatePageJsonLd = ({
+  data,
+  baseUrl,
+  currency,
+  locale,
+  pageType,
+}: JsonLdGeneratorOptions): WithContext<CollectionPage> => {
+  const { treeNode, products, pagination } = data;
+
+  const breadcrumbList = buildBreadcrumbList(
+    treeNode,
+    baseUrl,
+    locale,
+    pageType
+  );
+
+  const productListItems: ListItem[] = products.map((product, index) => ({
+    "@type": "ListItem",
+    position: index + 1,
+    item: mapProductToSchema(product, baseUrl, currency, locale),
+  }));
+
+  const pageUrl = buildPageUrl(treeNode, baseUrl, locale, pageType);
 
   const schema: WithContext<CollectionPage> = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    name: category.metaTitle || category.categoryName,
-    description: category.metaDescription || category.description,
-    url: `${baseUrl}/${locale === "TR" ? "" : locale + "/"}${category.categorySlug}`,
+    name: treeNode.metaTitle || treeNode.name,
+    description: treeNode.metaDescription || treeNode.description,
+    url: pageUrl,
     breadcrumb: breadcrumbList,
     mainEntity: {
       "@type": "ItemList",
       itemListElement: productListItems,
-      numberOfItems: data.pagination.totalCount,
+      numberOfItems: pagination.totalCount,
     },
   };
 
   return schema;
 };
 
-/**
- * Tekil bir ürünü Schema Product objesine çevirir.
- */
+const buildPageUrl = (
+  node: TreeNode,
+  baseUrl: string,
+  locale: Locale,
+  pageType: PageType
+): string => {
+  const localePrefix = locale === "TR" ? "" : `${locale.toLowerCase()}/`;
+  const typePrefix = getTypePrefix(pageType);
+
+  return `${baseUrl}/${localePrefix}${typePrefix}${node.slug}`;
+};
+
+const getTypePrefix = (pageType: PageType): string => {
+  switch (pageType) {
+    case "category":
+      return "categories/";
+    case "brand":
+      return "brands/";
+    case "tag":
+      return "tags/";
+    default:
+      return "";
+  }
+};
+
+const buildBreadcrumbList = (
+  node: TreeNode,
+  baseUrl: string,
+  locale: Locale,
+  pageType: PageType
+): BreadcrumbList => {
+  const itemListElement: ListItem[] = [];
+  const path: TreeNode[] = [];
+
+  let current: TreeNode | undefined = node;
+  while (current) {
+    path.unshift(current);
+    current = current.parent;
+  }
+
+  itemListElement.push({
+    "@type": "ListItem",
+    position: 1,
+    name: "Home",
+    item: baseUrl,
+  });
+
+  const typeLabel = getTypeLabel(pageType, locale);
+  if (typeLabel) {
+    itemListElement.push({
+      "@type": "ListItem",
+      position: 2,
+      name: typeLabel,
+      item: `${baseUrl}/${locale === "TR" ? "" : `${locale.toLowerCase()}/`}${getTypePrefix(pageType)}`,
+    });
+  }
+
+  const startPosition = typeLabel ? 3 : 2;
+  path.forEach((item, index) => {
+    itemListElement.push({
+      "@type": "ListItem",
+      position: startPosition + index,
+      name: item.name,
+      item: buildPageUrl(item, baseUrl, locale, pageType),
+    });
+  });
+
+  return {
+    "@type": "BreadcrumbList",
+    itemListElement,
+  };
+};
+
+const getTypeLabel = (pageType: PageType, locale: Locale): string | null => {
+  const labels: Record<PageType, Record<Locale, string | null>> = {
+    category: { TR: null, EN: null, DE: null },
+    brand: { TR: "Markalar", EN: "Brands", DE: "Marken" },
+    tag: { TR: "Etiketler", EN: "Tags", DE: "Tags" },
+  };
+
+  return labels[pageType]?.[locale] ?? null;
+};
+
 const mapProductToSchema = (
   product: UiProductType,
   baseUrl: string,
@@ -67,7 +155,6 @@ const mapProductToSchema = (
   locale: Locale
 ): SchemaProduct => {
   const translation = product.translations.find((t) => t.locale === locale);
-
   const mainImage = product.assets.find((a) => a.order === 0)?.asset?.url;
 
   const prices = product.variants
@@ -119,47 +206,28 @@ const mapProductToSchema = (
       "@type": "Brand",
       name: brandName,
     },
-
-    category: product.taxonomyCategoryId || undefined,
-    offers: offers,
+    offers,
   };
 };
 
-/**
- * Kategori ağacını yukarı doğru tarayarak Breadcrumb oluşturur.
- */
-const buildBreadcrumbList = (
-  category: CategoryTreeData,
+export const generateCategoryJsonLd = (
+  data: InfinityScrollPageReturnType,
   baseUrl: string,
+  currency: Currency,
   locale: Locale
-): BreadcrumbList => {
-  const itemListElement: ListItem[] = [];
-  let current: CategoryTreeData | undefined = category;
-  const path: CategoryTreeData[] = [];
+) =>
+  generatePageJsonLd({ data, baseUrl, currency, locale, pageType: "category" });
 
-  while (current) {
-    path.unshift(current);
-    current = current.parentCategory;
-  }
+export const generateBrandJsonLd = (
+  data: InfinityScrollPageReturnType,
+  baseUrl: string,
+  currency: Currency,
+  locale: Locale
+) => generatePageJsonLd({ data, baseUrl, currency, locale, pageType: "brand" });
 
-  itemListElement.push({
-    "@type": "ListItem",
-    position: 1,
-    name: "Home",
-    item: baseUrl,
-  });
-
-  path.forEach((cat, index) => {
-    itemListElement.push({
-      "@type": "ListItem",
-      position: index + 2,
-      name: cat.categoryName,
-      item: `${baseUrl}/${locale === "TR" ? "" : locale + "/"}${cat.categorySlug}`,
-    });
-  });
-
-  return {
-    "@type": "BreadcrumbList",
-    itemListElement,
-  };
-};
+export const generateTagJsonLd = (
+  data: InfinityScrollPageReturnType,
+  baseUrl: string,
+  currency: Currency,
+  locale: Locale
+) => generatePageJsonLd({ data, baseUrl, currency, locale, pageType: "tag" });

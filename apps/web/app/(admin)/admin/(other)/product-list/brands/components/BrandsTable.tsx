@@ -17,12 +17,7 @@ import {
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { Locale } from "@repo/database/client";
-import {
-  DateFormatter,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@repo/shared";
+import { DateFormatter, useMutation, useQuery } from "@repo/shared";
 import { AdminBrandTableData, BrandTableApiResponse } from "@repo/types";
 import { IconEdit, IconTrash } from "@tabler/icons-react";
 import { Route } from "next";
@@ -42,7 +37,6 @@ const getBrandName = (
 const BrandsTable = () => {
   const searchParams = useSearchParams();
   const { push } = useRouter();
-  const queryClient = useQueryClient();
 
   const [openedDeletePopover, setOpenedDeletePopover] = useState<
     Record<string, boolean>
@@ -88,7 +82,7 @@ const BrandsTable = () => {
 
       return result.data;
     },
-    onSuccess: (data, brandId) => {
+    onSuccess: (data, brandId, result, context) => {
       setOpenedDeletePopover((prev) => ({
         ...prev,
         [brandId]: false,
@@ -101,7 +95,7 @@ const BrandsTable = () => {
         autoClose: 3000,
       });
 
-      queryClient.invalidateQueries({
+      context.client.invalidateQueries({
         queryKey: ["admin-brands"],
       });
     },

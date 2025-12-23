@@ -14,16 +14,9 @@ export type CookieStore = {
   getAll(): { name: string; value: string }[];
 };
 
-const isServer = typeof window === "undefined";
-
 class ServerAxiosWrapper {
   private cookieStore: CookieStore | null = null;
 
-  /**
-   * Server component'lerde kullanmadan önce cookie store'u set et
-   * const cookieStore = await cookies();
-   * serverFetch.setCookies(cookieStore);
-   */
   setCookies(cookieStore: CookieStore) {
     this.cookieStore = cookieStore;
     return this;
@@ -126,6 +119,20 @@ class ServerAxiosWrapper {
   ): Promise<ApiResponse<T>> {
     try {
       const response = await this.createInstance().delete<T>(url, config);
+      return { success: true, data: response.data, status: response.status };
+    } catch (error) {
+      return this.formatError(error);
+    }
+  }
+
+  async postFormData<T>(
+    url: string,
+    formData: FormData
+  ): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.createInstance().post<T>(url, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       return { success: true, data: response.data, status: response.status };
     } catch (error) {
       return this.formatError(error);
@@ -361,7 +368,32 @@ const getClientFetch = () => {
   return clientInstance;
 };
 
-const fetchWrapper = isServer ? createServerFetch() : getClientFetch();
-export default fetchWrapper;
+const getFetchWrapper = () => {
+  if (typeof window === "undefined") {
+    return createServerFetch();
+  }
+  return getClientFetch();
+};
 
+const fetchWrapper = {
+  get: <T>(url: string, config?: AxiosRequestConfig) =>
+    getFetchWrapper().get<T>(url, config),
+
+  post: <T>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
+    getFetchWrapper().post<T>(url, data, config),
+
+  put: <T>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
+    getFetchWrapper().put<T>(url, data, config),
+
+  patch: <T>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
+    getFetchWrapper().patch<T>(url, data, config),
+
+  delete: <T>(url: string, config?: AxiosRequestConfig) =>
+    getFetchWrapper().delete<T>(url, config),
+
+  postFormData: <T>(url: string, formData: FormData) =>
+    getFetchWrapper().postFormData<T>(url, formData),
+};
+
+export default fetchWrapper;
 export type { ApiResponse, ApiSuccess };

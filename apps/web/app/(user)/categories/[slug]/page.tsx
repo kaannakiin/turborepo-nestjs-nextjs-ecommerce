@@ -1,10 +1,11 @@
 import InfinityQueryPage from "@/components/pages/InfinityQueryPage";
+import { getQueryClient } from "@lib/serverQueryClient";
 import { generateCategoryJsonLd } from "@lib/ui/json-ld-generator";
 import { getServerSideAllSearchParams } from "@lib/ui/product-helper";
 import { ApiError, createServerFetch } from "@lib/wrappers/fetchWrapper";
 import { Currency, Locale } from "@repo/database";
-import { dehydrate, HydrationBoundary, QueryClient } from "@repo/shared";
-import { CategoryPageReturnType } from "@repo/types";
+import { dehydrate, HydrationBoundary } from "@repo/shared";
+import { InfinityScrollPageReturnType } from "@repo/types";
 import { Metadata } from "next";
 import { cookies } from "next/headers";
 import Script from "next/script";
@@ -16,25 +17,22 @@ interface Props {
   searchParams: SearchParams;
 }
 
-const getCategoryLoader = cache(
-  async (params: Params, searchParams: SearchParams) => {
-    const slug = (await params).slug as string;
-    const pageParamsObj = await searchParams;
+const getCategoryData = cache(
+  async (
+    slug: string,
+    page: number,
+    queryString: string,
+    currency: Currency,
+    locale: Locale
+  ) => {
     const cookieStore = await cookies();
-
-    const currentPage = Number((pageParamsObj.page as string) || "1");
-    const cacheKeyParams = getServerSideAllSearchParams(pageParamsObj, [
-      "page",
-    ]);
-
-    const fetchParams = cacheKeyParams
-      ? `${cacheKeyParams}&page=${currentPage}`
-      : `page=${currentPage}`;
-
     const api = createServerFetch().setCookies(cookieStore);
-    const res = await api.get<CategoryPageReturnType>(
-      `/categories/${slug}${fetchParams ? `?${fetchParams}` : ""}`
-    );
+
+    const fetchUrl = queryString
+      ? `/categories/${slug}?${queryString}&page=${page}`
+      : `/categories/${slug}?page=${page}`;
+
+    const res = await api.get<InfinityScrollPageReturnType>(fetchUrl);
 
     if (!res.success) {
       throw new Error((res as ApiError).error || "Kategori verisi alınamadı");
@@ -43,47 +41,73 @@ const getCategoryLoader = cache(
     return {
       data: res.data,
       slug,
-      currentPage,
-      cacheKeyParams,
-      currency: (cookieStore.get("currency")?.value as Currency) || "TRY",
-      locale: (cookieStore.get("locale")?.value as Locale) || "TR",
+      currentPage: page,
+      cacheKeyParams: queryString,
+      currency,
+      locale,
     };
   }
 );
+
+async function parseArgs(params: Params, searchParams: SearchParams) {
+  const slug = (await params).slug as string;
+  const pageParamsObj = await searchParams;
+  const cookieStore = await cookies();
+
+  const currentPage = Number((pageParamsObj.page as string) || "1");
+  const cacheKeyParams =
+    getServerSideAllSearchParams(pageParamsObj, ["page"]) || "";
+
+  const currency = (cookieStore.get("currency")?.value as Currency) || "TRY";
+  const locale = (cookieStore.get("locale")?.value as Locale) || "TR";
+
+  return { slug, currentPage, cacheKeyParams, currency, locale };
+}
 
 export async function generateMetadata({
   params,
   searchParams,
 }: Props): Promise<Metadata> {
-  const { data } = await getCategoryLoader(params, searchParams);
+  const { slug, currentPage, cacheKeyParams, currency, locale } =
+    await parseArgs(params, searchParams);
+
+  const { data } = await getCategoryData(
+    slug,
+    currentPage,
+    cacheKeyParams,
+    currency,
+    locale
+  );
 
   return {
-    title: data.category.metaTitle || data.category.categoryName,
-    description: data.category.metaDescription,
+    title: data.treeNode.metaTitle || data.treeNode.name,
+    description: data.treeNode.metaDescription,
   };
 }
 
 const CategoryPage = async ({ params, searchParams }: Props) => {
-  const { data, slug, currentPage, cacheKeyParams, currency, locale } =
-    await getCategoryLoader(params, searchParams);
+  const { slug, cacheKeyParams, currency, locale } = await parseArgs(
+    params,
+    searchParams
+  );
 
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 1000 * 60 * 5,
-        gcTime: 1000 * 60 * 15,
-        refetchOnWindowFocus: false,
-        refetchOnReconnect: true,
-        retry: 2,
-      },
-    },
-  });
+  const { data } = await getCategoryData(
+    slug,
+    1,
+    cacheKeyParams,
+    currency,
+    locale
+  );
+
+  const queryClient = getQueryClient();
+
   const endPoint = "categories";
+
   const queryKey = [`${endPoint}-infinite`, slug, cacheKeyParams];
 
   queryClient.setQueryData(queryKey, {
     pages: [data],
-    pageParams: [currentPage],
+    pageParams: [1],
   });
 
   const jsonLd = generateCategoryJsonLd(
@@ -105,8 +129,8 @@ const CategoryPage = async ({ params, searchParams }: Props) => {
         slug={slug}
         queryKey={queryKey}
         initialUrlParams={cacheKeyParams}
-        initialPage={currentPage}
         endPoint="categories"
+        staleTime={1000 * 60 * 5}
       />
     </HydrationBoundary>
   );
