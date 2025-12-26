@@ -19,6 +19,7 @@
     "@repo/database": "*",
     "@repo/shared": "*",
     "date-fns": "^4.1.0",
+    "htmlparser2": "^10.0.0",
     "libphonenumber-js": "^1.12.14",
     "zod": "^4.1.3"
   },

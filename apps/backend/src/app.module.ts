@@ -22,6 +22,7 @@ import { CategoriesModule } from './categories/categories.module';
     AuthModule,
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '../.env',
     }),
     AdminModule,
     NestMinioModule.registerAsync({

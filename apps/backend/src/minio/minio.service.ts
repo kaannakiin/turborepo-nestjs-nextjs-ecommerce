@@ -7,7 +7,6 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { $Enums } from '@repo/database';
 import { createId } from '@repo/shared';
-import { type Client } from 'minio';
 import { NestMinioService } from 'nestjs-minio';
 import sharp from 'sharp';
 
@@ -35,7 +34,7 @@ export interface UploadResponse {
 @Injectable()
 export class MinioService {
   private readonly logger = new Logger(MinioService.name);
-  private minioClient: Client;
+  private minioClient: ReturnType<NestMinioService['getMinio']>;
 
   constructor(
     private minio: NestMinioService,
