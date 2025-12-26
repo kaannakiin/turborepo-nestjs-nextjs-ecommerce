@@ -22,6 +22,7 @@ import { UserModule } from './user/user.module';
     AuthModule,
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '../.env',
     }),
     AdminModule,
     NestMinioModule.registerAsync({
