@@ -15,7 +15,7 @@ import { ProductsModule } from './products/products.module';
   providers: [AdminService],
   imports: [
     UsersModule,
-
+    SharedModule,
     DiscountsModule,
     CampaignsModule,
     PaymentsModule,
