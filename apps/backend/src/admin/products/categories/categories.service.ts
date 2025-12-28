@@ -11,7 +11,7 @@ import {
   CategoryIdAndName,
   CategoryZodType,
 } from '@repo/types';
-import { LocaleService } from 'src/common/services/locale.service';
+import { LocaleService } from 'src/common/services/locale/locale.service';
 import { MinioService } from 'src/minio/minio.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 

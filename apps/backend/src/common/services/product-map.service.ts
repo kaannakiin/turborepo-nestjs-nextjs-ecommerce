@@ -1,20 +1,6 @@
 import { Global, Injectable } from '@nestjs/common';
-import {
-  AssetType,
-  Currency,
-  Locale,
-  ProductTranslation,
-  VariantGroupTranslation,
-  VariantGroupType,
-  VariantOptionTranslation,
-} from '@repo/database';
-import {
-  ProductCart,
-  ProductMapInputType,
-  VariantMapInputType,
-} from '@repo/types';
+import { AssetType, Currency, Locale } from '@repo/database';
 
-@Global()
 @Injectable()
 export class ProductMapService {
   private getTranslation<T extends { locale: Locale }>(

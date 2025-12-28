@@ -19,7 +19,6 @@ import {
 } from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
 
-@Global()
 @Injectable()
 export class ProductViewService {
   constructor(private readonly prismaService: PrismaService) {}

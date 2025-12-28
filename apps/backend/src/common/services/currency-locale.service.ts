@@ -2,7 +2,6 @@ import { Global, Injectable } from '@nestjs/common';
 import { Currency, Locale } from '@repo/database';
 import { PrismaService } from 'src/prisma/prisma.service';
 
-@Global()
 @Injectable()
 export class CurrencyLocaleService {
   constructor(private readonly prismaService: PrismaService) {}

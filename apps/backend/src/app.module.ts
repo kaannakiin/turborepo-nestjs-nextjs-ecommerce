@@ -4,19 +4,18 @@ import { NestMinioModule } from 'nestjs-minio';
 import { AdminModule } from './admin/admin.module';
 import { ChatModule } from './ai/chat/chat.module';
 import { AuthModule } from './auth/auth.module';
+import { BrandsModule } from './brands/brands.module';
 import { CartV3Module } from './cart-v3/cart-v3.module';
-import { SharedModule } from './common/services/shared.module';
+import { CategoriesModule } from './categories/categories.module';
 import { LocationsModule } from './locations/locations.module';
 import { MinioModule } from './minio/minio.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
 import { PrismaLoggerModule } from './prisma-logger/prisma-logger.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ProductsModule } from './products/products.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { UserModule } from './user/user.module';
-import { CategoriesModule } from './categories/categories.module';
-import { BrandsModule } from './brands/brands.module';
-import { ProductsModule } from './products/products.module';
 @Module({
   imports: [
     PrismaModule,
@@ -52,7 +51,6 @@ import { ProductsModule } from './products/products.module';
     MinioModule,
     LocationsModule,
     ShippingModule,
-    SharedModule,
     CartV3Module,
     ChatModule,
     PaymentsModule,

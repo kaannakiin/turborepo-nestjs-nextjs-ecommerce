@@ -30,7 +30,7 @@ import {
   productVariantOptionsSelect,
   TURKEY_DB_ID,
 } from '@repo/types';
-import { LocaleService } from 'src/common/services/locale.service';
+import { LocaleService } from 'src/common/services/locale/locale.service';
 import { PrismaLoggerService } from 'src/prisma-logger/prisma-logger.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ShippingService } from 'src/shipping/shipping.service';

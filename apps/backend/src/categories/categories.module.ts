@@ -3,10 +3,11 @@ import { CurrencyLocaleService } from 'src/common/services/currency-locale.servi
 import { CategoriesController } from './categories.controller';
 import { CategoriesService } from './categories.service';
 import { ProductViewService } from 'src/common/services/product-view.service';
+import { LocaleModule } from 'src/common/services/locale/locale.module';
 
 @Module({
   controllers: [CategoriesController],
   providers: [CategoriesService, CurrencyLocaleService, ProductViewService],
-  imports: [],
+  imports: [LocaleModule],
 })
 export class CategoriesModule {}

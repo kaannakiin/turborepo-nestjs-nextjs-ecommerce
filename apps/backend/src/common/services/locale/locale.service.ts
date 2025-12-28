@@ -14,8 +14,4 @@ export class LocaleService {
   getLocale(): $Enums.Locale {
     return this.locale;
   }
-
-  setLocale(locale: $Enums.Locale): void {
-    this.locale = locale;
-  }
 }

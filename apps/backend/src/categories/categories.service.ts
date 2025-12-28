@@ -10,7 +10,7 @@ import {
   FiltersResponse,
 } from '@repo/types';
 import { CurrencyLocaleService } from 'src/common/services/currency-locale.service';
-import { LocaleService } from 'src/common/services/locale.service';
+import { LocaleService } from 'src/common/services/locale/locale.service';
 import { ProductViewService } from 'src/common/services/product-view.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 

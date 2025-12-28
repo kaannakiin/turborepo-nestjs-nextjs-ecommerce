@@ -5,6 +5,6 @@ import { Themev2Service } from './themev2.service';
 
 @Module({
   controllers: [Themev2Controller],
-  providers: [Themev2Service],
+  providers: [Themev2Service, ProductMapService],
 })
 export class Themev2Module {}

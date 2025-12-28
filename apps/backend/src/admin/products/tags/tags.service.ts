@@ -3,7 +3,7 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { LocaleService } from 'src/common/services/locale.service';
+import { LocaleService } from 'src/common/services/locale/locale.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()

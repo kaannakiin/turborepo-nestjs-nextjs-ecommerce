@@ -8,7 +8,7 @@ import {
   productPriceSelect,
   productVariantOptionsSelect,
 } from '@repo/types';
-import { LocaleService } from 'src/common/services/locale.service';
+import { LocaleService } from 'src/common/services/locale/locale.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
