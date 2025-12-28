@@ -28,7 +28,7 @@ const dynamicRemotePatterns = envDomains
   .filter(Boolean);
 
 const nextConfig = {
-  reactCompiler: true,
+  // reactCompiler: true,
   typedRoutes: true,
   transpilePackages: ["@repo/database"],
   serverExternalPackages: ["@prisma/client", "pg"],
