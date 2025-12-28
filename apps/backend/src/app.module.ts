@@ -7,16 +7,15 @@ import { AuthModule } from './auth/auth.module';
 import { BrandsModule } from './brands/brands.module';
 import { CartV3Module } from './cart-v3/cart-v3.module';
 import { CategoriesModule } from './categories/categories.module';
+import { SharedModule } from './common/services/shared.module';
 import { LocationsModule } from './locations/locations.module';
 import { MinioModule } from './minio/minio.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
-import { PrismaLoggerModule } from './prisma-logger/prisma-logger.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { UserModule } from './user/user.module';
-import { SharedModule } from './common/services/shared.module';
 @Module({
   imports: [
     SharedModule,
@@ -57,7 +56,6 @@ import { SharedModule } from './common/services/shared.module';
     ChatModule,
     PaymentsModule,
     OrdersModule,
-    PrismaLoggerModule,
     CategoriesModule,
     BrandsModule,
     ProductsModule,
