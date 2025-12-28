@@ -1,5 +1,4 @@
 {
-
   "name": "draft-turborepo",
   "private": true,
   "scripts": {
@@ -7,12 +6,14 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "start": "turbo run start",
-    "start:migrate": "turbo run db:deploy:full && turbo run start",
+    "start:migrate": "turbo run db:deploy && turbo run start",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types"
   },
   "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
     "@types/node": "^25.0.0",
+    "babel-plugin-react-compiler": "^1.0.0",
     "prettier": "^3.6.2",
     "turbo": "^2.6.0",
     "typescript": "~5.8.3"

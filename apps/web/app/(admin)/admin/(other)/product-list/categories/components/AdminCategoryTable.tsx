@@ -1,5 +1,10 @@
 "use client";
 
+import TableAsset from "@/(admin)/components/TableAsset";
+import CustomSearchInput from "@/components/CustomSearchInput";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import { getQueryClient } from "@lib/serverQueryClient";
+import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
 import {
   ActionIcon,
   Badge,
@@ -15,40 +20,41 @@ import {
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { DateFormatter, useQuery, useQueryClient } from "@repo/shared";
-import { AdminCategoryTableData } from "@repo/types";
+import { AdminCategoryTableReturnType } from "@repo/types";
 import { IconEdit, IconTrash } from "@tabler/icons-react";
+import { Route } from "next";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
-import CustomSearchInput from "@/components/CustomSearchInput";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import TableAsset from "@/(admin)/components/TableAsset";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
-import { Route } from "next";
 
-// Response type
-interface CategoriesResponse {
-  success: boolean;
-  data: AdminCategoryTableData[];
-  pagination: {
-    currentPage: number;
-    totalPages: number;
-    totalItems: number;
-    itemsPerPage: number;
-  };
-}
+const getTurkishTranslation = (
+  translations: AdminCategoryTableReturnType["categories"][number]["translations"]
+) => {
+  return translations.find((t) => t.locale === "TR") || translations[0];
+};
 
-// Fetch function
+const getParentCategoryName = (
+  parentCategory: AdminCategoryTableReturnType["categories"][number]["parentCategory"]
+) => {
+  if (!parentCategory) return "Ana Kategori";
+  const trTranslation =
+    parentCategory.translations.find((t) => t.locale === "TR") ||
+    parentCategory.translations[0];
+  return trTranslation?.name || "Bilinmeyen";
+};
+
 const fetchCategories = async (
   search: string,
-  page: number
-): Promise<CategoriesResponse> => {
+  page: number,
+  limit: number
+): Promise<AdminCategoryTableReturnType> => {
   const params = new URLSearchParams();
   if (search) params.append("search", search);
   params.append("page", page.toString());
+  params.append("limit", limit.toString());
 
-  const response = await fetchWrapper.get<CategoriesResponse>(
-    `/admin/products/categories/get-all-categories?${params}`
+  const response = await fetchWrapper.get<AdminCategoryTableReturnType>(
+    `/admin/products/categories?${params}`
   );
 
   if (!response.success) {
@@ -58,26 +64,24 @@ const fetchCategories = async (
   return response.data;
 };
 
-// Delete function
 const deleteCategory = async (id: string) => {
-  const response = await fetchWrapper.delete(
-    `/admin/products/categories/delete-category/${id}`
-  );
+  const response = await fetchWrapper.delete<{
+    success: boolean;
+    message: string;
+  }>(`/admin/products/categories/delete-category/${id}`);
 
   if (!response.success) {
-    throw new Error("Kategori silinirken bir hata oluştu");
+    const error = response as ApiError;
+    throw new Error(error.error || "Kategori silinirken bir hata oluştu");
   }
 
   return response.data;
 };
 
-const useCategories = (search: string, page: number) => {
+const useCategories = (search: string, page: number, limit: number) => {
   return useQuery({
-    queryKey: ["categories", search, page],
-    queryFn: () => fetchCategories(search, page),
-    staleTime: 5 * 60 * 1000, // 5 dakika
-    gcTime: 10 * 60 * 1000, // 10 dakika
-    refetchOnWindowFocus: false,
+    queryKey: ["categories", search, page, limit],
+    queryFn: () => fetchCategories(search, page, limit),
   });
 };
 
@@ -89,11 +93,11 @@ const AdminCategoryTable = () => {
   );
 
   const searchParams = useSearchParams();
-  const queryClient = useQueryClient();
 
   const { data, isLoading, error, refetch } = useCategories(
     searchParams.get("search") || "",
-    currentPage
+    currentPage,
+    20
   );
 
   const handlePageChange = (page: number) => {
@@ -112,10 +116,8 @@ const AdminCategoryTable = () => {
         autoClose: 3000,
       });
 
-      // Cache'i invalidate et
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      getQueryClient().invalidateQueries({ queryKey: ["categories"] });
 
-      // Popover'ı kapat
       setDeletePopoverOpened(null);
     } catch (error) {
       console.error("Delete error:", error);
@@ -131,22 +133,6 @@ const AdminCategoryTable = () => {
     } finally {
       setIsDeleting(false);
     }
-  };
-
-  const getTurkishTranslation = (
-    translations: AdminCategoryTableData["translations"]
-  ) => {
-    return translations.find((t) => t.locale === "TR") || translations[0];
-  };
-
-  const getParentCategoryName = (
-    parentCategory: AdminCategoryTableData["parentCategory"]
-  ) => {
-    if (!parentCategory) return "Ana Kategori";
-    const trTranslation =
-      parentCategory.translations.find((t) => t.locale === "TR") ||
-      parentCategory.translations[0];
-    return trTranslation?.name || "Bilinmeyen";
   };
 
   if (isLoading || isDeleting) {
@@ -178,7 +164,7 @@ const AdminCategoryTable = () => {
     );
   }
 
-  const categories = data?.data || [];
+  const categories = data?.categories || [];
   const pagination = data?.pagination;
 
   return (

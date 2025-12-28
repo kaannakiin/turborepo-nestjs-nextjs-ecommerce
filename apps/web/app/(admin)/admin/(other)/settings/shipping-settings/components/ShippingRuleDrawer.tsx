@@ -1,6 +1,6 @@
 "use client";
 
-import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
+import PriceFormatter from "@/(user)/components/PriceFormatter";
 import { getConditionText, getCurrencyLabel } from "@lib/helpers";
 import {
   Button,
@@ -26,7 +26,7 @@ import {
 import { ShippingRuleSchema, ShippingRuleType } from "@repo/types";
 import { IconPackage } from "@tabler/icons-react";
 import { useEffect } from "react";
-import ProductPriceNumberInput from "../../../product-list/create-variant/components/ProductPriceNumberInput";
+import ProductPriceNumberInput from "../../../product-list/products/components/ProductPriceNumberInput";
 interface ShippingRuleDrawerProps {
   openedRuleModal: boolean;
   closeRuleModal: () => void;
@@ -129,11 +129,7 @@ const ShippingRuleDrawer = ({
                 </Group>
                 {price > 0 ? (
                   <Group gap={"1px"} wrap="nowrap" align="center">
-                    <ProductPriceFormatter
-                      fz={"xs"}
-                      c={"white"}
-                      price={price}
-                    />
+                    <PriceFormatter fz={"xs"} c={"white"} price={price} />
                     <Text fz={"xs"} c={"white"}>
                       {" "}
                       - Kargo Ücreti

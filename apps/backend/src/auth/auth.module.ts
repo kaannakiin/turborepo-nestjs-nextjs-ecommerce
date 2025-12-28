@@ -8,6 +8,7 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { FacebookStrategy } from './strategies/facebook.strategy';
 import { CsrfService } from './csrf.service';
+import { UserModule } from 'src/user/user.module';
 
 @Module({
   controllers: [AuthController],
@@ -20,7 +21,7 @@ import { CsrfService } from './csrf.service';
     FacebookStrategy,
     CsrfService,
   ],
-  imports: [JwtModule],
+  imports: [JwtModule, UserModule],
   exports: [CsrfService],
 })
 export class AuthModule {}

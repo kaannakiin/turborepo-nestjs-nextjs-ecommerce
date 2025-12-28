@@ -1,6 +1,6 @@
 "use client";
 
-import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
+import PriceFormatter from "@/(user)/components/PriceFormatter";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
@@ -130,7 +130,7 @@ const AuthUserShippingList = ({ cart }: AuthUserShippingListProps) => {
                 {rule && rule.price === 0 ? (
                   <Text> Ücretsiz Kargo</Text>
                 ) : (
-                  <ProductPriceFormatter price={rule.price} />
+                  <PriceFormatter price={rule.price} />
                 )}
               </Group>
             ))

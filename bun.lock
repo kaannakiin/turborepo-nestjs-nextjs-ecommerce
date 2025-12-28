@@ -5,7 +5,9 @@
     "": {
       "name": "draft-turborepo",
       "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
         "@types/node": "^25.0.0",
+        "babel-plugin-react-compiler": "^1.0.0",
         "prettier": "^3.6.2",
         "turbo": "^2.6.0",
         "typescript": "~5.8.3",
@@ -24,10 +26,10 @@
         "@nestjs/platform-express": "^11.0.1",
         "@nestjs/throttler": "^6.4.0",
         "@prisma/adapter-pg": "^7.0.0",
-        "@repo/database": "*",
-        "@repo/eslint-config": "*",
-        "@repo/shared": "*",
-        "@repo/types": "*",
+        "@repo/database": "workspace:*",
+        "@repo/eslint-config": "workspace:*",
+        "@repo/shared": "workspace:*",
+        "@repo/types": "workspace:*",
         "argon2": "^0.44.0",
         "cookie-parser": "^1.4.7",
         "csrf-csrf": "^4.0.3",
@@ -49,8 +51,8 @@
         "@nestjs/cli": "^11.0.0",
         "@nestjs/schematics": "^11.0.0",
         "@nestjs/testing": "^11.0.1",
-        "@repo/jest-config": "*",
-        "@repo/typescript-config": "*",
+        "@repo/jest-config": "workspace:*",
+        "@repo/typescript-config": "workspace:*",
         "@swc/cli": "^0.6.0",
         "@swc/core": "^1.10.7",
         "@types/cookie-parser": "^1.4.9",
@@ -88,22 +90,26 @@
         "@dnd-kit/sortable": "^10.0.0",
         "@dnd-kit/utilities": "^3.2.2",
         "@gfazioli/mantine-marquee": "^2.5.5",
-        "@mantine/core": "^8.2.7",
-        "@mantine/dates": "^8.2.8",
-        "@mantine/dropzone": "^8.2.8",
-        "@mantine/hooks": "^8.2.7",
-        "@mantine/notifications": "^8.2.8",
-        "@repo/database": "*",
-        "@repo/shared": "*",
-        "@repo/types": "*",
+        "@mantine/core": "8.3.10",
+        "@mantine/dates": "8.3.10",
+        "@mantine/dropzone": "8.3.10",
+        "@mantine/hooks": "8.3.10",
+        "@mantine/notifications": "8.3.10",
+        "@mantine/spotlight": "8.3.10",
+        "@prisma/client": "^7.2.0",
+        "@repo/database": "workspace:*",
+        "@repo/shared": "workspace:*",
+        "@repo/types": "workspace:*",
         "@tabler/icons-react": "^3.34.1",
         "@tailwindcss/postcss": "^4.1.12",
+        "@tanstack/react-virtual": "^3.13.13",
         "axios": "^1.12.2",
         "dayjs": "^1.11.18",
         "htmlparser2": "^10.0.0",
         "jose": "^6.1.3",
         "nestjs-real-ip": "^3.0.1",
         "next": "16.0.10",
+        "pg": "^8.16.3",
         "react": "19.2.0",
         "react-dom": "19.2.0",
         "react-imask": "^7.6.1",
@@ -115,8 +121,8 @@
         "zustand": "^5.0.8",
       },
       "devDependencies": {
-        "@repo/eslint-config": "*",
-        "@repo/typescript-config": "*",
+        "@repo/eslint-config": "workspace:*",
+        "@repo/typescript-config": "workspace:*",
         "@types/node": "^22.15.3",
         "@types/react": "19.2.2",
         "@types/react-dom": "19.2.2",
@@ -141,8 +147,8 @@
         "node-fetch": "^3.3.2",
       },
       "devDependencies": {
-        "@repo/eslint-config": "*",
-        "@repo/typescript-config": "*",
+        "@repo/eslint-config": "workspace:*",
+        "@repo/typescript-config": "workspace:*",
         "@types/node": "22.8.2",
         "@types/pg": "^8.15.5",
         "dotenv": "^16.4.7",
@@ -175,7 +181,7 @@
       "version": "0.0.0",
       "devDependencies": {
         "@jest/types": "^29.6.3",
-        "@repo/typescript-config": "*",
+        "@repo/typescript-config": "workspace:*",
         "jest": "^29.7.0",
         "next": "^15.4.2",
         "typescript": "^5.8.2",
@@ -187,14 +193,14 @@
       "dependencies": {
         "@hookform/resolvers": "^5.2.1",
         "@paralleldrive/cuid2": "^2.2.2",
-        "@repo/database": "*",
+        "@repo/database": "workspace:*",
         "@tanstack/react-query": "^5.85.6",
         "date-fns": "^4.1.0",
         "react-hook-form": "^7.62.0",
       },
       "devDependencies": {
-        "@repo/eslint-config": "*",
-        "@repo/typescript-config": "*",
+        "@repo/eslint-config": "workspace:*",
+        "@repo/typescript-config": "workspace:*",
         "@types/eslint": "9.6.1",
         "@types/node": "22.8.2",
         "eslint": "9.13.0",
@@ -205,16 +211,16 @@
       "name": "@repo/types",
       "version": "0.0.0",
       "dependencies": {
-        "@repo/database": "*",
-        "@repo/shared": "*",
+        "@repo/database": "workspace:*",
+        "@repo/shared": "workspace:*",
         "date-fns": "^4.1.0",
         "htmlparser2": "^10.0.0",
         "libphonenumber-js": "^1.12.14",
         "zod": "^4.1.3",
       },
       "devDependencies": {
-        "@repo/eslint-config": "*",
-        "@repo/typescript-config": "*",
+        "@repo/eslint-config": "workspace:*",
+        "@repo/typescript-config": "workspace:*",
         "@types/eslint": "9.6.1",
         "@types/node": "22.8.2",
         "eslint": "9.13.0",
@@ -601,6 +607,8 @@
 
     "@mantine/notifications": ["@mantine/notifications@8.3.10", "", { "dependencies": { "@mantine/store": "8.3.10", "react-transition-group": "4.4.5" }, "peerDependencies": { "@mantine/core": "8.3.10", "@mantine/hooks": "8.3.10", "react": "^18.x || ^19.x", "react-dom": "^18.x || ^19.x" } }, "sha512-0aVpRCyn9u0wuryBnFu1jOwBYw6xGeaNNtTcTUnSvkL6NAypfPon6JG7Wsekf3IuWSTLBjhYaFEIEd4nh7VDpg=="],
 
+    "@mantine/spotlight": ["@mantine/spotlight@8.3.10", "", { "dependencies": { "@mantine/store": "8.3.10" }, "peerDependencies": { "@mantine/core": "8.3.10", "@mantine/hooks": "8.3.10", "react": "^18.x || ^19.x", "react-dom": "^18.x || ^19.x" } }, "sha512-0GfQd/smRcd5u0o6Ad7J9ZEWLcZZ81h9/Z9qUnzIlJeYjXqJdr40MMqDxNsXgZEDKscPJkggZMqMiRZXhFbdNQ=="],
+
     "@mantine/store": ["@mantine/store@8.3.10", "", { "peerDependencies": { "react": "^18.x || ^19.x" } }, "sha512-38t1UivcucZo9hQq27F/eqR5GvovNs4NHEz6DchOuZzV5IJWqO8+T07ivb8wct47ovYe42rPfLcaOdnIEvMsJA=="],
 
     "@mantine/utils": ["@mantine/utils@6.0.22", "", { "peerDependencies": { "react": ">=16.8.0" } }, "sha512-RSKlNZvxhMCkOFZ6slbYvZYbWjHUM+PxDQnupIOxIdsTZQQjx/BFfrfJ7kQFOP+g7MtpOds8weAetEs5obwMOQ=="],
@@ -872,6 +880,10 @@
     "@tanstack/query-core": ["@tanstack/query-core@5.90.12", "", {}, "sha512-T1/8t5DhV/SisWjDnaiU2drl6ySvsHj1bHBCWNXd+/T+Hh1cf6JodyEYMd5sgwm+b/mETT4EV3H+zCVczCU5hg=="],
 
     "@tanstack/react-query": ["@tanstack/react-query@5.90.12", "", { "dependencies": { "@tanstack/query-core": "5.90.12" }, "peerDependencies": { "react": "^18 || ^19" } }, "sha512-graRZspg7EoEaw0a8faiUASCyJrqjKPdqJ9EwuDRUF9mEYJ1YPczI9H+/agJ0mOJkPCJDk0lsz5QTrLZ/jQ2rg=="],
+
+    "@tanstack/react-virtual": ["@tanstack/react-virtual@3.13.13", "", { "dependencies": { "@tanstack/virtual-core": "3.13.13" }, "peerDependencies": { "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-4o6oPMDvQv+9gMi8rE6gWmsOjtUZUYIJHv7EB+GblyYdi8U6OqLl8rhHWIUZSL1dUU2dPwTdTgybCKf9EjIrQg=="],
+
+    "@tanstack/virtual-core": ["@tanstack/virtual-core@3.13.13", "", {}, "sha512-uQFoSdKKf5S8k51W5t7b2qpfkyIbdHMzAn+AMQvHPxKUPeo1SsGaA4JRISQT87jm28b7z8OEqPcg1IOZagQHcA=="],
 
     "@tiptap/core": ["@tiptap/core@3.14.0", "", { "peerDependencies": { "@tiptap/pm": "^3.14.0" } }, "sha512-nm0VWVA1Vq/jaKY3wyRXViL/kf78yMdH7qETpv4qZXDQLU+pdWV3IGoRTQTKESc7d8L1wL/2uCeByLNUJfrSIw=="],
 
@@ -3041,8 +3053,6 @@
 
     "@swc/cli/commander": ["commander@8.3.0", "", {}, "sha512-OkTL9umf+He2DZkUq8f8J9of7yL6RJKI24dVITBmNfZBmri9zYZQrKkuXiKhyfPSu8tUhnVBB1iKXevvnlR4Ww=="],
 
-    "@swc/cli/fast-glob": ["fast-glob@3.3.3", "", { "dependencies": { "@nodelib/fs.stat": "^2.0.2", "@nodelib/fs.walk": "^1.2.3", "glob-parent": "^5.1.2", "merge2": "^1.3.0", "micromatch": "^4.0.8" } }, "sha512-7MptL8U0cqcFdzIzwOTHoilX9x5BrNqye7Z/LuC7kCMRio1EMSyqRK3BEAUD7sXRq4iT4AzTVuZdhgQ2TCvYLg=="],
-
     "@swc/cli/minimatch": ["minimatch@9.0.5", "", { "dependencies": { "brace-expansion": "^2.0.1" } }, "sha512-G6T0ZX48xgozx7587koeX9Ys2NYy6Gmv//P89sEte9V9whIapMNF4idKxnW2QtCcLiTWlb/wfCabAtAFWhhBow=="],
 
     "@swc/cli/semver": ["semver@7.7.3", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-SdsKMrI9TdgjdweUSR9MweHA4EJ8YxHn8DFaDisvhVlUOe4BF1tLD7GAj0lIqWVl+dPb/rExr0Btby5loQm20Q=="],
@@ -3250,8 +3260,6 @@
     "@repo/shared/@types/node/undici-types": ["undici-types@6.19.8", "", {}, "sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw=="],
 
     "@repo/types/@types/node/undici-types": ["undici-types@6.19.8", "", {}, "sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw=="],
-
-    "@swc/cli/fast-glob/glob-parent": ["glob-parent@5.1.2", "", { "dependencies": { "is-glob": "^4.0.1" } }, "sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow=="],
 
     "@swc/cli/minimatch/brace-expansion": ["brace-expansion@2.0.2", "", { "dependencies": { "balanced-match": "^1.0.0" } }, "sha512-Jt0vHyM+jmUBqojB7E1NIYadt0vI0Qxjxd2TErW94wDz+E2LAm5vKMXXwg6ZZBTHPuUlDgQHKXvjGBdfcF1ZDQ=="],
 

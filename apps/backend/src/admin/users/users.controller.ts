@@ -1,4 +1,10 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  ParseIntPipe,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import {
   AllUsersReturnType,
   type GetUsersQueries,
@@ -22,15 +28,19 @@ export class UsersController {
     @Query(new ZodValidationPipe(getUsersQueries)) queries: GetUsersQueries,
   ): Promise<GetUsersQueriesReturnType> {
     return this.usersService.getUsers({
-      page: queries.page, // Zod'da default 1 var, || 0 gereksiz
-      search: queries.search, // Zod'da default "" var
-      sortBy: queries.sortBy, // Zod'da default var
+      page: queries.page,
+      search: queries.search,
+      sortBy: queries.sortBy,
     });
   }
 
-  @Get('get-users-id-and-name')
-  async getUsersIdAndName() {
-    return this.usersService.getUsersIdAndName();
+  @Get('get-user-infos')
+  async getUserData(
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('search') search?: string,
+    @Query('take', new ParseIntPipe({ optional: true })) take?: number,
+  ) {
+    return this.usersService.getUserData(page || 1, search || null, take || 10);
   }
 
   @Get('all-users')

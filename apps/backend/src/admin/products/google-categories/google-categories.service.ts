@@ -1,11 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, TaxonomyCategory } from '@repo/database';
-import {
-  GoogleTaxonomyCategory,
-  NewTaxonomyCategory,
-  SimplifiedTaxonomyCategory,
-  TaxonomyCategoryWithChildren,
-} from '@repo/types';
+import { TaxonomyCategory } from '@repo/database';
+import { NewTaxonomyCategory, SimplifiedTaxonomyCategory } from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -128,11 +123,7 @@ export class GoogleCategoriesService {
       };
     }
   }
-  /**
-   * Verilen bir kategori ID'sinin kendisi dahil tüm atalarını (root'a kadar) getirir.
-   * PostgreSQL'deki 'WITH RECURSIVE' özelliğini kullanır.
-   * @param categoryId Başlangıç kategorisinin ID'si
-   */
+
   async getCategoryWithAncestors(
     categoryId: string,
   ): Promise<SimplifiedTaxonomyCategory[]> {
@@ -140,11 +131,10 @@ export class GoogleCategoriesService {
       return [];
     }
 
-    // childrenCount için BigInt dönebilir, Number() ile çevirmek önemli.
     const results: (TaxonomyCategory & { childrenCount: BigInt })[] = await this
       .prismaService.$queryRaw`
         WITH RECURSIVE AncestorPath AS (
-            -- 1. Anchor (Başlangıç): Seçilen kategori
+            
             SELECT
                 id,
                 "originalName",
@@ -156,7 +146,7 @@ export class GoogleCategoriesService {
 
             UNION ALL
 
-            -- 2. Recursive (Özyineli): Bir üst parent'ı bul
+            
             SELECT
                 t.id,
                 t."originalName",
@@ -166,17 +156,16 @@ export class GoogleCategoriesService {
             FROM "TaxonomyCategory" t
             INNER JOIN AncestorPath ap ON t.id = ap."parentId"
         )
-        -- 3. Sonuç: Tüm yolu seç
+        
         SELECT
           id,
           "originalName",
           "parentId",
           "childrenCount"
         FROM AncestorPath
-        ORDER BY "depth" ASC; -- Kök kategoriden (depth 0) başlayarak sırala
+        ORDER BY "depth" ASC; 
       `;
 
-    // Sonuçları istediğimiz 'Simplified' formata çevirelim
     return results.map((cat) => ({
       id: cat.id,
       name: cat.originalName,
@@ -185,11 +174,6 @@ export class GoogleCategoriesService {
     }));
   }
 
-  /**
-   * Sadece ata ID'lerini döndüren daha optimize bir versiyon.
-   * Frontend'in 'preExpandedIds' listesi için bu yeterlidir.
-   * @param categoryId Başlangıç kategorisinin ID'si
-   */
   async getAncestorIds(categoryId: string): Promise<string[]> {
     if (!categoryId) {
       return [];
@@ -210,14 +194,9 @@ export class GoogleCategoriesService {
       SELECT id FROM AncestorPath;
     `;
 
-    // Sadece ID'leri içeren bir string dizisi döndür
     return results.map((r) => r.id);
   }
 
-  /**
-   * BONUS: Frontend'de seçili ID'nin adını göstermek için
-   * tek bir kategoriyi getiren endpoint.
-   */
   async getCategoryDetailsById(
     id: string,
   ): Promise<SimplifiedTaxonomyCategory | null> {

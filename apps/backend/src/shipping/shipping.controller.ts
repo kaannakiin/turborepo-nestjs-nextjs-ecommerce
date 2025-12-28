@@ -18,30 +18,30 @@ import { ShippingService } from './shipping.service';
 export class ShippingController {
   constructor(private readonly shippingService: ShippingService) {}
 
-  @Post('create-or-update-cargo-zone')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(['ADMIN', 'OWNER'])
-  @UsePipes(new ZodValidationPipe(CargoZoneConfigSchema))
-  async createOrUpdateCargoZone(@Body() body: CargoZoneType) {
-    return this.shippingService.createOrUpdateCargoZone(body);
-  }
+  // @Post('create-or-update-cargo-zone')
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles(['ADMIN', 'OWNER'])
+  // @UsePipes(new ZodValidationPipe(CargoZoneConfigSchema))
+  // async createOrUpdateCargoZone(@Body() body: CargoZoneType) {
+  //   return this.shippingService.createOrUpdateCargoZone(body);
+  // }
 
-  @Get('get-all-cargo-zones')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(['ADMIN', 'OWNER'])
-  async getAllCargoZones() {
-    return this.shippingService.getAllCargoZones();
-  }
+  // @Get('get-all-cargo-zones')
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles(['ADMIN', 'OWNER'])
+  // async getAllCargoZones() {
+  //   return this.shippingService.getAllCargoZones();
+  // }
 
-  @Get('get-cargo-zone/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(['ADMIN', 'OWNER'])
-  async getCargoZone(@Param('id') id: string) {
-    return this.shippingService.getCargoZone(id);
-  }
+  // @Get('get-cargo-zone/:id')
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles(['ADMIN', 'OWNER'])
+  // async getCargoZone(@Param('id') id: string) {
+  //   return this.shippingService.getCargoZone(id);
+  // }
 
-  @Get('get-available-shipping-methods/:cartId')
-  async getAvailableShippingMethods(@Param('cartId') cartId: string) {
-    return this.shippingService.getAvailableShippingMethods(cartId);
-  }
+  // @Get('get-available-shipping-methods/:cartId')
+  // async getAvailableShippingMethods(@Param('cartId') cartId: string) {
+  //   return this.shippingService.getAvailableShippingMethods(cartId);
+  // }
 }

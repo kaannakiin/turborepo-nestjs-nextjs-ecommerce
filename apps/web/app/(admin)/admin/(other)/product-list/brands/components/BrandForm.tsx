@@ -1,12 +1,16 @@
 "use client";
 
+import GlobalDropzone from "@/components/GlobalDropzone";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import GlobalSeoCard from "@/components/GlobalSeoCard";
+import AdminBrandDataSelect from "@/components/inputs/admin/AdminBrandDataSelect";
+import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
 import {
   Button,
   Group,
   InputLabel,
   SimpleGrid,
   Stack,
-  Text,
   TextInput,
   Title,
 } from "@mantine/core";
@@ -19,26 +23,21 @@ import {
   useForm,
   zodResolver,
 } from "@repo/shared";
-import { Brand, BrandSchema } from "@repo/types";
+import { BrandSchema, BrandZodType } from "@repo/types";
 import { useRouter } from "next/navigation";
-import GlobalDropzone from "@/components/GlobalDropzone";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import GlobalSeoCard from "@/components/GlobalSeoCard";
-import CustomBrandSelect from "./CustomBrandSelect";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
 
 interface BrandFormProps {
-  defaultValues?: Brand;
+  defaultValues?: BrandZodType;
 }
 
 const BrandForm = ({ defaultValues }: BrandFormProps) => {
   const {
     control,
     handleSubmit,
-    formState: { isSubmitting, errors },
+    formState: { isSubmitting },
     setValue,
     watch,
-  } = useForm<Brand>({
+  } = useForm<BrandZodType>({
     resolver: zodResolver(BrandSchema),
     defaultValues: defaultValues || {
       uniqueId: createId(),
@@ -58,38 +57,41 @@ const BrandForm = ({ defaultValues }: BrandFormProps) => {
   });
   const { push } = useRouter();
 
-  const onSubmit: SubmitHandler<Brand> = async (data) => {
+  const onSubmit: SubmitHandler<BrandZodType> = async (data) => {
     const { image, ...rest } = data;
 
     try {
       // Brand oluştur
-      const brandRes = await fetchWrapper.post(
-        "/admin/products/brands/create-or-update-brand",
-        rest
-      );
+      const brandRes = await fetchWrapper.post<{
+        success: boolean;
+        brandId: string;
+      }>("/admin/products/brands/create-or-update-brand", rest);
       if (!brandRes.success) {
+        const response = brandRes as ApiError;
         notifications.show({
           title: "Hata",
           message:
+            response.error ||
             "Marka kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.",
           autoClose: 3000,
         });
         return;
       }
 
-      // Resim yükle
       if (image) {
         const formData = new FormData();
         formData.append("file", image);
 
         const imageRes = await fetchWrapper.postFormData(
-          `/admin/products/brands/update-brand-image/${data.uniqueId}`,
+          `/admin/products/brands/upload-brand-image/${brandRes.data.brandId}`,
           formData
         );
         if (!imageRes.success) {
+          const error = imageRes as ApiError;
           notifications.show({
             title: "Hata",
             message:
+              error.error ||
               "Resim yüklenirken bir hata oluştu. Lütfen tekrar deneyin.",
             autoClose: 3000,
             color: "red",
@@ -147,16 +149,12 @@ const BrandForm = ({ defaultValues }: BrandFormProps) => {
           control={control}
           name="parentId"
           render={({ field, fieldState }) => (
-            <CustomBrandSelect
+            <AdminBrandDataSelect
               {...field}
-              nothingFoundMessage={
-                <Text fz={"md"} fw={700}>
-                  Hiçbir ebeveyn marka bulunamadı
-                </Text>
-              }
-              label="Ebeveyn Marka"
-              error={fieldState.error?.message}
-              brandId={defaultValues?.uniqueId}
+              props={{
+                error: fieldState.error?.message,
+              }}
+              multiple={false}
             />
           )}
         />

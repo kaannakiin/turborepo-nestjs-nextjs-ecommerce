@@ -1,61 +1,75 @@
-import { cookies } from "next/headers";
+"use client";
+
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
+import { Alert, Button } from "@mantine/core";
+import { useQuery } from "@repo/shared";
+import { CategoryZodType } from "@repo/types";
+import { IconAlertCircle, IconRefresh } from "@tabler/icons-react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import AdminCategoryForm from "../components/AdminCategoryForm";
-import { Params } from "types/GlobalTypes";
 
-const AdminCategoriesFormPage = async ({ params }: { params: Params }) => {
-  const { slug } = await params;
+const AdminCategoriesFormPage = () => {
+  const params = useParams();
 
-  if (slug === "new") {
-    return <AdminCategoryForm />;
-  } else {
-    try {
-      const cookieStore = await cookies();
-      const categoryResponse = await fetch(
-        `${process.env.BACKEND_URL}/admin/products/categories/get-category/${slug}`,
-        {
-          method: "GET",
-          headers: {
-            Cookie: `token=${cookieStore.get("token")?.value || ""}`,
-          },
-          credentials: "include",
-          cache: "no-cache",
-        }
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["admin-category-form", params.slug],
+    queryFn: async () => {
+      const res = await fetchWrapper.get<CategoryZodType>(
+        `/admin/products/categories/get-category-form-value/${params.slug}`
       );
 
-      if (!categoryResponse.ok) {
-        // Kategori bulunamadı veya başka bir hata
-        return (
-          <div className="flex items-center justify-center min-h-[50vh]">
-            <div className="text-center">
-              <h2 className="text-xl font-semibold text-gray-700 mb-2">
-                Kategori Yüklenirken Hata Oluştu
-              </h2>
-              <p className="text-gray-500">
-                Kategori bulunamadı veya erişim izniniz yok.
-              </p>
-            </div>
-          </div>
-        );
+      if (!res.success) {
+        const error = res as ApiError;
+        throw new Error(error.error || "Failed to fetch category data");
       }
 
-      const categoryData = await categoryResponse.json();
+      return res.data;
+    },
+    enabled: !!params.slug && params.slug !== "new",
+    retry: 1,
+  });
 
-      return <AdminCategoryForm defaultValues={categoryData} />;
-    } catch (error) {
-      return (
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold text-red-600 mb-2">
-              Kategori Yüklenirken Hata Oluştu
-            </h2>
-            <p className="text-gray-500">
-              Bağlantı hatası. Lütfen sayfayı yenileyin.
-            </p>
-          </div>
-        </div>
-      );
-    }
+  if (params?.slug === "new") {
+    return <AdminCategoryForm />;
   }
+
+  if (isLoading) {
+    return <GlobalLoadingOverlay />;
+  }
+
+  if (error) {
+    return (
+      <>
+        <Alert
+          color="red"
+          title="Kategori Yüklenemedi"
+          icon={<IconAlertCircle />}
+          mb="md"
+        >
+          {error instanceof Error
+            ? error.message
+            : "Kategori bilgileri yüklenirken bir hata oluştu"}
+        </Alert>
+
+        <Button.Group>
+          <Button
+            leftSection={<IconRefresh size={16} />}
+            onClick={() => refetch()}
+            variant="light"
+          >
+            Tekrar Dene
+          </Button>
+          <Button component={Link} href="/admin/product-list/categories">
+            Kategoriler Listesi
+          </Button>
+        </Button.Group>
+      </>
+    );
+  }
+
+  return <AdminCategoryForm defaultValues={data} />;
 };
 
 export default AdminCategoriesFormPage;

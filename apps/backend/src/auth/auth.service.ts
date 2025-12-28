@@ -244,7 +244,6 @@ export class AuthService {
   }
 
   async revokeSession(userId: string, sessionId: string) {
-    // Önce oturumun gerçekten bu kullanıcıya mı ait olduğunu kontrol et
     const session = await this.prismaService.refreshTokens.findUnique({
       where: { id: sessionId },
     });
@@ -257,7 +256,6 @@ export class AuthService {
       throw new BadRequestException('Bu işlem için yetkiniz yok.');
     }
 
-    // Oturumu iptal et (revokedAt ekle)
     await this.prismaService.refreshTokens.update({
       where: { id: sessionId },
       data: {
@@ -268,13 +266,12 @@ export class AuthService {
     return { success: true, message: 'Oturum başarıyla sonlandırıldı.' };
   }
 
-  // Hazır elin değmişken tüm oturumları listeleme metodunu da ekleyelim
   async getActiveSessions(userId: string) {
     return await this.prismaService.refreshTokens.findMany({
       where: {
         userId: userId,
-        revokedAt: null, // Sadece aktif olanlar
-        expiresAt: { gt: new Date() }, // Süresi dolmamış olanlar
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
       },
       select: {
         id: true,
@@ -283,11 +280,52 @@ export class AuthService {
         os: true,
         ipAddress: true,
         createdAt: true,
-        // hashedRefreshToken'ı asla client'a gönderme!
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
+  }
+
+  async logOut(res: Response, req?: Request) {
+    const isProduction = this.configService.get('NODE_ENV') === 'production';
+    const domain = this.configService.get('DOMAIN');
+
+    const refreshToken = req?.cookies?.refresh_token;
+    if (refreshToken) {
+      try {
+        const payload = this.jwtService.verify(refreshToken, {
+          secret: this.configService.getOrThrow('JWT_REFRESH_TOKEN_SECRET'),
+        }) as TokenPayload;
+
+        await this.prismaService.refreshTokens.updateMany({
+          where: { id: payload.jti },
+          data: { revokedAt: new Date() },
+        });
+      } catch {}
+    }
+
+    const cookieOptions = {
+      httpOnly: true,
+      sameSite: 'lax' as const,
+      secure: isProduction,
+      path: '/',
+      ...(isProduction && domain ? { domain } : {}),
+    };
+    res.clearCookie('token', cookieOptions);
+    res.clearCookie('refresh_token', cookieOptions);
+
+    const csrfCookieOptions = {
+      httpOnly: true,
+      sameSite: isProduction ? ('none' as const) : ('lax' as const),
+      secure: isProduction,
+      path: '/',
+      ...(isProduction && domain ? { domain } : {}),
+    };
+
+    const csrfCookieName = isProduction ? '__Secure-csrf-token' : 'csrf-token';
+    res.clearCookie(csrfCookieName, csrfCookieOptions);
+
+    return { success: true, message: 'Logged out successfully' };
   }
 }

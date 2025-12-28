@@ -4,19 +4,21 @@ import { NestMinioModule } from 'nestjs-minio';
 import { AdminModule } from './admin/admin.module';
 import { ChatModule } from './ai/chat/chat.module';
 import { AuthModule } from './auth/auth.module';
+import { BrandsModule } from './brands/brands.module';
 import { CartV3Module } from './cart-v3/cart-v3.module';
+import { CategoriesModule } from './categories/categories.module';
 import { SharedModule } from './common/services/shared.module';
 import { LocationsModule } from './locations/locations.module';
 import { MinioModule } from './minio/minio.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
-import { PrismaLoggerModule } from './prisma-logger/prisma-logger.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ProductsModule } from './products/products.module';
 import { ShippingModule } from './shipping/shipping.module';
-import { UserPageModule } from './user-page/user-page.module';
 import { UserModule } from './user/user.module';
 @Module({
   imports: [
+    SharedModule,
     PrismaModule,
     UserModule,
     AuthModule,
@@ -30,31 +32,33 @@ import { UserModule } from './user/user.module';
       useFactory: (configService: ConfigService) => {
         const accessKey = configService.getOrThrow<string>('MINIO_ACCESS_KEY');
         const secretKey = configService.getOrThrow<string>('MINIO_SECRET_KEY');
-        const useSSL = configService.get<string>('MINIO_USE_SSL') === 'true';
-        const endpointRaw = configService.get<string>('MINIO_ENDPOINT');
+        const endpointRaw = configService.getOrThrow<string>('MINIO_ENDPOINT');
         const url = new URL(endpointRaw);
-        const endPoint = url.hostname;
-        const port = parseInt(configService.get<string>('MINIO_PORT')) || 443;
-        return {
-          endPoint,
-          port,
-          useSSL,
+
+        const settings = {
+          endPoint: url.hostname,
+          port: parseInt(url.port) || (url.protocol === 'https:' ? 443 : 80),
+          useSSL: url.protocol === 'https:',
           accessKey,
           secretKey,
+        };
+        console.log('MinIO Bağlantı Ayarları:', settings);
+        return {
+          ...settings,
         };
       },
       inject: [ConfigService],
     }),
     MinioModule,
     LocationsModule,
-    UserPageModule,
     ShippingModule,
-    SharedModule,
     CartV3Module,
     ChatModule,
     PaymentsModule,
     OrdersModule,
-    PrismaLoggerModule,
+    CategoriesModule,
+    BrandsModule,
+    ProductsModule,
     // ThrottlerModule.forRootAsync({
     //   imports: [ConfigModule],
     //   inject: [ConfigService],

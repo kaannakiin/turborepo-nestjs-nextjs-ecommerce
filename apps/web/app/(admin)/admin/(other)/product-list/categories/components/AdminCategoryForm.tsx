@@ -25,37 +25,40 @@ import {
   useQuery,
   zodResolver,
 } from "@repo/shared";
-import { Category, CategorySchema } from "@repo/types";
+import { CategorySchema, CategoryZodType } from "@repo/types";
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 
 interface AdminCategoryFormProps {
-  defaultValues?: Category;
+  defaultValues?: CategoryZodType;
 }
 
-// Fetch function for parent categories
-const fetchParentCategories = async (categoryId?: string) => {
-  const endpoint = categoryId
-    ? `get-all-parent-categories/${categoryId}`
-    : "get-all-parent-categories";
+interface CategoryGroup {
+  group: string;
+  items: Array<{ value: string; label: string; disabled?: boolean }>;
+}
 
-  const result = await fetchWrapper.get<{
-    data: Array<{ value: string; label: string }>;
-  }>(`/admin/products/categories/${endpoint}`);
+const fetchParentCategories = async (categoryId?: string) => {
+  const params = categoryId ? { excludeId: categoryId } : {};
+
+  const result = await fetchWrapper.get<CategoryGroup[]>(
+    `/admin/products/categories/get-all-categories-for-select`,
+    { params }
+  );
 
   if (!result.success) {
     throw new Error("Üst kategoriler yüklenirken bir hata oluştu");
   }
 
-  return result.data.data;
+  return result.data;
 };
 
-// Custom hook for parent categories
 const useParentCategories = (currentCategoryId?: string) => {
   return useQuery({
     queryKey: ["parentCategories", currentCategoryId],
     queryFn: () => fetchParentCategories(currentCategoryId),
-    staleTime: 5 * 60 * 1000, // 5 dakika
-    gcTime: 10 * 60 * 1000, // 10 dakika
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 };
 
@@ -63,10 +66,10 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
   const {
     control,
     handleSubmit,
-    formState: { isSubmitting, errors },
+    formState: { isSubmitting },
     watch,
     setValue,
-  } = useForm<Category>({
+  } = useForm<CategoryZodType>({
     resolver: zodResolver(CategorySchema),
     defaultValues: defaultValues || {
       existingImage: null,
@@ -89,15 +92,29 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
   const { push } = useRouter();
   const existingImage = watch("existingImage") || null;
 
-  // TanStack Query hook'u
   const { data: parentCategories = [], isLoading: parentCategoriesLoading } =
     useParentCategories(defaultValues?.uniqueId);
 
-  const onSubmit: SubmitHandler<Category> = async (data: Category) => {
+  const selectData = useMemo(() => {
+    if (!parentCategories.length) return [];
+
+    return parentCategories.map((group) => ({
+      group: group.group,
+      items: group.items.map((item) => ({
+        value: item.value,
+        label: item.label,
+        disabled: item.disabled,
+      })),
+    }));
+  }, [parentCategories]);
+
+  const onSubmit: SubmitHandler<CategoryZodType> = async (
+    data: CategoryZodType
+  ) => {
     const { image, ...rest } = data;
 
     try {
-      const categoryRes = await fetchWrapper.post<void>(
+      const categoryRes = await fetchWrapper.post<{ categoryId: string }>(
         "/admin/products/categories/create-or-update-category",
         rest
       );
@@ -112,13 +129,12 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
         return;
       }
 
-      // Resim yükle
       if (image) {
         const formData = new FormData();
         formData.append("file", image);
 
         const imageRes = await fetchWrapper.postFormData<void>(
-          `/admin/products/categories/update-category-image/${data.uniqueId}`,
+          `/admin/products/categories/upload-category-image/${data.uniqueId}`,
           formData
         );
 
@@ -149,6 +165,7 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
       });
     }
   };
+
   return (
     <Stack gap={"lg"}>
       {isSubmitting && <GlobalLoadingOverlay />}
@@ -188,17 +205,20 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
           render={({ field, fieldState }) => (
             <Select
               {...field}
+              value={field.value || null}
+              onChange={(value) => field.onChange(value || null)}
               error={fieldState.error?.message}
-              label="Ebeveyn Kategori"
+              label="Üst Kategori"
               clearable
-              data={parentCategories}
+              searchable
+              data={selectData}
               disabled={parentCategoriesLoading}
+              nothingFoundMessage="Kategori bulunamadı"
             />
           )}
         />
       </SimpleGrid>
 
-      {/* Rest of the form remains the same */}
       <Controller
         control={control}
         name="image"
@@ -209,6 +229,7 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
               onDrop={(files) => field.onChange(files ? files[0] : null)}
               value={field.value}
               accept={"IMAGE"}
+              cols={1}
               existingImages={
                 existingImage ? [{ type: "IMAGE", url: existingImage }] : []
               }

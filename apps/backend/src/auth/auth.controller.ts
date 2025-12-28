@@ -20,6 +20,7 @@ import {
   TokenPayload,
 } from '@repo/types';
 import { type Request, type Response } from 'express';
+import { RealIP } from 'nestjs-real-ip';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import { AuthService } from './auth.service';
@@ -29,7 +30,6 @@ import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
-import { RealIP } from 'nestjs-real-ip';
 
 @Controller('auth')
 export class AuthController {
@@ -147,6 +147,12 @@ export class AuthController {
     @Param('sessionId') sessionId: string,
   ) {
     return this.authService.revokeSession(user.id, sessionId);
+  }
+
+  @Post('sign-out')
+  @HttpCode(HttpStatus.OK)
+  logOut(@Res({ passthrough: true }) res: Response, @Req() req: Request) {
+    return this.authService.logOut(res, req);
   }
 
   // FORGOT PASSWORD - 'auth-strict' throttler (3 istek/5dk)

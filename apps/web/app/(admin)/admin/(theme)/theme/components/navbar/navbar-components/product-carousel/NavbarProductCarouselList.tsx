@@ -1,5 +1,5 @@
 "use client";
-import SelectableProductModal from "@/components/modals/SelectableProductModal";
+import SelectableProductModal from "@/components/modals/product-modal/SelectableProductModal";
 import { TruncatedText } from "@/components/TruncatedText";
 import {
   closestCenter,
@@ -28,7 +28,7 @@ import {
 import { IconPlus } from "@tabler/icons-react";
 import { useThemeStore } from "../../../../store/theme-store";
 import { SortableListRow } from "../../../common/SortableListRow";
-import { diffCarouselItems } from "@/components/modals/selectable-product-modal.helper";
+import { diffCarouselItems } from "@/components/modals/product-modal/selectable-product-modal.helper";
 
 interface LeftSideProductFormProps {
   control: Control<ThemeInputType>;

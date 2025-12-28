@@ -1,207 +1,224 @@
-import { queryClient } from "@lib/serverQueryClient";
-import { CategoryPagePreparePageReturnData } from "@repo/types";
+import InfinityQueryPage from "@/components/pages/store-components/InfinityQueryPage";
+import StoreNotFound from "@/components/pages/store-components/StoreNotFound";
+import { getQueryClient } from "@lib/serverQueryClient";
+import { generateCategoryJsonLd } from "@lib/ui/json-ld-generator";
+import {
+  getOgImageUrl,
+  getServerSideAllSearchParams,
+} from "@lib/ui/product-helper";
+import { ApiError, createServerFetch } from "@lib/wrappers/fetchWrapper";
+import { Currency, Locale } from "@repo/database";
+import { dehydrate, HydrationBoundary } from "@repo/shared";
+import { CategoryProductsResponse, FiltersResponse } from "@repo/types";
 import { Metadata } from "next";
+import { cookies } from "next/headers";
 import Script from "next/script";
+import { cache } from "react";
 import { Params, SearchParams } from "types/GlobalTypes";
-import CategoryClientPage from "../components/CategoryClientPage";
 
-const fetchCategory = async (slug: string) => {
-  try {
-    const req = await queryClient.fetchQuery({
-      queryKey: ["get-category", slug],
-      queryFn: async () => {
-        const url = `${process.env.BACKEND_URL}/user-categories/get-category/${slug}`;
+interface Props {
+  params: Params;
+  searchParams: SearchParams;
+}
 
-        const req = await fetch(url, {
-          method: "GET",
-        });
+const getCategoryData = cache(
+  async (
+    slug: string,
+    page: number,
+    queryString: string,
+    currency: Currency,
+    locale: Locale
+  ) => {
+    const cookieStore = await cookies();
+    const api = createServerFetch().setCookies(cookieStore);
 
-        if (!req.ok) {
-          console.log("Failed to fetch category data");
-          return null;
-        }
-        const data = (await req.json()) as CategoryPagePreparePageReturnData;
-        if (!data.success) {
-          return null;
-        }
-        return data;
-      },
-      staleTime: 1000 * 60 * 5,
-      gcTime: 1000 * 60 * 10,
-    });
-    return req;
-  } catch (error) {
-    console.log("error", error);
-    return null;
+    const productsUrl = queryString
+      ? `/categories/${slug}?${queryString}&page=${page}`
+      : `/categories/${slug}?page=${page}`;
+
+    const filtersUrl = queryString
+      ? `/categories/${slug}/filters?${queryString}`
+      : `/categories/${slug}/filters`;
+
+    const [productsRes, filtersRes] = await Promise.all([
+      api.get<CategoryProductsResponse>(productsUrl),
+      api.get<FiltersResponse>(filtersUrl),
+    ]);
+
+    if (!productsRes.success) {
+      throw new Error((productsRes as ApiError).error || "Ürünler alınamadı");
+    }
+
+    if (!filtersRes.success) {
+      throw new Error((filtersRes as ApiError).error || "Filtreler alınamadı");
+    }
+
+    return {
+      products: productsRes.data,
+      filters: filtersRes.data,
+      slug,
+      currentPage: page,
+      cacheKeyParams: queryString,
+      currency,
+      locale,
+    };
   }
-};
+);
 
-const generateOgImageUrl = (imageUrl: string): string => {
-  const urlWithoutExtension = imageUrl.replace(/\.[^/.]+$/, "");
-  return `${urlWithoutExtension}-og.jpg`;
-};
+async function parseArgs(params: Params, searchParams: SearchParams) {
+  const slug = (await params).slug as string;
+  const pageParamsObj = await searchParams;
+  const cookieStore = await cookies();
 
-const generateBreadcrumbStructuredData = (
-  categoryData: CategoryPagePreparePageReturnData,
-  slug: string
-) => {
-  const { hiearchy, category } = categoryData;
+  const currentPage = Number((pageParamsObj.page as string) || "1");
 
-  if (!hiearchy?.parentCategories || hiearchy.parentCategories.length === 0) {
-    return null;
-  }
+  const cacheKeyParams =
+    getServerSideAllSearchParams(pageParamsObj, ["page"]) || "";
 
-  const itemListElement = [
-    {
-      "@type": "ListItem",
-      position: 1,
-      name: "Ana Sayfa",
-      item: process.env.NEXT_PUBLIC_BASE_URL || "https://example.com",
-    },
-  ];
+  const currency = (cookieStore.get("currency")?.value as Currency) || "TRY";
+  const locale = (cookieStore.get("locale")?.value as Locale) || "TR";
 
-  hiearchy.parentCategories.forEach((parent, index) => {
-    itemListElement.push({
-      "@type": "ListItem",
-      position: index + 2,
-      name: parent.name,
-      item: `${process.env.NEXT_PUBLIC_BASE_URL}/categories/${parent.slug}`,
-    });
-  });
-
-  if (category) {
-    itemListElement.push({
-      "@type": "ListItem",
-      position: itemListElement.length + 1,
-      name: category.name,
-      item: `${process.env.NEXT_PUBLIC_BASE_URL}/categories/${slug}`,
-    });
-  }
-
-  return {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement,
-  };
-};
+  return { slug, currentPage, cacheKeyParams, currency, locale };
+}
 
 export async function generateMetadata({
   params,
-}: {
-  params: Params;
-}): Promise<Metadata> {
-  const { slug } = await params;
+  searchParams,
+}: Props): Promise<Metadata> {
+  try {
+    const { slug, currentPage, cacheKeyParams, currency, locale } =
+      await parseArgs(params, searchParams);
 
-  const categoryData = await fetchCategory(slug);
+    const { products } = await getCategoryData(
+      slug,
+      currentPage,
+      cacheKeyParams,
+      currency,
+      locale
+    );
 
-  if (!categoryData || !categoryData.success || !categoryData.category) {
+    const { treeNode, pagination } = products;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const categoryUrl = `${baseUrl}/categories/${slug}`;
+
+    const title = treeNode.metaTitle || treeNode.name;
+    const description =
+      treeNode.metaDescription ||
+      `${treeNode.name} kategorisinde ${pagination.totalCount} ürün. En uygun fiyatlarla hemen alışverişe başla!`;
+
+    const ogImage = treeNode.imageUrl ? getOgImageUrl(treeNode.imageUrl) : null;
+
+    const metadata: Metadata = {
+      title,
+      description,
+
+      alternates: {
+        canonical: categoryUrl,
+      },
+      openGraph: {
+        type: "website",
+        locale: locale === "TR" ? "tr_TR" : "en_US",
+        url: categoryUrl,
+        title,
+        description,
+        ...(ogImage && {
+          images: [
+            {
+              url: ogImage,
+              width: 1200,
+              height: 630,
+              alt: treeNode.name,
+              type: "image/jpeg",
+            },
+          ],
+        }),
+      },
+
+      twitter: {
+        card: ogImage ? "summary_large_image" : "summary",
+        title,
+        description,
+        ...(ogImage && {
+          images: [ogImage],
+        }),
+      },
+
+      other: {
+        "product:category": treeNode.name,
+        "product:availability": "in stock",
+        ...(currentPage > 1 && {
+          "og:url": `${categoryUrl}?page=${currentPage}`,
+        }),
+      },
+    };
+
+    return metadata;
+  } catch (error) {
     return {
       title: "Kategori Bulunamadı",
+      description: "Aradığınız kategori bulunamadı.",
       robots: {
         index: false,
         follow: false,
       },
     };
   }
-
-  const { category } = categoryData;
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://example.com";
-  const categoryUrl = `${baseUrl}/categories/${slug}`;
-
-  const title = category.metaTitle || `${category.name}`;
-
-  const description = category.metaDescription || `Kategori: ${category.name}`;
-
-  let ogImageUrl = `${baseUrl}/og-default.jpg`;
-  if (category.category?.image?.url) {
-    ogImageUrl = generateOgImageUrl(category.category.image.url);
-  }
-
-  const breadcrumbData = generateBreadcrumbStructuredData(categoryData, slug);
-
-  const metadata: Metadata = {
-    title,
-    description,
-    alternates: {
-      canonical: categoryUrl,
-    },
-
-    openGraph: {
-      type: "website",
-      url: categoryUrl,
-      title,
-      description,
-      images: [
-        {
-          url: ogImageUrl,
-          width: 1200,
-          height: 630,
-          alt: category.name,
-        },
-      ],
-      siteName: "Site Adı",
-      locale: category.locale || "tr_TR",
-    },
-
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: [ogImageUrl],
-    },
-
-    robots: {
-      index: true,
-      follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        "max-image-preview": "large",
-        "max-snippet": -1,
-      },
-    },
-
-    other: {
-      ...(breadcrumbData && {
-        "breadcrumb-schema": JSON.stringify(breadcrumbData),
-      }),
-    },
-  };
-
-  return metadata;
 }
 
-const CategoriesPage = async ({ params }: { params: Params }) => {
-  const { slug } = await params;
+const CategoryPage = async ({ params, searchParams }: Props) => {
+  const { slug, cacheKeyParams, currency, locale } = await parseArgs(
+    params,
+    searchParams
+  );
 
-  const categoryData = await fetchCategory(slug);
+  const data = await getCategoryData(slug, 1, cacheKeyParams, currency, locale);
 
-  if (!categoryData || !categoryData.success) {
-    return <div>not found</div>;
+  if (!data.products || !data.filters) {
+    return <StoreNotFound type="category" />;
   }
 
-  const breadcrumbData = generateBreadcrumbStructuredData(categoryData, slug);
-  return (
-    <>
-      {breadcrumbData && (
-        <Script
-          id="breadcrumb-schema"
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(breadcrumbData),
-          }}
-        />
-      )}
+  const { products, filters } = data;
+  const queryClient = getQueryClient();
+  const endPoint = "categories";
 
-      <CategoryClientPage
-        brands={categoryData.brands}
-        category={categoryData.category}
-        hiearchy={categoryData.hiearchy}
-        variantGroups={categoryData.variantGroups}
-        id={categoryData.category.categoryId}
+  const productsQueryKey = [
+    `${endPoint}-products-infinite`,
+    slug,
+    cacheKeyParams,
+  ];
+  const filtersQueryKey = [`${endPoint}-filters`, slug, cacheKeyParams];
+
+  queryClient.setQueryData(productsQueryKey, {
+    pages: [products],
+    pageParams: [1],
+  });
+  queryClient.setQueryData(filtersQueryKey, filters);
+
+  const jsonLd = generateCategoryJsonLd(
+    products,
+    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
+    currency,
+    locale
+  );
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <Script
+        id="json-ld"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-    </>
+
+      <InfinityQueryPage
+        slug={slug}
+        productsQueryKey={productsQueryKey}
+        filtersQueryKey={filtersQueryKey}
+        initialUrlParams={cacheKeyParams}
+        endPoint="categories"
+        staleTime={1000 * 60 * 5}
+      />
+    </HydrationBoundary>
   );
 };
 
-export default CategoriesPage;
+export default CategoryPage;

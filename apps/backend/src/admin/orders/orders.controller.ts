@@ -20,25 +20,25 @@ import { Roles } from 'src/user/reflectors/roles.decorator';
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  @Get()
-  async getAllOrders(
-    @Query('page', new ParseIntPipe()) page: number,
-    @Query('limit', new ParseIntPipe()) limit: number,
-    @Query('search', new NullableStringPipe())
-    search?: string,
-    @Query('status', new ParseEnumPipe($Enums.OrderStatus, { optional: true }))
-    orderStatus?: $Enums.OrderStatus,
-  ) {
-    return this.ordersService.getOrders({
-      page,
-      limit,
-      search,
-      orderStatus,
-    });
-  }
+  // @Get()
+  // async getAllOrders(
+  //   @Query('page', new ParseIntPipe()) page: number,
+  //   @Query('limit', new ParseIntPipe()) limit: number,
+  //   @Query('search', new NullableStringPipe())
+  //   search?: string,
+  //   @Query('status', new ParseEnumPipe($Enums.OrderStatus, { optional: true }))
+  //   orderStatus?: $Enums.OrderStatus,
+  // ) {
+  //   return this.ordersService.getOrders({
+  //     page,
+  //     limit,
+  //     search,
+  //     orderStatus,
+  //   });
+  // }
 
-  @Get('/:orderNumber')
-  async getOrderByOrderNumber(@Param('orderNumber') orderNumber: string) {
-    return this.ordersService.getOrderByOrderNumber(orderNumber);
-  }
+  // @Get('/:orderNumber')
+  // async getOrderByOrderNumber(@Param('orderNumber') orderNumber: string) {
+  //   return this.ordersService.getOrderByOrderNumber(orderNumber);
+  // }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { queryClient } from "@lib/serverQueryClient";
+import { getQueryClient } from "@lib/serverQueryClient";
 import {
   Combobox,
   createTheme,
@@ -21,17 +21,18 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 import segmentedClasses from "./styles/SegmentedControl.module.css";
+
 const primaryColor: MantineColorsTuple = [
-  "#fff0e4",
-  "#ffe0cf",
-  "#fac0a1",
-  "#f69e6e",
-  "#f28043",
-  "#f06e27",
-  "#f06418",
-  "#d6530c",
-  "#bf4906",
-  "#a73c00",
+  "#ecf4ff",
+  "#dce4f5",
+  "#b9c7e2",
+  "#94a8d0",
+  "#748dc0",
+  "#5f7cb7",
+  "#5474b4",
+  "#44639f",
+  "#3a5890",
+  "#2c4b80",
 ];
 const adminPrimaryColor: MantineColorsTuple = [
   "#eff2ff",
@@ -47,6 +48,7 @@ const adminPrimaryColor: MantineColorsTuple = [
 ];
 
 const LayoutProviderWrapper = ({ children }: { children: ReactNode }) => {
+  const queryClient = getQueryClient();
   const pathname = usePathname();
   const theme = createTheme({
     colors: { primary: primaryColor, admin: adminPrimaryColor },
@@ -84,20 +86,20 @@ const LayoutProviderWrapper = ({ children }: { children: ReactNode }) => {
   });
   dayjs.extend(customParseFormat);
   return (
-    <QueryClientProvider client={queryClient}>
-      <DatesProvider
-        settings={{ locale: "tr", firstDayOfWeek: 1, weekendDays: [5, 6] }}
-      >
-        <MantineProvider
-          defaultColorScheme="light"
-          forceColorScheme="light"
-          theme={theme}
+    <MantineProvider
+      defaultColorScheme="light"
+      forceColorScheme="light"
+      theme={theme}
+    >
+      <Notifications position="bottom-right" />
+      <QueryClientProvider client={queryClient}>
+        <DatesProvider
+          settings={{ locale: "tr", firstDayOfWeek: 1, weekendDays: [5, 6] }}
         >
-          <Notifications position="bottom-right" />
           {children}
-        </MantineProvider>
-      </DatesProvider>
-    </QueryClientProvider>
+        </DatesProvider>
+      </QueryClientProvider>
+    </MantineProvider>
   );
 };
 

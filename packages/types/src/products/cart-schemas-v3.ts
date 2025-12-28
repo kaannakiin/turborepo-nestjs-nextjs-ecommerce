@@ -111,7 +111,7 @@ export const productPriceSelect = {
     currency: true,
     discountedPrice: true,
   },
-} as const satisfies Prisma.ProductInclude["prices"];
+} as const satisfies Prisma.ProductVariantCombinationInclude["prices"];
 
 export const productVariantOptionsSelect = {
   orderBy: [
@@ -214,13 +214,7 @@ export const cartItemIncludeForCart = {
     createdAt: "asc",
   },
   include: {
-    product: {
-      include: {
-        assets: productAssetSelect,
-        prices: productPriceSelect,
-        translations: true,
-      },
-    },
+ 
     variant: {
       include: {
         assets: productAssetSelect,

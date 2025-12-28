@@ -294,7 +294,7 @@ const GlobalDropzone = ({
             backgroundColor: "var(--mantine-color-gray-0)",
           }}
         >
-          <AspectRatio ratio={1} pos="relative" w="100%">
+          <AspectRatio ratio={1} pos="relative" className="w-full" maw={400}>
             {image.type === AssetType.IMAGE ? (
               <CustomImage src={image.url} alt="Existing image" />
             ) : (

@@ -1,541 +1,491 @@
 import {
-  ConflictException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { $Enums, Prisma } from '@repo/database';
+import { Prisma } from '@repo/database';
 import {
-  Category,
+  adminCategoryTableQuery,
+  AdminCategoryTableReturnType,
   CategoryIdAndName,
-  Cuid2ZodType,
-  DiscountItem,
-  FlatItem,
+  CategoryZodType,
 } from '@repo/types';
+import { LocaleService } from 'src/common/services/locale/locale.service';
 import { MinioService } from 'src/minio/minio.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class CategoriesService {
+  private logger = new Logger(CategoriesService.name);
+
   constructor(
-    private prismaService: PrismaService,
-    private minio: MinioService,
+    private readonly prismaService: PrismaService,
+    private readonly minioService: MinioService,
+    private readonly localeService: LocaleService,
   ) {}
 
-  async createOrUpdateCategory(data: Omit<Category, 'image'>) {
-    const { uniqueId, translations, parentId } = data;
+  async createOrUpdateCategory(
+    data: Omit<CategoryZodType, 'image'>,
+  ): Promise<{ success: boolean; categoryId: string }> {
     try {
-      const result = await this.prismaService.$transaction(async (prisma) => {
-        const existingCategory = await prisma.category.findUnique({
-          where: { id: uniqueId },
+      const category = await this.prismaService.$transaction(async (prisma) => {
+        const category = await prisma.category.upsert({
+          where: { id: data.uniqueId },
+          create: {
+            id: data.uniqueId,
+            parentCategoryId: data.parentId || null,
+            translations: {
+              createMany: {
+                data: data.translations.map((t) => ({
+                  locale: t.locale,
+                  name: t.name,
+                  slug: t.slug,
+                  description: t.description || null,
+                  metaTitle: t.metaTitle || null,
+                  metaDescription: t.metaDescription || null,
+                })),
+                skipDuplicates: true,
+              },
+            },
+          },
+          update: {
+            parentCategoryId: data.parentId || null,
+            translations: {
+              upsert: data.translations.map((t) => ({
+                where: {
+                  locale_categoryId: {
+                    categoryId: data.uniqueId,
+                    locale: t.locale,
+                  },
+                },
+                create: {
+                  locale: t.locale,
+                  name: t.name,
+                  slug: t.slug,
+                  description: t.description || null,
+                  metaTitle: t.metaTitle || null,
+                  metaDescription: t.metaDescription || null,
+                },
+                update: {
+                  locale: t.locale,
+                  name: t.name,
+                  slug: t.slug,
+                  description: t.description || null,
+                  metaTitle: t.metaTitle || null,
+                  metaDescription: t.metaDescription || null,
+                },
+              })),
+            },
+          },
         });
-
-        if (existingCategory) {
-          await prisma.categoryTranslation.deleteMany({
-            where: { categoryId: uniqueId },
-          });
-
-          return await prisma.category.update({
-            where: { id: uniqueId },
-            data: {
-              parentCategoryId: parentId || null,
-              translations: {
-                createMany: {
-                  data: translations.map((t) => ({
-                    locale: t.locale,
-                    name: t.name.trim(),
-                    slug: t.slug.trim(),
-                    description: t.description?.trim(),
-                    metaTitle: t.metaTitle?.trim(),
-                    metaDescription: t.metaDescription?.trim(),
-                  })),
-                },
-              },
-            },
-          });
-        } else {
-          return await prisma.category.create({
-            data: {
-              id: uniqueId,
-              parentCategoryId: parentId || null,
-              translations: {
-                createMany: {
-                  data: translations.map((t) => ({
-                    locale: t.locale,
-                    name: t.name.trim(),
-                    slug: t.slug.trim(),
-                    description: t.description?.trim(),
-                    metaTitle: t.metaTitle?.trim(),
-                    metaDescription: t.metaDescription?.trim(),
-                  })),
-                },
-              },
-            },
-          });
-        }
+        return category;
       });
 
       return {
+        categoryId: category.id,
         success: true,
-        message: 'İşlem başarıyla tamamlandı',
       };
     } catch (error) {
+      this.logger.error('Error creating or updating category', error);
       throw new InternalServerErrorException(
-        'Kategori işlemi sırasında hata oluştu',
+        'Failed to create or update category',
       );
     }
   }
 
-  async updateCategoryImage(file: Express.Multer.File, uniqueId: Cuid2ZodType) {
-    const category = await this.prismaService.category.findUnique({
-      where: { id: uniqueId },
-      include: { image: true },
-    });
-
-    if (!category) {
-      throw new NotFoundException('Marka bulunamadı');
-    }
-
-    if (category.image) {
-      const deletedFile = await this.minio.deleteAsset(category.image.url);
-      if (!deletedFile.success) {
-        throw new InternalServerErrorException(
-          'Mevcut marka resmi silinirken bir hata oluştu',
-        );
-      }
-      await this.prismaService.asset.delete({
-        where: { id: category.image.id },
-      });
-    }
-    const uploadFile = await this.minio.uploadAsset({
-      bucketName: 'categories',
-      file,
-      isNeedOg: true,
-      isNeedThumbnail: true,
-    });
-    if (!uploadFile.success) {
-      throw new InternalServerErrorException(
-        'Marka resmi yüklenirken bir hata oluştu',
-      );
-    }
-    const asset = await this.prismaService.asset.create({
-      data: {
-        url: uploadFile.data.url,
-        type: 'IMAGE',
-        category: {
-          connect: { id: category.id },
-        },
-      },
-    });
-    return {
-      success: true,
-      message: 'Resim başarıyla yüklendi',
-    };
-  }
-
-  async getCategoryById(id: Cuid2ZodType): Promise<Category> {
-    const category = await this.prismaService.category.findUnique({
-      where: { id },
-      include: {
-        translations: true,
-        image: true,
-      },
-    });
-
-    if (!category) {
-      throw new NotFoundException('Kategori bulunamadı');
-    }
-    return {
-      translations: category.translations,
-      uniqueId: category.id,
-      parentId: category.parentCategoryId || undefined,
-      existingImage: category.image ? category.image.url : undefined,
-      image: undefined,
-    };
-  }
-
-  async deleteCategoryImage(url: string) {
-    if (!url) {
-      throw new NotFoundException("Resim URL'si sağlanmadı");
-    }
-    const asset = await this.prismaService.asset.findUnique({
-      where: { url },
-      include: { category: true },
-    });
-    if (!asset) {
-      throw new NotFoundException('Resim bulunamadı');
-    }
-    if (!asset.category) {
-      throw new ConflictException('Bu resim bir markaya bağlı değil');
-    }
-    const deletedFile = await this.minio.deleteAsset(url);
-    if (!deletedFile.success) {
-      throw new InternalServerErrorException(
-        'Resim silinirken bir hata oluştu',
-      );
-    }
-    await this.prismaService.asset.delete({
-      where: { id: asset.id },
-    });
-    return {
-      success: true,
-      message: 'Resim başarıyla silindi',
-    };
-  }
-
-  async getAllCategories(search?: string, page?: number) {
-    const limit = 10;
-    const offset = page && page > 0 ? (page - 1) * limit : 0;
-    const where: Prisma.CategoryWhereInput = {
-      ...(search?.trim() && {
-        translations: {
-          some: {
-            OR: [
-              { name: { contains: search.trim(), mode: 'insensitive' } },
-              { slug: { contains: search.trim(), mode: 'insensitive' } },
-            ],
-          },
-        },
-      }),
-    };
-
-    return this.prismaService.category.findMany({
-      where,
-      include: {
-        translations: {
-          select: {
-            name: true,
-            locale: true,
-            slug: true,
-          },
-        },
-        image: {
-          select: {
-            url: true,
-          },
-        },
-        parentCategory: {
-          include: {
-            translations: {
-              select: {
-                name: true,
-                locale: true,
-              },
-            },
-          },
-        },
-        _count: {
-          select: {
-            childCategories: true,
-            products: true,
-          },
-        },
-      },
-      skip: offset,
-      take: limit,
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
-  async getCategoriesCount(search?: string): Promise<number> {
-    const where: Prisma.CategoryWhereInput = {
-      ...(search?.trim() && {
-        translations: {
-          some: {
-            OR: [
-              { name: { contains: search.trim(), mode: 'insensitive' } },
-              { slug: { contains: search.trim(), mode: 'insensitive' } },
-            ],
-          },
-        },
-      }),
-    };
-
-    return this.prismaService.category.count({ where });
-  }
-
-  async deleteCategory(id: Cuid2ZodType) {
+  async uploadCategoryImage(
+    categoryId: string,
+    file: Express.Multer.File,
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data?: { url: string; type: string };
+  }> {
     try {
-      return await this.prismaService.$transaction(async (prisma) => {
-        const category = await prisma.category.findUnique({
-          where: { id },
-          include: {
-            image: true,
-            childCategories: true,
-            _count: {
-              select: {
-                products: true,
-              },
-            },
-          },
-        });
+      const category = await this.prismaService.category.findUnique({
+        where: { id: categoryId },
+        include: { image: true },
+      });
 
-        if (!category) {
-          throw new NotFoundException('Kategori bulunamadı');
-        }
+      if (!category) {
+        return {
+          success: false,
+          message: 'Kategori bulunamadı',
+        };
+      }
 
-        // 1. Kategoriye bağlı ürünlerin category bağlantılarını temizle
-        if (category._count.products > 0) {
-          await prisma.productCategory.deleteMany({
-            where: { categoryId: id },
-          });
-        }
+      const { data, success } = await this.minioService.uploadAsset({
+        bucketName: 'categories',
+        file,
+        isNeedOg: true,
+        isNeedThumbnail: true,
+      });
 
-        // 2. Eğer kategorinin resmi varsa, önce MinIO'dan sil
+      if (!success) {
+        return {
+          success: false,
+          message: 'Dosya yükleme başarısız oldu',
+        };
+      }
+
+      await this.prismaService.$transaction(async (tx) => {
         if (category.image) {
-          const deletedFile = await this.minio.deleteAsset(category.image.url);
-          if (!deletedFile.success) {
-            throw new InternalServerErrorException(
-              'Kategori resmi silinirken bir hata oluştu',
-            );
-          }
-
-          // Asset'i veritabanından sil
-          await prisma.asset.delete({
+          await this.minioService.deleteAsset(category.image.url);
+          await tx.asset.delete({
             where: { id: category.image.id },
           });
         }
 
-        // 3. Ana kategori ise, child kategorilerin parentCategoryId'lerini null yap
-        if (category.childCategories.length > 0) {
-          await prisma.category.updateMany({
-            where: { parentCategoryId: id },
-            data: { parentCategoryId: null },
-          });
+        await tx.category.update({
+          where: { id: categoryId },
+          data: {
+            image: {
+              create: {
+                url: data.url,
+                type: data.type,
+              },
+            },
+          },
+        });
+      });
+
+      return {
+        success: true,
+        message: 'Kategori görseli başarıyla güncellendi',
+        data: {
+          url: data.url,
+          type: data.type,
+        },
+      };
+    } catch (error) {
+      this.logger.error('Error uploading category image', error);
+      throw new InternalServerErrorException('Failed to upload category image');
+    }
+  }
+
+  async getCategories(
+    page: number,
+    limit: number,
+    search?: string,
+  ): Promise<AdminCategoryTableReturnType> {
+    const where: Prisma.CategoryWhereInput = search?.trim()
+      ? {
+          OR: [
+            {
+              translations: {
+                some: {
+                  name: {
+                    contains: search,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+            },
+            {
+              translations: {
+                some: {
+                  slug: {
+                    contains: search,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+            },
+          ],
+        }
+      : {};
+
+    try {
+      const [categories, totalCount] = await Promise.all([
+        this.prismaService.category.findMany({
+          where,
+          take: limit,
+          skip: (page - 1) * limit,
+          orderBy: {
+            createdAt: 'desc',
+          },
+          select: adminCategoryTableQuery,
+        }),
+        this.prismaService.category.count({ where }),
+      ]);
+
+      return {
+        success: true,
+        categories,
+        pagination: {
+          currentPage: page,
+          perPage: limit,
+          totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+        },
+      };
+    } catch (error) {
+      this.logger.error('Error fetching categories', error);
+      throw new InternalServerErrorException('Failed to fetch categories');
+    }
+  }
+
+  async deleteCategory(
+    id: string,
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      const category = await this.prismaService.category.findUnique({
+        where: { id },
+        include: {
+          image: true,
+          childCategories: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      });
+
+      if (!category) {
+        throw new NotFoundException('Kategori bulunamadı');
+      }
+
+      if (category.childCategories.length > 0) {
+        return {
+          success: false,
+          message: `Bu kategorinin ${category.childCategories.length} alt kategorisi bulunmaktadır. Önce alt kategorileri silin.`,
+        };
+      }
+
+      await this.prismaService.$transaction(async (tx) => {
+        if (category.image) {
+          await this.minioService.deleteAsset(category.image?.url);
+          await tx.asset.delete({ where: { url: category.image?.url } });
         }
 
-        await prisma.category.delete({
-          where: { id },
-        });
-
-        return {
-          success: true,
-          message: `Kategori başarıyla silindi${
-            category._count.products > 0
-              ? `, ${category._count.products} ürünün kategori bağlantısı kaldırıldı`
-              : ''
-          }${
-            category.childCategories.length > 0
-              ? ` ve ${category.childCategories.length} alt kategori ana kategori yapıldı`
-              : ''
-          }`,
-        };
+        await tx.category.delete({ where: { id } });
       });
-    } catch (error) {
-      console.error('Delete category error:', error);
 
-      if (
-        error instanceof NotFoundException ||
-        error instanceof ConflictException ||
-        error instanceof InternalServerErrorException
-      ) {
+      return {
+        success: true,
+        message: 'Kategori başarıyla silindi',
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
         throw error;
       }
 
-      if (error.code === 'P2003') {
-        throw new ConflictException(
-          'Bu kategori başka kayıtlar tarafından kullanıldığı için silinemez',
-        );
-      }
-
+      this.logger.error('Error deleting category', error);
       throw new InternalServerErrorException(
-        'Kategori silinirken beklenmeyen bir hata oluştu',
+        'Kategori silinirken bir hata oluştu',
       );
     }
   }
 
-  async getAllParentCategories(currentCategoryId?: Cuid2ZodType) {
-    // Prisma ile recursive CTE kullanarak hierarchical query
-    const result = await this.prismaService.$queryRaw<
-      Array<{
-        id: string;
-        level: number;
-        name: string;
-        locale: string;
-      }>
-    >`
-    WITH RECURSIVE category_hierarchy AS (
-      -- Base case: tüm root kategoriler (parentCategoryId null olanlar)
-      SELECT 
-        c.id,
-        0 as level,
-        ct.name,
-        ct.locale
-      FROM "Category" c
-      INNER JOIN "CategoryTranslation" ct ON c.id = ct."categoryId"
-      WHERE c."parentCategoryId" IS NULL
-        AND ct.locale = 'TR'
-        ${currentCategoryId ? Prisma.sql`AND c.id != ${currentCategoryId}` : Prisma.empty}
-      
-      UNION ALL
-      
-      -- Recursive case: child kategoriler
-      SELECT 
-        child.id,
-        ch.level + 1,
-        child_ct.name,
-        child_ct.locale
-      FROM "Category" child
-      INNER JOIN "CategoryTranslation" child_ct ON child.id = child_ct."categoryId"
-      INNER JOIN category_hierarchy ch ON child."parentCategoryId" = ch.id
-      WHERE child_ct.locale = 'TR'
-        ${currentCategoryId ? Prisma.sql`AND child.id != ${currentCategoryId}` : Prisma.empty}
-        AND ch.level < 10 -- Sonsuz döngü koruması
-    )
-    SELECT DISTINCT id, level, name, locale
-    FROM category_hierarchy
-    ORDER BY level ASC, name ASC
-  `;
-
-    return result.map((category) => ({
-      value: category.id,
-      label: `${'  '.repeat(category.level)}${category.name}`, // Indentation ile hierarchy gösterimi
-    }));
-  }
-
-  async getAllCategoriesWithoutQuery() {
-    return this.prismaService.category.findMany({
-      select: {
-        translations: {
-          select: {
-            locale: true,
-            name: true,
-          },
+  async getCategoryFormValue(id: string): Promise<CategoryZodType> {
+    try {
+      const category = await this.prismaService.category.findUnique({
+        where: { id },
+        include: {
+          image: true,
+          translations: true,
         },
-        id: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-  async getAllCategoriesOnlyIdAndName(): Promise<CategoryIdAndName[]> {
-    const categories = await this.prismaService.category.findMany({
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        translations: {
-          select: {
-            name: true,
-            locale: true,
-          },
-        },
-      },
-    });
-    return categories.map((category) => ({
-      id: category.id,
-      name:
-        category.translations.find((t) => t.locale === 'TR')?.name ||
-        category.translations[0]?.name ||
-        'İsimsiz Kategori',
-    }));
-  }
-  async getAllCategoriesOnlyIdNameImage(): Promise<
-    Array<
-      CategoryIdAndName & {
-        image: { url: string; type: $Enums.AssetType } | null;
-      }
-    >
-  > {
-    const categories = await this.prismaService.category.findMany({
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        image: {
-          select: {
-            url: true,
-            type: true,
-          },
-        },
-        translations: {
-          select: {
-            name: true,
-            locale: true,
-          },
-        },
-      },
-    });
-    return categories.map((category) => ({
-      id: category.id,
-      name:
-        category.translations.find((t) => t.locale === 'TR')?.name ||
-        category.translations[0]?.name ||
-        'İsimsiz Kategori',
-      image: category.image
-        ? { url: category.image.url, type: category.image.type }
-        : null,
-    }));
-  }
-
-  async getAllCategoryAndItsSubs(): Promise<DiscountItem[]> {
-    const flatCategories = await this.prismaService.$queryRaw<FlatItem[]>`
-    WITH RECURSIVE CategoryHierarchy AS (
-      -- Root kategorileri getir
-      SELECT c.id, c."parentCategoryId"
-      FROM "Category" AS c
-      WHERE c."parentCategoryId" IS NULL
-      
-      UNION ALL
-      
-      -- Alt kategorileri recursive olarak getir
-      SELECT c.id, c."parentCategoryId"
-      FROM "Category" AS c
-      JOIN CategoryHierarchy AS ch ON c."parentCategoryId" = ch.id
-    ),
-    CategoryWithTranslations AS (
-      SELECT 
-        ch.id,
-        ch."parentCategoryId",
-        ct.name,
-        ct.locale,
-        ROW_NUMBER() OVER (
-          PARTITION BY ch.id 
-          ORDER BY 
-            CASE WHEN ct.locale = 'TR' THEN 0 ELSE 1 END,
-            ct.locale
-        ) as rn
-      FROM CategoryHierarchy ch
-      LEFT JOIN "CategoryTranslation" ct ON ch.id = ct."categoryId"
-    )
-    SELECT 
-      id,
-      "parentCategoryId",
-      name
-    FROM CategoryWithTranslations
-    WHERE rn = 1;
-  `;
-
-    const nodeMap = new Map<string, DiscountItem>();
-    const result: DiscountItem[] = [];
-
-    // Tüm node'ları oluştur
-    flatCategories.forEach((item) => {
-      nodeMap.set(item.id, {
-        id: item.id,
-        name: item.name || 'Unnamed',
-        sub: [],
       });
-    });
-
-    flatCategories.forEach((item) => {
-      const currentNode = nodeMap.get(item.id);
-      if (!currentNode) return;
-
-      if (item.parentId) {
-        const parentNode = nodeMap.get(item.parentId);
-        if (parentNode) {
-          parentNode.sub!.push(currentNode);
-        }
-      } else {
-        result.push(currentNode);
+      if (!category) {
+        throw new NotFoundException('Kategori bulunamadı');
       }
-    });
+      return {
+        translations: category.translations.map((t) => ({
+          name: t.name,
+          slug: t.slug,
+          description: t.description,
+          locale: t.locale,
+          metaDescription: t.metaDescription,
+          metaTitle: t.metaTitle,
+        })),
+        uniqueId: category.id,
+        existingImage: category.image ? category.image?.url : null,
+        image: null,
+        parentId: category.parentCategoryId || null,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Kategori form verisi getirilirken bir hata oluştu',
+      );
+    }
+  }
 
-    // Boş sub array'leri temizle
-    nodeMap.forEach((node) => {
-      if (node.sub && node.sub.length === 0) {
-        delete node.sub;
+  async getAllCategoriesForSelect(excludeCategoryId?: string): Promise<
+    Array<{
+      group: string;
+      items: Array<{ value: string; label: string; disabled?: boolean }>;
+    }>
+  > {
+    try {
+      const categories = await this.prismaService.category.findMany({
+        select: adminCategoryTableQuery,
+        orderBy: { createdAt: 'asc' },
+      });
+
+      const tree = this.buildCategoryTree(
+        categories,
+        null,
+        0,
+        excludeCategoryId,
+      );
+
+      return this.convertToGroupedFormat(tree, categories);
+    } catch (error) {
+      this.logger.error('Error fetching categories for select', error);
+      throw new InternalServerErrorException('Failed to fetch categories');
+    }
+  }
+
+  private convertToGroupedFormat(
+    tree: Array<{
+      id: string;
+      name: string;
+      level: number;
+      disabled?: boolean;
+    }>,
+    allCategories: AdminCategoryTableReturnType['categories'],
+  ): Array<{
+    group: string;
+    items: Array<{ value: string; label: string; disabled?: boolean }>;
+  }> {
+    const result: Array<{
+      group: string;
+      items: Array<{ value: string; label: string; disabled?: boolean }>;
+    }> = [];
+
+    const rootCategories = tree.filter((cat) => cat.level === 0);
+
+    for (const root of rootCategories) {
+      const groupItems: Array<{
+        value: string;
+        label: string;
+        disabled?: boolean;
+      }> = [];
+
+      groupItems.push({
+        value: root.id,
+        label: root.name,
+        disabled: root.disabled,
+      });
+
+      const children = tree.filter((cat) => {
+        const category = allCategories.find((c) => c.id === cat.id);
+        return this.isChildOf(allCategories, category?.id || '', root.id);
+      });
+
+      for (const child of children) {
+        groupItems.push({
+          value: child.id,
+          label: '—'.repeat(child.level) + ' ' + child.name,
+          disabled: child.disabled,
+        });
       }
-    });
+
+      result.push({
+        group: root.name,
+        items: groupItems,
+      });
+    }
 
     return result;
+  }
+
+  private isChildOf(
+    categories: AdminCategoryTableReturnType['categories'],
+    childId: string,
+    parentId: string,
+  ): boolean {
+    const category = categories.find((c) => c.id === childId);
+    if (!category) return false;
+
+    if (category.parentCategoryId === parentId) return true;
+
+    if (category.parentCategoryId) {
+      return this.isChildOf(categories, category.parentCategoryId, parentId);
+    }
+
+    return false;
+  }
+
+  private buildCategoryTree(
+    categories: AdminCategoryTableReturnType['categories'],
+    parentId: string | null = null,
+    level: number = 0,
+    excludeId?: string,
+  ): Array<{ id: string; name: string; level: number; disabled?: boolean }> {
+    const result = [];
+
+    for (const category of categories) {
+      if (category.parentCategoryId === parentId) {
+        const name = category.translations[0]?.name || 'İsimsiz Kategori';
+
+        const disabled = excludeId
+          ? this.isDescendant(categories, excludeId, category.id)
+          : false;
+
+        result.push({
+          id: category.id,
+          name,
+          level,
+          disabled,
+        });
+
+        result.push(
+          ...this.buildCategoryTree(
+            categories,
+            category.id,
+            level + 1,
+            excludeId,
+          ),
+        );
+      }
+    }
+
+    return result;
+  }
+
+  private isDescendant(
+    categories: AdminCategoryTableReturnType['categories'],
+    ancestorId: string,
+    categoryId: string,
+  ): boolean {
+    if (ancestorId === categoryId) return true;
+
+    const children = categories.filter(
+      (c) => c.parentCategoryId === categoryId,
+    );
+
+    for (const child of children) {
+      if (this.isDescendant(categories, ancestorId, child.id)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  async getAllCategoriesOnlyIdAndName(): Promise<CategoryIdAndName[]> {
+    try {
+      const categories = await this.prismaService.category.findMany({
+        select: {
+          id: true,
+          translations: true,
+        },
+      });
+      const locale = this.localeService.getLocale();
+      return categories.map((category) => ({
+        id: category.id,
+        name:
+          category.translations.find((t) => t.locale === locale)?.name ||
+          category.translations[0]?.name ||
+          'N/A',
+      }));
+    } catch (error) {
+      this.logger.error('Error fetching categories id and name', error);
+      throw new InternalServerErrorException(
+        'Failed to fetch categories id and name',
+      );
+    }
   }
 }

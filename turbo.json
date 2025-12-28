@@ -13,9 +13,9 @@
       "env": [
         "BACKEND_URL",
         "NEXT_PUBLIC_BACKEND_URL",
-        "NEXT_PUBLIC_BASE_URL",
+        "NEXT_PUBLIC_APP_URL",
         "JWT_ACCESS_TOKEN_SECRET",
-        "INDEX_PAGE"
+        "ALLOWED_IMAGE_DOMAINS"
       ],
       "outputs": [".next/**", "!.next/cache/**"]
     },
@@ -95,9 +95,9 @@
       "env": [
         "BACKEND_URL",
         "NEXT_PUBLIC_BACKEND_URL",
-        "NEXT_PUBLIC_BASE_URL",
+        "NEXT_PUBLIC_APP_URL",
         "JWT_ACCESS_TOKEN_SECRET",
-        "INDEX_PAGE"
+        "ALLOWED_IMAGE_DOMAINS"
       ]
     },
     "database#build": {
@@ -117,17 +117,6 @@
       "persistent": true
     },
     "db:deploy": {
-      "cache": false,
-      "outputs": [],
-      "env": ["DATABASE_URL"]
-    },
-    "db:views": {
-      "cache": false,
-      "outputs": [],
-      "env": ["DATABASE_URL"]
-    },
-    "db:deploy:full": {
-      "dependsOn": ["db:deploy", "db:views"],
       "cache": false,
       "outputs": [],
       "env": ["DATABASE_URL"]

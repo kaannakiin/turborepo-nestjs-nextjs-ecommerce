@@ -2,7 +2,7 @@ import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import { useTheme } from "@/context/theme-context/ThemeContext";
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { Box, Container, Stack, Text, Title } from "@mantine/core";
-import { keepPreviousData, useQuery, useQueryClient } from "@repo/shared";
+import { keepPreviousData, useQuery } from "@repo/shared";
 import { ProductCarouselComponentInputType, ProductCart } from "@repo/types";
 import { useMemo } from "react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
@@ -20,7 +20,6 @@ interface FirstThemeProductCarouselProps {
 const FirstThemeProductCarousel = ({
   data,
 }: FirstThemeProductCarouselProps) => {
-  const queryClient = useQueryClient();
   const { config, title, description } = data;
 
   const { actualMedia: media } = useTheme();
@@ -40,12 +39,12 @@ const FirstThemeProductCarousel = ({
 
   const { data: productsData, isLoading } = useQuery({
     queryKey: queryKey,
-    queryFn: async () => {
+    queryFn: async ({ client }) => {
       if (productIds.length === 0 && variantIds.length === 0) {
         return { products: [], variants: [] };
       }
 
-      const existingQueries = queryClient.getQueriesData<{
+      const existingQueries = client.getQueriesData<{
         products: ProductCart[];
         variants: ProductCart[];
       }>({ queryKey: ["theme-carousel"] });

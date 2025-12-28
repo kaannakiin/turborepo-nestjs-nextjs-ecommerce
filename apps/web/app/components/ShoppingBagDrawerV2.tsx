@@ -1,5 +1,5 @@
 "use client";
-import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
+import PriceFormatter from "@/(user)/components/PriceFormatter";
 import { useCartV3 } from "@/context/cart-context/CartContextV3";
 import {
   ActionIcon,
@@ -248,14 +248,14 @@ const ShoppingBagDrawerV2 = () => {
                                 {item.discountedPrice &&
                                 item.discountedPrice < item.price ? (
                                   <>
-                                    <ProductPriceFormatter
+                                    <PriceFormatter
                                       size="sm"
                                       td="line-through"
                                       c="dimmed"
                                       ta="end"
                                       price={item.price * item.quantity}
                                     />
-                                    <ProductPriceFormatter
+                                    <PriceFormatter
                                       size="md"
                                       fw={700}
                                       ta={"end"}
@@ -265,7 +265,7 @@ const ShoppingBagDrawerV2 = () => {
                                     />
                                   </>
                                 ) : (
-                                  <ProductPriceFormatter
+                                  <PriceFormatter
                                     size="md"
                                     fw={700}
                                     ta={"end"}
@@ -296,7 +296,7 @@ const ShoppingBagDrawerV2 = () => {
                       {cart.totalDiscount > 0 ? "Ara Toplam" : "Toplam"}
                     </Text>
                     <Stack gap="xs" align="flex-end">
-                      <ProductPriceFormatter
+                      <PriceFormatter
                         fz={"md"}
                         fw={500}
                         c={"dimmed"}
@@ -316,7 +316,7 @@ const ShoppingBagDrawerV2 = () => {
                         İndirim
                       </Text>
                       <Stack gap="xs" align="flex-end">
-                        <ProductPriceFormatter
+                        <PriceFormatter
                           fz={"md"}
                           fw={500}
                           c={"dimmed"}
@@ -337,7 +337,7 @@ const ShoppingBagDrawerV2 = () => {
                         Toplam
                       </Text>
                       <Stack gap="xs" align="flex-end">
-                        <ProductPriceFormatter
+                        <PriceFormatter
                           fz={"md"}
                           fw={500}
                           c={"dimmed"}

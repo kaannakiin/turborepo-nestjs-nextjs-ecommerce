@@ -3,7 +3,36 @@ import { CountryType, Locale } from "../../generated/prisma/enums.js";
 import { Prisma, prisma } from "../index";
 const TURKEY_DB_ID = "da8c5f2a-8d37-48a8-beff-6ab3793a1861";
 
-// Kullanıcıdan input almak için yardımcı fonksiyon
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const DELAY_BETWEEN_COUNTRIES = 200;
+const DELAY_BETWEEN_STATES = 100;
+const DELAY_BETWEEN_CITIES = 100;
+const DELAY_BETWEEN_DISTRICTS = 150;
+const DELAY_ON_RATE_LIMIT = 5000;
+
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  maxRetries: number = 3
+): Promise<Response> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const response = await fetch(url, options);
+
+    if (response.status === 429) {
+      console.log(
+        `   ⏳ Rate limited (429), waiting ${DELAY_ON_RATE_LIMIT / 1000}s before retry ${attempt}/${maxRetries}...`
+      );
+      await sleep(DELAY_ON_RATE_LIMIT);
+      continue;
+    }
+
+    return response;
+  }
+
+  throw new Error(`Max retries (${maxRetries}) exceeded due to rate limiting`);
+}
+
 function promptUser(question: string): Promise<string> {
   const rl = readline.createInterface({
     input: process.stdin,
@@ -52,7 +81,7 @@ async function fetchCountries() {
     };
 
     console.log("\n🌍 Fetching countries from API...");
-    const response = await fetch(
+    const response = await fetchWithRetry(
       "https://api.myikas.com/api/v1/admin/graphql",
       {
         method: "POST",
@@ -102,7 +131,8 @@ async function fetchCountries() {
       try {
         console.log(`\n📍 Processing country: ${country.name}`);
 
-        // Önce state'leri kontrol et
+        await sleep(DELAY_BETWEEN_COUNTRIES);
+
         const stateQuery = {
           query: `{
             listState(countryId: { eq: "${country.id}" }) {
@@ -114,7 +144,7 @@ async function fetchCountries() {
           }`,
         };
 
-        const stateResponse = await fetch(
+        const stateResponse = await fetchWithRetry(
           "https://api.myikas.com/api/v1/admin/graphql",
           {
             method: "POST",
@@ -142,7 +172,8 @@ async function fetchCountries() {
           };
         };
 
-        // Ülke tipini belirle
+        await sleep(DELAY_BETWEEN_STATES);
+
         let countryType: CountryType;
         let shouldFetchCities = false;
         let shouldCreateStates = false;
@@ -166,7 +197,6 @@ async function fetchCountries() {
           );
         }
 
-        // Ülkeyi veritabanına kaydet
         await prisma.country.create({
           data: {
             id: country.id,
@@ -207,7 +237,6 @@ async function fetchCountries() {
         });
         console.log(`   ✅ Country created`);
 
-        // Sadece gerçek state'leri kaydet
         if (shouldCreateStates) {
           for (const state of stateData.data.listState) {
             await prisma.state.create({
@@ -224,7 +253,6 @@ async function fetchCountries() {
           );
         }
 
-        // CITY tipindeki ülkeler için şehirleri direkt country'ye bağla
         if (shouldFetchCities) {
           const defaultState = stateData.data.listState[0];
 
@@ -241,7 +269,7 @@ async function fetchCountries() {
             }`,
           };
 
-          const cityResponse = await fetch(
+          const cityResponse = await fetchWithRetry(
             "https://api.myikas.com/api/v1/admin/graphql",
             {
               method: "POST",
@@ -251,6 +279,8 @@ async function fetchCountries() {
               body: JSON.stringify(cityQuery),
             }
           );
+
+          await sleep(DELAY_BETWEEN_CITIES);
 
           if (cityResponse.ok) {
             const cityData = (await cityResponse.json()) as {
@@ -306,7 +336,6 @@ async function seedTurkeyDistricts() {
   try {
     console.log("\n🇹🇷 Starting Turkey districts seed...");
 
-    // Önce mevcut district'leri temizle
     const deletedDistricts = await prisma.district.deleteMany({
       where: {
         city: {
@@ -318,7 +347,6 @@ async function seedTurkeyDistricts() {
       `🧹 Cleared ${deletedDistricts.count} existing Turkey districts`
     );
 
-    // Türkiye'deki tüm şehirleri çek
     const turkeyCities = await prisma.city.findMany({
       where: { countryId: TURKEY_DB_ID },
       orderBy: { name: "asc" },
@@ -341,6 +369,8 @@ async function seedTurkeyDistricts() {
       try {
         console.log(`\n🏙️ Processing: ${city.name}`);
 
+        await sleep(DELAY_BETWEEN_DISTRICTS);
+
         const districtQuery = {
           query: `{
             listDistrict(cityId: { eq: "${city.id}" }) {
@@ -354,7 +384,7 @@ async function seedTurkeyDistricts() {
           }`,
         };
 
-        const response = await fetch(
+        const response = await fetchWithRetry(
           "https://api.myikas.com/api/v1/admin/graphql",
           {
             method: "POST",
@@ -398,7 +428,6 @@ async function seedTurkeyDistricts() {
           continue;
         }
 
-        // District'leri sırala ve database formatına çevir
         const createManyDistrict: Prisma.DistrictCreateManyInput[] = districts
           .sort((a, b) => a.order - b.order)
           .map((district) => ({
@@ -407,7 +436,6 @@ async function seedTurkeyDistricts() {
             cityId: city.id,
           }));
 
-        // District'leri toplu olarak oluştur
         const result = await prisma.district.createMany({
           data: createManyDistrict,
           skipDuplicates: true,
@@ -485,7 +513,6 @@ async function main() {
   }
 }
 
-// Script'i çalıştır
 main()
   .then(() => {
     console.log("\n🎉 Seed script finished successfully!");

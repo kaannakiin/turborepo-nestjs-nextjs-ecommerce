@@ -1,8 +1,8 @@
 "use client";
 
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import { getQueryClient } from "@lib/serverQueryClient";
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
-import { queryClient } from "@lib/serverQueryClient";
 import {
   Button,
   Drawer,
@@ -61,7 +61,9 @@ const PayTRForm = ({
     if (res.success) {
       close();
       refetch?.();
-      queryClient.invalidateQueries({ queryKey: ["admin-payment-methods"] });
+      getQueryClient().invalidateQueries({
+        queryKey: ["admin-payment-methods"],
+      });
     }
   };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import ActionPopover from "@/(admin)/components/ActionPopover";
-import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
+import PriceFormatter from "@/(user)/components/PriceFormatter";
 import GlobalLoader from "@/components/GlobalLoader";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import { getConditionText, getSelectionTextShipping } from "@lib/helpers";
@@ -292,7 +292,7 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
                         <Text>{rule.name}</Text>
                         {rule.shippingPrice > 0 ? (
                           <Group gap={"1px"} wrap="nowrap" align="center">
-                            <ProductPriceFormatter
+                            <PriceFormatter
                               fz={"xs"}
                               price={rule.shippingPrice}
                               currency={rule.currency}

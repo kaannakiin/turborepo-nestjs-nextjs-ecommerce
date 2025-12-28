@@ -2,7 +2,7 @@
 
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
-import { queryClient } from "@lib/serverQueryClient";
+import { getQueryClient } from "@lib/serverQueryClient";
 import {
   Button,
   Drawer,
@@ -62,7 +62,9 @@ const Iyzicoform = ({
     if (res.success) {
       close();
       refetch?.();
-      queryClient.invalidateQueries({ queryKey: ["admin-payment-methods"] });
+      getQueryClient().invalidateQueries({
+        queryKey: ["admin-payment-methods"],
+      });
     }
   };
   return (

@@ -9,12 +9,11 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
-  UsePipes,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
-  Brand,
   BrandSchema,
+  BrandZodType,
   Cuid2Schema,
   type Cuid2ZodType,
 } from '@repo/types';
@@ -25,21 +24,50 @@ import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import { Roles } from 'src/user/reflectors/roles.decorator';
 import { BrandsService } from './brands.service';
 
-@Controller('/admin/products/brands')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(['ADMIN', 'OWNER'])
+@Controller('/admin/products/brands')
 export class BrandsController {
   constructor(private readonly brandsService: BrandsService) {}
 
+  @Get()
+  async getBrands(
+    @Query('search') search?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.brandsService.getBrands({ search, page, limit });
+  }
+
+  @Get('get-brand-form-value/:id')
+  async getBrandForForm(
+    @Param('id', new ZodValidationPipe(Cuid2Schema)) id: Cuid2ZodType,
+  ) {
+    return this.brandsService.getBrandFormValue(id);
+  }
+
+  @Get('get-all-brands-only-id-and-name')
+  async getAllBrandsIdsAndName() {
+    return this.brandsService.getAllBrandsIdsAndName();
+  }
+
   @Post('create-or-update-brand')
-  @UsePipes(new ZodValidationPipe(BrandSchema.omit({ image: true })))
-  async createOrUpdateBrand(@Body() data: Omit<Brand, 'image'>) {
+  async createOrUpdateBrand(
+    @Body(
+      new ZodValidationPipe(
+        BrandSchema.omit({
+          image: true,
+        }),
+      ),
+    )
+    data: Omit<BrandZodType, 'image'>,
+  ) {
     return this.brandsService.createOrUpdateBrand(data);
   }
 
-  @Post('update-brand-image/:id')
+  @Post('upload-brand-image/:id')
   @UseInterceptors(FileInterceptor('file'))
-  async updateBrandImage(
+  async uploadBrandImage(
     @UploadedFile(
       new FilesValidationPipe({
         types: 'IMAGE',
@@ -47,80 +75,20 @@ export class BrandsController {
       }),
     )
     file: Express.Multer.File,
-    @Param('id', new ZodValidationPipe(Cuid2Schema)) id: Cuid2ZodType, // ✅ Düzeltilmiş
+    @Param('id', new ZodValidationPipe(Cuid2Schema)) id: Cuid2ZodType,
   ) {
-    return this.brandsService.updateBrandImage(file, id);
+    return this.brandsService.uploadBrandImage(id, file);
   }
 
-  @Get('get-all-brands')
-  async getAllBrands(
-    @Query('search') search?: string,
-    @Query('page') page?: string,
+  @Delete('delete-brand-image/:id')
+  async deleteBrandImage(@Param('id') id: string) {
+    return this.brandsService.deleteBrandImage(id);
+  }
+
+  @Delete(':id')
+  async deleteBrand(
+    @Param('id', new ZodValidationPipe(Cuid2Schema)) id: Cuid2ZodType,
   ) {
-    const pageNumber = page ? parseInt(page) : 1;
-    const brands = await this.brandsService.getAllBrands(search, pageNumber);
-    const total = await this.brandsService.getBrandsCount(search);
-
-    return {
-      success: true,
-      data: brands,
-      pagination: {
-        currentPage: pageNumber,
-        totalPages: Math.ceil(total / 10),
-        totalItems: total,
-        itemsPerPage: 10,
-      },
-    };
-  }
-  @Get('get-all-brands-without-query')
-  async getAllBrandsWithoutQuery() {
-    return this.brandsService.getAllBrandsWithoutQuery();
-  }
-
-  @Delete('delete-brand/:id')
-  async deleteBrand(@Param('id') id: Cuid2ZodType) {
     return this.brandsService.deleteBrand(id);
-  }
-
-  @Get('get-brand/:id')
-  async getBrand(@Param('id') id: Cuid2ZodType) {
-    return this.brandsService.getBrand(id);
-  }
-
-  @Delete('delete-brand-image/:url')
-  async deleteBrandImage(@Param('url') url: string) {
-    return this.brandsService.deleteBrandImage(url);
-  }
-
-  @Get('get-all-parent-brands/:id')
-  async getAllParentBrands(@Param('id') id: Cuid2ZodType) {
-    const brands = await this.brandsService.getAllParentBrands(id);
-    return {
-      success: true,
-      data: brands,
-    };
-  }
-
-  @Get('get-all-parent-brands')
-  async getAllParentBrandsForNew() {
-    const brands = await this.brandsService.getAllParentBrands();
-    return {
-      success: true,
-      data: brands,
-    };
-  }
-  @Get('get-all-brands-only-id-and-name')
-  async getAllBrandsOnlyIdAndName() {
-    return this.brandsService.getAllBrandsOnlyIdAndName();
-  }
-
-  @Get('get-all-brands-only-id-name-image')
-  async getAllBrandsOnlyIdNameImage() {
-    return this.brandsService.getAllBrandsOnlyIdNameImage();
-  }
-
-  @Get('get-all-brands-and-its-subs')
-  async getAllBrandsAndItsSubs() {
-    return this.brandsService.getAllBrandsAndItsSubs();
   }
 }

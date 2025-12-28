@@ -20,28 +20,28 @@ import { CartsService } from './carts.service';
 export class CartsController {
   constructor(private readonly cartsService: CartsService) {}
 
-  @Get()
-  async getAllCarts(
-    @Query('page', new ParseIntPipe()) page: number,
-    @Query('limit', new ParseIntPipe()) limit: number,
-    @Query('startDate', ParseIsoStringPipe) startDate?: Date,
-    @Query('endDate', ParseIsoStringPipe) endDate?: Date,
-    @Query('search') search?: string,
-    @Query('status', new ParseEnumPipe($Enums.CartStatus, { optional: true }))
-    status?: $Enums.CartStatus,
-  ) {
-    return this.cartsService.getAllCarts({
-      page,
-      limit,
-      search,
-      status,
-      startDate,
-      endDate,
-    });
-  }
+  // @Get()
+  // async getAllCarts(
+  //   @Query('page', new ParseIntPipe()) page: number,
+  //   @Query('limit', new ParseIntPipe()) limit: number,
+  //   @Query('startDate', ParseIsoStringPipe) startDate?: Date,
+  //   @Query('endDate', ParseIsoStringPipe) endDate?: Date,
+  //   @Query('search') search?: string,
+  //   @Query('status', new ParseEnumPipe($Enums.CartStatus, { optional: true }))
+  //   status?: $Enums.CartStatus,
+  // ) {
+  //   return this.cartsService.getAllCarts({
+  //     page,
+  //     limit,
+  //     search,
+  //     status,
+  //     startDate,
+  //     endDate,
+  //   });
+  // }
 
-  @Get('/:cartId')
-  async getCartById(@Param('cartId') cartId: string) {
-    return this.cartsService.getCartForAdmin(cartId);
-  }
+  // @Get('/:cartId')
+  // async getCartById(@Param('cartId') cartId: string) {
+  //   return this.cartsService.getCartForAdmin(cartId);
+  // }
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import SelectableUserModal from "@/components/modals/user-modal/SelectableUserModal";
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
   ActionIcon,
@@ -17,7 +18,6 @@ import { useDisclosure } from "@mantine/hooks";
 import { Control, Controller, UseFormSetValue, useQuery } from "@repo/shared";
 import { AllUsersReturnType, MainDiscount } from "@repo/types";
 import { IconTrash, IconUser, IconUsers } from "@tabler/icons-react";
-import DiscountModal from "./DiscountModal";
 import FormCard from "./FormCard";
 
 interface DiscountCustomerFormProps {
@@ -185,24 +185,18 @@ const DiscountCustomerForm = ({
             )}
         </Stack>
       </FormCard>
-      {!allCustomers && data && data.length > 0 && (
-        <DiscountModal
-          isLoading={isLoading}
+      {!allCustomers && (
+        <SelectableUserModal
           opened={opened}
           onClose={close}
-          dataTitle="Kişi"
-          selectedItems={selectedCustomers}
-          data={data.map((user) => ({
-            id: user.id,
-            name: `${user.name} ${user.surname} / ${user.email || user.phone}`,
-            sub: [],
-          }))}
-          modalProps={{
-            title: "Müşteri Seç",
-          }}
-          onSave={(data) => {
-            setValue("otherCustomers", data);
-            close();
+          selectedIds={selectedCustomers}
+          multiple
+          title="Kullanıcı Seçim Ekranı"
+          onSubmit={(data) => {
+            setValue(
+              "otherCustomers",
+              data.map((data) => data.id)
+            );
           }}
         />
       )}

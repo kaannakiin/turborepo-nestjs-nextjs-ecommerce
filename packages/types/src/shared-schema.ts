@@ -124,7 +124,6 @@ export const productQueryIncludeV2 = {
       },
     },
   },
-  prices: true,
   translations: true,
 } as const satisfies Prisma.ProductInclude;
 

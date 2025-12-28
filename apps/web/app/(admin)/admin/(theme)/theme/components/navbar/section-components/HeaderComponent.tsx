@@ -1,7 +1,7 @@
 "use client";
-import AdminBrandDataSelect from "@/components/inputs/AdminBrandDataSelect";
-import AdminCategoryDataSelect from "@/components/inputs/AdminCategoryDataSelect";
-import AdminTagDataSelect from "@/components/inputs/AdminTagDataSelect";
+import AdminBrandDataSelect from "@/components/inputs/admin/AdminBrandDataSelect";
+import AdminCategoryDataSelect from "@/components/inputs/admin/AdminCategoryDataSelect";
+import AdminTagDataSelect from "@/components/inputs/admin/AdminTagDataSelect";
 import IconDropzone from "@/components/inputs/IconDropzone";
 import {
   closestCenter,

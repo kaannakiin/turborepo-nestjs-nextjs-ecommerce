@@ -1,6 +1,6 @@
 "use client";
 
-import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
+import PriceFormatter from "@/(user)/components/PriceFormatter";
 import CustomImage from "@/components/CustomImage";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
@@ -104,7 +104,7 @@ const AdminOrderViewPage = () => {
                       <Table.Th>Toplam Tutar</Table.Th>
                     </Table.Tr>
                   </Table.Thead>
-                  {itemSchema && itemSchema.length > 0 && (
+                  {/* {itemSchema && itemSchema.length > 0 && (
                     <Table.Tbody>
                       {itemSchema.map((item) => {
                         const productName =
@@ -193,7 +193,7 @@ const AdminOrderViewPage = () => {
                             </Table.Td>
 
                             <Table.Td>
-                              <ProductPriceFormatter
+                              <PriceFormatter
                                 price={item.buyedPrice}
                                 currency={currency}
                                 fw={500}
@@ -201,7 +201,7 @@ const AdminOrderViewPage = () => {
                             </Table.Td>
 
                             <Table.Td>
-                              <ProductPriceFormatter
+                              <PriceFormatter
                                 price={item.totalFinalPrice}
                                 currency={currency}
                                 fw={600}
@@ -212,7 +212,7 @@ const AdminOrderViewPage = () => {
                         );
                       })}
                     </Table.Tbody>
-                  )}
+                  )} */}
                 </Table>
               </Table.ScrollContainer>
             </FormCard>
@@ -300,13 +300,13 @@ const AdminOrderViewPage = () => {
 
               <Group justify="space-between">
                 <Text>Ara Toplam</Text>
-                <ProductPriceFormatter price={data.totalPrice} fw={500} />
+                <PriceFormatter price={data.totalPrice} fw={500} />
               </Group>
 
               {Number(data.discountAmount) > 0 && (
                 <Group justify="space-between">
                   <Text c="green.7">İndirim Tutarı</Text>
-                  <ProductPriceFormatter
+                  <PriceFormatter
                     price={Number(data.discountAmount)}
                     c="green.7"
                     fw={500}
@@ -324,10 +324,7 @@ const AdminOrderViewPage = () => {
                   )}
                 </Text>
                 {cargoRuleSnapshot.price > 0 ? (
-                  <ProductPriceFormatter
-                    price={cargoRuleSnapshot.price}
-                    fw={500}
-                  />
+                  <PriceFormatter price={cargoRuleSnapshot.price} fw={500} />
                 ) : (
                   <Text c="green.7" fw={500}>
                     Ücretsiz
@@ -341,11 +338,7 @@ const AdminOrderViewPage = () => {
                 <Text fw={600} fz="lg">
                   Toplam
                 </Text>
-                <ProductPriceFormatter
-                  price={data.totalFinalPrice}
-                  fw={700}
-                  fz="lg"
-                />
+                <PriceFormatter price={data.totalFinalPrice} fw={700} fz="lg" />
               </Group>
             </FormCard>
             {data.transactions && data.transactions.length > 0 && (
@@ -405,7 +398,7 @@ const AdminOrderViewPage = () => {
                                   >
                                     {getPaymentStatusLabel(transaction.status)}
                                   </Badge>
-                                  <ProductPriceFormatter
+                                  <PriceFormatter
                                     price={transaction.amount}
                                     fw={700}
                                     fz="xl"

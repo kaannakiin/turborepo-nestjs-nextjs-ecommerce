@@ -10,7 +10,7 @@ import {
 } from "@mantine/core";
 import { OrderItemWithSnapshot } from "@repo/types";
 import { Locale, Currency } from "@repo/database/client";
-import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
+import PriceFormatter from "@/(user)/components/PriceFormatter";
 import CustomImage from "@/components/CustomImage";
 
 interface AdminOrderItemCardProps {
@@ -24,16 +24,16 @@ const AdminOrderItemCard = ({
   locale = "TR",
   currency = "TRY",
 }: AdminOrderItemCardProps) => {
-  const getProductName = () => {
-    const translation = item.productSnapshot.translations.find(
-      (t) => t.locale === locale
-    );
-    return (
-      translation?.name ||
-      item.productSnapshot.translations[0]?.name ||
-      "İsimsiz Ürün"
-    );
-  };
+  // const getProductName = () => {
+  //   const translation = item.productSnapshot.translations.find(
+  //     (t) => t.locale === locale
+  //   );
+  //   return (
+  //     translation?.name ||
+  //     item.productSnapshot.translations[0]?.name ||
+  //     "İsimsiz Ürün"
+  //   );
+  // };
 
   const getVariantOptions = () => {
     if (!item.variantSnapshot?.options) return null;
@@ -50,47 +50,47 @@ const AdminOrderItemCard = ({
       .join(" - ");
   };
 
-  const getFullProductName = () => {
-    const productName = getProductName();
-    const variantOptions = getVariantOptions();
+  // const getFullProductName = () => {
+  //   // const productName = getProductName();
+  //   const variantOptions = getVariantOptions();
 
-    if (variantOptions) {
-      return `${productName} - ${variantOptions}`;
-    }
+  //   if (variantOptions) {
+  //     return `${productName} - ${variantOptions}`;
+  //   }
 
-    return productName;
-  };
+  //   return productName;
+  // };
 
-  const getImageUrl = () => {
-    if (
-      item.variantSnapshot?.assets &&
-      item.variantSnapshot.assets.length > 0
-    ) {
-      return item.variantSnapshot.assets[0].asset.url;
-    }
+  // const getImageUrl = () => {
+  //   if (
+  //     item.variantSnapshot?.assets &&
+  //     item.variantSnapshot.assets.length > 0
+  //   ) {
+  //     return item.variantSnapshot.assets[0].asset.url;
+  //   }
 
-    if (item.productSnapshot.assets && item.productSnapshot.assets.length > 0) {
-      return item.productSnapshot.assets[0].asset.url;
-    }
+  //   if (item.productSnapshot.assets && item.productSnapshot.assets.length > 0) {
+  //     return item.productSnapshot.assets[0].asset.url;
+  //   }
 
-    return null;
-  };
+  //   return null;
+  // };
 
-  const imageUrl = getImageUrl();
-  const fullProductName = getFullProductName();
+  // const imageUrl = getImageUrl();
+  // const fullProductName = getFullProductName();
 
   return (
     <Card shadow="sm" padding="md" radius="md" withBorder>
       <Group wrap="nowrap" gap="md">
-        {imageUrl && (
+        {/* {imageUrl && (
           <AspectRatio ratio={1} pos={"relative"} maw={200}>
             <CustomImage src={imageUrl} />
           </AspectRatio>
-        )}
+        )} */}
         <Stack gap="xs" style={{ flex: 1 }}>
-          <Text size="sm" fw={600} lineClamp={2}>
+          {/* <Text size="sm" fw={600} lineClamp={2}>
             {fullProductName}
-          </Text>
+          </Text> */}
 
           {item.variantSnapshot?.options && (
             <Group gap="xs">
@@ -131,11 +131,11 @@ const AdminOrderItemCard = ({
             </Group>
           )}
 
-          {(item.productSnapshot.sku || item.variantSnapshot?.sku) && (
+          {/* {(item.productSnapshot.sku || item.variantSnapshot?.sku) && (
             <Text size="xs" c="dimmed">
               SKU: {item.variantSnapshot?.sku || item.productSnapshot.sku}
             </Text>
-          )}
+          )} */}
         </Stack>
 
         <Stack gap="xs" align="flex-end" style={{ minWidth: 120 }}>
@@ -144,14 +144,14 @@ const AdminOrderItemCard = ({
           </Badge>
 
           <Stack gap={4} align="flex-end">
-            <ProductPriceFormatter
+            <PriceFormatter
               price={item.buyedPrice}
               currency={currency}
               size="sm"
               fw={600}
             />
 
-            <ProductPriceFormatter
+            <PriceFormatter
               price={item.totalFinalPrice}
               currency={currency}
               size="xs"
@@ -162,14 +162,11 @@ const AdminOrderItemCard = ({
             {item.discountAmount && Number(item.discountAmount) > 0 && (
               <Group gap={4}>
                 <Text size="xs" td="line-through" c="dimmed">
-                  <ProductPriceFormatter
-                    price={item.totalPrice}
-                    currency={currency}
-                  />
+                  <PriceFormatter price={item.totalPrice} currency={currency} />
                 </Text>
                 <Badge size="xs" color="green" variant="light">
                   -{" "}
-                  <ProductPriceFormatter
+                  <PriceFormatter
                     price={item.discountAmount}
                     currency={currency}
                   />

@@ -5,10 +5,10 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { GoogleCategoriesService } from './google-categories.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/user/reflectors/roles.decorator';
+import { GoogleCategoriesService } from './google-categories.service';
 
 @Controller('/admin/products/google-categories')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -44,16 +44,11 @@ export class GoogleCategoriesController {
     return { success: true, ids };
   }
 
-  /**
-   * Frontend'in seçili ID'nin adını gösterebilmesi için
-   * tek bir kategori detayını döndürür.
-   */
   @Get('get-category-details-by-id')
   async getCategoryDetailsById(@Query('id') id: string) {
     const category =
       await this.googleCategoriesService.getCategoryDetailsById(id);
     if (!category) {
-      // Hata yönetimi
       return { success: false, message: 'Category not found' };
     }
     return { success: true, category };

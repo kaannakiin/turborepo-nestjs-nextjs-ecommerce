@@ -143,7 +143,7 @@ export type GoogleTaxonomyCategory = Prisma.TaxonomyCategoryGetPayload<{
   };
 }>;
 
-export type Category = z.infer<typeof CategorySchema>;
+export type CategoryZodType = z.infer<typeof CategorySchema>;
 export type CategoryTranslation = z.infer<typeof CategoryTranslationSchema>;
 
 export type CategoryIdAndName = {

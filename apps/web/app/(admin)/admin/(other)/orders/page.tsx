@@ -1,5 +1,5 @@
 "use client";
-import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
+import PriceFormatter from "@/(user)/components/PriceFormatter";
 import CustomPagination from "@/components/CustomPagination";
 import CustomSearchInput from "@/components/CustomSearchInput";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
@@ -270,7 +270,7 @@ const AdminOrdersPage = () => {
                   </Table.Td>
                   <Table.Td>
                     <Stack gap={2}>
-                      <ProductPriceFormatter
+                      <PriceFormatter
                         price={order.totalFinalPrice}
                         currency={order.currency}
                       />

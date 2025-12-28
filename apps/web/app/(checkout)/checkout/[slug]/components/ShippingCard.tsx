@@ -1,6 +1,6 @@
 "use client";
 
-import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
+import PriceFormatter from "@/(user)/components/PriceFormatter";
 import {
   Box,
   Group,
@@ -52,11 +52,7 @@ const ShippingCard = ({ onEdit, cartData }: ShippingCardProps) => {
           <Group gap={"xs"} align="center">
             <Text fz={"sm"}>{cartData.methodTitle}</Text>
             {cartData.price > 0 ? (
-              <ProductPriceFormatter
-                fz={"sm"}
-                c={"dimmed"}
-                price={cartData.price}
-              />
+              <PriceFormatter fz={"sm"} c={"dimmed"} price={cartData.price} />
             ) : (
               <Text fz={"sm"} c={"dimmed"}>
                 / Ücretsiz
@@ -81,11 +77,7 @@ const ShippingCard = ({ onEdit, cartData }: ShippingCardProps) => {
             <Group gap={"xs"} align="center">
               <Text fz={"lg"}>{cartData.methodTitle}</Text>
               {cartData.price > 0 ? (
-                <ProductPriceFormatter
-                  fz={"lg"}
-                  c={"dimmed"}
-                  price={cartData.price}
-                />
+                <PriceFormatter fz={"lg"} c={"dimmed"} price={cartData.price} />
               ) : (
                 <Text fz={"lg"} c={"dimmed"}>
                   / Ücretsiz

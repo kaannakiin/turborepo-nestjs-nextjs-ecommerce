@@ -189,7 +189,6 @@ export type OrderItemWithSnapshot = Omit<
   OrderItemSchema,
   "prodcutSnapshot" | "variantSnapshot"
 > & {
-  productSnapshot: CartItemForPayment["product"];
   variantSnapshot?: CartItemForPayment["variant"];
 };
 export type OrderWithSnapshot = Omit<

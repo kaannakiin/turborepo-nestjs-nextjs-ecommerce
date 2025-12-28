@@ -1,9 +1,11 @@
 "use client";
 
+import TableAsset from "@/(admin)/components/TableAsset";
+import CustomPagination from "@/components/CustomPagination";
+import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
-  ActionIcon,
   Alert,
-  Badge,
+  AspectRatio,
   Button,
   Card,
   Center,
@@ -11,6 +13,7 @@ import {
   List,
   Modal,
   SimpleGrid,
+  Skeleton,
   Stack,
   Table,
   Text,
@@ -18,45 +21,37 @@ import {
   Title,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { DateFormatter, useQuery } from "@repo/shared";
-import { AdminProductTableData } from "@repo/types";
+import { Locale } from "@repo/database";
+import { useQuery } from "@repo/shared";
+import { AdminProductTableProductData, Pagination } from "@repo/types";
 import {
   IconAdjustments,
   IconCheck,
-  IconEdit,
   IconPackage,
   IconPlus,
 } from "@tabler/icons-react";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import CustomPagination from "../../../../../components/CustomPagination";
-import CustomSearchInput from "../../../../../components/CustomSearchInput";
-import GlobalLoadingOverlay from "../../../../../components/GlobalLoadingOverlay";
-import TableAsset from "../../../../components/TableAsset";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import { Route } from "next";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import CustomSearchInput from "../../../../../components/CustomSearchInput";
 
 type ProductsResponse = {
-  products: AdminProductTableData[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  products: AdminProductTableProductData[];
+  pagination?: Pagination;
 };
 
 const fetchProducts = async (
   search?: string,
-  page: number = 1
+  page: number = 1,
+  limit = 20
 ): Promise<ProductsResponse> => {
-  const params = new URLSearchParams();
-  if (search) params.append("search", search);
-  params.append("page", page.toString());
-
-  const response = await fetchWrapper.get<ProductsResponse>(
-    `/admin/products/get-products?${params.toString()}`
-  );
+  const response = await fetchWrapper.get<ProductsResponse>(`/admin/products`, {
+    params: {
+      search: search?.trim(),
+      page,
+      limit,
+    },
+  });
 
   if (!response.success) {
     throw new Error("Ürünler yüklenirken hata oluştu");
@@ -65,14 +60,38 @@ const fetchProducts = async (
   return response.data;
 };
 
+// Skeleton Row Component
+const SkeletonRow = () => (
+  <Table.Tr>
+    <Table.Td>
+      <Skeleton height={40} width={40} />
+    </Table.Td>
+    <Table.Td>
+      <Stack gap="xs">
+        <Skeleton height={16} width="60%" />
+        <Skeleton height={12} width="40%" />
+      </Stack>
+    </Table.Td>
+    <Table.Td>
+      <Skeleton height={16} width={80} />
+    </Table.Td>
+    <Table.Td>
+      <Skeleton height={16} width={40} />
+    </Table.Td>
+    <Table.Td>
+      <Skeleton height={16} width={100} />
+    </Table.Td>
+  </Table.Tr>
+);
+
 const ProductTable = () => {
   const [opened, { open, close }] = useDisclosure(false);
   const searchParams = useSearchParams();
-
+  const { push } = useRouter();
   const search = searchParams.get("search") || "";
   const page = parseInt(searchParams.get("page") || "1");
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, isFetching, error } = useQuery({
     queryKey: ["admin-products", search, page],
     queryFn: () => fetchProducts(search || undefined, page),
     staleTime: 1000 * 60 * 5,
@@ -100,118 +119,169 @@ const ProductTable = () => {
   }
 
   return (
-    <Stack gap="lg">
-      {isLoading && <GlobalLoadingOverlay />}
-
-      <Group justify="space-between" align="center">
-        <Title order={4}>Ürün Listesi</Title>
-        <Group gap="md">
-          <Button onClick={open} leftSection={<IconPlus size={16} />}>
-            Ürün Ekle
-          </Button>
-          <CustomSearchInput />
+    <>
+      <Stack gap={"md"}>
+        <Group justify="space-between" align="center">
+          <Title order={4}>Ürün Listesi</Title>
+          <Group gap="md">
+            <Button onClick={open} leftSection={<IconPlus size={16} />}>
+              Ürün Ekle
+            </Button>
+            <CustomSearchInput />
+          </Group>
         </Group>
-      </Group>
 
-      <Table.ScrollContainer minWidth={700} style={{ position: "relative" }}>
-        <Table striped highlightOnHover verticalSpacing="md">
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Görsel</Table.Th>
-              <Table.Th>Ürün Adı</Table.Th>
-              <Table.Th>Fiyat</Table.Th>
-              <Table.Th>Stok</Table.Th>
-              <Table.Th>Tarih</Table.Th>
-              <Table.Th>İşlemler</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {data?.products.map((product) => (
-              <Table.Tr key={product.id}>
-                <Table.Td
-                  style={{ width: 120, maxHeight: 120, position: "relative" }}
-                >
-                  {product.finalImage && (
-                    <TableAsset type="IMAGE" url={product.finalImage} />
-                  )}
-                </Table.Td>
-                <Table.Td>
-                  <Stack gap={4}>
-                    <Text size="sm" fw={500}>
-                      {product.translations[0]?.name || "İsimsiz Ürün"}
-                    </Text>
-                    {product.isVariant &&
-                      product._count.variantCombinations > 0 && (
-                        <Text size="xs" c="dimmed">
-                          {product._count.variantCombinations} varyant
-                        </Text>
-                      )}
-                  </Stack>
-                </Table.Td>
-                <Table.Td>
-                  <Text size="sm" fw={500}>
-                    {product.priceDisplay}
-                  </Text>
-                </Table.Td>
-                <Table.Td>
-                  <Badge
-                    color={
-                      parseInt(product.stockDisplay.split(" ")[0]) > 0
-                        ? "green"
-                        : "red"
-                    }
-                    variant="light"
-                    size="md"
-                    radius={0}
-                  >
-                    <Text fz={"xs"} fw={700}>
-                      {product.stockDisplay}
-                    </Text>
-                  </Badge>
-                </Table.Td>
-
-                <Table.Td>
-                  <Text size="xs" c="dimmed">
-                    {DateFormatter.shortDate(product.createdAt)}
-                  </Text>
-                </Table.Td>
-                <Table.Td>
-                  <Group gap="xs">
-                    <ActionIcon
-                      variant="subtle"
-                      component={Link}
-                      href={
-                        product.isVariant
-                          ? (`/admin//product-list/create-variant/${product.id}` as Route)
-                          : (`/admin//product-list/create-basic/${product.id}` as Route)
-                      }
-                    >
-                      <IconEdit size={16} />
-                    </ActionIcon>
-                  </Group>
-                </Table.Td>
+        <Table.ScrollContainer minWidth={800}>
+          <Table
+            striped
+            highlightOnHover
+            highlightOnHoverColor="primary.0"
+            style={{
+              opacity: isFetching ? 0.6 : 1,
+              transition: "opacity 0.2s",
+            }}
+          >
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Görsel</Table.Th>
+                <Table.Th>Ürün Adı</Table.Th>
+                <Table.Th>Fiyat</Table.Th>
+                <Table.Th>Stok</Table.Th>
+                <Table.Th>Tarih</Table.Th>
               </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
+            </Table.Thead>
+            <Table.Tbody>
+              {isLoading
+                ? Array.from({ length: 5 }).map((_, index) => (
+                    <SkeletonRow key={index} />
+                  ))
+                : data?.products.map((product) => {
+                    const locale: Locale = "TR";
+                    const currency = "TRY";
 
-        {data?.products.length === 0 && !isLoading && (
-          <Center py="xl">
-            <Stack align="center" gap="md">
-              <IconPackage size={48} color="gray" />
-              <Text size="lg" c="dimmed">
-                {search
-                  ? "Arama kriterlerine uygun ürün bulunamadı"
-                  : "Henüz ürün bulunmuyor"}
-              </Text>
-            </Stack>
-          </Center>
+                    const name =
+                      product.translations.find((t) => t.locale === locale)
+                        ?.name ||
+                      product.translations[0]?.name ||
+                      "İsimsiz Ürün";
+
+                    const defaultVariant = product.variants.find(
+                      (v) => v.isDefault
+                    );
+                    const firstImageVariant = product.variants.find(
+                      (v) => v.assets.length > 0
+                    );
+
+                    const asset =
+                      product.assets[0]?.asset ||
+                      defaultVariant?.assets[0]?.asset ||
+                      firstImageVariant?.assets[0]?.asset ||
+                      null;
+
+                    const allVariants = product.variants;
+
+                    const stocks = allVariants.map((v) => v.stock);
+                    const minStock =
+                      stocks.length > 0 ? Math.min(...stocks) : 0;
+                    const maxStock =
+                      stocks.length > 0 ? Math.max(...stocks) : 0;
+
+                    const renderStock = () => {
+                      if (stocks.length === 0) return 0;
+
+                      if (minStock === maxStock) {
+                        return minStock;
+                      }
+
+                      return `${minStock} - ${maxStock}`;
+                    };
+
+                    const prices = allVariants
+                      .map(
+                        (v) =>
+                          v.prices.find((p) => p.currency === currency)?.price
+                      )
+                      .filter(
+                        (p): p is number => p !== undefined && p !== null
+                      );
+
+                    const minPrice =
+                      prices.length > 0 ? Math.min(...prices) : 0;
+                    const maxPrice =
+                      prices.length > 0 ? Math.max(...prices) : 0;
+
+                    const renderPrice = () => {
+                      if (prices.length === 0) return "-";
+
+                      const format = (val: number) =>
+                        new Intl.NumberFormat(locale, {
+                          style: "currency",
+                          currency,
+                        }).format(val);
+
+                      if (minPrice === maxPrice) {
+                        return format(minPrice);
+                      }
+                      return `${format(minPrice)} - ${format(maxPrice)}`;
+                    };
+
+                    return (
+                      <Table.Tr
+                        key={product.id}
+                        style={{ cursor: "pointer" }}
+                        onClick={() => {
+                          push(
+                            `/admin/product-list/products/${product.id}` as Route
+                          );
+                        }}
+                      >
+                        <Table.Td onClick={(e) => e.stopPropagation()}>
+                          <AspectRatio ratio={1} maw={40}>
+                            <TableAsset
+                              type={asset?.type || "IMAGE"}
+                              url={asset?.url || "https://placehold.co/40x40"}
+                            />
+                          </AspectRatio>
+                        </Table.Td>
+                        <Table.Td>
+                          {name}
+                          {product?.variants?.length > 1 && (
+                            <Text fz={"xs"} c={"dimmed"}>
+                              {`${product.variants.length} Varyant`}
+                            </Text>
+                          )}
+                        </Table.Td>
+                        <Table.Td>{renderPrice()}</Table.Td>
+                        <Table.Td>{renderStock()}</Table.Td>
+                        <Table.Td>
+                          {new Date(product.createdAt).toLocaleDateString(
+                            locale
+                          )}
+                        </Table.Td>
+                      </Table.Tr>
+                    );
+                  })}
+            </Table.Tbody>
+          </Table>
+
+          {!isLoading && data?.products.length === 0 && (
+            <Center py="xl">
+              <Stack align="center" gap="md">
+                <IconPackage size={48} color="gray" />
+                <Text size="lg" c="dimmed">
+                  {search
+                    ? "Arama kriterlerine uygun ürün bulunamadı"
+                    : "Henüz ürün bulunmuyor"}
+                </Text>
+              </Stack>
+            </Center>
+          )}
+        </Table.ScrollContainer>
+
+        {data?.pagination && data?.pagination.totalPages > 1 && (
+          <CustomPagination total={data.pagination.totalPages} />
         )}
-      </Table.ScrollContainer>
-
-      {data && data.pagination.totalPages > 1 && (
-        <CustomPagination total={data.pagination.totalPages} />
-      )}
+      </Stack>
 
       <Modal
         opened={opened}
@@ -238,7 +308,7 @@ const ProductTable = () => {
               radius="md"
               withBorder
               component={Link}
-              href={"/admin/product-list/create-basic/new" as Route}
+              href={"/admin/product-list/products/new" as Route}
               onClick={close}
               style={{
                 cursor: "pointer",
@@ -290,7 +360,7 @@ const ProductTable = () => {
               radius="md"
               withBorder
               component={Link}
-              href={"/admin/product-list/create-variant/new" as Route}
+              href={"/admin/product-list/products/new?variant=true" as Route}
               onClick={close}
               style={{
                 cursor: "pointer",
@@ -345,7 +415,7 @@ const ProductTable = () => {
           box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
         }
       `}</style>
-    </Stack>
+    </>
   );
 };
 
