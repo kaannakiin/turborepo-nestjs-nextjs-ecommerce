@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
-import { ProductsService } from './products.service';
-import { ProductsController } from './products.controller';
-import { CurrencyLocaleService } from 'src/common/services/currency-locale.service';
 import { LocaleModule } from 'src/common/services/locale/locale.module';
+import { ProductsController } from './products.controller';
+import { ProductsService } from './products.service';
 
 @Module({
   controllers: [ProductsController],
-  providers: [ProductsService, CurrencyLocaleService],
+  providers: [ProductsService],
   imports: [LocaleModule],
 })
 export class ProductsModule {}

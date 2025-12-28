@@ -16,6 +16,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { UserModule } from './user/user.module';
+import { SharedModule } from './common/services/shared.module';
 @Module({
   imports: [
     PrismaModule,
@@ -55,6 +56,7 @@ import { UserModule } from './user/user.module';
     ChatModule,
     PaymentsModule,
     OrdersModule,
+    SharedModule,
     PrismaLoggerModule,
     CategoriesModule,
     BrandsModule,
