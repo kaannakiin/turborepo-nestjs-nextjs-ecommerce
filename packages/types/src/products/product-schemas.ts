@@ -20,6 +20,7 @@ export const MIME_TYPES = {
     "image/webp",
     "image/gif",
     "image/svg+xml",
+    "image/avif",
   ] as string[],
   VIDEO: ["video/webm"] as string[],
   AUDIO: ["audio/mpeg", "audio/mp4"] as string[],

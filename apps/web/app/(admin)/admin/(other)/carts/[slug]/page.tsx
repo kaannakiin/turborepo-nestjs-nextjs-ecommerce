@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
+import PriceFormatter from "@/(user)/components/PriceFormatter";
 import CustomImage from "@/components/CustomImage";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
@@ -172,7 +172,7 @@ const CartViewPage = () => {
               <Text size="sm" c="dimmed" mb={4}>
                 Toplam Tutar
               </Text>
-              <ProductPriceFormatter
+              <PriceFormatter
                 price={totalPrice}
                 currency={cart.currency}
                 size="xl"
@@ -300,7 +300,7 @@ const CartViewPage = () => {
                             </Text>
                             <Stack gap={2} align="flex-end">
                               {hasDiscount && (
-                                <ProductPriceFormatter
+                                <PriceFormatter
                                   price={originalPrice}
                                   currency={cart.currency}
                                   size="sm"
@@ -308,7 +308,7 @@ const CartViewPage = () => {
                                   td="line-through" // Üstü çizili
                                 />
                               )}
-                              <ProductPriceFormatter
+                              <PriceFormatter
                                 price={finalPrice}
                                 fw={600}
                                 currency={cart.currency}

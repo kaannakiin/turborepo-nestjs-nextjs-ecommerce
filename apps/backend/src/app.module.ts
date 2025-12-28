@@ -15,6 +15,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { UserModule } from './user/user.module';
 import { CategoriesModule } from './categories/categories.module';
+import { BrandsModule } from './brands/brands.module';
+import { ProductsModule } from './products/products.module';
 @Module({
   imports: [
     PrismaModule,
@@ -30,17 +32,19 @@ import { CategoriesModule } from './categories/categories.module';
       useFactory: (configService: ConfigService) => {
         const accessKey = configService.getOrThrow<string>('MINIO_ACCESS_KEY');
         const secretKey = configService.getOrThrow<string>('MINIO_SECRET_KEY');
-        const useSSL = configService.get<string>('MINIO_USE_SSL') === 'true';
-        const endpointRaw = configService.get<string>('MINIO_ENDPOINT');
+        const endpointRaw = configService.getOrThrow<string>('MINIO_ENDPOINT');
         const url = new URL(endpointRaw);
-        const endPoint = url.hostname;
-        const port = parseInt(configService.get<string>('MINIO_PORT')) || 443;
-        return {
-          endPoint,
-          port,
-          useSSL,
+
+        const settings = {
+          endPoint: url.hostname,
+          port: parseInt(url.port) || (url.protocol === 'https:' ? 443 : 80),
+          useSSL: url.protocol === 'https:',
           accessKey,
           secretKey,
+        };
+        console.log('MinIO Bağlantı Ayarları:', settings);
+        return {
+          ...settings,
         };
       },
       inject: [ConfigService],
@@ -55,6 +59,8 @@ import { CategoriesModule } from './categories/categories.module';
     OrdersModule,
     PrismaLoggerModule,
     CategoriesModule,
+    BrandsModule,
+    ProductsModule,
     // ThrottlerModule.forRootAsync({
     //   imports: [ConfigModule],
     //   inject: [ConfigService],

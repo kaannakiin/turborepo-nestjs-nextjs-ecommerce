@@ -1,62 +1,132 @@
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import { getQueryClient } from "@lib/serverQueryClient";
-import { GetProductPageReturnType } from "@repo/types";
-import dynamic from "next/dynamic";
+import { getOgImageUrl } from "@lib/ui/product-helper";
+import { createServerFetch } from "@lib/wrappers/fetchWrapper";
+import { dehydrate, HydrationBoundary } from "@repo/shared";
+import { ProductDetailType } from "@repo/types";
+import { Metadata } from "next";
+import { unstable_cache } from "next/cache";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { Params } from "types/GlobalTypes";
+import ProductPageClient from "./components/ProductPageClient";
 
-const VariantProductClient = dynamic(
-  () => import("./components/VariantProductClient"),
+interface Props {
+  params: Params;
+}
+
+// Cache'lenebilir fetch fonksiyonu
+const getCachedProductData = unstable_cache(
+  async (slug: string) => {
+    const api = createServerFetch();
+    const response = await api.get<ProductDetailType>(`/product/${slug}`);
+
+    if (!response.success) {
+      return null;
+    }
+
+    return response.data;
+  },
+  ["product-data"],
   {
-    ssr: true,
-    loading: () => <GlobalLoadingOverlay />,
+    revalidate: 60,
+    tags: ["product"],
   }
 );
 
-const BasicProductClient = dynamic(
-  () => import("./components/BasicProductClient"),
-  {
-    ssr: true,
-    loading: () => <GlobalLoadingOverlay />,
+// Cookie gerektiren fetch (cache'lenmez ama auth için kullanılabilir)
+const getProductDataWithAuth = async (slug: string) => {
+  const cookieStore = await cookies();
+  const api = createServerFetch().setCookies(cookieStore);
+
+  const response = await api.get<ProductDetailType>(`/product/${slug}`);
+
+  if (!response.success) {
+    return null;
   }
-);
 
-const client = getQueryClient();
+  return response.data;
+};
 
-const ProductPage = async ({ params }: { params: Params }) => {
-  const { slug } = await params;
-  const productMainData = await client.fetchQuery({
-    queryKey: ["get-product", slug],
-    queryFn: async () => {
-      const res = await fetch(
-        `${process.env.BACKEND_URL}/users/products/get-product/${slug}`,
-        {
-          method: "GET",
-        }
-      );
-      const data = (await res.json()) as GetProductPageReturnType;
-      if (!data.success || !data.data) {
-        return null;
-      }
-      return data.data;
+// Hangi fonksiyonu kullanacağına karar ver
+const getProductData = async (slug: string, needsAuth: boolean = false) => {
+  if (needsAuth) {
+    return getProductDataWithAuth(slug);
+  }
+  return getCachedProductData(slug);
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const slug = (await params).slug as string;
+  const product = await getCachedProductData(slug); // Metadata için auth gerekmez
+
+  if (!product) {
+    return {
+      title: "Ürün Bulunamadı",
+      description: "Aradığınız ürün bulunamadı.",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const translation = product.translations[0];
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const productUrl = `${baseUrl}/${slug}`;
+
+  const title = translation?.metaTitle || translation?.name || "Ürün";
+  const description =
+    translation?.metaDescription ||
+    translation?.description ||
+    `${translation?.name} - En uygun fiyatlarla hemen satın al!`;
+
+  const mainImage = product.assets[0]?.asset?.url;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: productUrl,
     },
-    gcTime: 5 * 60 * 1000, // 5 minutes
-    staleTime: 1 * 60 * 1000, // 1 minute
-  });
+    openGraph: {
+      type: "website",
+      url: productUrl,
+      title,
+      description,
+      ...(mainImage && {
+        images: [
+          {
+            url: getOgImageUrl(mainImage),
+            width: 1200,
+            height: 630,
+            alt: translation?.name,
+          },
+        ],
+      }),
+    },
+    twitter: {
+      card: mainImage ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(mainImage && { images: [getOgImageUrl(mainImage)] }),
+    },
+  };
+}
 
-  if (!productMainData) {
-    return notFound();
+const ProductPage = async ({ params }: Props) => {
+  const slug = (await params).slug as string;
+
+  const product = await getCachedProductData(slug);
+
+  if (!product) {
+    notFound();
   }
 
-  // if (productMainData.isVariant) {
-  //   return <VariantProductClient productData={productMainData} />;
-  // }
+  const queryClient = getQueryClient();
+  queryClient.setQueryData(["product", slug], product);
 
-  // if (!productMainData.isVariant) {
-  //   return <BasicProductClient productData={productMainData} />;
-  // }
-
-  return notFound();
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <ProductPageClient slug={slug} />
+    </HydrationBoundary>
+  );
 };
 
 export default ProductPage;

@@ -1,11 +1,15 @@
-import InfinityQueryPage from "@/components/pages/InfinityQueryPage";
+import InfinityQueryPage from "@/components/pages/store-components/InfinityQueryPage";
+import StoreNotFound from "@/components/pages/store-components/StoreNotFound";
 import { getQueryClient } from "@lib/serverQueryClient";
 import { generateCategoryJsonLd } from "@lib/ui/json-ld-generator";
-import { getServerSideAllSearchParams } from "@lib/ui/product-helper";
+import {
+  getOgImageUrl,
+  getServerSideAllSearchParams,
+} from "@lib/ui/product-helper";
 import { ApiError, createServerFetch } from "@lib/wrappers/fetchWrapper";
 import { Currency, Locale } from "@repo/database";
 import { dehydrate, HydrationBoundary } from "@repo/shared";
-import { InfinityScrollPageReturnType } from "@repo/types";
+import { CategoryProductsResponse, FiltersResponse } from "@repo/types";
 import { Metadata } from "next";
 import { cookies } from "next/headers";
 import Script from "next/script";
@@ -28,18 +32,30 @@ const getCategoryData = cache(
     const cookieStore = await cookies();
     const api = createServerFetch().setCookies(cookieStore);
 
-    const fetchUrl = queryString
+    const productsUrl = queryString
       ? `/categories/${slug}?${queryString}&page=${page}`
       : `/categories/${slug}?page=${page}`;
 
-    const res = await api.get<InfinityScrollPageReturnType>(fetchUrl);
+    const filtersUrl = queryString
+      ? `/categories/${slug}/filters?${queryString}`
+      : `/categories/${slug}/filters`;
 
-    if (!res.success) {
-      throw new Error((res as ApiError).error || "Kategori verisi alınamadı");
+    const [productsRes, filtersRes] = await Promise.all([
+      api.get<CategoryProductsResponse>(productsUrl),
+      api.get<FiltersResponse>(filtersUrl),
+    ]);
+
+    if (!productsRes.success) {
+      throw new Error((productsRes as ApiError).error || "Ürünler alınamadı");
+    }
+
+    if (!filtersRes.success) {
+      throw new Error((filtersRes as ApiError).error || "Filtreler alınamadı");
     }
 
     return {
-      data: res.data,
+      products: productsRes.data,
+      filters: filtersRes.data,
       slug,
       currentPage: page,
       cacheKeyParams: queryString,
@@ -55,6 +71,7 @@ async function parseArgs(params: Params, searchParams: SearchParams) {
   const cookieStore = await cookies();
 
   const currentPage = Number((pageParamsObj.page as string) || "1");
+
   const cacheKeyParams =
     getServerSideAllSearchParams(pageParamsObj, ["page"]) || "";
 
@@ -68,21 +85,84 @@ export async function generateMetadata({
   params,
   searchParams,
 }: Props): Promise<Metadata> {
-  const { slug, currentPage, cacheKeyParams, currency, locale } =
-    await parseArgs(params, searchParams);
+  try {
+    const { slug, currentPage, cacheKeyParams, currency, locale } =
+      await parseArgs(params, searchParams);
 
-  const { data } = await getCategoryData(
-    slug,
-    currentPage,
-    cacheKeyParams,
-    currency,
-    locale
-  );
+    const { products } = await getCategoryData(
+      slug,
+      currentPage,
+      cacheKeyParams,
+      currency,
+      locale
+    );
 
-  return {
-    title: data.treeNode.metaTitle || data.treeNode.name,
-    description: data.treeNode.metaDescription,
-  };
+    const { treeNode, pagination } = products;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const categoryUrl = `${baseUrl}/categories/${slug}`;
+
+    const title = treeNode.metaTitle || treeNode.name;
+    const description =
+      treeNode.metaDescription ||
+      `${treeNode.name} kategorisinde ${pagination.totalCount} ürün. En uygun fiyatlarla hemen alışverişe başla!`;
+
+    const ogImage = treeNode.imageUrl ? getOgImageUrl(treeNode.imageUrl) : null;
+
+    const metadata: Metadata = {
+      title,
+      description,
+
+      alternates: {
+        canonical: categoryUrl,
+      },
+      openGraph: {
+        type: "website",
+        locale: locale === "TR" ? "tr_TR" : "en_US",
+        url: categoryUrl,
+        title,
+        description,
+        ...(ogImage && {
+          images: [
+            {
+              url: ogImage,
+              width: 1200,
+              height: 630,
+              alt: treeNode.name,
+              type: "image/jpeg",
+            },
+          ],
+        }),
+      },
+
+      twitter: {
+        card: ogImage ? "summary_large_image" : "summary",
+        title,
+        description,
+        ...(ogImage && {
+          images: [ogImage],
+        }),
+      },
+
+      other: {
+        "product:category": treeNode.name,
+        "product:availability": "in stock",
+        ...(currentPage > 1 && {
+          "og:url": `${categoryUrl}?page=${currentPage}`,
+        }),
+      },
+    };
+
+    return metadata;
+  } catch (error) {
+    return {
+      title: "Kategori Bulunamadı",
+      description: "Aradığınız kategori bulunamadı.",
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
 }
 
 const CategoryPage = async ({ params, searchParams }: Props) => {
@@ -91,28 +171,32 @@ const CategoryPage = async ({ params, searchParams }: Props) => {
     searchParams
   );
 
-  const { data } = await getCategoryData(
-    slug,
-    1,
-    cacheKeyParams,
-    currency,
-    locale
-  );
+  const data = await getCategoryData(slug, 1, cacheKeyParams, currency, locale);
 
+  if (!data.products || !data.filters) {
+    return <StoreNotFound type="category" />;
+  }
+
+  const { products, filters } = data;
   const queryClient = getQueryClient();
-
   const endPoint = "categories";
 
-  const queryKey = [`${endPoint}-infinite`, slug, cacheKeyParams];
+  const productsQueryKey = [
+    `${endPoint}-products-infinite`,
+    slug,
+    cacheKeyParams,
+  ];
+  const filtersQueryKey = [`${endPoint}-filters`, slug, cacheKeyParams];
 
-  queryClient.setQueryData(queryKey, {
-    pages: [data],
+  queryClient.setQueryData(productsQueryKey, {
+    pages: [products],
     pageParams: [1],
   });
+  queryClient.setQueryData(filtersQueryKey, filters);
 
   const jsonLd = generateCategoryJsonLd(
-    data,
-    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    products,
+    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
     currency,
     locale
   );
@@ -127,7 +211,8 @@ const CategoryPage = async ({ params, searchParams }: Props) => {
 
       <InfinityQueryPage
         slug={slug}
-        queryKey={queryKey}
+        productsQueryKey={productsQueryKey}
+        filtersQueryKey={filtersQueryKey}
         initialUrlParams={cacheKeyParams}
         endPoint="categories"
         staleTime={1000 * 60 * 5}

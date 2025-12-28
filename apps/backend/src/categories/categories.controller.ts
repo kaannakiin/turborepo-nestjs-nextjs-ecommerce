@@ -1,36 +1,36 @@
+import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
 import {
-  Controller,
-  Get,
-  Param,
-  ParseEnumPipe,
-  ParseIntPipe,
-  Query,
-} from '@nestjs/common';
-import {
-  CATEGORY_PAGE_BRANDS_KEY_NAME,
-  CATEGORY_PAGE_PRODUCT_TAGS_KEY_NAME,
   ProductPageSortOption,
+  getParamKey,
+  filterReservedKeys,
 } from '@repo/shared';
 import { CategoriesService } from './categories.service';
+import { ParseSortOptionPipe } from 'src/common/pipes/product-sort-option.pipe';
 
 @Controller('categories')
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Get('/:slug')
-  async getCategoryBySlug(
+  async getCategoryProducts(
     @Param('slug') slug: string,
-    @Query('sort', new ParseEnumPipe(ProductPageSortOption, { optional: true }))
+    @Query(getParamKey('sort'), ParseSortOptionPipe)
     sort: ProductPageSortOption = ProductPageSortOption.NEWEST,
-    @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 12,
-    @Query('minPrice', new ParseIntPipe({ optional: true })) minPrice?: number,
-    @Query('maxPrice', new ParseIntPipe({ optional: true })) maxPrice?: number,
-    @Query(CATEGORY_PAGE_PRODUCT_TAGS_KEY_NAME) tags?: string,
-    @Query(CATEGORY_PAGE_BRANDS_KEY_NAME) brands?: string,
-    @Query() query?: Record<string, string | string[]>,
+    @Query(getParamKey('page'), new ParseIntPipe({ optional: true }))
+    page: number = 1,
+    @Query(getParamKey('limit'), new ParseIntPipe({ optional: true }))
+    limit: number = 12,
+    @Query(getParamKey('minPrice'), new ParseIntPipe({ optional: true }))
+    minPrice?: number,
+    @Query(getParamKey('maxPrice'), new ParseIntPipe({ optional: true }))
+    maxPrice?: number,
+    @Query(getParamKey('tags')) tags?: string,
+    @Query(getParamKey('brands')) brands?: string,
+    @Query(getParamKey('categories')) categories?: string,
+    @Query() allQuery?: Record<string, string | string[]>,
   ) {
-    return this.categoriesService.getCategoryPageBySlug(slug, {
+    const variantFilters = filterReservedKeys(allQuery ?? {});
+    const result = await this.categoriesService.getCategoryProducts(slug, {
       sort,
       page,
       limit,
@@ -38,7 +38,36 @@ export class CategoriesController {
       maxPrice,
       tags,
       brands,
-      variantFilters: query ?? {},
+      categories,
+      variantFilters,
     });
+
+    return result;
+  }
+
+  @Get('/:slug/filters')
+  async getCategoryFilters(
+    @Param('slug') slug: string,
+    @Query(getParamKey('minPrice'), new ParseIntPipe({ optional: true }))
+    minPrice?: number,
+    @Query(getParamKey('maxPrice'), new ParseIntPipe({ optional: true }))
+    maxPrice?: number,
+    @Query(getParamKey('tags')) tags?: string,
+    @Query(getParamKey('brands')) brands?: string,
+    @Query(getParamKey('categories')) categories?: string,
+    @Query() allQuery?: Record<string, string | string[]>,
+  ) {
+    const variantFilters = filterReservedKeys(allQuery ?? {});
+
+    const result = await this.categoriesService.getCategoryFilters(slug, {
+      minPrice,
+      maxPrice,
+      tags,
+      brands,
+      categories,
+      variantFilters,
+    });
+
+    return result;
   }
 }

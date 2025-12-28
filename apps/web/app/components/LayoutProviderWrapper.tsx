@@ -23,16 +23,16 @@ import { ReactNode } from "react";
 import segmentedClasses from "./styles/SegmentedControl.module.css";
 
 const primaryColor: MantineColorsTuple = [
-  "#fff0e4",
-  "#ffe0cf",
-  "#fac0a1",
-  "#f69e6e",
-  "#f28043",
-  "#f06e27",
-  "#f06418",
-  "#d6530c",
-  "#bf4906",
-  "#a73c00",
+  "#ecf4ff",
+  "#dce4f5",
+  "#b9c7e2",
+  "#94a8d0",
+  "#748dc0",
+  "#5f7cb7",
+  "#5474b4",
+  "#44639f",
+  "#3a5890",
+  "#2c4b80",
 ];
 const adminPrimaryColor: MantineColorsTuple = [
   "#eff2ff",

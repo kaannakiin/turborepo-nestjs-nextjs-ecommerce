@@ -1,7 +1,9 @@
 import { Currency, Locale } from "@repo/database";
 import {
-  InfinityScrollPageReturnType,
-  TreeNode,
+  BaseNode,
+  BrandProductsResponse,
+  CategoryProductsResponse,
+  TagProductsResponse,
   UiProductType,
 } from "@repo/types";
 import {
@@ -17,7 +19,9 @@ import {
 export type PageType = "category" | "brand" | "tag";
 
 interface JsonLdGeneratorOptions {
-  data: InfinityScrollPageReturnType;
+  node: BaseNode & { parent?: BaseNode };
+  products: UiProductType[];
+  pagination: { totalCount: number };
   baseUrl: string;
   currency: Currency;
   locale: Locale;
@@ -25,20 +29,15 @@ interface JsonLdGeneratorOptions {
 }
 
 export const generatePageJsonLd = ({
-  data,
+  node,
+  products,
+  pagination,
   baseUrl,
   currency,
   locale,
   pageType,
 }: JsonLdGeneratorOptions): WithContext<CollectionPage> => {
-  const { treeNode, products, pagination } = data;
-
-  const breadcrumbList = buildBreadcrumbList(
-    treeNode,
-    baseUrl,
-    locale,
-    pageType
-  );
+  const breadcrumbList = buildBreadcrumbList(node, baseUrl, locale, pageType);
 
   const productListItems: ListItem[] = products.map((product, index) => ({
     "@type": "ListItem",
@@ -46,13 +45,13 @@ export const generatePageJsonLd = ({
     item: mapProductToSchema(product, baseUrl, currency, locale),
   }));
 
-  const pageUrl = buildPageUrl(treeNode, baseUrl, locale, pageType);
+  const pageUrl = buildPageUrl(node.slug, baseUrl, locale, pageType);
 
-  const schema: WithContext<CollectionPage> = {
+  return {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    name: treeNode.metaTitle || treeNode.name,
-    description: treeNode.metaDescription || treeNode.description,
+    name: node.metaTitle || node.name,
+    description: node.metaDescription || node.description,
     url: pageUrl,
     breadcrumb: breadcrumbList,
     mainEntity: {
@@ -61,12 +60,58 @@ export const generatePageJsonLd = ({
       numberOfItems: pagination.totalCount,
     },
   };
-
-  return schema;
 };
 
+export const generateCategoryJsonLd = (
+  data: CategoryProductsResponse,
+  baseUrl: string,
+  currency: Currency,
+  locale: Locale
+) =>
+  generatePageJsonLd({
+    node: data.treeNode,
+    products: data.products,
+    pagination: data.pagination,
+    baseUrl,
+    currency,
+    locale,
+    pageType: "category",
+  });
+
+export const generateBrandJsonLd = (
+  data: BrandProductsResponse,
+  baseUrl: string,
+  currency: Currency,
+  locale: Locale
+) =>
+  generatePageJsonLd({
+    node: data.brand,
+    products: data.products,
+    pagination: data.pagination,
+    baseUrl,
+    currency,
+    locale,
+    pageType: "brand",
+  });
+
+export const generateTagJsonLd = (
+  data: TagProductsResponse,
+  baseUrl: string,
+  currency: Currency,
+  locale: Locale
+) =>
+  generatePageJsonLd({
+    node: data.tag,
+    products: data.products,
+    pagination: data.pagination,
+    baseUrl,
+    currency,
+    locale,
+    pageType: "tag",
+  });
+
 const buildPageUrl = (
-  node: TreeNode,
+  slug: string,
   baseUrl: string,
   locale: Locale,
   pageType: PageType
@@ -74,7 +119,7 @@ const buildPageUrl = (
   const localePrefix = locale === "TR" ? "" : `${locale.toLowerCase()}/`;
   const typePrefix = getTypePrefix(pageType);
 
-  return `${baseUrl}/${localePrefix}${typePrefix}${node.slug}`;
+  return `${baseUrl}/${localePrefix}${typePrefix}${slug}`;
 };
 
 const getTypePrefix = (pageType: PageType): string => {
@@ -91,18 +136,18 @@ const getTypePrefix = (pageType: PageType): string => {
 };
 
 const buildBreadcrumbList = (
-  node: TreeNode,
+  node: BaseNode & { parent?: BaseNode },
   baseUrl: string,
   locale: Locale,
   pageType: PageType
 ): BreadcrumbList => {
   const itemListElement: ListItem[] = [];
-  const path: TreeNode[] = [];
 
-  let current: TreeNode | undefined = node;
+  const path: BaseNode[] = [];
+  let current: (BaseNode & { parent?: BaseNode }) | undefined = node;
   while (current) {
     path.unshift(current);
-    current = current.parent;
+    current = current.parent as (BaseNode & { parent?: BaseNode }) | undefined;
   }
 
   itemListElement.push({
@@ -118,7 +163,7 @@ const buildBreadcrumbList = (
       "@type": "ListItem",
       position: 2,
       name: typeLabel,
-      item: `${baseUrl}/${locale === "TR" ? "" : `${locale.toLowerCase()}/`}${getTypePrefix(pageType)}`,
+      item: `${baseUrl}/${locale === "TR" ? "" : `${locale.toLowerCase()}/`}${getTypePrefix(pageType).slice(0, -1)}`,
     });
   }
 
@@ -128,7 +173,7 @@ const buildBreadcrumbList = (
       "@type": "ListItem",
       position: startPosition + index,
       name: item.name,
-      item: buildPageUrl(item, baseUrl, locale, pageType),
+      item: buildPageUrl(item.slug, baseUrl, locale, pageType),
     });
   });
 
@@ -209,25 +254,3 @@ const mapProductToSchema = (
     offers,
   };
 };
-
-export const generateCategoryJsonLd = (
-  data: InfinityScrollPageReturnType,
-  baseUrl: string,
-  currency: Currency,
-  locale: Locale
-) =>
-  generatePageJsonLd({ data, baseUrl, currency, locale, pageType: "category" });
-
-export const generateBrandJsonLd = (
-  data: InfinityScrollPageReturnType,
-  baseUrl: string,
-  currency: Currency,
-  locale: Locale
-) => generatePageJsonLd({ data, baseUrl, currency, locale, pageType: "brand" });
-
-export const generateTagJsonLd = (
-  data: InfinityScrollPageReturnType,
-  baseUrl: string,
-  currency: Currency,
-  locale: Locale
-) => generatePageJsonLd({ data, baseUrl, currency, locale, pageType: "tag" });

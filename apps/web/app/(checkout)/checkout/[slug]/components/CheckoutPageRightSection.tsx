@@ -1,6 +1,6 @@
 "use client";
 
-import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
+import PriceFormatter from "@/(user)/components/PriceFormatter";
 import {
   Accordion,
   Avatar,
@@ -88,19 +88,15 @@ const CartItem = ({ item }: { item: CartV3["items"][0] }) => (
       <div className="flex flex-col gap-1 items-end shrink-0">
         {item.discountedPrice ? (
           <>
-            <ProductPriceFormatter
-              fz="sm"
-              fw={700}
-              price={item.discountedPrice}
-            />
-            <ProductPriceFormatter
+            <PriceFormatter fz="sm" fw={700} price={item.discountedPrice} />
+            <PriceFormatter
               fz="xs"
               className="line-through text-gray-500"
               price={item.price}
             />
           </>
         ) : (
-          <ProductPriceFormatter fz="sm" fw={700} price={item.price} />
+          <PriceFormatter fz="sm" fw={700} price={item.price} />
         )}
       </div>
     </div>
@@ -257,7 +253,7 @@ const CartSummary = ({
             </ThemeIcon>
           </Tooltip>
         </Group>
-        <ProductPriceFormatter c="dimmed" price={calculateTotal()} />
+        <PriceFormatter c="dimmed" price={calculateTotal()} />
       </Group>
 
       {step === "info" || step === "shipping" ? null : cargoRule &&
@@ -265,7 +261,7 @@ const CartSummary = ({
         cargoRule.price > 0 ? (
         <Group justify="space-between">
           <Text c="dimmed">Kargo Ücreti</Text>
-          <ProductPriceFormatter c="dimmed" price={cargoRule.price} />
+          <PriceFormatter c="dimmed" price={cargoRule.price} />
         </Group>
       ) : (
         <Text c={"dimmed"}>Ücretsiz Kargo</Text>
@@ -286,7 +282,7 @@ const CartSummary = ({
         <Text c="black" fz="lg" fw={700}>
           Toplam
         </Text>
-        <ProductPriceFormatter
+        <PriceFormatter
           c="black"
           fz="lg"
           fw={700}

@@ -1,6 +1,6 @@
 "use client";
 
-import ProductPriceFormatter from "@/(user)/components/ProductPriceFormatter";
+import PriceFormatter from "@/(user)/components/PriceFormatter";
 import { getConditionText, getCurrencyLabel } from "@lib/helpers";
 import {
   Button,
@@ -129,11 +129,7 @@ const ShippingRuleDrawer = ({
                 </Group>
                 {price > 0 ? (
                   <Group gap={"1px"} wrap="nowrap" align="center">
-                    <ProductPriceFormatter
-                      fz={"xs"}
-                      c={"white"}
-                      price={price}
-                    />
+                    <PriceFormatter fz={"xs"} c={"white"} price={price} />
                     <Text fz={"xs"} c={"white"}>
                       {" "}
                       - Kargo Ücreti

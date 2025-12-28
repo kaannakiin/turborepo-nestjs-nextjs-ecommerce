@@ -9,22 +9,6 @@ datasource db {
   provider = "postgresql"
 }
 
-model Asset {
-  id                String             @id @default(cuid())
-  type              AssetType          @default(IMAGE)
-  url               String             @unique
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  brand             Brand?
-  category          Category?
-  productAsset      ProductAsset[]
-  desktopSliderItem SliderItemSchema[] @relation("DesktopAsset")
-  mobileSliderItem  SliderItemSchema[] @relation("MobileAsset")
-  variantOption     VariantOption?
-
-  @@index([url])
-}
-
 model User {
   id                String             @id @default(cuid())
   role              UserRole           @default(USER)
@@ -66,6 +50,22 @@ model RefreshTokens {
   user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model Asset {
+  id                String             @id @default(cuid())
+  type              AssetType          @default(IMAGE)
+  url               String             @unique
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  brand             Brand?
+  category          Category?
+  productAsset      ProductAsset[]
+  desktopSliderItem SliderItemSchema[] @relation("DesktopAsset")
+  mobileSliderItem  SliderItemSchema[] @relation("MobileAsset")
+  variantOption     VariantOption?
+
+  @@index([url])
 }
 
 model CategoryTranslation {

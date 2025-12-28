@@ -2,7 +2,7 @@
 import {
   getFontFamily,
   useGoogleFonts,
-} from "@/components/hooks/useGoogleFont";
+} from "../../../../../hooks/useGoogleFont";
 import { generateColorTuple } from "@lib/helpers";
 import {
   Button,

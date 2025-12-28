@@ -3,16 +3,16 @@ import { getCurrencyIntlFormat } from "@lib/helpers";
 import { Text, TextProps } from "@mantine/core";
 import { Prisma, Currency } from "@repo/database/client";
 
-interface ProductPriceFormatterProps extends TextProps {
+interface PriceFormatterProps extends TextProps {
   price: number | InstanceType<typeof Prisma.Decimal>;
   currency?: Currency;
 }
 
-const ProductPriceFormatter = ({
+const PriceFormatter = ({
   price,
   currency = "TRY",
   ...props
-}: ProductPriceFormatterProps) => {
+}: PriceFormatterProps) => {
   if (!price) return null;
 
   const numericPrice =
@@ -34,4 +34,4 @@ const ProductPriceFormatter = ({
   );
 };
 
-export default ProductPriceFormatter;
+export default PriceFormatter;

@@ -1,13 +1,13 @@
 [phases.setup]
-nixPkgs = ["nodejs_22", "npm-9_x", "openssl"]
+nixPkgs = ["bun", "openssl"]
 nixLibs = ["gcc-unwrapped"]
 aptPkgs = ["curl", "wget"]
 
 [phases.install]
-cmds = ["npm ci"]
+cmds = ["bun install --frozen-lockfile"]
 
 [phases.build]
-cmds = ["npx turbo run db:generate", "npx turbo run build"]
+cmds = ["bun run --filter=@repo/database db:generate", "bunx turbo run build"]
 
 [start]
-cmd = "npx turbo run db:generate --filter=@repo/database && npm run start:migrate"
+cmd = "bun run --filter=@repo/database db:deploy && bunx turbo run start"

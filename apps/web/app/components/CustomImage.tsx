@@ -1,7 +1,7 @@
 "use client";
 import NextImage from "next/image";
 import { Image as MantineImage } from "@mantine/core";
-import { MouseEventHandler, useState, useMemo } from "react";
+import { MouseEventHandler, useState, useMemo, useEffect } from "react";
 
 interface CustomImageProps {
   alt?: string;
@@ -19,6 +19,10 @@ const CustomImage = ({
   priority = false,
 }: CustomImageProps) => {
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(true);
+  }, [src]);
 
   const IGNORED_HOSTS = ["placehold.co"];
 
@@ -48,15 +52,13 @@ const CustomImage = ({
     if (!originalSrc) return null;
 
     try {
-      const pathSegments = originalSrc.split(".");
-      if (pathSegments.length > 1) {
-        const base = pathSegments.join(".");
-        return `${base}-thumbnail.webp`;
-      }
+      const lastDotIndex = originalSrc.lastIndexOf(".");
+      if (lastDotIndex === -1) return null;
 
-      return originalSrc.replace(/\.[^/.]+$/, "-thumbnail.webp");
-    } catch (e) {
-      return originalSrc.replace(/\.[^/.]+$/, "-thumbnail.webp");
+      const base = originalSrc.substring(0, lastDotIndex);
+      return `${base}-thumbnail.webp`;
+    } catch {
+      return null;
     }
   };
 
@@ -64,12 +66,17 @@ const CustomImage = ({
   const showThumbnail = thumbnailSrc !== null;
 
   return (
-    <div className={`relative w-full ${className}`} onClick={onClick}>
+    <div
+      className={`relative overflow-hidden  w-full h-full ${className}`}
+      onClick={onClick}
+      style={{ minHeight: "100%" }} // Parent'tan height almasını sağla
+    >
       {showThumbnail && (
         <NextImage
           alt={alt}
           src={thumbnailSrc as string}
           fill
+          sizes="(max-width: 768px) 100vw, 50vw"
           className={`
             object-contain 
             filter blur-xl 
@@ -83,6 +90,7 @@ const CustomImage = ({
         alt={alt}
         src={src}
         fill
+        sizes="(max-width: 768px) 100vw, 50vw"
         priority={priority}
         onLoad={() => setIsLoading(false)}
         className={`

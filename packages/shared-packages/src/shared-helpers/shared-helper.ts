@@ -166,10 +166,20 @@ export const ProductPageSortOption = {
   BEST_SELLING: "best-selling",
   A_Z: "a-z",
   Z_A: "z-a",
-};
+} as const;
 
 export type ProductPageSortOption =
   (typeof ProductPageSortOption)[keyof typeof ProductPageSortOption];
+
+export const SORT_OPTIONS_ARRAY: ProductPageSortOption[] = [
+  ProductPageSortOption.NEWEST,
+  ProductPageSortOption.OLDEST,
+  ProductPageSortOption.PRICE_DESC,
+  ProductPageSortOption.PRICE_ASC,
+  ProductPageSortOption.BEST_SELLING,
+  ProductPageSortOption.A_Z,
+  ProductPageSortOption.Z_A,
+];
 
 export function getSortProductPageLabel(sortOption: ProductPageSortOption) {
   switch (sortOption) {
@@ -193,49 +203,15 @@ export function getSortProductPageLabel(sortOption: ProductPageSortOption) {
 }
 
 export function getSortIndexFromQuery(index: number): ProductPageSortOption {
-  switch (index) {
-    case 0:
-      return ProductPageSortOption.NEWEST;
-    case 1:
-      return ProductPageSortOption.OLDEST;
-    case 2:
-      return ProductPageSortOption.PRICE_DESC;
-    case 3:
-      return ProductPageSortOption.PRICE_ASC;
-    case 4:
-      return ProductPageSortOption.BEST_SELLING;
-    case 5:
-      return ProductPageSortOption.A_Z;
-    case 6:
-      return ProductPageSortOption.Z_A;
-    default:
-      return ProductPageSortOption.NEWEST;
-  }
+  return SORT_OPTIONS_ARRAY[index] || ProductPageSortOption.NEWEST;
 }
 
 export function getIndexFromSortOption(
   sortOption: ProductPageSortOption
 ): number {
-  switch (sortOption) {
-    case ProductPageSortOption.NEWEST:
-      return 0;
-    case ProductPageSortOption.OLDEST:
-      return 1;
-    case ProductPageSortOption.PRICE_DESC:
-      return 2;
-    case ProductPageSortOption.PRICE_ASC:
-      return 3;
-    case ProductPageSortOption.BEST_SELLING:
-      return 4;
-    case ProductPageSortOption.A_Z:
-      return 5;
-    case ProductPageSortOption.Z_A:
-      return 6;
-    default:
-      return 0;
-  }
+  const index = SORT_OPTIONS_ARRAY.indexOf(sortOption);
+  return index !== -1 ? index : 0;
 }
-
 const ORDER_STATUS_CONFIG = {
   PENDING: {
     value: 1,

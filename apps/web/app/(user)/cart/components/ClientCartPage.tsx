@@ -25,7 +25,7 @@ import {
 } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import CustomImage from "../../../components/CustomImage";
-import ProductPriceFormatter from "../../components/ProductPriceFormatter";
+import PriceFormatter from "../../components/PriceFormatter";
 
 const ClientCartPage = () => {
   const { cart, removeItem, increaseItem, decreaseItem, isCartLoading } =
@@ -186,14 +186,14 @@ const ClientCartPage = () => {
                                 <Stack gap="xs" align="flex-end">
                                   {item.discountedPrice &&
                                     item.price !== item.discountedPrice && (
-                                      <ProductPriceFormatter
+                                      <PriceFormatter
                                         size="sm"
                                         td="line-through"
                                         c="dimmed"
                                         price={item.price * item.quantity}
                                       />
                                     )}
-                                  <ProductPriceFormatter
+                                  <PriceFormatter
                                     fw={700}
                                     size="lg"
                                     price={
@@ -325,14 +325,14 @@ const ClientCartPage = () => {
                             <Stack gap="xs" align="flex-end">
                               {item.discountedPrice &&
                                 item.price !== item.discountedPrice && (
-                                  <ProductPriceFormatter
+                                  <PriceFormatter
                                     size="sm"
                                     td="line-through"
                                     c="dimmed"
                                     price={item.price * item.quantity}
                                   />
                                 )}
-                              <ProductPriceFormatter
+                              <PriceFormatter
                                 fw={700}
                                 size="lg"
                                 price={
@@ -366,7 +366,7 @@ const ClientCartPage = () => {
                       {cart.totalDiscount > 0 ? "Ara Toplam" : "Toplam"} (
                       {cart.items.length} ürün)
                     </Text>
-                    <ProductPriceFormatter
+                    <PriceFormatter
                       price={
                         cart.totalDiscount > 0
                           ? cart.totalDiscount + cart.totalPrice
@@ -381,7 +381,7 @@ const ClientCartPage = () => {
                     <Divider />
                     <Group justify="space-between" c="red">
                       <Text>İndirim</Text>
-                      <ProductPriceFormatter
+                      <PriceFormatter
                         c="red"
                         fw={500}
                         price={cart.totalDiscount}
@@ -397,7 +397,7 @@ const ClientCartPage = () => {
                       <Text fw={700} size="lg">
                         Toplam
                       </Text>
-                      <ProductPriceFormatter
+                      <PriceFormatter
                         fw={700}
                         size="xl"
                         price={cart.totalPrice}

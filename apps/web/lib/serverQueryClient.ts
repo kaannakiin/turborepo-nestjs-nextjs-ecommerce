@@ -8,6 +8,7 @@ function makeQueryClient() {
         gcTime: 1000 * 60 * 15,
         refetchOnWindowFocus: false,
         refetchOnReconnect: true,
+        refetchOnMount: false,
         retry: 2,
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
       },
