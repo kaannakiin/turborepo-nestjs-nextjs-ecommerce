@@ -4,7 +4,7 @@ nixLibs = ["gcc-unwrapped"]
 aptPkgs = ["curl", "wget"]
 
 [phases.install]
-cmds = ["bun install --frozen-lockfile"]
+cmds = ["bun install --frozen"]
 
 [phases.build]
 cmds = ["bun run --filter=@repo/database db:generate", "bunx turbo run build"]
