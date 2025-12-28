@@ -10,6 +10,8 @@ import { Themev2Module } from './themev2/themev2.module';
 import { UsersModule } from './users/users.module';
 import { ProductsModule } from './products/products.module';
 import { SharedModule } from 'src/common/services/shared.module';
+import { MinioModule } from 'src/minio/minio.module';
+import { PrismaModule } from 'src/prisma/prisma.module';
 
 @Module({
   controllers: [AdminController],
@@ -17,6 +19,8 @@ import { SharedModule } from 'src/common/services/shared.module';
   imports: [
     UsersModule,
     SharedModule,
+    MinioModule,
+    PrismaModule,
     DiscountsModule,
     CampaignsModule,
     PaymentsModule,
