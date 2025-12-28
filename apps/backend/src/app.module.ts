@@ -19,6 +19,7 @@ import { UserModule } from './user/user.module';
 import { SharedModule } from './common/services/shared.module';
 @Module({
   imports: [
+    SharedModule,
     PrismaModule,
     UserModule,
     AuthModule,
@@ -56,7 +57,6 @@ import { SharedModule } from './common/services/shared.module';
     ChatModule,
     PaymentsModule,
     OrdersModule,
-    SharedModule,
     PrismaLoggerModule,
     CategoriesModule,
     BrandsModule,
