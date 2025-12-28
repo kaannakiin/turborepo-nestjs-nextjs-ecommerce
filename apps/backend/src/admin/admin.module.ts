@@ -9,6 +9,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { Themev2Module } from './themev2/themev2.module';
 import { UsersModule } from './users/users.module';
 import { ProductsModule } from './products/products.module';
+import { SharedModule } from 'src/common/services/shared.module';
 
 @Module({
   controllers: [AdminController],
