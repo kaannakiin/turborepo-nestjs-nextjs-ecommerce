@@ -29,3 +29,4 @@ export * from "./admin/themev2/theme-section-schemas/header-schema";
 export * from "./common/common-queries";
 export * from "./api/admin/index";
 export * from "./api/categories/categories-api-types";
+export * from "./admin/inventory/inventory-schema";

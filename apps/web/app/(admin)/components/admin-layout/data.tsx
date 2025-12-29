@@ -2,9 +2,11 @@ import {
   IconBrandAbstract,
   IconBrush,
   IconBuildingStore,
+  IconBuildingWarehouse,
   IconCategory,
   IconCreditCard,
   IconDiscount,
+  IconForklift,
   IconLayoutDashboard,
   IconList,
   IconMail,
@@ -60,6 +62,16 @@ export const navGroups: NavGroup[] = [
       { href: "/product-list/brands/new", label: "Marka Ekle", hidden: true },
       { href: "/product-list/tags", label: "Etiketler" },
       { href: "/product-list/tags/new", label: "Etiket Ekle", hidden: true },
+    ],
+  },
+  {
+    label: "Stok Yönetimi",
+    icon: <IconForklift size={20} stroke={1.8} />,
+    sub: [
+      {
+        href: "/inventory",
+        label: "Envanter Yönetimi",
+      },
     ],
   },
   {

@@ -4,11 +4,13 @@ import TableAsset from "@/(admin)/components/TableAsset";
 import CustomPagination from "@/components/CustomPagination";
 import fetchWrapper from "@lib/wrappers/fetchWrapper";
 import {
+  ActionIcon,
   Alert,
   AspectRatio,
   Button,
   Card,
   Center,
+  Checkbox,
   Group,
   List,
   Modal,
@@ -22,18 +24,30 @@ import {
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Locale } from "@repo/database";
-import { useQuery } from "@repo/shared";
-import { AdminProductTableProductData, Pagination } from "@repo/types";
+import { DateFormatter, useQuery } from "@repo/shared";
+import {
+  AdminProductTableProductData,
+  Pagination,
+  ProductBulkAction,
+} from "@repo/types";
 import {
   IconAdjustments,
   IconCheck,
+  IconEdit,
   IconPackage,
   IconPlus,
 } from "@tabler/icons-react";
 import { Route } from "next";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import CustomSearchInput from "../../../../../components/CustomSearchInput";
+import ProductActionsGroup from "./product-actions/ProductActionsGroup";
+import {
+  BulkActionPayload,
+  useProductBulkAction,
+} from "@lib/ui/bulk-action-queries";
+import { getBulkActionConfig } from "@lib/ui/bulk-action.helper";
 
 type ProductsResponse = {
   products: AdminProductTableProductData[];
@@ -56,11 +70,9 @@ const fetchProducts = async (
   if (!response.success) {
     throw new Error("Ürünler yüklenirken hata oluştu");
   }
-
   return response.data;
 };
 
-// Skeleton Row Component
 const SkeletonRow = () => (
   <Table.Tr>
     <Table.Td>
@@ -85,11 +97,41 @@ const SkeletonRow = () => (
 );
 
 const ProductTable = () => {
+  const [selectedProductIDs, setSelectedProductIDs] = useState<string[]>([]);
+  const [currentAction, setCurrentAction] = useState<ProductBulkAction | null>(
+    null
+  );
   const [opened, { open, close }] = useDisclosure(false);
   const searchParams = useSearchParams();
   const { push } = useRouter();
   const search = searchParams.get("search") || "";
   const page = parseInt(searchParams.get("page") || "1");
+
+  useEffect(() => {
+    setSelectedProductIDs([]);
+  }, [page, search]);
+
+  const onClick = (productId: string) => {
+    push(`/admin/product-list/products/${productId}` as Route);
+  };
+
+  const { mutate: executeBulkAction, isPending } = useProductBulkAction({
+    needsRefresh: true,
+    onSuccess: () => {
+      setSelectedProductIDs([]);
+      setCurrentAction(null);
+    },
+  });
+
+  const onSelect = (productId: string) => {
+    setSelectedProductIDs((prev) => {
+      if (prev.includes(productId)) {
+        return prev.filter((id) => id !== productId);
+      } else {
+        return [...prev, productId];
+      }
+    });
+  };
 
   const { data, isLoading, isFetching, error } = useQuery({
     queryKey: ["admin-products", search, page],
@@ -97,6 +139,32 @@ const ProductTable = () => {
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
   });
+
+  const onAction = (action: ProductBulkAction) => {
+    const config = getBulkActionConfig(action);
+
+    // Modal gerektiren action'lar
+    if (config.needsModal) {
+      setCurrentAction(action);
+      // İlgili modal'ı aç
+      return;
+    }
+
+    // Direkt çalışan action'lar
+    executeBulkAction({
+      action,
+      productIds: selectedProductIDs,
+    });
+  };
+  const handleModalConfirm = (extraData?: Partial<BulkActionPayload>) => {
+    if (!currentAction) return;
+
+    executeBulkAction({
+      action: currentAction,
+      productIds: selectedProductIDs,
+      ...extraData,
+    });
+  };
 
   if (error) {
     return (
@@ -121,15 +189,23 @@ const ProductTable = () => {
   return (
     <>
       <Stack gap={"md"}>
-        <Group justify="space-between" align="center">
-          <Title order={4}>Ürün Listesi</Title>
-          <Group gap="md">
-            <Button onClick={open} leftSection={<IconPlus size={16} />}>
-              Ürün Ekle
-            </Button>
-            <CustomSearchInput />
+        <Stack gap={"xs"}>
+          <Group justify="space-between" align="center">
+            <Title order={4}>Ürün Listesi</Title>
+            <Group gap="md">
+              <Button onClick={open} leftSection={<IconPlus size={16} />}>
+                Ürün Ekle
+              </Button>
+              <CustomSearchInput />
+            </Group>
           </Group>
-        </Group>
+          <ProductActionsGroup
+            selectedIds={selectedProductIDs}
+            onAction={(action) => {
+              onAction(action);
+            }}
+          />
+        </Stack>
 
         <Table.ScrollContainer minWidth={800}>
           <Table
@@ -143,11 +219,32 @@ const ProductTable = () => {
           >
             <Table.Thead>
               <Table.Tr>
+                <Table.Th w={20}>
+                  <Checkbox
+                    checked={
+                      selectedProductIDs.length === data?.products.length
+                    }
+                    indeterminate={
+                      selectedProductIDs.length > 0 &&
+                      selectedProductIDs.length < (data?.products.length || 0)
+                    }
+                    onChange={() => {
+                      if (selectedProductIDs.length === data?.products.length) {
+                        setSelectedProductIDs([]);
+                      } else {
+                        setSelectedProductIDs(
+                          data?.products.map((p) => p.id) || []
+                        );
+                      }
+                    }}
+                  />
+                </Table.Th>
                 <Table.Th>Görsel</Table.Th>
                 <Table.Th>Ürün Adı</Table.Th>
                 <Table.Th>Fiyat</Table.Th>
                 <Table.Th>Stok</Table.Th>
                 <Table.Th>Tarih</Table.Th>
+                <Table.Th w={50}></Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -229,12 +326,20 @@ const ProductTable = () => {
                       <Table.Tr
                         key={product.id}
                         style={{ cursor: "pointer" }}
-                        onClick={() => {
-                          push(
-                            `/admin/product-list/products/${product.id}` as Route
-                          );
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelect(product.id);
                         }}
                       >
+                        <Table.Td>
+                          <Checkbox
+                            checked={selectedProductIDs.includes(product.id)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              onSelect(product.id);
+                            }}
+                          />
+                        </Table.Td>
                         <Table.Td onClick={(e) => e.stopPropagation()}>
                           <AspectRatio ratio={1} maw={40}>
                             <TableAsset
@@ -254,9 +359,16 @@ const ProductTable = () => {
                         <Table.Td>{renderPrice()}</Table.Td>
                         <Table.Td>{renderStock()}</Table.Td>
                         <Table.Td>
-                          {new Date(product.createdAt).toLocaleDateString(
-                            locale
-                          )}
+                          {DateFormatter.shortDate(product.createdAt)}
+                        </Table.Td>
+                        <Table.Td onClick={(e) => e.stopPropagation()}>
+                          <ActionIcon
+                            variant="subtle"
+                            color="gray"
+                            onClick={() => onClick(product.id)}
+                          >
+                            <IconEdit size={18} />
+                          </ActionIcon>
                         </Table.Td>
                       </Table.Tr>
                     );

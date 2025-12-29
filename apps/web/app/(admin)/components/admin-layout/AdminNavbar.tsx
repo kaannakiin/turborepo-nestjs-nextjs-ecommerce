@@ -193,7 +193,7 @@ const AdminNavbar = ({
             <ActionIcon
               variant="subtle"
               color="gray"
-              size="xl"
+              size="md"
               radius="xl"
               onClick={onToggleCollapse}
               className="hover:bg-slate-100 transition-all duration-200"

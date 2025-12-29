@@ -15,6 +15,39 @@ export const getCountryCodes = (): string[] => {
   return callingCodes;
 };
 
+export const PhoneSchema = z
+  .string({
+    error: "Telefon numarası gereklidir",
+  })
+  .refine(
+    (val) => {
+      try {
+        return isValidPhoneNumber(val);
+      } catch {
+        return false;
+      }
+    },
+    {
+      message: "Geçersiz telefon numarası",
+    }
+  );
+export const PhoneSchemaOptional = z
+  .string()
+  .nullish()
+  .refine(
+    (val) => {
+      if (!val) return true;
+      try {
+        return isValidPhoneNumber(val);
+      } catch {
+        return false;
+      }
+    },
+    {
+      message: "Geçersiz telefon numarası",
+    }
+  );
+
 export const RegisterSchema = z
   .object({
     name: z

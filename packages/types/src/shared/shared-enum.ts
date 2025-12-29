@@ -172,3 +172,28 @@ export const FontType = {
 export type FontType = (typeof FontType)[keyof typeof FontType];
 // Zod enum için
 export const fontKeys = Object.keys(FontType) as [string, ...string[]];
+
+export const ProductBulkAction = {
+  activate: "activate",
+  deactivate: "deactivate",
+  delete: "delete",
+  "assign-category": "assign-category",
+  "remove-category": "remove-category",
+  "assign-brand": "assign-brand",
+  "assign-taxonomy": "assign-taxonomy",
+  "assign-tags": "assign-tags",
+  "remove-tags": "remove-tags",
+  "update-price-percent": "update-price-percent",
+  "update-price-fixed": "update-price-fixed",
+  "update-stock": "update-stock",
+  "inventory-track-on": "inventory-track-on",
+  "inventory-track-off": "inventory-track-off",
+  "inventory-allow-negative": "inventory-allow-negative",
+  "inventory-deny-negative": "inventory-deny-negative",
+  "assign-supplier": "assign-supplier",
+  "print-barcode": "print-barcode",
+  "export-excel": "export-excel",
+} as const;
+
+export type ProductBulkAction =
+  (typeof ProductBulkAction)[keyof typeof ProductBulkAction];

@@ -4,11 +4,12 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { Locale, Prisma } from '@repo/database';
+import { Locale, Prisma, User } from '@repo/database';
 import {
   AdminProductTableProductData,
   adminProductTableQuery,
   BaseProductZodType,
+  BulkActionZodType,
   CombinatedVariantsZodType,
   commonProductAssetsQuery,
   Pagination,
@@ -21,6 +22,7 @@ import {
   VariantProductZodType,
   variantsOptionsOrderByQuery,
 } from '@repo/types';
+import { ProductBulkActionService } from 'src/common/services/produıct-bulk-action.service';
 import { MinioService } from 'src/minio/minio.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -29,6 +31,7 @@ export class ProductsService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly minioService: MinioService,
+    private readonly productBulkActionService: ProductBulkActionService,
   ) {}
   private logger = new Logger(ProductsService.name);
 
@@ -1105,5 +1108,9 @@ export class ProductsService {
         })),
       });
     }
+  }
+
+  public async bulkAction(data: BulkActionZodType, user: User) {
+    return this.productBulkActionService.performBulkAction(data, user);
   }
 }
