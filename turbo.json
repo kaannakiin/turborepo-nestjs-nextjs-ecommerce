@@ -5,10 +5,12 @@
   "globalDependencies": ["**/.env", "**/.env.*local"],
   "tasks": {
     "build": {
+      "cache": false,
       "dependsOn": ["^build", "db:generate"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**", ".expo/**"]
     },
     "web#build": {
+      "cache": false,
       "dependsOn": ["^build"],
       "env": [
         "BACKEND_URL",
@@ -20,6 +22,7 @@
       "outputs": [".next/**", "!.next/cache/**"]
     },
     "backend#build": {
+      "cache": false,
       "dependsOn": ["^build"],
       "env": [
         "JWT_ACCESS_TOKEN_EXPIRATION_MS",
@@ -101,6 +104,7 @@
       ]
     },
     "database#build": {
+      "cache": false,
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
@@ -126,9 +130,11 @@
       "env": ["DATABASE_URL"]
     },
     "lint": {
+      "cache": false,
       "dependsOn": ["^lint"]
     },
     "check-types": {
+      "cache": false,
       "dependsOn": ["^check-types"]
     }
   }

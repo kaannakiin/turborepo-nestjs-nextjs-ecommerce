@@ -1,6 +1,6 @@
 "use client";
 
-import CustomPhoneInput from "@/(user)/components/CustomPhoneInput";
+import CustomPhoneInput from "@/components/inputs/CustomPhoneInput";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import { Button, Card, Group, SimpleGrid, TextInput } from "@mantine/core";
 import { notifications } from "@mantine/notifications";

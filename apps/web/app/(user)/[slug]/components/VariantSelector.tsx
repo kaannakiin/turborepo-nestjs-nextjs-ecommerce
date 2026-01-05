@@ -1,7 +1,10 @@
 "use client";
 
 import { Avatar, Badge, Select } from "@mantine/core";
-import { VariantGroupRenderType, VariantGroupType } from "@repo/database";
+import {
+  VariantGroupRenderType,
+  VariantGroupType,
+} from "@repo/database/client";
 import { ProductDetailVariantGroup } from "@repo/types";
 import Image from "next/image";
 

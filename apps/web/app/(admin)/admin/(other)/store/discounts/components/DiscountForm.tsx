@@ -70,7 +70,7 @@ import { useState } from "react";
 import CouponForm from "./CouponForm";
 import DiscountConditionForm from "./DiscountConditionForm";
 import DiscountCustomerForm from "./DiscountCustomerForm";
-import FormCard from "./FormCard";
+import FormCard from "../../../../../../components/cards/FormCard";
 
 interface DiscountFormProps {
   defaultValues?: MainDiscount;
@@ -290,7 +290,6 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
   };
   const { push } = useRouter();
   const onSubmit: SubmitHandler<MainDiscount> = async (data) => {
-
     const res = await fetchWrapper.post<DiscountUpsertResponse>(
       "/admin/discounts/upgrade-or-create",
       data

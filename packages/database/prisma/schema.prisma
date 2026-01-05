@@ -9,27 +9,168 @@ datasource db {
   provider = "postgresql"
 }
 
+enum AccountStatus {
+  ACTIVE
+  PASSIVE
+  BANNED
+  PENDING_APPROVAL // B2B kayıtları için onay süreci
+}
+
+enum RegistrationSource {
+  WEB_REGISTER
+  ADMIN_PANEL
+  IMPORT_EXCEL // CSV/Excel yüklemeleri için
+  API
+  CHECKOUT_GUEST
+  PROVIDER_OAUTH
+}
+
+enum SubscriptionStatus {
+  SUBSCRIBED
+  UNSUBSCRIBED
+  PENDING
+}
+
 model User {
-  id                String             @id @default(cuid())
-  role              UserRole           @default(USER)
-  name              String
-  surname           String
-  email             String?            @unique
-  phone             String?            @unique
-  password          String?
-  imageUrl          String?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  defaultAddressId  String?            @unique
-  addresses         AddressSchema[]
-  carts             Cart[]
+  id   String   @id @default(cuid())
+  role UserRole @default(USER)
+
+  // Kimlik Bilgileri
+  name     String
+  surname  String
+  email    String? @unique
+  phone    String? @unique
+  password String?
+  imageUrl String?
+
+  // Durum & Güvenlik
+  accountStatus   AccountStatus @default(ACTIVE)
+  isEmailVerified Boolean       @default(false)
+  emailVerifiedAt DateTime?
+  isPhoneVerified Boolean       @default(false)
+  phoneVerifiedAt DateTime?
+
+  // Pazarlama & Kaynak
+  registrationSource RegistrationSource @default(WEB_REGISTER)
+  subscriptionStatus SubscriptionStatus @default(UNSUBSCRIBED)
+  note               String? // Admin notu
+  tags               CustomerTag[] // Hızlı etiketleme (Örn: "Sorunlu Müşteri")
+
+  // İstatistikler (Segmentasyon için kritik - Cron ile veya event ile güncellenir)
+  orderCount     Int       @default(0)
+  totalSpent     Decimal   @default(0) // Float yerine Decimal kullan, para bu
+  lastOrderDate  DateTime?
+  firstOrderDate DateTime?
+
+  // B2B & Gruplama
+  customerGroups CustomerGroup[] // Statik gruplar (Many-to-Many)
+  priceListId    String? // Kullanıcıya özel fiyat listesi varsa
+  priceList      PriceList?      @relation(fields: [priceListId], references: [id])
+
+  // Custom Attributes (Ikas'taki attributes gibi esnek alanlar)
+  // Örn: { "vergiDairesi": "Besiktas", "sektor": "Tekstil" }
+  customAttributes Json?
+
+  // Mevcut İlişkiler
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  defaultAddressId String?         @unique
+  addresses        AddressSchema[]
+  carts            Cart[]
+  orders           OrderSchema[]
+  defaultAddress   AddressSchema?  @relation("UserDefaultAddress", fields: [defaultAddressId], references: [id])
+
+  // İndirim ilişkileri (Mevcut yapın)
   specificDiscounts DiscountCustomer[]
   discountUsages    DiscountUsage[]
-  orders            OrderSchema[]
   refreshTokens     RefreshTokens[]
-  defaultAddress    AddressSchema?     @relation("UserDefaultAddress", fields: [defaultAddressId], references: [id])
 
-  @@index([id, email, phone])
+  @@index([email, phone])
+  @@index([accountStatus])
+  @@index([totalSpent]) // Segmentasyon sorguları için
+  @@index([orderCount])
+}
+
+model CustomerTag {
+  id    String @id @default(cuid())
+  name  String @unique // Örn: "influencer", "iadeci", "toptanci"
+  users User[]
+}
+
+// 2. Statik Müşteri Grupları (Manuel Atama)
+enum GroupType {
+  MANUAL // Eski usül: Admin elle ekler veya "Register Flow" sonucu buraya ID yazılır.
+  SMART // (Dinamik): İçindeki 'conditions' JSON'ına uyanları anlık getirir.
+}
+
+model CustomerGroup {
+  id          String  @id @default(cuid())
+  name        String // Örn: "VIP Müşteriler" veya "Manuel Onaylılar"
+  description String?
+
+  type GroupType @default(MANUAL)
+
+  // --- SMART GROUP İÇİN ---
+  // Senin Karar Ağacı UI'ından çıkan JSON buraya kaydedilecek.
+  // Örn: { "logic": "AND", "rules": [{ "field": "totalSpent", "op": "gt", "value": 5000 }] }
+  conditions Json?
+
+  // --- MANUAL GROUP İÇİN ---
+  // Statik olarak veritabanında ilişki kurulmuş üyeler
+  users User[]
+
+  // ORTAK ÖZELLİKLER
+  isDefault  Boolean     @default(false)
+  priceLists PriceList[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum PriceListType {
+  OVERRIDE // Ana fiyatı ezer (Kesin Fiyat)
+  DISCOUNT // Ana fiyat üzerinden % indirim yapar
+  INCREASE // Ana fiyat üzerine ekleme yapar
+}
+
+model PriceList {
+  id       String        @id @default(cuid())
+  name     String // Örn: "2025 Toptan Fiyat Listesi"
+  currency Currency      @default(TRY)
+  type     PriceListType @default(OVERRIDE)
+
+  // Genel bir oran varsa (Örn: Tüm ürünlere %20 indirim)
+  adjustmentValue Float?
+
+  startDate DateTime?
+  endDate   DateTime?
+  isActive  Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Kimler bu fiyatı görür?
+  users  User[] // Direkt atanan kullanıcılar
+  groups CustomerGroup[] // Atanan gruplar
+
+  // Ürün bazlı özel fiyatlar
+  prices ProductPriceListPrice[]
+}
+
+// Bir ürünün, spesifik bir listedeki fiyatı
+model ProductPriceListPrice {
+  id          String @id @default(cuid())
+  priceListId String
+  variantId   String // Varyant bazlı fiyatlandırma
+
+  price       Float // Listeye özel fiyat
+  minQuantity Int   @default(1) // Kademeli fiyat (Tiered Pricing) için
+
+  priceList PriceList                 @relation(fields: [priceListId], references: [id], onDelete: Cascade)
+  variant   ProductVariantCombination @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([priceListId, variantId, minQuantity])
+  @@index([variantId])
 }
 
 model RefreshTokens {
@@ -404,9 +545,10 @@ model ProductVariantCombination {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  product      Product                           @relation(fields: [productId], references: [id], onDelete: Cascade)
-  options      ProductVariantCombinationOption[]
-  translations ProductVariantTranslation[]
+  product         Product                           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  options         ProductVariantCombinationOption[]
+  translations    ProductVariantTranslation[]
+  priceListPrices ProductPriceListPrice[]
 
   prices           ProductPrice[]
   assets           ProductAsset[]
@@ -512,16 +654,15 @@ model Country {
 }
 
 model State {
-  id                    String                         @id
-  name                  String
-  stateCode             String?
-  countryId             String
-  createdAt             DateTime                       @default(now())
-  updatedAt             DateTime                       @updatedAt
-  addressSchema         AddressSchema[]
-  Country               Country                        @relation(fields: [countryId], references: [id])
-  inventoryLocations    InventoryLocation[]
-  inventoryServiceZones InventoryLocationServiceZone[]
+  id                 String              @id
+  name               String
+  stateCode          String?
+  countryId          String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  addressSchema      AddressSchema[]
+  Country            Country             @relation(fields: [countryId], references: [id])
+  inventoryLocations InventoryLocation[]
 
   @@index([countryId])
   @@index([name])
@@ -944,7 +1085,7 @@ model DiscountCustomer {
 model DiscountConditionGroup {
   id         String                   @id @default(cuid())
   discountId String
-  operator   FilterOperator
+  operator   LogicalOperator          @default(AND)
   type       DiscountConditionType    @default(PRODUCT)
   brands     DiscountBrand[]
   categories DiscountCategory[]
@@ -1357,11 +1498,6 @@ enum AllowedDiscountedItemsBy {
   discounted_price
 }
 
-enum FilterOperator {
-  AND
-  OR
-}
-
 enum DiscountConditionType {
   PRODUCT
   CATEGORY
@@ -1657,15 +1793,21 @@ model InventoryLocationServiceZone {
   id         String @id @default(cuid())
   locationId String
 
-  // Hangi bölgeye hizmet veriyor
-  countryId String
-  stateId   String? // null = tüm iller
-  cityIds   String[] @default([]) // boş = tüm şehirler
+  // Ülke bilgisi
+  countryId   String
+  countryType CountryType // Ülkenin tipi (redundant ama query kolaylığı için)
 
-  // Bu bölge için öncelik (aynı bölgeye birden fazla depo hizmet verebilir)
-  priority Int @default(0)
+  // Bölge tanımı - CountryType'a göre kullanılır
+  // STATE tipli ülkeler için (ABD, Almanya vs)
+  stateIds String[] @default([]) // Boş = tüm state'ler
 
-  // Tahmini teslimat süresi (gün)
+  // CITY tipli ülkeler için (Türkiye, Fransa vs)
+  cityIds String[] @default([]) // Boş = tüm şehirler
+
+  // NONE tipli ülkeler için sadece countryId yeterli
+
+  // Öncelik ve teslimat
+  priority              Int  @default(0)
   estimatedDeliveryDays Int?
 
   createdAt DateTime @default(now())
@@ -1673,10 +1815,9 @@ model InventoryLocationServiceZone {
 
   location InventoryLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
   country  Country           @relation(fields: [countryId], references: [id])
-  state    State?            @relation(fields: [stateId], references: [id])
 
-  @@unique([locationId, countryId, stateId])
-  @@index([countryId, stateId])
+  @@unique([locationId, countryId]) // Bir lokasyon, bir ülke için tek zone
+  @@index([countryId])
 }
 
 model InventoryMovement {
@@ -1966,4 +2107,74 @@ enum WeightUnit {
   GR
   LB
   OZ
+}
+
+model FulfillmentStrategy {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  type        String  @default("PROXIMITY") // Enum yerine String
+  isDefault   Boolean @default(false)
+  isActive    Boolean @default(true)
+  priority    Int     @default(0)
+
+  allowSplitShipment Boolean @default(false)
+  maxSplitCount      Int?
+  allowBackorder     Boolean @default(false)
+  allowDropship      Boolean @default(false)
+
+  // Tüm kurallar JSON'da
+  rules Json @default("[]") // FulfillmentRule[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  decisions FulfillmentDecision[]
+
+  @@index([isActive, priority])
+}
+
+model FulfillmentDecision {
+  id      String @id @default(cuid())
+  orderId String
+
+  strategyId   String?
+  decisionType FulfillmentDecisionType // FulfillmentDecisionType
+
+  assignedLocationId String?
+  supplierId         String?
+
+  // Hangi kural match etti, neden bu karar
+  matchedRuleId String?
+  evaluationLog Json?
+
+  createdAt DateTime @default(now())
+
+  strategy FulfillmentStrategy? @relation(fields: [strategyId], references: [id])
+
+  @@index([orderId])
+  @@index([strategyId])
+}
+
+// =====================
+// FULFILLMENT EXECUTION LOG
+// =====================
+
+enum FulfillmentDecisionType {
+  AUTO_ASSIGNED // Otomatik atandı
+  SPLIT_SHIPMENT // Bölündü
+  DROPSHIP // Dropship'e yönlendirildi
+  BACKORDER // Backorder'a alındı
+  MANUAL_REQUIRED // Manuel müdahale gerekli
+  REJECTED // Reddedildi
+}
+
+// ============================================
+// LOGICAL OPERATORS (Gruplar için)
+// ============================================
+
+// Zaten FilterOperator var, onu rename edelim
+enum LogicalOperator {
+  AND
+  OR
 }

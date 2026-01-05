@@ -21,7 +21,6 @@ export class LocationsService {
       },
     });
   }
-
   async getCitiesByCountry(countryId: string) {
     return this.prismaService.city.findMany({
       where: {
@@ -95,7 +94,6 @@ export class LocationsService {
       }),
     ]);
 
-    // Client-side'da kontrol et
     return addresses.map((address) => ({
       ...address,
       isDefault: address.id === user?.defaultAddressId,

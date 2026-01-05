@@ -11,7 +11,7 @@ import {
   Text,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { FilterOperator, DiscountConditionType } from "@repo/database/client";
+import { DiscountConditionType, LogicalOperator } from "@repo/database/client";
 import { Control, Controller, useFieldArray, useQuery } from "@repo/shared";
 import { DiscountItem, MainDiscount } from "@repo/types";
 import { IconEdit, IconTrash } from "@tabler/icons-react";
@@ -416,11 +416,11 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
                           {...controllerField}
                           data={[
                             {
-                              value: FilterOperator.AND,
+                              value: LogicalOperator.AND,
                               label: "VE (AND)",
                             },
                             {
-                              value: FilterOperator.OR,
+                              value: LogicalOperator.OR,
                               label: "VEYA (OR)",
                             },
                           ]}

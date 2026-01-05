@@ -14,7 +14,7 @@ const DELAY_ON_RATE_LIMIT = 5000;
 async function fetchWithRetry(
   url: string,
   options: RequestInit,
-  maxRetries: number = 3
+  maxRetries: number = 5
 ): Promise<Response> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     const response = await fetch(url, options);

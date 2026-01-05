@@ -14,7 +14,10 @@ import {
   Text,
   UnstyledButton,
 } from "@mantine/core";
-import { VariantGroupRenderType, VariantGroupType } from "@repo/database";
+import {
+  VariantGroupRenderType,
+  VariantGroupType,
+} from "@repo/database/client";
 import { FiltersResponse, TreeNode } from "@repo/types";
 import { IconChevronDown, IconFilter2, IconX } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";

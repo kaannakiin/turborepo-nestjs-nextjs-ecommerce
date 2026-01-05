@@ -14,7 +14,7 @@ import { Controller, SubmitHandler, useForm, zodResolver } from "@repo/shared";
 import { RegisterSchema, RegisterSchemaType } from "@repo/types";
 import { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
-import CustomPhoneInput from "../../(user)/components/CustomPhoneInput";
+import CustomPhoneInput from "../../components/inputs/CustomPhoneInput";
 import GlobalLoadingOverlay from "../../components/GlobalLoadingOverlay";
 
 const RegisterForm = () => {

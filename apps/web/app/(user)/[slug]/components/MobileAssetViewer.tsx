@@ -2,7 +2,7 @@
 
 import CustomImage from "@/components/CustomImage";
 import { AspectRatio } from "@mantine/core";
-import { AssetType } from "@repo/database";
+import { AssetType } from "@repo/database/client";
 import { useState } from "react";
 import type { Swiper as SwiperType } from "swiper";
 import { Pagination } from "swiper/modules";

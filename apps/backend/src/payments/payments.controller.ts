@@ -8,11 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { User } from '@repo/database';
-import {
-  PaymentZodSchema,
-  type ThreeDCallback,
-  type PaymentZodType,
-} from '@repo/types';
+import { type ThreeDCallback } from '@repo/types';
 import type { Request, Response } from 'express';
 import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';

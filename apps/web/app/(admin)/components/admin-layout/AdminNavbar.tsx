@@ -248,7 +248,7 @@ const AdminNavbar = ({
       <Divider color="gray.1" />
 
       <AppShell.Section grow component={ScrollArea} className="px-3 py-3">
-        <div className="flex gap-2 h-full">
+        <div className="flex gap-1 h-full">
           <Stack gap="xs" className="py-1">
             {navGroups.map((item, index) => (
               <Tooltip
@@ -276,7 +276,7 @@ const AdminNavbar = ({
             ))}
           </Stack>
 
-          <Box className="flex-1 pl-2 border-l border-slate-100">
+          <Box className="flex-1">
             <Text
               size="xs"
               fw={600}
@@ -296,13 +296,22 @@ const AdminNavbar = ({
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 hover:translate-x-0.5"
                   }`}
                 >
-                  <Text
-                    size="sm"
-                    fw={activeHref === subItem.href ? 600 : 500}
-                    className="transition-all duration-200"
+                  <Tooltip
+                    label={subItem.tooltip}
+                    disabled={!subItem.tooltip}
+                    withArrow
+                    position="right"
+                    w={250}
+                    multiline
                   >
-                    {subItem.label}
-                  </Text>
+                    <Text
+                      size="sm"
+                      fw={activeHref === subItem.href ? 600 : 500}
+                      className="transition-all duration-200"
+                    >
+                      {subItem.label}
+                    </Text>
+                  </Tooltip>
                 </UnstyledButton>
               ))}
             </Stack>

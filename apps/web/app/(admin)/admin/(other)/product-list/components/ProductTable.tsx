@@ -7,6 +7,7 @@ import {
   ActionIcon,
   Alert,
   AspectRatio,
+  Badge,
   Button,
   Card,
   Center,
@@ -23,7 +24,7 @@ import {
   Title,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { Locale } from "@repo/database";
+import { Locale } from "@repo/database/client";
 import { DateFormatter, useQuery } from "@repo/shared";
 import {
   AdminProductTableProductData,
@@ -48,6 +49,13 @@ import {
   useProductBulkAction,
 } from "@lib/ui/bulk-action-queries";
 import { getBulkActionConfig } from "@lib/ui/bulk-action.helper";
+import {
+  getPriceRange,
+  getProductAsset,
+  getProductName,
+  getProductStatus,
+  getStockRange,
+} from "@lib/ui/product-helper";
 
 type ProductsResponse = {
   products: AdminProductTableProductData[];
@@ -143,14 +151,12 @@ const ProductTable = () => {
   const onAction = (action: ProductBulkAction) => {
     const config = getBulkActionConfig(action);
 
-    // Modal gerektiren action'lar
     if (config.needsModal) {
       setCurrentAction(action);
-      // İlgili modal'ı aç
+
       return;
     }
 
-    // Direkt çalışan action'lar
     executeBulkAction({
       action,
       productIds: selectedProductIDs,
@@ -193,18 +199,18 @@ const ProductTable = () => {
           <Group justify="space-between" align="center">
             <Title order={4}>Ürün Listesi</Title>
             <Group gap="md">
+              <ProductActionsGroup
+                selectedIds={selectedProductIDs}
+                onAction={(action) => {
+                  onAction(action);
+                }}
+              />
               <Button onClick={open} leftSection={<IconPlus size={16} />}>
                 Ürün Ekle
               </Button>
               <CustomSearchInput />
             </Group>
           </Group>
-          <ProductActionsGroup
-            selectedIds={selectedProductIDs}
-            onAction={(action) => {
-              onAction(action);
-            }}
-          />
         </Stack>
 
         <Table.ScrollContainer minWidth={800}>
@@ -256,71 +262,11 @@ const ProductTable = () => {
                     const locale: Locale = "TR";
                     const currency = "TRY";
 
-                    const name =
-                      product.translations.find((t) => t.locale === locale)
-                        ?.name ||
-                      product.translations[0]?.name ||
-                      "İsimsiz Ürün";
-
-                    const defaultVariant = product.variants.find(
-                      (v) => v.isDefault
-                    );
-                    const firstImageVariant = product.variants.find(
-                      (v) => v.assets.length > 0
-                    );
-
-                    const asset =
-                      product.assets[0]?.asset ||
-                      defaultVariant?.assets[0]?.asset ||
-                      firstImageVariant?.assets[0]?.asset ||
-                      null;
-
-                    const allVariants = product.variants;
-
-                    const stocks = allVariants.map((v) => v.stock);
-                    const minStock =
-                      stocks.length > 0 ? Math.min(...stocks) : 0;
-                    const maxStock =
-                      stocks.length > 0 ? Math.max(...stocks) : 0;
-
-                    const renderStock = () => {
-                      if (stocks.length === 0) return 0;
-
-                      if (minStock === maxStock) {
-                        return minStock;
-                      }
-
-                      return `${minStock} - ${maxStock}`;
-                    };
-
-                    const prices = allVariants
-                      .map(
-                        (v) =>
-                          v.prices.find((p) => p.currency === currency)?.price
-                      )
-                      .filter(
-                        (p): p is number => p !== undefined && p !== null
-                      );
-
-                    const minPrice =
-                      prices.length > 0 ? Math.min(...prices) : 0;
-                    const maxPrice =
-                      prices.length > 0 ? Math.max(...prices) : 0;
-
-                    const renderPrice = () => {
-                      if (prices.length === 0) return "-";
-
-                      const format = (val: number) =>
-                        new Intl.NumberFormat(locale, {
-                          style: "currency",
-                          currency,
-                        }).format(val);
-
-                      if (minPrice === maxPrice) {
-                        return format(minPrice);
-                      }
-                      return `${format(minPrice)} - ${format(maxPrice)}`;
-                    };
+                    const name = getProductName(product, locale);
+                    const asset = getProductAsset(product);
+                    const status = getProductStatus(product);
+                    const stock = getStockRange(product);
+                    const price = getPriceRange(product, currency, locale);
 
                     return (
                       <Table.Tr
@@ -341,12 +287,21 @@ const ProductTable = () => {
                           />
                         </Table.Td>
                         <Table.Td onClick={(e) => e.stopPropagation()}>
-                          <AspectRatio ratio={1} maw={40}>
-                            <TableAsset
-                              type={asset?.type || "IMAGE"}
-                              url={asset?.url || "https://placehold.co/40x40"}
-                            />
-                          </AspectRatio>
+                          <Group gap={"md"} align="center">
+                            <AspectRatio ratio={1} maw={40}>
+                              <TableAsset
+                                type={asset?.type || "IMAGE"}
+                                url={asset?.url || "https://placehold.co/40x40"}
+                              />
+                            </AspectRatio>
+                            {status === "active" ? (
+                              <Badge color="green">Aktif</Badge>
+                            ) : status === "partial" ? (
+                              <Badge color="yellow">Kısmen Aktif</Badge>
+                            ) : (
+                              <Badge color="red">Pasif</Badge>
+                            )}
+                          </Group>
                         </Table.Td>
                         <Table.Td>
                           {name}
@@ -356,8 +311,8 @@ const ProductTable = () => {
                             </Text>
                           )}
                         </Table.Td>
-                        <Table.Td>{renderPrice()}</Table.Td>
-                        <Table.Td>{renderStock()}</Table.Td>
+                        <Table.Td>{price.display}</Table.Td>
+                        <Table.Td>{stock.display}</Table.Td>
                         <Table.Td>
                           {DateFormatter.shortDate(product.createdAt)}
                         </Table.Td>

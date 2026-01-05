@@ -1,12 +1,17 @@
 import {
+  Body,
   Controller,
   Get,
+  Param,
   ParseIntPipe,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import {
   AllUsersReturnType,
+  CustomerGroupSchema,
+  type CustomerGroupOutputZodType,
   type GetUsersQueries,
   getUsersQueries,
   GetUsersQueriesReturnType,
@@ -46,5 +51,27 @@ export class UsersController {
   @Get('all-users')
   async allUsers(): Promise<AllUsersReturnType[]> {
     return this.usersService.getUserInfos();
+  }
+
+  @Post('customer-group')
+  async upsertCustomerSegment(
+    @Body(new ZodValidationPipe(CustomerGroupSchema))
+    body: CustomerGroupOutputZodType,
+  ) {
+    return this.usersService.upsertCustomerGroup(body);
+  }
+
+  @Get('customer-groups')
+  async getCustomerSegments(
+    @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 20,
+    @Query('search') search?: string,
+  ) {
+    return this.usersService.getCustomerGroups(page, limit, search);
+  }
+
+  @Get('customer-group/:id')
+  async getCustomerSegment(@Param('id') id: string) {
+    return this.usersService.getCustomerGroup(id);
   }
 }

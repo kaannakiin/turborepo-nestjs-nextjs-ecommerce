@@ -11,14 +11,16 @@ import {
 } from "@mantine/core";
 import { Dropzone, DropzoneProps, FileWithPath } from "@mantine/dropzone";
 import { notifications } from "@mantine/notifications";
-import { AssetType } from "@repo/database";
+import { AssetType } from "@repo/database/client";
 import { getMimeTypesForAssetType } from "@repo/types";
 import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 
 type ValueType = File | string;
 
-interface IconDropzoneProps
-  extends Omit<DropzoneProps, "accept" | "onChange" | "onDrop"> {
+interface IconDropzoneProps extends Omit<
+  DropzoneProps,
+  "accept" | "onChange" | "onDrop"
+> {
   accepts?: AssetType | AssetType[];
   cols?: SimpleGridProps["cols"];
   value?: ValueType | ValueType[] | null;

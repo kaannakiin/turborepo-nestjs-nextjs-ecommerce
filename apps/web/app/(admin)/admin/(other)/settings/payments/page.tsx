@@ -8,7 +8,7 @@ import { PaymentMethodType } from "@repo/types";
 import { IconInfoCircle } from "@tabler/icons-react";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import FormCard from "../../store/discounts/components/FormCard";
+import FormCard from "../../../../../components/cards/FormCard";
 import PaymentMethods from "./payment-methods/page";
 
 const AdminPaymentsPage = () => {

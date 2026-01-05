@@ -1,7 +1,7 @@
 "use client";
 
 import { ActionIcon, AspectRatio } from "@mantine/core";
-import { AssetType } from "@repo/database";
+import { AssetType } from "@repo/database/client";
 import {
   IconChevronLeft,
   IconChevronRight,

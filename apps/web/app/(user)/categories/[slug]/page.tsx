@@ -7,7 +7,7 @@ import {
   getServerSideAllSearchParams,
 } from "@lib/ui/product-helper";
 import { ApiError, createServerFetch } from "@lib/wrappers/fetchWrapper";
-import { Currency, Locale } from "@repo/database";
+import { Currency, Locale } from "@repo/database/client";
 import { dehydrate, HydrationBoundary } from "@repo/shared";
 import { CategoryProductsResponse, FiltersResponse } from "@repo/types";
 import { Metadata } from "next";

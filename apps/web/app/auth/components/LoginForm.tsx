@@ -13,7 +13,7 @@ import { LoginSchema, LoginSchemaType } from "@repo/types";
 import { IconMail, IconPhone } from "@tabler/icons-react";
 import { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
-import CustomPhoneInput from "../../(user)/components/CustomPhoneInput";
+import CustomPhoneInput from "../../components/inputs/CustomPhoneInput";
 import GlobalLoadingOverlay from "../../components/GlobalLoadingOverlay";
 
 const LoginForm = () => {

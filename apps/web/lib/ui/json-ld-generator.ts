@@ -1,4 +1,4 @@
-import { Currency, Locale } from "@repo/database";
+import { Currency, Locale } from "@repo/database/client";
 import {
   BaseNode,
   BrandProductsResponse,

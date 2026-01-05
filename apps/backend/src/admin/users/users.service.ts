@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { Prisma, User } from '@repo/database';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { CustomerGroup, GroupType, Prisma, User } from '@repo/database';
 import {
   AllUsersReturnType,
+  CustomerGroupOutputZodType,
   GetUsersQueriesReturnType,
   Pagination,
   SortAdminUserTable,
@@ -54,10 +55,8 @@ export class UsersService {
     const take = 10;
     const skip = (params.page - 1) * take;
 
-    // Default sıralama ekle - eğer sortBy gelmezse default olarak createdAt desc
     let orderBy: Prisma.UserOrderByWithRelationInput = { createdAt: 'desc' };
 
-    // sortBy parametresi varsa ve geçerliyse kullan
     if (
       params.sortBy &&
       Object.values(SortAdminUserTable).includes(params.sortBy)
@@ -76,7 +75,6 @@ export class UsersService {
           orderBy = { createdAt: 'desc' };
           break;
         default:
-          // Default durumda en yeni kayıtlar üstte
           orderBy = { createdAt: 'desc' };
       }
     }
@@ -189,5 +187,143 @@ export class UsersService {
         totalPages: Math.ceil(total / take),
       },
     };
+  }
+
+  async upsertCustomerGroup(
+    data: CustomerGroupOutputZodType,
+  ): Promise<{ success: boolean; groupId?: string }> {
+    try {
+      const isSmartGroup = data.type === GroupType.SMART;
+
+      const conditions = isSmartGroup
+        ? (data.conditions as Prisma.JsonObject)
+        : Prisma.DbNull;
+
+      const usersForCreate = isSmartGroup
+        ? undefined
+        : {
+            connect: (data.users || []).map((userId) => ({ id: userId })),
+          };
+
+      const usersForUpdate = isSmartGroup
+        ? { set: [] }
+        : {
+            set: (data.users || []).map((userId) => ({ id: userId })),
+          };
+
+      const basePayload = {
+        name: data.name,
+        description: data.description || null,
+        type: data.type,
+        conditions: conditions,
+      };
+
+      const upserted = await this.prismaService.customerGroup.upsert({
+        where: {
+          id: data.uniqueId || 'new-record',
+        },
+        create: {
+          ...(data.uniqueId ? { id: data.uniqueId } : {}),
+          ...basePayload,
+          users: usersForCreate,
+        },
+        update: {
+          ...basePayload,
+          users: usersForUpdate,
+        },
+      });
+
+      return {
+        success: true,
+        groupId: upserted.id,
+      };
+    } catch (error) {
+      console.error('CustomerGroup (Segment) upsert error:', error);
+      throw new InternalServerErrorException('Grup kaydedilemedi');
+    }
+  }
+
+  async getCustomerGroups(
+    page: number,
+    limit: number,
+    search?: string,
+  ): Promise<{
+    groups: (CustomerGroup & { _count: { users: number } })[];
+    pagination: Pagination;
+  }> {
+    try {
+      const skip = (page - 1) * limit;
+
+      const where: Prisma.CustomerGroupWhereInput = {
+        ...(search && {
+          name: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        }),
+      };
+
+      const [groups, total] = await Promise.all([
+        this.prismaService.customerGroup.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            _count: {
+              select: { users: true },
+            },
+          },
+        }),
+        this.prismaService.customerGroup.count({ where }),
+      ]);
+
+      return {
+        groups,
+        pagination: {
+          currentPage: page,
+          totalCount: total,
+          perPage: limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
+    } catch (error) {
+      console.error('Get Smart Groups error:', error);
+      throw new InternalServerErrorException('Akıllı gruplar alınamadı');
+    }
+  }
+
+  async getCustomerGroup(
+    id: string,
+  ): Promise<{ group: CustomerGroup; users: User[] } | null> {
+    try {
+      const group = await this.prismaService.customerGroup.findUnique({
+        where: { id: id },
+      });
+
+      if (!group) return null;
+
+      let users: User[] = [];
+
+      if (group.type === 'MANUAL') {
+        users = await this.prismaService.user.findMany({
+          where: {
+            customerGroups: {
+              some: {
+                id: id,
+              },
+            },
+          },
+        });
+      }
+
+      return {
+        group,
+        users,
+      };
+    } catch (error) {
+      console.error('Get CustomerGroup error:', error);
+      throw new InternalServerErrorException('Grup detayı alınamadı');
+    }
   }
 }
