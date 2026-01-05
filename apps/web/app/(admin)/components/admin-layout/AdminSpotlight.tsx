@@ -22,7 +22,6 @@ const AdminSpotlight = () => {
           const groupItems = spotlightItems.filter(
             (item) => item.group === group.label
           );
-
           if (groupItems.length === 0) return null;
 
           return {

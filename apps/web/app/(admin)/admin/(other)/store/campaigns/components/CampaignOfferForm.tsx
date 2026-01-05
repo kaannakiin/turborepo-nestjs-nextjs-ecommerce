@@ -27,7 +27,7 @@ import {
 } from "@repo/shared";
 import { CampaignZodType, ProductModalData } from "@repo/types";
 import { useState } from "react";
-import FormCard from "../../discounts/components/FormCard";
+import FormCard from "../../../../../../components/cards/FormCard";
 import OverviewUppSellCard from "./OverviewUppSellCard";
 import SearchableProductModal from "./SearchableProductModal";
 

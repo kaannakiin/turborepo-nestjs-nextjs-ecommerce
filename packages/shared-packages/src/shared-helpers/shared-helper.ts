@@ -1,4 +1,4 @@
-import { $Enums } from "@repo/database";
+import { $Enums, LocationType } from "@repo/database";
 export function slugify(text: string): string {
   if (!text || typeof text !== "string") return "";
 
@@ -517,3 +517,36 @@ const visibleCauseConfigs: Record<$Enums.inVisibleCause, { label: string }> = {
 export function getInvisibleCauseLabel(cause: $Enums.inVisibleCause): string {
   return visibleCauseConfigs[cause]?.label || "Bilinmeyen";
 }
+
+const inventoryLocationType: Record<
+  LocationType,
+  { label: string; color: string }
+> = {
+  WAREHOUSE: {
+    label: "Depo",
+    color: "blue",
+  },
+  STORE: {
+    label: "Mağaza",
+    color: "green",
+  },
+  SUPPLIER: {
+    label: "Tedarikçi",
+    color: "orange",
+  },
+  FULFILLMENT: {
+    label: "Dağıtım Merkezi",
+    color: "purple",
+  },
+  VIRTUAL: {
+    label: "Sanal Lokasyon",
+    color: "gray",
+  },
+};
+
+export const getInventoryLocationTypeLabel = (type: LocationType): string => {
+  return inventoryLocationType[type]?.label || "Bilinmeyen";
+};
+export const getInventoryLocationTypeColor = (type: LocationType): string => {
+  return inventoryLocationType[type]?.color || "gray";
+};

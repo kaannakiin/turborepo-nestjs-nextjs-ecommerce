@@ -18,7 +18,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { Control, Controller, UseFormSetValue, useQuery } from "@repo/shared";
 import { AllUsersReturnType, MainDiscount } from "@repo/types";
 import { IconTrash, IconUser, IconUsers } from "@tabler/icons-react";
-import FormCard from "./FormCard";
+import FormCard from "../../../../../../components/cards/FormCard";
 
 interface DiscountCustomerFormProps {
   control: Control<MainDiscount>;

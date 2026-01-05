@@ -14,6 +14,7 @@ import {
   Select,
   SimpleGrid,
   Stack,
+  Switch,
   TextInput,
   Title,
 } from "@mantine/core";
@@ -422,6 +423,16 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
           Varyantlı Ürün {defaultValues ? "Güncelle" : "Oluştur"}
         </Title>
         <Group gap="md" justify="end">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setValue("active", false);
+              handleSubmit(onSubmit)();
+            }}
+          >
+            {defaultValues ? "Pasif Olarak Güncelle" : "Taslak Olarak Kaydet"}
+          </Button>
           <Button type="button" onClick={handleSubmit(onSubmit)}>
             {defaultValues ? "Güncelle" : "Kaydet"}
           </Button>
@@ -469,6 +480,17 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
           />
         </Grid.Col>
       </Grid>
+      <Controller
+        control={control}
+        name="active"
+        render={({ field: { value, ...field } }) => (
+          <Switch
+            {...field}
+            checked={value}
+            label={value ? "Aktif" : "Pasif"}
+          />
+        )}
+      />
       <Controller
         control={control}
         name="translations.0.description"

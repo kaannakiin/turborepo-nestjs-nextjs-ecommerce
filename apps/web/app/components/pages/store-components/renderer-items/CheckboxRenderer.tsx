@@ -1,7 +1,7 @@
 "use client";
 
 import { Checkbox, Stack, Group, Avatar } from "@mantine/core";
-import { AssetType } from "@repo/database";
+import { AssetType } from "@repo/database/client";
 
 interface CheckboxItem {
   id: string;

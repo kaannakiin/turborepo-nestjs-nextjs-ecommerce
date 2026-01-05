@@ -5,12 +5,10 @@ import { AdminModule } from './admin/admin.module';
 import { ChatModule } from './ai/chat/chat.module';
 import { AuthModule } from './auth/auth.module';
 import { BrandsModule } from './brands/brands.module';
-import { CartV3Module } from './cart-v3/cart-v3.module';
 import { CategoriesModule } from './categories/categories.module';
 import { SharedModule } from './common/services/shared.module';
 import { LocationsModule } from './locations/locations.module';
 import { MinioModule } from './minio/minio.module';
-import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
@@ -52,10 +50,8 @@ import { UserModule } from './user/user.module';
     MinioModule,
     LocationsModule,
     ShippingModule,
-    CartV3Module,
     ChatModule,
     PaymentsModule,
-    OrdersModule,
     CategoriesModule,
     BrandsModule,
     ProductsModule,

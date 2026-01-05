@@ -1,6 +1,6 @@
 import AdminAppShellLayout from "@/(admin)/components/admin-layout/AdminAppShellLayout";
 import { getSession } from "@lib/auth";
-import { UserRole } from "@repo/database";
+import { UserRole } from "@repo/database/client";
 import { notFound } from "next/navigation";
 
 const AdminLayout = async ({ children }: { children: React.ReactNode }) => {

@@ -57,7 +57,7 @@ import {
 } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import FormCard from "../../discounts/components/FormCard";
+import FormCard from "../../../../../../components/cards/FormCard";
 import CampaignOfferForm from "./CampaignOfferForm";
 import SearchableProductModal from "./SearchableProductModal";
 

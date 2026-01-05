@@ -1,4 +1,4 @@
-import { Currency, Locale, Prisma } from "@repo/database";
+import { Currency, Locale, Prisma } from "@repo/database/client";
 
 export const commonProductAssetsQuery = {
   orderBy: {

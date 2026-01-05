@@ -15,6 +15,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import {
   BaseProductSchema,
   type BaseProductZodType,
+  BulkActionSchema,
+  type BulkActionZodType,
   Cuid2ZodType,
   VariantProductSchema,
   type VariantProductZodType,
@@ -25,6 +27,8 @@ import { FilesValidationPipe } from 'src/common/pipes/file-validation.pipe';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import { Roles } from 'src/user/reflectors/roles.decorator';
 import { ProductsService } from './products.service';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { type User } from '@repo/database';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(['ADMIN', 'OWNER'])
@@ -97,5 +101,14 @@ export class ProductsController {
       body.productId,
       body.variantId,
     );
+  }
+
+  @Post('bulk-action')
+  async bulkAction(
+    @Body(new ZodValidationPipe(BulkActionSchema))
+    body: BulkActionZodType,
+    @CurrentUser() user: User,
+  ) {
+    return this.productsService.bulkAction(body, user);
   }
 }

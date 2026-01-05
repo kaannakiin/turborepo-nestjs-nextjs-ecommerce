@@ -17,7 +17,7 @@ import {
   TextInput,
 } from "@mantine/core";
 import { useDebouncedState } from "@mantine/hooks";
-import { User } from "@repo/database";
+import { User } from "@repo/database/client";
 import { keepPreviousData, useQuery } from "@repo/shared";
 import { Pagination as PaginationType } from "@repo/types";
 import { IconSearch } from "@tabler/icons-react";

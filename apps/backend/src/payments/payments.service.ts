@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { $Enums, StorePaymentProvider, User } from '@repo/database';
 import {
   BasketItem,
-  CartItemForPayment,
   CompleteThreeDSRequest,
   CompleteThreeDSResponse,
   InstallmentRequest,
@@ -13,16 +12,13 @@ import {
   NonThreeDSRequest,
   NonThreeDSResponse,
   PaymentChannel,
-  PaymentZodType,
   PayTRPaymentMethodType,
-  ShippingAddressPayload,
   ThreeDCallback,
   ThreeDSRequest,
   ThreeDSResponse,
 } from '@repo/types';
 import { Request, Response } from 'express';
-import { CartV3Service } from 'src/cart-v3/cart-v3.service';
-import { OrdersService } from 'src/orders/orders.service';
+
 import { PrismaService } from 'src/prisma/prisma.service';
 import { IyzicoService } from './iyzico/iyzico.service';
 
@@ -32,11 +28,9 @@ export class PaymentsService {
   private readonly provider: StorePaymentProvider | null = null;
   private readonly webUrl: string;
   constructor(
-    private readonly cartService: CartV3Service,
     private readonly configService: ConfigService,
     private readonly prismaService: PrismaService,
     private readonly iyzicoService: IyzicoService,
-    private readonly orderService: OrdersService,
   ) {
     this.webUrl = this.configService
       .getOrThrow<string>('WEB_UI_REDIRECT')

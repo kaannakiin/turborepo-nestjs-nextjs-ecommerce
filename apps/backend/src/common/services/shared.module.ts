@@ -3,6 +3,8 @@ import { PrismaLoggerService } from 'src/common/services/prisma-logger.service';
 import { CurrencyLocaleService } from './currency-locale.service';
 import { ProductMapService } from './product-map.service';
 import { ProductViewService } from './product-view.service';
+import { ProductBulkActionService } from './product-bulk-action.service';
+import { HelperService } from './helper.service';
 
 @Global()
 @Module({
@@ -11,12 +13,16 @@ import { ProductViewService } from './product-view.service';
     ProductMapService,
     ProductViewService,
     PrismaLoggerService,
+    ProductBulkActionService,
+    HelperService,
   ],
   exports: [
     CurrencyLocaleService,
     ProductMapService,
     ProductViewService,
     PrismaLoggerService,
+    ProductBulkActionService,
+    HelperService,
   ],
 })
 export class SharedModule {}

@@ -4,11 +4,12 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { Locale, Prisma } from '@repo/database';
+import { Locale, Prisma, User } from '@repo/database';
 import {
   AdminProductTableProductData,
   adminProductTableQuery,
   BaseProductZodType,
+  BulkActionZodType,
   CombinatedVariantsZodType,
   commonProductAssetsQuery,
   Pagination,
@@ -21,6 +22,7 @@ import {
   VariantProductZodType,
   variantsOptionsOrderByQuery,
 } from '@repo/types';
+import { ProductBulkActionService } from 'src/common/services/product-bulk-action.service';
 import { MinioService } from 'src/minio/minio.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -29,6 +31,7 @@ export class ProductsService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly minioService: MinioService,
+    private readonly productBulkActionService: ProductBulkActionService,
   ) {}
   private logger = new Logger(ProductsService.name);
 
@@ -261,6 +264,7 @@ export class ProductsService {
               } as BaseProductZodType)
             : ({
                 type: product.type,
+                active: product.active,
                 uniqueId: product.id,
                 tagIds: product.tags.map((tag) => tag.productTagId),
                 translations: product.translations.map((t) => ({
@@ -651,13 +655,13 @@ export class ProductsService {
       combinatedVariants,
       ...productData
     } = data;
-
     return await this.prismaService.$transaction(async (tx) => {
       const product = await tx.product.upsert({
         where: { id: uniqueId },
         create: {
           id: uniqueId,
           type: productData.type,
+          active: productData.active,
           brandId: productData.brandId,
           taxonomyCategoryId: productData.googleTaxonomyId,
           visibleAllCombinations: productData.visibleAllCombinations,
@@ -676,6 +680,7 @@ export class ProductsService {
         },
         update: {
           type: productData.type,
+          active: productData.active,
           visibleAllCombinations: productData.visibleAllCombinations,
           brandId: productData.brandId,
           taxonomyCategoryId: productData.googleTaxonomyId,
@@ -1105,5 +1110,9 @@ export class ProductsService {
         })),
       });
     }
+  }
+
+  public async bulkAction(data: BulkActionZodType, user: User) {
+    return this.productBulkActionService.performBulkAction(data, user);
   }
 }

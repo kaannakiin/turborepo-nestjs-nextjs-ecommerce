@@ -5,6 +5,7 @@ import {
   IconCategory,
   IconCreditCard,
   IconDiscount,
+  IconForklift,
   IconLayoutDashboard,
   IconList,
   IconMail,
@@ -21,6 +22,7 @@ export interface NavSubItem {
   label: string;
   href: string;
   hidden?: boolean;
+  tooltip?: string;
 }
 
 export interface NavGroup {
@@ -63,6 +65,22 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
+    label: "Stok Yönetimi",
+    icon: <IconForklift size={20} stroke={1.8} />,
+    sub: [
+      {
+        href: "/inventory/location",
+        label: "Envanter Yönetimi",
+      },
+      {
+        href: "/inventory/rules",
+        label: "Envanter Dağıtım Kuralları",
+        tooltip:
+          "Stoklarınızı farklı depolara veya mağazalara otomatik olarak dağıtmak için kurallar oluşturun.",
+      },
+    ],
+  },
+  {
     label: "Mağaza",
     icon: <IconBuildingStore size={20} stroke={1.8} />,
     sub: [
@@ -83,7 +101,18 @@ export const navGroups: NavGroup[] = [
   {
     label: "Kullanıcılar",
     icon: <IconUsers size={20} stroke={1.8} />,
-    sub: [{ href: "/users/user-list", label: "Kullanıcı Listesi" }],
+    sub: [
+      { href: "/customers/customer-list", label: "Kullanıcılar" },
+      {
+        href: "/customers/customer-groups",
+        label: "Müşteri Grupları",
+      },
+      {
+        href: "/customers/customer-groups/new",
+        label: "Müşteri Grubu Ekle",
+        hidden: true,
+      },
+    ],
   },
   {
     label: "Tema",
@@ -130,16 +159,14 @@ export const getSpotlightItems = (): SpotlightItem[] => {
   const items: SpotlightItem[] = [];
 
   navGroups.forEach((group) => {
-    group.sub
-      .filter((item) => !item.hidden)
-      .forEach((item) => {
-        items.push({
-          label: item.label,
-          href: item.href,
-          group: group.label,
-          icon: spotlightIcons[item.href] || group.icon,
-        });
+    group.sub.forEach((item) => {
+      items.push({
+        label: item.label,
+        href: item.href,
+        group: group.label,
+        icon: spotlightIcons[item.href] || group.icon,
       });
+    });
   });
 
   return items;

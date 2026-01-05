@@ -43,7 +43,6 @@ import {
   AnnouncementInputType,
   HeaderLinkInputType,
   HeaderLinkType,
-  SelectOption,
   ThemeInputType,
 } from "@repo/types";
 import {
@@ -108,7 +107,10 @@ const LinksEditor = ({ control, onBack }: LinksEditorProps) => {
     idKey: "brandId" | "categoryId" | "tagId",
     selectedIds: string[]
   ) => {
-    return (value: string | string[] | null, options?: SelectOption[]) => {
+    return (
+      value: string | string[] | null,
+      options?: { value: string; label: string }[]
+    ) => {
       if (!Array.isArray(value)) return;
 
       const removedIds = selectedIds.filter((id) => !value.includes(id));

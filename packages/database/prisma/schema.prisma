@@ -9,27 +9,168 @@ datasource db {
   provider = "postgresql"
 }
 
+enum AccountStatus {
+  ACTIVE
+  PASSIVE
+  BANNED
+  PENDING_APPROVAL // B2B kayıtları için onay süreci
+}
+
+enum RegistrationSource {
+  WEB_REGISTER
+  ADMIN_PANEL
+  IMPORT_EXCEL // CSV/Excel yüklemeleri için
+  API
+  CHECKOUT_GUEST
+  PROVIDER_OAUTH
+}
+
+enum SubscriptionStatus {
+  SUBSCRIBED
+  UNSUBSCRIBED
+  PENDING
+}
+
 model User {
-  id                String             @id @default(cuid())
-  role              UserRole           @default(USER)
-  name              String
-  surname           String
-  email             String?            @unique
-  phone             String?            @unique
-  password          String?
-  imageUrl          String?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  defaultAddressId  String?            @unique
-  addresses         AddressSchema[]
-  carts             Cart[]
+  id   String   @id @default(cuid())
+  role UserRole @default(USER)
+
+  // Kimlik Bilgileri
+  name     String
+  surname  String
+  email    String? @unique
+  phone    String? @unique
+  password String?
+  imageUrl String?
+
+  // Durum & Güvenlik
+  accountStatus   AccountStatus @default(ACTIVE)
+  isEmailVerified Boolean       @default(false)
+  emailVerifiedAt DateTime?
+  isPhoneVerified Boolean       @default(false)
+  phoneVerifiedAt DateTime?
+
+  // Pazarlama & Kaynak
+  registrationSource RegistrationSource @default(WEB_REGISTER)
+  subscriptionStatus SubscriptionStatus @default(UNSUBSCRIBED)
+  note               String? // Admin notu
+  tags               CustomerTag[] // Hızlı etiketleme (Örn: "Sorunlu Müşteri")
+
+  // İstatistikler (Segmentasyon için kritik - Cron ile veya event ile güncellenir)
+  orderCount     Int       @default(0)
+  totalSpent     Decimal   @default(0) // Float yerine Decimal kullan, para bu
+  lastOrderDate  DateTime?
+  firstOrderDate DateTime?
+
+  // B2B & Gruplama
+  customerGroups CustomerGroup[] // Statik gruplar (Many-to-Many)
+  priceListId    String? // Kullanıcıya özel fiyat listesi varsa
+  priceList      PriceList?      @relation(fields: [priceListId], references: [id])
+
+  // Custom Attributes (Ikas'taki attributes gibi esnek alanlar)
+  // Örn: { "vergiDairesi": "Besiktas", "sektor": "Tekstil" }
+  customAttributes Json?
+
+  // Mevcut İlişkiler
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  defaultAddressId String?         @unique
+  addresses        AddressSchema[]
+  carts            Cart[]
+  orders           OrderSchema[]
+  defaultAddress   AddressSchema?  @relation("UserDefaultAddress", fields: [defaultAddressId], references: [id])
+
+  // İndirim ilişkileri (Mevcut yapın)
   specificDiscounts DiscountCustomer[]
   discountUsages    DiscountUsage[]
-  orders            OrderSchema[]
   refreshTokens     RefreshTokens[]
-  defaultAddress    AddressSchema?     @relation("UserDefaultAddress", fields: [defaultAddressId], references: [id])
 
-  @@index([id, email, phone])
+  @@index([email, phone])
+  @@index([accountStatus])
+  @@index([totalSpent]) // Segmentasyon sorguları için
+  @@index([orderCount])
+}
+
+model CustomerTag {
+  id    String @id @default(cuid())
+  name  String @unique // Örn: "influencer", "iadeci", "toptanci"
+  users User[]
+}
+
+// 2. Statik Müşteri Grupları (Manuel Atama)
+enum GroupType {
+  MANUAL // Eski usül: Admin elle ekler veya "Register Flow" sonucu buraya ID yazılır.
+  SMART // (Dinamik): İçindeki 'conditions' JSON'ına uyanları anlık getirir.
+}
+
+model CustomerGroup {
+  id          String  @id @default(cuid())
+  name        String // Örn: "VIP Müşteriler" veya "Manuel Onaylılar"
+  description String?
+
+  type GroupType @default(MANUAL)
+
+  // --- SMART GROUP İÇİN ---
+  // Senin Karar Ağacı UI'ından çıkan JSON buraya kaydedilecek.
+  // Örn: { "logic": "AND", "rules": [{ "field": "totalSpent", "op": "gt", "value": 5000 }] }
+  conditions Json?
+
+  // --- MANUAL GROUP İÇİN ---
+  // Statik olarak veritabanında ilişki kurulmuş üyeler
+  users User[]
+
+  // ORTAK ÖZELLİKLER
+  isDefault  Boolean     @default(false)
+  priceLists PriceList[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum PriceListType {
+  OVERRIDE // Ana fiyatı ezer (Kesin Fiyat)
+  DISCOUNT // Ana fiyat üzerinden % indirim yapar
+  INCREASE // Ana fiyat üzerine ekleme yapar
+}
+
+model PriceList {
+  id       String        @id @default(cuid())
+  name     String // Örn: "2025 Toptan Fiyat Listesi"
+  currency Currency      @default(TRY)
+  type     PriceListType @default(OVERRIDE)
+
+  // Genel bir oran varsa (Örn: Tüm ürünlere %20 indirim)
+  adjustmentValue Float?
+
+  startDate DateTime?
+  endDate   DateTime?
+  isActive  Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Kimler bu fiyatı görür?
+  users  User[] // Direkt atanan kullanıcılar
+  groups CustomerGroup[] // Atanan gruplar
+
+  // Ürün bazlı özel fiyatlar
+  prices ProductPriceListPrice[]
+}
+
+// Bir ürünün, spesifik bir listedeki fiyatı
+model ProductPriceListPrice {
+  id          String @id @default(cuid())
+  priceListId String
+  variantId   String // Varyant bazlı fiyatlandırma
+
+  price       Float // Listeye özel fiyat
+  minQuantity Int   @default(1) // Kademeli fiyat (Tiered Pricing) için
+
+  priceList PriceList                 @relation(fields: [priceListId], references: [id], onDelete: Cascade)
+  variant   ProductVariantCombination @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([priceListId, variantId, minQuantity])
+  @@index([variantId])
 }
 
 model RefreshTokens {
@@ -404,9 +545,10 @@ model ProductVariantCombination {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  product      Product                           @relation(fields: [productId], references: [id], onDelete: Cascade)
-  options      ProductVariantCombinationOption[]
-  translations ProductVariantTranslation[]
+  product         Product                           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  options         ProductVariantCombinationOption[]
+  translations    ProductVariantTranslation[]
+  priceListPrices ProductPriceListPrice[]
 
   prices           ProductPrice[]
   assets           ProductAsset[]
@@ -418,6 +560,12 @@ model ProductVariantCombination {
   conditionInCampaigns CampaignConditionVariant[]
   offerInCampaigns     CampaignOffer[]
   discountConditions   DiscountProductVariant[]
+
+  inventoryItem      InventoryItem?
+  transferItems      InventoryTransferItem[]
+  adjustmentItems    InventoryAdjustmentItem[]
+  supplierProducts   SupplierProduct[]
+  supplierOrderItems SupplierOrderItem[]
 
   @@index([productId])
   @@index([active])
@@ -494,6 +642,9 @@ model Country {
   cargoLocation      Location[]
   states             State[]
 
+  inventoryLocations    InventoryLocation[]
+  inventoryServiceZones InventoryLocationServiceZone[]
+
   @@index([name])
   @@index([iso2])
   @@index([iso3])
@@ -503,14 +654,15 @@ model Country {
 }
 
 model State {
-  id            String          @id
-  name          String
-  stateCode     String?
-  countryId     String
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  addressSchema AddressSchema[]
-  Country       Country         @relation(fields: [countryId], references: [id])
+  id                 String              @id
+  name               String
+  stateCode          String?
+  countryId          String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  addressSchema      AddressSchema[]
+  Country            Country             @relation(fields: [countryId], references: [id])
+  inventoryLocations InventoryLocation[]
 
   @@index([countryId])
   @@index([name])
@@ -519,16 +671,17 @@ model State {
 }
 
 model City {
-  id            String          @id
-  name          String
-  latitude      String?
-  longitude     String?
-  countryId     String
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  addressSchema AddressSchema[]
-  country       Country         @relation(fields: [countryId], references: [id])
-  districts     District[]
+  id                 String              @id
+  name               String
+  latitude           String?
+  longitude          String?
+  countryId          String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  addressSchema      AddressSchema[]
+  country            Country             @relation(fields: [countryId], references: [id])
+  districts          District[]
+  inventoryLocations InventoryLocation[]
 
   @@index([countryId])
   @@index([name])
@@ -536,13 +689,14 @@ model City {
 }
 
 model District {
-  id            String          @id
-  name          String
-  cityId        String
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  addressSchema AddressSchema[]
-  city          City            @relation(fields: [cityId], references: [id])
+  id                 String              @id
+  name               String
+  cityId             String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  addressSchema      AddressSchema[]
+  city               City                @relation(fields: [cityId], references: [id])
+  inventoryLocations InventoryLocation[]
 
   @@index([cityId])
 }
@@ -931,7 +1085,7 @@ model DiscountCustomer {
 model DiscountConditionGroup {
   id         String                   @id @default(cuid())
   discountId String
-  operator   FilterOperator
+  operator   LogicalOperator          @default(AND)
   type       DiscountConditionType    @default(PRODUCT)
   brands     DiscountBrand[]
   categories DiscountCategory[]
@@ -1344,11 +1498,6 @@ enum AllowedDiscountedItemsBy {
   discounted_price
 }
 
-enum FilterOperator {
-  AND
-  OR
-}
-
 enum DiscountConditionType {
   PRODUCT
   CATEGORY
@@ -1493,4 +1642,539 @@ view ProductListingView {
 
   @@unique([productId, variantId, currency])
   @@map("ProductListingView")
+}
+
+// =====================
+// LOCATION YÖNETİMİ
+// =====================
+
+enum LocationType {
+  WAREHOUSE // Ana depo
+  STORE // Fiziksel mağaza
+  SUPPLIER // Tedarikçi (dropship için)
+  FULFILLMENT // 3PL fulfillment center
+  VIRTUAL // Sanal stok (pre-order vs.)
+}
+
+model InventoryLocation {
+  id                   String       @id @default(cuid())
+  name                 String
+  type                 LocationType
+  isActive             Boolean      @default(true)
+  isFulfillmentEnabled Boolean      @default(true) // Bu lokasyondan sipariş karşılanabilir mi?
+  priority             Int          @default(0) // Stok düşme önceliği
+
+  // Adres bilgileri (opsiyonel)
+  addressLine1 String?
+  addressLine2 String?
+  zipCode      String?
+
+  cityId     String?
+  stateId    String?
+  countryId  String?
+  districtId String?
+
+  country  Country?  @relation(fields: [countryId], references: [id])
+  state    State?    @relation(fields: [stateId], references: [id])
+  city     City?     @relation(fields: [cityId], references: [id])
+  district District? @relation(fields: [districtId], references: [id])
+
+  // ===== Koordinatlar (Override veya City'den al) =====
+  // Eğer depo şehir merkezinde değilse manuel gir
+  latitude  String?
+  longitude String?
+
+  // ===== Servis Bölgesi (Hangi bölgelere hizmet verir) =====
+  serviceZones InventoryLocationServiceZone[]
+
+  // İletişim
+  contactName  String?
+  contactEmail String?
+  contactPhone String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  inventoryLevels InventoryLevel[]
+  movements       InventoryMovement[]
+  transfersFrom   InventoryTransfer[] @relation("TransferFrom")
+  transfersTo     InventoryTransfer[] @relation("TransferTo")
+  supplierOrders  SupplierOrder[]
+
+  @@index([type, isActive])
+  @@index([priority])
+}
+
+// =====================
+// INVENTORY ITEM & LEVEL
+// =====================
+
+model InventoryItem {
+  id        String  @id @default(cuid())
+  variantId String  @unique
+  sku       String? // Denormalized for quick access
+
+  // Tracking settings
+  tracked           Boolean @default(true) // Stok takibi yapılsın mı?
+  allowNegative     Boolean @default(false) // Negatif stoka izin ver
+  lowStockThreshold Int? // Düşük stok uyarı eşiği
+
+  // Ağırlık/boyut (kargo hesaplaması için)
+  weight     Float?
+  weightUnit WeightUnit @default(KG)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  variant   ProductVariantCombination @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  levels    InventoryLevel[]
+  movements InventoryMovement[]
+
+  @@index([sku])
+}
+
+model InventoryLevel {
+  id              String @id @default(cuid())
+  inventoryItemId String
+  locationId      String
+
+  // Stok değerleri
+  available Int @default(0) // Satışa açık
+  reserved  Int @default(0) // Sepette/siparişte bekleyen
+  committed Int @default(0) // Onaylanmış sipariş, henüz gönderilmedi
+  incoming  Int @default(0) // Yolda olan (supplier'dan)
+  damaged   Int @default(0) // Hasarlı
+
+  // computed: onHand = available + reserved + committed
+  // computed: sellable = available
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  inventoryItem InventoryItem     @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  location      InventoryLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([inventoryItemId, locationId])
+  @@index([locationId])
+  @@index([available])
+}
+
+// =====================
+// STOK HAREKETLERİ
+// =====================
+
+enum MovementType {
+  // Giriş
+  PURCHASE // Satın alma
+  RETURN // Müşteri iadesi
+  TRANSFER_IN // Transfer girişi
+  ADJUSTMENT_ADD // Manuel ekleme
+  PRODUCTION // Üretim
+
+  // Çıkış  
+  SALE // Satış
+  TRANSFER_OUT // Transfer çıkışı
+  ADJUSTMENT_REMOVE // Manuel çıkarma
+  DAMAGED // Hasar
+  LOST // Kayıp
+  EXPIRED // Son kullanma tarihi geçmiş
+
+  // Rezervasyon
+  RESERVE // Sepete ekleme
+  UNRESERVE // Sepetten çıkarma
+  COMMIT // Sipariş onayı
+  UNCOMMIT // Sipariş iptali
+  FULFILL // Gönderim
+}
+
+// Bir deponun hangi şehirlere/illere hizmet verdiği
+model InventoryLocationServiceZone {
+  id         String @id @default(cuid())
+  locationId String
+
+  // Ülke bilgisi
+  countryId   String
+  countryType CountryType // Ülkenin tipi (redundant ama query kolaylığı için)
+
+  // Bölge tanımı - CountryType'a göre kullanılır
+  // STATE tipli ülkeler için (ABD, Almanya vs)
+  stateIds String[] @default([]) // Boş = tüm state'ler
+
+  // CITY tipli ülkeler için (Türkiye, Fransa vs)
+  cityIds String[] @default([]) // Boş = tüm şehirler
+
+  // NONE tipli ülkeler için sadece countryId yeterli
+
+  // Öncelik ve teslimat
+  priority              Int  @default(0)
+  estimatedDeliveryDays Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  location InventoryLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  country  Country           @relation(fields: [countryId], references: [id])
+
+  @@unique([locationId, countryId]) // Bir lokasyon, bir ülke için tek zone
+  @@index([countryId])
+}
+
+model InventoryMovement {
+  id              String @id @default(cuid())
+  inventoryItemId String
+  locationId      String
+
+  type     MovementType
+  quantity Int // + veya - olabilir
+
+  // Önceki ve sonraki değerler (audit için)
+  previousAvailable Int
+  newAvailable      Int
+  previousReserved  Int?
+  newReserved       Int?
+
+  // Referanslar
+  orderId         String?
+  orderItemId     String?
+  transferId      String?
+  supplierOrderId String?
+  adjustmentId    String?
+
+  // Meta
+  reason    String?
+  note      String?
+  actorType ActorType @default(SYSTEM)
+  actorId   String?
+
+  createdAt DateTime @default(now())
+
+  inventoryItem InventoryItem        @relation(fields: [inventoryItemId], references: [id])
+  location      InventoryLocation    @relation(fields: [locationId], references: [id])
+  transfer      InventoryTransfer?   @relation(fields: [transferId], references: [id])
+  adjustment    InventoryAdjustment? @relation(fields: [adjustmentId], references: [id])
+
+  @@index([inventoryItemId, createdAt(sort: Desc)])
+  @@index([locationId, createdAt(sort: Desc)])
+  @@index([type, createdAt(sort: Desc)])
+  @@index([orderId])
+}
+
+// =====================
+// TRANSFER (Lokasyonlar arası)
+// =====================
+
+enum TransferStatus {
+  DRAFT
+  PENDING // Onay bekliyor
+  IN_TRANSIT // Yolda
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+}
+
+model InventoryTransfer {
+  id             String @id @default(cuid())
+  transferNumber String @unique
+
+  fromLocationId String
+  toLocationId   String
+
+  status TransferStatus @default(DRAFT)
+
+  expectedDate DateTime?
+  shippedAt    DateTime?
+  receivedAt   DateTime?
+
+  note String?
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  fromLocation InventoryLocation       @relation("TransferFrom", fields: [fromLocationId], references: [id])
+  toLocation   InventoryLocation       @relation("TransferTo", fields: [toLocationId], references: [id])
+  items        InventoryTransferItem[]
+  movements    InventoryMovement[]
+
+  @@index([status])
+  @@index([fromLocationId])
+  @@index([toLocationId])
+}
+
+model InventoryTransferItem {
+  id         String @id @default(cuid())
+  transferId String
+  variantId  String
+
+  quantityExpected Int
+  quantityShipped  Int @default(0)
+  quantityReceived Int @default(0)
+
+  note String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transfer InventoryTransfer         @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  variant  ProductVariantCombination @relation(fields: [variantId], references: [id])
+
+  @@unique([transferId, variantId])
+}
+
+// =====================
+// MANUEL DÜZELTME (Sayım vs.)
+// =====================
+
+enum AdjustmentReason {
+  CYCLE_COUNT // Periyodik sayım
+  STOCK_COUNT // Tam sayım
+  SHRINKAGE // Fire
+  DAMAGE // Hasar
+  CORRECTION // Düzeltme
+  RECOUNT // Yeniden sayım
+  OTHER
+}
+
+model InventoryAdjustment {
+  id               String           @id @default(cuid())
+  adjustmentNumber String           @unique
+  locationId       String
+  reason           AdjustmentReason
+  note             String?
+
+  createdBy  String
+  approvedBy String?
+  approvedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items     InventoryAdjustmentItem[]
+  movements InventoryMovement[]
+
+  @@index([locationId])
+  @@index([reason])
+}
+
+model InventoryAdjustmentItem {
+  id           String @id @default(cuid())
+  adjustmentId String
+  variantId    String
+
+  previousQuantity Int
+  newQuantity      Int
+  difference       Int // computed: new - previous
+
+  createdAt DateTime @default(now())
+
+  adjustment InventoryAdjustment       @relation(fields: [adjustmentId], references: [id], onDelete: Cascade)
+  variant    ProductVariantCombination @relation(fields: [variantId], references: [id])
+
+  @@unique([adjustmentId, variantId])
+}
+
+// =====================
+// TEDARİKÇİ YÖNETİMİ
+// =====================
+
+model Supplier {
+  id      String  @id @default(cuid())
+  name    String
+  code    String? @unique
+  email   String?
+  phone   String?
+  website String?
+
+  // Adres
+  addressLine1 String?
+  addressLine2 String?
+  cityId       String?
+  countryId    String?
+
+  // Ödeme koşulları
+  paymentTermsDays Int? // Ödeme vadesi (gün)
+  currency         Currency @default(TRY)
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  products SupplierProduct[]
+  orders   SupplierOrder[]
+
+  @@index([isActive])
+}
+
+model SupplierProduct {
+  id         String @id @default(cuid())
+  supplierId String
+  variantId  String
+
+  supplierSku      String? // Tedarikçinin SKU'su
+  cost             Float? // Maliyet
+  currency         Currency @default(TRY)
+  leadTimeDays     Int? // Tedarik süresi
+  minOrderQuantity Int? // Minimum sipariş adedi
+
+  isPreferred Boolean @default(false) // Tercih edilen tedarikçi
+  isActive    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  supplier Supplier                  @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  variant  ProductVariantCombination @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([supplierId, variantId])
+  @@index([variantId])
+}
+
+// =====================
+// SATIN ALMA SİPARİŞİ
+// =====================
+
+enum SupplierOrderStatus {
+  DRAFT
+  SENT // Tedarikçiye gönderildi
+  CONFIRMED // Tedarikçi onayladı
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+}
+
+model SupplierOrder {
+  id            String @id @default(cuid())
+  orderNumber   String @unique
+  supplierId    String
+  destinationId String // Hangi lokasyona gelecek
+
+  status SupplierOrderStatus @default(DRAFT)
+
+  currency     Currency @default(TRY)
+  subtotal     Float    @default(0)
+  taxAmount    Float    @default(0)
+  shippingCost Float    @default(0)
+  totalAmount  Float    @default(0)
+
+  expectedDate DateTime?
+  orderedAt    DateTime?
+  receivedAt   DateTime?
+
+  note String?
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  supplier    Supplier            @relation(fields: [supplierId], references: [id])
+  destination InventoryLocation   @relation(fields: [destinationId], references: [id])
+  items       SupplierOrderItem[]
+
+  @@index([supplierId])
+  @@index([status])
+  @@index([destinationId])
+}
+
+model SupplierOrderItem {
+  id              String @id @default(cuid())
+  supplierOrderId String
+  variantId       String
+
+  quantityOrdered  Int
+  quantityReceived Int @default(0)
+
+  unitCost  Float
+  totalCost Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  supplierOrder SupplierOrder             @relation(fields: [supplierOrderId], references: [id], onDelete: Cascade)
+  variant       ProductVariantCombination @relation(fields: [variantId], references: [id])
+
+  @@unique([supplierOrderId, variantId])
+}
+
+// =====================
+// ENUMS
+// =====================
+
+enum WeightUnit {
+  KG
+  GR
+  LB
+  OZ
+}
+
+model FulfillmentStrategy {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  type        String  @default("PROXIMITY") // Enum yerine String
+  isDefault   Boolean @default(false)
+  isActive    Boolean @default(true)
+  priority    Int     @default(0)
+
+  allowSplitShipment Boolean @default(false)
+  maxSplitCount      Int?
+  allowBackorder     Boolean @default(false)
+  allowDropship      Boolean @default(false)
+
+  // Tüm kurallar JSON'da
+  rules Json @default("[]") // FulfillmentRule[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  decisions FulfillmentDecision[]
+
+  @@index([isActive, priority])
+}
+
+model FulfillmentDecision {
+  id      String @id @default(cuid())
+  orderId String
+
+  strategyId   String?
+  decisionType FulfillmentDecisionType // FulfillmentDecisionType
+
+  assignedLocationId String?
+  supplierId         String?
+
+  // Hangi kural match etti, neden bu karar
+  matchedRuleId String?
+  evaluationLog Json?
+
+  createdAt DateTime @default(now())
+
+  strategy FulfillmentStrategy? @relation(fields: [strategyId], references: [id])
+
+  @@index([orderId])
+  @@index([strategyId])
+}
+
+// =====================
+// FULFILLMENT EXECUTION LOG
+// =====================
+
+enum FulfillmentDecisionType {
+  AUTO_ASSIGNED // Otomatik atandı
+  SPLIT_SHIPMENT // Bölündü
+  DROPSHIP // Dropship'e yönlendirildi
+  BACKORDER // Backorder'a alındı
+  MANUAL_REQUIRED // Manuel müdahale gerekli
+  REJECTED // Reddedildi
+}
+
+// ============================================
+// LOGICAL OPERATORS (Gruplar için)
+// ============================================
+
+// Zaten FilterOperator var, onu rename edelim
+enum LogicalOperator {
+  AND
+  OR
 }

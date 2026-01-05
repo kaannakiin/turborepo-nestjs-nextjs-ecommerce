@@ -31,7 +31,7 @@ import {
   MainDiscount,
 } from "@repo/types";
 import { useEffect, useState } from "react";
-import FormCard from "./FormCard";
+import FormCard from "../../../../../../components/cards/FormCard";
 
 interface CouponFormProps {
   control: Control<MainDiscount>;
