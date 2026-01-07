@@ -3,6 +3,7 @@ import { config as baseConfig } from "./base";
 
 export const nestConfig = {
   ...baseConfig,
+  moduleFileExtensions: ["js", "json", "ts"],
   rootDir: "src",
   testRegex: ".*\\.spec\\.ts$",
   transform: {
