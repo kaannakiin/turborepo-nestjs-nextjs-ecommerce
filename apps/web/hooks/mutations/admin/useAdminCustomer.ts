@@ -7,6 +7,7 @@ import {
   CustomerGroupOutputZodType,
   DecisionTreeSchema,
   Pagination,
+  SortAdminUserTable,
 } from "@repo/types";
 
 type CustomerGroupUpsertResponse = {
@@ -123,5 +124,56 @@ export const useGetCustomerSegment = (segmentId: string) => {
     },
 
     enabled: !!segmentId && segmentId !== "new",
+  });
+};
+
+export const useGetCustomerList = (
+  page: number,
+  limit: number,
+  search?: string,
+  sortBy?: SortAdminUserTable
+) => {
+  return useQuery({
+    queryKey: ["customers", page, limit, search, sortBy],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        ...(search ? { search } : {}),
+        ...(sortBy ? { sortBy } : {}),
+      });
+      const response = await fetchWrapper.get<{
+        users: User[];
+        pagination: Pagination;
+      }>(`/admin/users?${params.toString()}`);
+      if (!response.success) {
+        const error = response as ApiError;
+        throw new Error(error.error || "Müşteriler alınamadı");
+      }
+
+      if (!response.data) {
+        throw new Error("Müşteriler bulunamadı");
+      }
+
+      return response.data;
+    },
+  });
+};
+
+export const useCustomerGroups = () => {
+  return useQuery({
+    queryKey: ["all-customer-groups"],
+    queryFn: async () => {
+      const response = await fetchWrapper.get<CustomerGroup[]>(
+        `/admin/users/customer-groups`
+      );
+
+      if (!response.success) {
+        const error = response as ApiError;
+        throw new Error(error.error || "Müşteri grupları alınamadı");
+      }
+
+      return response.data;
+    },
   });
 };

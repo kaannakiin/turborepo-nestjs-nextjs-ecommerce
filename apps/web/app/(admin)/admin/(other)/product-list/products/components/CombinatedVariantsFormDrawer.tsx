@@ -37,8 +37,10 @@ const GlobalTextEditor = dynamic(
   }
 );
 
-interface CombinatedVariantsFormDrawerProps
-  extends Pick<DrawerProps, "opened" | "onClose"> {
+interface CombinatedVariantsFormDrawerProps extends Pick<
+  DrawerProps,
+  "opened" | "onClose"
+> {
   control: Control<VariantProductZodType>;
   selectedIndex: number;
   onSave?: () => void;
@@ -209,8 +211,13 @@ const CombinatedVariantsFormDrawer = ({
         transition: "slide-up",
         duration: 400,
       }}
-      size="xl"
+      size="90%"
       title="Varyant Kombinasyonu Düzenle"
+      classNames={{
+        title: "text-lg font-semibold",
+        header: "border-b border-gray-400",
+        body: "pt-2",
+      }}
     >
       <Stack gap="lg">
         <div>

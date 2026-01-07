@@ -45,7 +45,6 @@ export const ProductRelationFields = [
 ] as const;
 
 export const CustomerRelationFields = [
-  FulfillmentConditionField.CUSTOMER_TYPE,
   FulfillmentConditionField.CUSTOMER_GROUP,
 ] as const;
 
@@ -229,6 +228,56 @@ const ShippingMethodConditionSchema = z.discriminatedUnion("operator", [
   }),
 ]);
 
+const StockLevelConditionSchema = z.discriminatedUnion("operator", [
+  z.object({
+    field: z.literal(FulfillmentConditionField.STOCK_LEVEL),
+    operator: z.enum([ConditionOperator.EQ, ConditionOperator.NEQ]),
+    value: z.enum(["OUT_OF_STOCK", "LOW_STOCK", "IN_STOCK", "HIGH_STOCK"]),
+  }),
+  z.object({
+    field: z.literal(FulfillmentConditionField.STOCK_LEVEL),
+    operator: z.enum([ConditionOperator.IN, ConditionOperator.NOT_IN]),
+    value: z
+      .array(z.enum(["OUT_OF_STOCK", "LOW_STOCK", "IN_STOCK", "HIGH_STOCK"]))
+      .min(1),
+  }),
+]);
+
+const LocationTypeConditionSchema = z.discriminatedUnion("operator", [
+  z.object({
+    field: z.literal(FulfillmentConditionField.LOCATION_TYPE),
+    operator: z.enum([ConditionOperator.EQ, ConditionOperator.NEQ]),
+    value: z.enum(["WAREHOUSE", "STORE", "DROPSHIP", "VIRTUAL"]),
+  }),
+  z.object({
+    field: z.literal(FulfillmentConditionField.LOCATION_TYPE),
+    operator: z.enum([ConditionOperator.IN, ConditionOperator.NOT_IN]),
+    value: z
+      .array(z.enum(["WAREHOUSE", "STORE", "DROPSHIP", "VIRTUAL"]))
+      .min(1),
+  }),
+]);
+
+const SupplierLeadTimeConditionSchema = z.discriminatedUnion("operator", [
+  z.object({
+    field: z.literal(FulfillmentConditionField.SUPPLIER_LEAD_TIME),
+    operator: z.enum([
+      ConditionOperator.EQ,
+      ConditionOperator.NEQ,
+      ConditionOperator.GT,
+      ConditionOperator.GTE,
+      ConditionOperator.LT,
+      ConditionOperator.LTE,
+    ]),
+    value: NumericValueSchema,
+  }),
+  z.object({
+    field: z.literal(FulfillmentConditionField.SUPPLIER_LEAD_TIME),
+    operator: z.literal(ConditionOperator.BETWEEN),
+    value: RangeValueSchema,
+  }),
+]);
+
 export const FulfillmentConditionSchema = z.union([
   NumericConditionSchema,
   CurrencyConditionSchema,
@@ -239,6 +288,9 @@ export const FulfillmentConditionSchema = z.union([
   TimeOfDayConditionSchema,
   IsHolidayConditionSchema,
   ShippingMethodConditionSchema,
+  StockLevelConditionSchema,
+  LocationTypeConditionSchema,
+  SupplierLeadTimeConditionSchema,
 ]);
 
 export type FulfillmentCondition = z.infer<typeof FulfillmentConditionSchema>;
@@ -474,7 +526,7 @@ export type FulfillmentStrategySettings = z.infer<
 >;
 
 export const FulfillmentStrategyZodSchema = z.object({
-  uniqueId: z.cuid2(),
+  uniqueId: z.cuid2().nullish(),
   name: z
     .string()
     .min(2, "Strateji adı en az 2 karakter olmalı")
@@ -499,4 +551,13 @@ export type FulfillmentStrategyInput = z.input<
 >;
 export type FulfillmentStrategyOutput = z.output<
   typeof FulfillmentStrategyZodSchema
+>;
+
+export const GetFulfillmentStrategiesQuerySchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  take: z.coerce.number().min(1).max(100).default(10),
+  search: z.string().optional(),
+});
+export type GetFulfillmentStrategiesInput = z.infer<
+  typeof GetFulfillmentStrategiesQuerySchema
 >;

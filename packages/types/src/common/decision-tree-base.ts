@@ -1,9 +1,108 @@
+//packages/types/src/common/decision-tree-base.ts
 import { LogicalOperator } from "@repo/database/client";
 import { z } from "zod";
 import { ConditionOperator, TimeUnit } from "../common";
 export const ConditionOperatorSchema = z.enum(ConditionOperator);
 export const LogicalOperatorSchema = z.enum(LogicalOperator);
 export const TimeUnitSchema = z.enum(TimeUnit);
+
+export type FieldType =
+  | "numeric"
+  | "date"
+  | "boolean"
+  | "enum"
+  | "relation"
+  | "location"
+  | "string"
+  | "time"
+  | "currency"
+  | "duration";
+
+export interface FieldConfig<TMeta = unknown> {
+  label: string;
+  description: string;
+  type: FieldType;
+  operators: ConditionOperator[];
+  meta?: TMeta;
+}
+export const OPERATORS_BY_FIELD_TYPE: Record<FieldType, ConditionOperator[]> = {
+  numeric: [
+    ConditionOperator.EQ,
+    ConditionOperator.NEQ,
+    ConditionOperator.GT,
+    ConditionOperator.GTE,
+    ConditionOperator.LT,
+    ConditionOperator.LTE,
+    ConditionOperator.BETWEEN,
+    ConditionOperator.IS_NULL,
+    ConditionOperator.IS_NOT_NULL,
+  ],
+  date: [
+    ConditionOperator.EQ,
+    ConditionOperator.NEQ,
+    ConditionOperator.GT,
+    ConditionOperator.GTE,
+    ConditionOperator.LT,
+    ConditionOperator.LTE,
+    ConditionOperator.BETWEEN,
+    ConditionOperator.WITHIN_LAST,
+    ConditionOperator.WITHIN_NEXT,
+    ConditionOperator.NOT_WITHIN_LAST,
+    ConditionOperator.IS_NULL,
+    ConditionOperator.IS_NOT_NULL,
+  ],
+  boolean: [ConditionOperator.IS_TRUE, ConditionOperator.IS_FALSE],
+  enum: [
+    ConditionOperator.EQ,
+    ConditionOperator.NEQ,
+    ConditionOperator.IN,
+    ConditionOperator.NOT_IN,
+  ],
+  relation: [
+    ConditionOperator.HAS_ANY,
+    ConditionOperator.HAS_ALL,
+    ConditionOperator.HAS_NONE,
+    ConditionOperator.EXISTS,
+    ConditionOperator.NOT_EXISTS,
+  ],
+  location: [
+    ConditionOperator.EQ,
+    ConditionOperator.NEQ,
+    ConditionOperator.IN,
+    ConditionOperator.NOT_IN,
+    ConditionOperator.IS_NULL,
+    ConditionOperator.IS_NOT_NULL,
+  ],
+  string: [
+    ConditionOperator.EQ,
+    ConditionOperator.NEQ,
+    ConditionOperator.CONTAINS,
+    ConditionOperator.NOT_CONTAINS,
+    ConditionOperator.STARTS_WITH,
+    ConditionOperator.ENDS_WITH,
+    ConditionOperator.IS_EMPTY,
+    ConditionOperator.IS_NOT_EMPTY,
+  ],
+  time: [ConditionOperator.BETWEEN],
+  currency: [
+    ConditionOperator.EQ,
+    ConditionOperator.NEQ,
+    ConditionOperator.IN,
+    ConditionOperator.NOT_IN,
+  ],
+  duration: [
+    ConditionOperator.EQ,
+    ConditionOperator.GT,
+    ConditionOperator.LT,
+    ConditionOperator.BETWEEN,
+  ],
+};
+
+export interface BaseCondition<TField extends string = string> {
+  field: TField;
+  operator: ConditionOperator;
+  value?: unknown;
+}
 
 export const NumericValueSchema = z.number();
 

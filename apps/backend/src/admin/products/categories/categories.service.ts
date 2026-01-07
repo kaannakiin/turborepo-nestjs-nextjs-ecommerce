@@ -29,57 +29,59 @@ export class CategoriesService {
     data: Omit<CategoryZodType, 'image'>,
   ): Promise<{ success: boolean; categoryId: string }> {
     try {
-      const category = await this.prismaService.$transaction(async (prisma) => {
-        const category = await prisma.category.upsert({
-          where: { id: data.uniqueId },
-          create: {
-            id: data.uniqueId,
-            parentCategoryId: data.parentId || null,
-            translations: {
-              createMany: {
-                data: data.translations.map((t) => ({
-                  locale: t.locale,
-                  name: t.name,
-                  slug: t.slug,
-                  description: t.description || null,
-                  metaTitle: t.metaTitle || null,
-                  metaDescription: t.metaDescription || null,
-                })),
-                skipDuplicates: true,
+      const category = await this.prismaService.category.upsert({
+        where: { id: data.uniqueId },
+        create: {
+          id: data.uniqueId,
+          parentCategoryId: data.parentId || null,
+          translations: {
+            createMany: {
+              data: data.translations.map((t) => ({
+                locale: t.locale,
+                name: t.name,
+                slug: t.slug,
+                description: t.description || null,
+                metaTitle: t.metaTitle || null,
+                metaDescription: t.metaDescription || null,
+              })),
+              skipDuplicates: true,
+            },
+          },
+        },
+        update: {
+          parentCategoryId: data.parentId || null,
+          translations: {
+            deleteMany: {
+              locale: {
+                notIn: data.translations.map((t) => t.locale),
               },
             },
-          },
-          update: {
-            parentCategoryId: data.parentId || null,
-            translations: {
-              upsert: data.translations.map((t) => ({
-                where: {
-                  locale_categoryId: {
-                    categoryId: data.uniqueId,
-                    locale: t.locale,
-                  },
-                },
-                create: {
+
+            upsert: data.translations.map((t) => ({
+              where: {
+                locale_categoryId: {
+                  categoryId: data.uniqueId,
                   locale: t.locale,
-                  name: t.name,
-                  slug: t.slug,
-                  description: t.description || null,
-                  metaTitle: t.metaTitle || null,
-                  metaDescription: t.metaDescription || null,
                 },
-                update: {
-                  locale: t.locale,
-                  name: t.name,
-                  slug: t.slug,
-                  description: t.description || null,
-                  metaTitle: t.metaTitle || null,
-                  metaDescription: t.metaDescription || null,
-                },
-              })),
-            },
+              },
+              create: {
+                locale: t.locale,
+                name: t.name,
+                slug: t.slug,
+                description: t.description || null,
+                metaTitle: t.metaTitle || null,
+                metaDescription: t.metaDescription || null,
+              },
+              update: {
+                name: t.name,
+                slug: t.slug,
+                description: t.description || null,
+                metaTitle: t.metaTitle || null,
+                metaDescription: t.metaDescription || null,
+              },
+            })),
           },
-        });
-        return category;
+        },
       });
 
       return {
@@ -93,7 +95,6 @@ export class CategoriesService {
       );
     }
   }
-
   async uploadCategoryImage(
     categoryId: string,
     file: Express.Multer.File,

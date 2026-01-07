@@ -1,6 +1,15 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CustomerGroup, GroupType, Prisma, User } from '@repo/database';
 import {
+  AdminUserDeleteBulkAction,
+  AdminUserTableBulkActionsZodType,
+  AdminUserUpdateGroupBulkAction,
+  AdminUserUpdateRoleBulkAction,
   AllUsersReturnType,
   CustomerGroupOutputZodType,
   GetUsersQueriesReturnType,
@@ -9,17 +18,16 @@ import {
 } from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
 
-interface getUsersParams {
-  search: string;
-  page: number;
-  sortBy: SortAdminUserTable;
-}
-
 @Injectable()
 export class UsersService {
   constructor(private prismaService: PrismaService) {}
 
-  async getUsers(params: getUsersParams): Promise<GetUsersQueriesReturnType> {
+  async getUsers(params: {
+    page: number;
+    take: number;
+    search: string;
+    sortBy?: SortAdminUserTable;
+  }): Promise<GetUsersQueriesReturnType> {
     const whereClause: Prisma.UserWhereInput = {
       ...(params.search &&
         params.search.trim() !== '' && {
@@ -52,7 +60,7 @@ export class UsersService {
         }),
     };
 
-    const take = 10;
+    const take = 20;
     const skip = (params.page - 1) * take;
 
     let orderBy: Prisma.UserOrderByWithRelationInput = { createdAt: 'desc' };
@@ -85,16 +93,6 @@ export class UsersService {
         orderBy,
         take,
         skip,
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          surname: true,
-          phone: true,
-          createdAt: true,
-          updatedAt: true,
-        },
       }),
       this.prismaService.user.count({
         where: whereClause,
@@ -325,5 +323,92 @@ export class UsersService {
       console.error('Get CustomerGroup error:', error);
       throw new InternalServerErrorException('Grup detayı alınamadı');
     }
+  }
+
+  async handleBulkActions(data: AdminUserTableBulkActionsZodType) {
+    try {
+      switch (data.action) {
+        case 'DELETE':
+          return await this.bulkDeleteUsers(data);
+
+        case 'UPDATE_ROLE':
+          return await this.bulkUpdateRole(data);
+
+        case 'UPDATE_GROUP':
+          return await this.bulkUpdateGroup(data);
+
+        default:
+          throw new BadRequestException('Geçersiz işlem tipi');
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  private async bulkDeleteUsers(data: AdminUserDeleteBulkAction) {
+    const result = await this.prismaService.user.updateMany({
+      where: {
+        id: { in: data.ids },
+      },
+      data: {
+        accountStatus: 'PASSIVE',
+      },
+    });
+
+    return { success: true, message: `${result.count} kullanıcı silindi.` };
+  }
+
+  private async bulkUpdateRole(data: AdminUserUpdateRoleBulkAction) {
+    const result = await this.prismaService.user.updateMany({
+      where: {
+        id: { in: data.ids },
+      },
+      data: {
+        role: data.role,
+      },
+    });
+
+    return {
+      success: true,
+      message: `${result.count} kullanıcının rolü güncellendi.`,
+    };
+  }
+
+  private async bulkUpdateGroup(data: AdminUserUpdateGroupBulkAction) {
+    const group = await this.prismaService.customerGroup.findUnique({
+      where: { id: data.groupId },
+      select: { id: true, type: true, name: true },
+    });
+
+    if (!group) {
+      throw new NotFoundException('Hedef grup bulunamadı.');
+    }
+
+    if (group.type === 'SMART') {
+      throw new BadRequestException(
+        `"${group.name}" akıllı bir gruptur. Kullanıcılar manuel olarak eklenemez, koşullara göre otomatik atanır.`,
+      );
+    }
+
+    await this.prismaService.customerGroup.update({
+      where: { id: data.groupId },
+      data: {
+        users: {
+          connect: data.ids.map((userId) => ({ id: userId })),
+        },
+      },
+    });
+
+    return {
+      success: true,
+      message: `${data.ids.length} kullanıcı "${group.name}" grubuna başarıyla eklendi.`,
+    };
+  }
+
+  async getAllCustomerGroups(): Promise<CustomerGroup[]> {
+    const groups = await this.prismaService.customerGroup.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    return groups;
   }
 }

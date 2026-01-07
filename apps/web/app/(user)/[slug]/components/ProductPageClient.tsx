@@ -28,7 +28,7 @@ interface ProductPageClientProps {
 
 const ProductPageClient = ({ slug }: ProductPageClientProps) => {
   const { actualMedia } = useTheme();
-  const isMobile = actualMedia === "mobile";
+  const isMobile = actualMedia === "mobile" || actualMedia === "tablet";
 
   const { data: product } = useQuery({
     queryKey: ["product", slug],
@@ -72,7 +72,7 @@ const ProductPageClient = ({ slug }: ProductPageClientProps) => {
   }
 
   return (
-    <Container size="lg" py="xl">
+    <div className="max-w-[1500px] lg:mx-auto px-4 w-full">
       <Grid gutter="xl">
         <Grid.Col span={{ base: 12, lg: 7 }}>
           {isMobile ? (
@@ -150,7 +150,7 @@ const ProductPageClient = ({ slug }: ProductPageClientProps) => {
           </div>
         </Grid.Col>
       </Grid>
-    </Container>
+    </div>
   );
 };
 

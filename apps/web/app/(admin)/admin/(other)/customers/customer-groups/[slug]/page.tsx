@@ -27,14 +27,43 @@ import {
   CustomerGroupInputZodType,
   CustomerGroupOutputZodType,
   CustomerGroupSchema,
+  CustomerGroupSmartFields,
   customerSegmentDefaultValues,
+  SegmentCondition,
+  customerSegmentDomain,
+  DecisionTree,
+  DecisionTreeNode, // 👈 Import et
 } from "@repo/types";
 import { IconChevronRight, IconGitBranch } from "@tabler/icons-react";
 import { Route } from "next";
 import { useParams, useRouter } from "next/navigation";
-import { Activity, useEffect } from "react";
+import { Activity, useEffect, useMemo } from "react";
 import FormCard from "../../../../../../components/cards/FormCard";
-import CustomerConditionFlow from "../../components/CustomerConditionFlow";
+import { FlowDrawer } from "@/components/react-flow/FlowDrawer";
+import StartNode from "@/components/react-flow/StartNode";
+import CustomerConditionNode from "@/components/react-flow/customer-flow/CustomerConditionNode"; // 👈 Import et
+import CustomerConditionGroupNode from "@/components/react-flow/customer-flow/CustomerConditionGroupNode"; // 👈 Import et
+import ResultNode from "@/components/react-flow/ResultNode";
+import { Node, Edge } from "@xyflow/react";
+
+const getCustomerNodeLabel = (node: Node) => {
+  if (node.type === "start") return "Başlangıç";
+
+  if (node.type === "result") {
+    const data = node.data as { label: string };
+    return data.label;
+  }
+
+  if (node.type === "condition") {
+    const data = node.data as { condition: SegmentCondition };
+    const fieldConfig = customerSegmentDomain.fields[data.condition.field];
+    return fieldConfig?.label ?? data.condition.field;
+  }
+
+  if (node.type === "conditionGroup") return "Koşul Grubu";
+
+  return "Bilinmeyen";
+};
 
 const CustomerSegmentFormPage = () => {
   const params = useParams();
@@ -86,7 +115,18 @@ const CustomerSegmentFormPage = () => {
     control,
     name: "type",
   });
-  console.log("errors", errors);
+
+  // Node components
+  const nodeComponents = useMemo(
+    () => ({
+      start: StartNode,
+      condition: CustomerConditionNode,
+      conditionGroup: CustomerConditionGroupNode,
+      result: ResultNode,
+    }),
+    []
+  );
+
   const onSubmit = (values: CustomerGroupOutputZodType) => {
     mutate(values, {
       onSuccess: (data, variables, _res, context) => {
@@ -117,6 +157,22 @@ const CustomerSegmentFormPage = () => {
           color: "red",
         });
       },
+    });
+  };
+
+  const handleFlowSave = (data: { nodes: Node[]; edges: Edge[] }) => {
+    const decisionTree: DecisionTree = {
+      nodes: data.nodes as DecisionTreeNode[],
+      edges: data.edges as DecisionTree["edges"],
+    };
+
+    setValue("conditions", decisionTree);
+    closeFlow();
+
+    notifications.show({
+      title: "Başarılı",
+      message: "Koşullar eklendi",
+      color: "blue",
     });
   };
 
@@ -188,6 +244,7 @@ const CustomerSegmentFormPage = () => {
               )}
             />
           </FormCard>
+
           <Radio.Group>
             <Controller
               control={control}
@@ -218,6 +275,7 @@ const CustomerSegmentFormPage = () => {
               )}
             />
           </Radio.Group>
+
           <Activity mode={type === "SMART" ? "visible" : "hidden"}>
             <Button
               onClick={openFlow}
@@ -241,7 +299,9 @@ const CustomerSegmentFormPage = () => {
                 <IconGitBranch size={32} stroke={1.5} />
                 <Stack gap={4} style={{ flex: 1, textAlign: "left" }}>
                   <Text fw={500} size="sm">
-                    Karar Ağacı Oluştur
+                    {conditions
+                      ? "Karar Ağacını Düzenle"
+                      : "Karar Ağacı Oluştur"}
                   </Text>
                   <Text size="xs" c="dimmed" fw={400}>
                     Müşteri davranışlarına göre dinamik segment koşulları
@@ -252,6 +312,7 @@ const CustomerSegmentFormPage = () => {
               </Group>
             </Button>
           </Activity>
+
           <Group justify="flex-end" gap="md">
             <Button
               variant="subtle"
@@ -268,23 +329,15 @@ const CustomerSegmentFormPage = () => {
         </Stack>
       </form>
 
-      <CustomerConditionFlow
+      <FlowDrawer<CustomerGroupSmartFields, SegmentCondition>
         opened={flowOpened}
         onClose={closeFlow}
-        name={name}
+        onSave={handleFlowSave}
+        defaultField="ACCOUNT_STATUS"
         initialData={conditions}
-        onSubmit={(data) => {
-          setValue("conditions", data, {
-            shouldDirty: true,
-            shouldValidate: true,
-          });
-          closeFlow();
-          notifications.show({
-            title: "Başarılı",
-            message: "Koşullar eklendi",
-            color: "blue",
-          });
-        }}
+        nodeComponents={nodeComponents}
+        domainName="customerSegment"
+        getNodeLabel={getCustomerNodeLabel}
       />
     </Box>
   );

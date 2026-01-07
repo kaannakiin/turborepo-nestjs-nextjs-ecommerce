@@ -278,8 +278,6 @@ export type FulfillmentActionType =
 
 // 3. Koşul field'ları - rules JSON içinde kullanılacak
 export const FulfillmentConditionField = {
-  // Customer
-  CUSTOMER_TYPE: "CUSTOMER_TYPE",
   CUSTOMER_GROUP: "CUSTOMER_GROUP",
   // Order
   ORDER_TOTAL: "ORDER_TOTAL",

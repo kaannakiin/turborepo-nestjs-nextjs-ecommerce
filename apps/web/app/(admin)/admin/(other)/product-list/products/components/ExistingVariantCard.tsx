@@ -52,7 +52,14 @@ import {
   IconPointFilled,
   IconTrash,
 } from "@tabler/icons-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Activity,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { returnCombinateVariant } from "../helpers/product.helper";
 import CombinatedVariantsDropzoneDrawer from "./CombinatedVariantsDropzoneDrawer";
 import CombinatedVariantsFormDrawer from "./CombinatedVariantsFormDrawer";
@@ -636,24 +643,28 @@ const ExistingVariantCard = ({
                     <Table.Th className="flex items-start">Varyant</Table.Th>
                     <Table.Th>
                       Satış Fiyatı
-                      {selectedRows.size > 0 && (
+                      <Activity
+                        mode={selectedRows.size > 0 ? "visible" : "hidden"}
+                      >
                         <ProductPriceNumberInput
                           size="xs"
-                          placeholder="Toplu güncelle"
+                          variant="filled"
                           value={bulkUpdateValues.price}
                           onChange={(value) =>
                             handleBulkUpdate("price", value?.toString() || "")
                           }
                           style={{ marginTop: 4 }}
                         />
-                      )}
+                      </Activity>
                     </Table.Th>
                     <Table.Th>
                       İndirimli Fiyat
-                      {selectedRows.size > 0 && (
+                      <Activity
+                        mode={selectedRows.size > 0 ? "visible" : "hidden"}
+                      >
                         <ProductPriceNumberInput
                           size="xs"
-                          placeholder="Toplu güncelle"
+                          variant="filled"
                           value={bulkUpdateValues.discountPrice || undefined}
                           onChange={(value) =>
                             handleBulkUpdate(
@@ -663,14 +674,16 @@ const ExistingVariantCard = ({
                           }
                           style={{ marginTop: 4 }}
                         />
-                      )}
+                      </Activity>
                     </Table.Th>
                     <Table.Th>
                       Alış Fiyatı
-                      {selectedRows.size > 0 && (
+                      <Activity
+                        mode={selectedRows.size > 0 ? "visible" : "hidden"}
+                      >
                         <ProductPriceNumberInput
                           size="xs"
-                          placeholder="Toplu güncelle"
+                          variant="filled"
                           value={bulkUpdateValues.buyedPrice || undefined}
                           onChange={(value) =>
                             handleBulkUpdate(
@@ -680,28 +693,32 @@ const ExistingVariantCard = ({
                           }
                           style={{ marginTop: 4 }}
                         />
-                      )}
+                      </Activity>
                     </Table.Th>
                     <Table.Th>
                       SKU
-                      {selectedRows.size > 0 && (
+                      <Activity
+                        mode={selectedRows.size > 0 ? "visible" : "hidden"}
+                      >
                         <TextInput
                           size="xs"
-                          placeholder="Toplu güncelle"
+                          variant="filled"
                           value={bulkUpdateValues.sku}
                           onChange={(event) =>
                             handleBulkUpdate("sku", event.currentTarget.value)
                           }
                           style={{ marginTop: 4 }}
                         />
-                      )}
+                      </Activity>
                     </Table.Th>
                     <Table.Th>
                       Barkod
-                      {selectedRows.size > 0 && (
+                      <Activity
+                        mode={selectedRows.size > 0 ? "visible" : "hidden"}
+                      >
                         <TextInput
                           size="xs"
-                          placeholder="Toplu güncelle"
+                          variant="filled"
                           value={bulkUpdateValues.barcode}
                           onChange={(event) =>
                             handleBulkUpdate(
@@ -711,21 +728,23 @@ const ExistingVariantCard = ({
                           }
                           style={{ marginTop: 4 }}
                         />
-                      )}
+                      </Activity>
                     </Table.Th>
                     <Table.Th>
                       Stok
-                      {selectedRows.size > 0 && (
+                      <Activity
+                        mode={selectedRows.size > 0 ? "visible" : "hidden"}
+                      >
                         <ProductPriceNumberInput
                           size="xs"
-                          placeholder="Toplu güncelle"
+                          variant="filled"
                           value={bulkUpdateValues.stock}
                           onChange={(event) =>
                             handleBulkUpdate("stock", event?.toString() || "")
                           }
                           style={{ marginTop: 4 }}
                         />
-                      )}
+                      </Activity>
                     </Table.Th>
                     <Table.Th />
                   </Table.Tr>

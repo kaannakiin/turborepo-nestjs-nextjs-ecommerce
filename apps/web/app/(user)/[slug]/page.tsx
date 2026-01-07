@@ -5,7 +5,6 @@ import { dehydrate, HydrationBoundary } from "@repo/shared";
 import { ProductDetailType } from "@repo/types";
 import { Metadata } from "next";
 import { unstable_cache } from "next/cache";
-import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { Params } from "types/GlobalTypes";
 import ProductPageClient from "./components/ProductPageClient";
@@ -14,7 +13,6 @@ interface Props {
   params: Params;
 }
 
-// Cache'lenebilir fetch fonksiyonu
 const getCachedProductData = unstable_cache(
   async (slug: string) => {
     const api = createServerFetch();
@@ -33,31 +31,9 @@ const getCachedProductData = unstable_cache(
   }
 );
 
-// Cookie gerektiren fetch (cache'lenmez ama auth için kullanılabilir)
-const getProductDataWithAuth = async (slug: string) => {
-  const cookieStore = await cookies();
-  const api = createServerFetch().setCookies(cookieStore);
-
-  const response = await api.get<ProductDetailType>(`/product/${slug}`);
-
-  if (!response.success) {
-    return null;
-  }
-
-  return response.data;
-};
-
-// Hangi fonksiyonu kullanacağına karar ver
-const getProductData = async (slug: string, needsAuth: boolean = false) => {
-  if (needsAuth) {
-    return getProductDataWithAuth(slug);
-  }
-  return getCachedProductData(slug);
-};
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const slug = (await params).slug as string;
-  const product = await getCachedProductData(slug); // Metadata için auth gerekmez
+  const product = await getCachedProductData(slug);
 
   if (!product) {
     return {

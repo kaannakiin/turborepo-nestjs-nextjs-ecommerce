@@ -1,9 +1,9 @@
 import { CountryType } from "@repo/database/client";
 import { isPossiblePhoneNumber } from "libphonenumber-js";
 import * as z from "zod";
+import { tcKimlikNoRegex } from "../common";
 import { TURKEY_DB_ID } from "../common/constants";
 
-export const tcKimlikNoRegex = /^[1-9]{1}[0-9]{9}[02468]{1}$/;
 const BaseAddressSchema = z
   .object({
     id: z.cuid2({
@@ -117,7 +117,8 @@ export const AuthUserAddressSchema = BaseAddressSchema.safeExtend({
       error: '"Adres Başlığı gereklidir",',
     })
     .min(2, "Adres Başlığı en az 2 karakter olmalıdır")
-    .max(256, "Adres Başlığı en fazla 256 karakter olabilir"),
+    .max(256, "Adres Başlığı en fazla 256 karakter olabilir")
+    .describe("Ev, İş, Yazlık vb."),
   tcKimlikNo: z
     .string({
       error: ' "T.C. Kimlik Numarası gereklidir"',
@@ -144,6 +145,7 @@ export const AuthUserAddressSchema = BaseAddressSchema.safeExtend({
     }
   }
 });
+
 export const NonAuthUserAddressSchema = BaseAddressSchema.safeExtend({
   email: z.email({
     error: "Geçersiz E-posta Adresi",

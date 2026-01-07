@@ -3,6 +3,7 @@ import {
   getCountries,
   getCountryCallingCode,
 } from "libphonenumber-js";
+
 export const isPhoneJustCallingCode = (phone: string): boolean => {
   const callingCodes = getCountryCodes();
   return callingCodes.includes(phone as CountryCallingCode);

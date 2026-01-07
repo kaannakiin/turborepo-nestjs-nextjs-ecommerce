@@ -1,13 +1,21 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  UseGuards,
+  UsePipes,
+} from '@nestjs/common';
 import { type User } from '@repo/database';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { LocationsService } from './locations.service';
+import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import {
   AuthUserAddressSchema,
   type AuthUserAddressZodType,
 } from '@repo/types';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
-import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
-import { LocationsService } from './locations.service';
 
 @Controller('locations')
 export class LocationsController {
@@ -22,6 +30,7 @@ export class LocationsController {
   async getCitiesByCountry(@Param('countryId') countryId: string) {
     return this.locationsService.getCitiesByCountry(countryId);
   }
+
   @Get('get-districts-turkey-city/:countryId/:cityId')
   async getDistrictTurkeyCity(
     @Param('countryId') countryId: string,
@@ -42,9 +51,10 @@ export class LocationsController {
   }
 
   @Post('add-user-address')
+  @UsePipes(new ZodValidationPipe(AuthUserAddressSchema))
   @UseGuards(JwtAuthGuard)
   async addUserAddress(
-    @Body(new ZodValidationPipe(AuthUserAddressSchema))
+    @Body()
     address: AuthUserAddressZodType,
     @CurrentUser() user: User,
   ) {

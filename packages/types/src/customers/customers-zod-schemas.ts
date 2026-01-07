@@ -1,3 +1,4 @@
+//packages/types/src/customers/customers-zod-schemas.ts
 import {
   AccountStatus,
   GroupType,
@@ -20,6 +21,7 @@ import {
   DateValueSchema,
   DecisionNodeType,
   DurationValueSchema,
+  FieldType,
   NumericValueSchema,
   RangeValueSchema,
   StringArraySchema,
@@ -319,12 +321,12 @@ const BaseCustomerGroupSchema = z.object({
     .or(z.literal("")),
   isActive: z.boolean(),
 });
-const SmartGroupSchema = BaseCustomerGroupSchema.extend({
+export const SmartGroupSchema = BaseCustomerGroupSchema.extend({
   type: z.literal(GroupType.SMART),
   conditions: DecisionTreeSchema,
 });
 
-const ManualGroupSchema = BaseCustomerGroupSchema.extend({
+export const ManualGroupSchema = BaseCustomerGroupSchema.extend({
   type: z.literal(GroupType.MANUAL),
   conditions: z.null().nullish(),
   users: z.array(z.cuid2()).nullish(),
@@ -465,14 +467,6 @@ export const createResultNode = (
     color,
   },
 });
-
-export type FieldType =
-  | "numeric"
-  | "date"
-  | "boolean"
-  | "enum"
-  | "relation"
-  | "location";
 
 export { BooleanFields, DateFields, LocationFields, NumericFields };
 

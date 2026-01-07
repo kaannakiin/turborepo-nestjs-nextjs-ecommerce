@@ -1,7 +1,8 @@
+import { UserRole } from "@repo/database/client";
 import { CountryCallingCode, isValidPhoneNumber } from "libphonenumber-js";
 import { z } from "zod";
 import { getCountryCodes, isPhoneJustCallingCode } from "../common/helpers";
-import { SortAdminUserTable } from "../common";
+
 export const PhoneSchema = z
   .string({
     error: "Telefon numarası gereklidir",
@@ -124,43 +125,47 @@ export const RegisterSchema = z
   });
 
 export type RegisterSchemaType = z.infer<typeof RegisterSchema>;
+export const LoginSchemaWithPhone = z.object({
+  type: z.literal("phone"),
+  phone: z
+    .string({
+      error: "Telefon numarası gereklidir",
+    })
+    .refine(
+      (val) => {
+        try {
+          return isValidPhoneNumber(val);
+        } catch {
+          return false;
+        }
+      },
+      {
+        message: "Geçersiz telefon numarası",
+      }
+    ),
+  password: z
+    .string({
+      error: "Şifre gereklidir",
+    })
+    .min(6, "Şifre en az 6 karakter olmalıdır")
+    .max(50, "Şifre en fazla 50 karakter olabilir"),
+});
+export type LoginSchemaWithPhoneType = z.infer<typeof LoginSchemaWithPhone>;
+export const LoginSchemaWithEmail = z.object({
+  type: z.literal("email"),
+  email: z.email("Geçersiz e-posta adresi"),
+  password: z
+    .string({
+      error: "Şifre gereklidir",
+    })
+    .min(6, "Şifre en az 6 karakter olmalıdır")
+    .max(50, "Şifre en fazla 50 karakter olabilir"),
+});
+export type LoginSchemaWithEmailType = z.infer<typeof LoginSchemaWithEmail>;
 
 export const LoginSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("email"),
-    email: z.email("Geçersiz e-posta adresi"),
-    password: z
-      .string({
-        error: "Şifre gereklidir",
-      })
-      .min(6, "Şifre en az 6 karakter olmalıdır")
-      .max(50, "Şifre en fazla 50 karakter olabilir"),
-  }),
-  z.object({
-    type: z.literal("phone"),
-    phone: z
-      .string({
-        error: "Telefon numarası gereklidir",
-      })
-      .refine(
-        (val) => {
-          try {
-            return isValidPhoneNumber(val);
-          } catch {
-            return false;
-          }
-        },
-        {
-          message: "Geçersiz telefon numarası",
-        }
-      ),
-    password: z
-      .string({
-        error: "Şifre gereklidir",
-      })
-      .min(6, "Şifre en az 6 karakter olmalıdır")
-      .max(50, "Şifre en fazla 50 karakter olabilir"),
-  }),
+  LoginSchemaWithPhone,
+  LoginSchemaWithEmail,
 ]);
 
 export type LoginSchemaType = z.infer<typeof LoginSchema>;
@@ -195,9 +200,40 @@ export const UserDashboardInfoSchema = z.object({
 
 export type UserDashboardInfoType = z.infer<typeof UserDashboardInfoSchema>;
 
-export const getUsersQueries = z.object({
-  search: z.string().default(""), // default boş string
-  page: z.coerce.number().min(1).default(1), // query string "2" → number 2
-  sortBy: z.enum(SortAdminUserTable).default(SortAdminUserTable.nameAsc),
+const BulkActionIdsSchema = z.object({
+  ids: z.array(z.string().cuid2()).min(1),
 });
-export type GetUsersQueries = z.infer<typeof getUsersQueries>;
+
+export const AdminUserDeleteBulkActionSchema = BulkActionIdsSchema.extend({
+  action: z.literal("DELETE"),
+});
+
+export const AdminUserUpdateGroupBulkActionSchema = BulkActionIdsSchema.extend({
+  action: z.literal("UPDATE_GROUP"),
+  groupId: z.string().cuid2(),
+});
+
+export const AdminUserUpdateRoleBulkActionSchema = BulkActionIdsSchema.extend({
+  action: z.literal("UPDATE_ROLE"),
+  role: z.enum(UserRole),
+});
+
+export const AdminUserTableBulkActionsSchema = z.discriminatedUnion("action", [
+  AdminUserDeleteBulkActionSchema,
+  AdminUserUpdateGroupBulkActionSchema,
+  AdminUserUpdateRoleBulkActionSchema,
+]);
+
+export type AdminUserDeleteBulkAction = z.infer<
+  typeof AdminUserDeleteBulkActionSchema
+>;
+export type AdminUserUpdateGroupBulkAction = z.infer<
+  typeof AdminUserUpdateGroupBulkActionSchema
+>;
+export type AdminUserUpdateRoleBulkAction = z.infer<
+  typeof AdminUserUpdateRoleBulkActionSchema
+>;
+
+export type AdminUserTableBulkActionsZodType = z.infer<
+  typeof AdminUserTableBulkActionsSchema
+>;

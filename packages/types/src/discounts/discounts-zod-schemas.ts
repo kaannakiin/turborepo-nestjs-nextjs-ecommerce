@@ -7,7 +7,7 @@ import {
   LogicalOperator,
 } from "@repo/database/client";
 import { isAfter, isValid, parseISO } from "date-fns";
-import * as z from "zod";
+import { z } from "zod";
 const idArraySchema = z
   .array(
     z.cuid2({
@@ -400,7 +400,6 @@ const BaseDiscountSchema = z
     });
   });
 
-// Tier şemaları
 const PercentageTierByQuantitySchema = z
   .object({
     minQuantity: z
@@ -507,22 +506,12 @@ const FixedTierByPriceSchema = z
     }
   });
 
-/**
- * Adet bazlı tier validasyonu
- * Kontroller:
- * 1. minQuantity değerleri artan sırada olmalı
- * 2. Aynı minQuantity değeri tekrar etmemeli
- * 3. maxQuantity + 1 = next minQuantity (süreklilik)
- * 4. Son tier dışında maxQuantity olmalı
- * 5. İndirim değerleri artan sırada olmalı
- */
 function validateQuantityTiers<
   T extends { minQuantity: number; maxQuantity?: number | null },
 >(tiers: T[], discountField: keyof T, issues: any[]): void {
   if (!tiers || !tiers.length) return;
   const sortedTiers = [...tiers].sort((a, b) => a.minQuantity - b.minQuantity);
 
-  // İlk tierın minQuantity 1 olmalı
   if (sortedTiers[0].minQuantity !== 1) {
     issues.push({
       code: "custom",
@@ -537,7 +526,6 @@ function validateQuantityTiers<
     const currentTier = sortedTiers[i];
     const nextTier = sortedTiers[i + 1];
 
-    // ✅ Tekrar eden minQuantity kontrolü
     if (i > 0 && currentTier.minQuantity === sortedTiers[i - 1].minQuantity) {
       issues.push({
         code: "custom",
@@ -548,7 +536,6 @@ function validateQuantityTiers<
       return;
     }
 
-    // ✅ Son tier kontrolü (sadece son tier maxQuantity null olabilir)
     if (currentTier.maxQuantity == null && i < sortedTiers.length - 1) {
       issues.push({
         code: "custom",
@@ -559,9 +546,7 @@ function validateQuantityTiers<
       return;
     }
 
-    // ✅ Süreklilik kontrolü (bir sonraki tier varsa)
     if (nextTier && currentTier.maxQuantity != null) {
-      // maxQuantity + 1 = nextMinQuantity olmalı
       if (currentTier.maxQuantity + 1 !== nextTier.minQuantity) {
         issues.push({
           code: "custom",
@@ -573,7 +558,6 @@ function validateQuantityTiers<
       }
     }
 
-    // ✅ İndirim değerlerinin artan sırada olması
     if (nextTier) {
       const currentDiscount = currentTier[discountField] as number;
       const nextDiscount = nextTier[discountField] as number;
@@ -593,7 +577,6 @@ function validateQuantityTiers<
       }
     }
 
-    // ✅ maxQuantity >= minQuantity kontrolü (her tier için)
     if (
       currentTier.maxQuantity != null &&
       currentTier.maxQuantity < currentTier.minQuantity
@@ -609,22 +592,11 @@ function validateQuantityTiers<
   }
 }
 
-/**
- * Fiyat bazlı tier validasyonu
- * Kontroller:
- * 1. minAmount değerleri artan sırada olmalı
- * 2. Aynı minAmount değeri tekrar etmemeli
- * 3. maxAmount < next minAmount (çakışma olmamalı)
- * 4. Son tier dışında maxAmount olmalı
- * 5. İndirim değerleri artan sırada olmalı
- */
 function validatePriceTiers<
   T extends { minAmount: number; maxAmount?: number | null },
 >(tiers: T[], discountField: keyof T, issues: any[]): void {
-  // Önce minAmount'a göre sırala
   const sortedTiers = [...tiers].sort((a, b) => a.minAmount - b.minAmount);
 
-  // İlk tierın minAmount 0 olmalı
   if (sortedTiers[0].minAmount !== 0) {
     issues.push({
       code: "custom",
@@ -639,7 +611,6 @@ function validatePriceTiers<
     const currentTier = sortedTiers[i];
     const nextTier = sortedTiers[i + 1];
 
-    // ✅ Tekrar eden minAmount kontrolü
     if (i > 0 && currentTier.minAmount === sortedTiers[i - 1].minAmount) {
       issues.push({
         code: "custom",
@@ -650,7 +621,6 @@ function validatePriceTiers<
       return;
     }
 
-    // ✅ Son tier kontrolü (sadece son tier maxAmount null olabilir)
     if (currentTier.maxAmount == null && i < sortedTiers.length - 1) {
       issues.push({
         code: "custom",
@@ -661,9 +631,7 @@ function validatePriceTiers<
       return;
     }
 
-    // ✅ Çakışma kontrolü (bir sonraki tier varsa)
     if (nextTier && currentTier.maxAmount != null) {
-      // maxAmount < nextMinAmount olmalı (eşitlik olmamalı - çakışma)
       if (currentTier.maxAmount >= nextTier.minAmount) {
         issues.push({
           code: "custom",
@@ -675,7 +643,6 @@ function validatePriceTiers<
       }
     }
 
-    // ✅ İndirim değerlerinin artan sırada olması
     if (nextTier) {
       const currentDiscount = currentTier[discountField] as number;
       const nextDiscount = nextTier[discountField] as number;
@@ -695,7 +662,6 @@ function validatePriceTiers<
       }
     }
 
-    // ✅ maxAmount >= minAmount kontrolü (her tier için)
     if (
       currentTier.maxAmount != null &&
       currentTier.maxAmount <= currentTier.minAmount
@@ -795,7 +761,6 @@ export const FreeShippingDiscountSchema = z.object({
   ...BaseDiscountSchema.shape,
 });
 
-// 2. Ana şemayı bu değişkenleri kullanarak oluşturun
 export const MainDiscountSchema = z.discriminatedUnion("type", [
   PercentageDiscountSchema,
   PercentageGrowQuantityDiscountSchema,

@@ -1,5 +1,11 @@
+import InventoryFullfillmentStrategyTable from "./components/InventoryTable";
+
 const InventoryRulePage = () => {
-  return <div>InventoryRulePage</div>;
+  return (
+    <div>
+      <InventoryFullfillmentStrategyTable />
+    </div>
+  );
 };
 
 export default InventoryRulePage;
