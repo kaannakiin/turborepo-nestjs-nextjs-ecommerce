@@ -1,31 +1,31 @@
-import { Group, Paper, Text } from "@mantine/core";
+import { Group, Paper, Text } from '@mantine/core';
 import {
-  FulfillmentCondition,
-  FulfillmentConditionField,
+  FullfillmentCondition,
+  FullfillmentConditionField,
   getDomain,
-} from "@repo/types";
-import { IconAlertCircle } from "@tabler/icons-react";
-import { Node, NodeProps } from "@xyflow/react";
-import { memo, useMemo } from "react";
+} from '@repo/types';
+import { IconAlertCircle } from '@tabler/icons-react';
+import { Node, NodeProps } from '@xyflow/react';
+import { memo, useMemo } from 'react';
 import {
   GenericConditionNode,
   GenericConditionNodeData,
-} from "../builder/GenericConditionNode";
+} from '../builder/GenericConditionNode';
 
 export type FulfillmentConditionNodeData = GenericConditionNodeData<
-  FulfillmentConditionField,
-  FulfillmentCondition
+  FullfillmentConditionField,
+  FullfillmentCondition
 >;
 export type FulfillmentConditionNodeType = Node<
   FulfillmentConditionNodeData,
-  "condition"
+  'condition'
 >;
 
 const InventoryConditionNode = memo(
   ({ data, selected }: NodeProps<FulfillmentConditionNodeType>) => {
     const domainConfig = useMemo(() => {
-      return getDomain<FulfillmentConditionField, FulfillmentCondition>(
-        "fulfillment"
+      return getDomain<FullfillmentConditionField, FullfillmentCondition>(
+        'fulfillment',
       );
     }, []);
 
@@ -41,7 +41,7 @@ const InventoryConditionNode = memo(
     }
 
     return (
-      <GenericConditionNode<FulfillmentConditionField, FulfillmentCondition>
+      <GenericConditionNode<FullfillmentConditionField, FullfillmentCondition>
         data={data}
         selected={selected}
         domainConfig={domainConfig}
@@ -50,8 +50,8 @@ const InventoryConditionNode = memo(
         headerTitle="ENVANTER KURALI"
       />
     );
-  }
+  },
 );
 
-InventoryConditionNode.displayName = "FulfillmentConditionNode";
+InventoryConditionNode.displayName = 'FulfillmentConditionNode';
 export default InventoryConditionNode;

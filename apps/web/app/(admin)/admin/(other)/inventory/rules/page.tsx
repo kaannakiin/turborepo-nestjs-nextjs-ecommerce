@@ -1,4 +1,4 @@
-import InventoryFullfillmentStrategyTable from "./components/InventoryTable";
+import InventoryFullfillmentStrategyTable from './components/InventoryFullfillmentStrategyTable';
 
 const InventoryRulePage = () => {
   return (

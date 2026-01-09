@@ -8,50 +8,51 @@ import {
   DateValueSchema,
   DayOfWeek,
   DecisionNodeType,
-  FulfillmentActionType,
-  FulfillmentConditionField,
-  FulfillmentStrategyType,
+  FullfillmentActionType,
+  FullfillmentConditionField,
+  FullfillmentStrategyType,
   LogicalOperatorSchema,
   NumericValueSchema,
   PositionSchema,
   RangeValueSchema,
   StringArraySchema,
+  StringOrArraySchema,
   type DecisionTreeEdge,
 } from "../common";
 
 export const FulfillmentConditionFieldSchema = z.enum(
-  FulfillmentConditionField
+  FullfillmentConditionField
 );
-export const FulfillmentActionTypeSchema = z.enum(FulfillmentActionType);
-export const FulfillmentStrategyTypeSchema = z.enum(FulfillmentStrategyType);
+export const FulfillmentActionTypeSchema = z.enum(FullfillmentActionType);
+export const FulfillmentStrategyTypeSchema = z.enum(FullfillmentStrategyType);
 export const CurrencySchema = z.enum(Currency);
 
 export const FulfillmentNumericFields = [
-  FulfillmentConditionField.ORDER_TOTAL,
-  FulfillmentConditionField.ORDER_ITEM_COUNT,
-  FulfillmentConditionField.ORDER_WEIGHT,
+  FullfillmentConditionField.ORDER_TOTAL,
+  FullfillmentConditionField.ORDER_ITEM_COUNT,
+  FullfillmentConditionField.ORDER_WEIGHT,
 ] as const;
 
 export const FulfillmentLocationFields = [
-  FulfillmentConditionField.DESTINATION_COUNTRY,
-  FulfillmentConditionField.DESTINATION_STATE,
-  FulfillmentConditionField.DESTINATION_CITY,
+  FullfillmentConditionField.DESTINATION_COUNTRY,
+  FullfillmentConditionField.DESTINATION_STATE,
+  FullfillmentConditionField.DESTINATION_CITY,
 ] as const;
 
 export const ProductRelationFields = [
-  FulfillmentConditionField.PRODUCT_TAG,
-  FulfillmentConditionField.PRODUCT_CATEGORY,
-  FulfillmentConditionField.PRODUCT_BRAND,
+  FullfillmentConditionField.PRODUCT_TAG,
+  FullfillmentConditionField.PRODUCT_CATEGORY,
+  FullfillmentConditionField.PRODUCT_BRAND,
 ] as const;
 
 export const CustomerRelationFields = [
-  FulfillmentConditionField.CUSTOMER_GROUP,
+  FullfillmentConditionField.CUSTOMER_GROUP,
 ] as const;
 
 export const TimeFields = [
-  FulfillmentConditionField.DAY_OF_WEEK,
-  FulfillmentConditionField.TIME_OF_DAY,
-  FulfillmentConditionField.IS_HOLIDAY,
+  FullfillmentConditionField.DAY_OF_WEEK,
+  FullfillmentConditionField.TIME_OF_DAY,
+  FullfillmentConditionField.IS_HOLIDAY,
 ] as const;
 
 export const TimeRangeValueSchema = z
@@ -103,16 +104,23 @@ const NumericConditionSchema = z.discriminatedUnion("operator", [
 
 const CurrencyConditionSchema = z.discriminatedUnion("operator", [
   z.object({
-    field: z.literal(FulfillmentConditionField.ORDER_CURRENCY),
+    field: z.literal(FullfillmentConditionField.ORDER_CURRENCY),
     operator: z.enum([ConditionOperator.EQ, ConditionOperator.NEQ]),
     value: CurrencySchema,
   }),
   z.object({
-    field: z.literal(FulfillmentConditionField.ORDER_CURRENCY),
+    field: z.literal(FullfillmentConditionField.ORDER_CURRENCY),
     operator: z.enum([ConditionOperator.IN, ConditionOperator.NOT_IN]),
     value: z.array(CurrencySchema).min(1, "En az bir para birimi seçilmeli"),
   }),
 ]);
+
+const LocationValueObjectSchema = z.object({
+  countryId: z.uuid().nullish(),
+  stateId: z.uuid().nullish(),
+  cityId: z.uuid().nullish(),
+  districtId: z.uuid().nullish(),
+});
 
 /**
  * Lokasyon Koşulları
@@ -123,9 +131,8 @@ const LocationConditionSchema = z.discriminatedUnion("operator", [
   z.object({
     field: z.enum(FulfillmentLocationFields),
     operator: z.enum([ConditionOperator.EQ, ConditionOperator.NEQ]),
-    value: z.string().min(1, "Lokasyon ID gerekli"),
+    value: z.union([z.string(), LocationValueObjectSchema]),
   }),
-
   z.object({
     field: z.enum(FulfillmentLocationFields),
     operator: z.enum([ConditionOperator.IN, ConditionOperator.NOT_IN]),
@@ -172,7 +179,7 @@ const CustomerRelationConditionSchema = z.discriminatedUnion("operator", [
   z.object({
     field: z.enum(CustomerRelationFields),
     operator: z.enum([ConditionOperator.EQ, ConditionOperator.NEQ]),
-    value: z.string().min(1),
+    value: StringOrArraySchema,
   }),
   z.object({
     field: z.enum(CustomerRelationFields),
@@ -195,19 +202,19 @@ const CustomerRelationConditionSchema = z.discriminatedUnion("operator", [
  * - IS_HOLIDAY: Tatil günü mü
  */
 const DayOfWeekConditionSchema = z.object({
-  field: z.literal(FulfillmentConditionField.DAY_OF_WEEK),
+  field: z.literal(FullfillmentConditionField.DAY_OF_WEEK),
   operator: z.enum([ConditionOperator.IN, ConditionOperator.NOT_IN]),
   value: z.array(z.enum(DayOfWeek)).min(1, "En az bir gün seçilmeli"),
 });
 
 const TimeOfDayConditionSchema = z.object({
-  field: z.literal(FulfillmentConditionField.TIME_OF_DAY),
+  field: z.literal(FullfillmentConditionField.TIME_OF_DAY),
   operator: z.literal(ConditionOperator.BETWEEN),
   value: TimeRangeValueSchema,
 });
 
 const IsHolidayConditionSchema = z.object({
-  field: z.literal(FulfillmentConditionField.IS_HOLIDAY),
+  field: z.literal(FullfillmentConditionField.IS_HOLIDAY),
   operator: z.enum([ConditionOperator.IS_TRUE, ConditionOperator.IS_FALSE]),
 });
 
@@ -217,12 +224,12 @@ const IsHolidayConditionSchema = z.object({
  */
 const ShippingMethodConditionSchema = z.discriminatedUnion("operator", [
   z.object({
-    field: z.literal(FulfillmentConditionField.SHIPPING_METHOD),
+    field: z.literal(FullfillmentConditionField.SHIPPING_METHOD),
     operator: z.enum([ConditionOperator.EQ, ConditionOperator.NEQ]),
     value: z.string().min(1, "Kargo yöntemi gerekli"),
   }),
   z.object({
-    field: z.literal(FulfillmentConditionField.SHIPPING_METHOD),
+    field: z.literal(FullfillmentConditionField.SHIPPING_METHOD),
     operator: z.enum([ConditionOperator.IN, ConditionOperator.NOT_IN]),
     value: StringArraySchema,
   }),
@@ -230,12 +237,12 @@ const ShippingMethodConditionSchema = z.discriminatedUnion("operator", [
 
 const StockLevelConditionSchema = z.discriminatedUnion("operator", [
   z.object({
-    field: z.literal(FulfillmentConditionField.STOCK_LEVEL),
+    field: z.literal(FullfillmentConditionField.STOCK_LEVEL),
     operator: z.enum([ConditionOperator.EQ, ConditionOperator.NEQ]),
     value: z.enum(["OUT_OF_STOCK", "LOW_STOCK", "IN_STOCK", "HIGH_STOCK"]),
   }),
   z.object({
-    field: z.literal(FulfillmentConditionField.STOCK_LEVEL),
+    field: z.literal(FullfillmentConditionField.STOCK_LEVEL),
     operator: z.enum([ConditionOperator.IN, ConditionOperator.NOT_IN]),
     value: z
       .array(z.enum(["OUT_OF_STOCK", "LOW_STOCK", "IN_STOCK", "HIGH_STOCK"]))
@@ -245,12 +252,12 @@ const StockLevelConditionSchema = z.discriminatedUnion("operator", [
 
 const LocationTypeConditionSchema = z.discriminatedUnion("operator", [
   z.object({
-    field: z.literal(FulfillmentConditionField.LOCATION_TYPE),
+    field: z.literal(FullfillmentConditionField.LOCATION_TYPE),
     operator: z.enum([ConditionOperator.EQ, ConditionOperator.NEQ]),
     value: z.enum(["WAREHOUSE", "STORE", "DROPSHIP", "VIRTUAL"]),
   }),
   z.object({
-    field: z.literal(FulfillmentConditionField.LOCATION_TYPE),
+    field: z.literal(FullfillmentConditionField.LOCATION_TYPE),
     operator: z.enum([ConditionOperator.IN, ConditionOperator.NOT_IN]),
     value: z
       .array(z.enum(["WAREHOUSE", "STORE", "DROPSHIP", "VIRTUAL"]))
@@ -260,7 +267,7 @@ const LocationTypeConditionSchema = z.discriminatedUnion("operator", [
 
 const SupplierLeadTimeConditionSchema = z.discriminatedUnion("operator", [
   z.object({
-    field: z.literal(FulfillmentConditionField.SUPPLIER_LEAD_TIME),
+    field: z.literal(FullfillmentConditionField.SUPPLIER_LEAD_TIME),
     operator: z.enum([
       ConditionOperator.EQ,
       ConditionOperator.NEQ,
@@ -272,13 +279,13 @@ const SupplierLeadTimeConditionSchema = z.discriminatedUnion("operator", [
     value: NumericValueSchema,
   }),
   z.object({
-    field: z.literal(FulfillmentConditionField.SUPPLIER_LEAD_TIME),
+    field: z.literal(FullfillmentConditionField.SUPPLIER_LEAD_TIME),
     operator: z.literal(ConditionOperator.BETWEEN),
     value: RangeValueSchema,
   }),
 ]);
 
-export const FulfillmentConditionSchema = z.union([
+export const FullfillmentConditionSchema = z.union([
   NumericConditionSchema,
   CurrencyConditionSchema,
   LocationConditionSchema,
@@ -293,7 +300,7 @@ export const FulfillmentConditionSchema = z.union([
   SupplierLeadTimeConditionSchema,
 ]);
 
-export type FulfillmentCondition = z.infer<typeof FulfillmentConditionSchema>;
+export type FullfillmentCondition = z.infer<typeof FullfillmentConditionSchema>;
 
 export const LocationPrioritySchema = z.enum([
   "sequential",
@@ -306,26 +313,26 @@ export type LocationPriority = z.infer<typeof LocationPrioritySchema>;
  * Fulfillment Aksiyonları
  * Her aksiyon tipi için ayrı schema tanımlanmış
  */
-export const FulfillmentActionSchema = z.discriminatedUnion("type", [
+export const FullfillmentActionSchema = z.discriminatedUnion("type", [
   z.object({
-    type: z.literal(FulfillmentActionType.USE_LOCATION),
+    type: z.literal(FullfillmentActionType.USE_LOCATION),
     locationIds: z.array(z.cuid2()).min(1, "En az bir lokasyon seçilmeli"),
     priority: LocationPrioritySchema.default("sequential"),
   }),
 
   z.object({
-    type: z.literal(FulfillmentActionType.EXCLUDE_LOCATION),
+    type: z.literal(FullfillmentActionType.EXCLUDE_LOCATION),
     locationIds: z.array(z.cuid2()).min(1, "En az bir lokasyon seçilmeli"),
   }),
 
   z.object({
-    type: z.literal(FulfillmentActionType.PREFER_LOCATION),
+    type: z.literal(FullfillmentActionType.PREFER_LOCATION),
     locationId: z.cuid2(),
     fallbackAllowed: z.boolean().default(true),
   }),
 
   z.object({
-    type: z.literal(FulfillmentActionType.ALLOW_SPLIT),
+    type: z.literal(FullfillmentActionType.ALLOW_SPLIT),
     maxSplitCount: z.number().int().min(2).max(10).optional(),
     splitStrategy: z
       .enum(["minimize_shipments", "fastest_delivery"])
@@ -333,65 +340,65 @@ export const FulfillmentActionSchema = z.discriminatedUnion("type", [
   }),
 
   z.object({
-    type: z.literal(FulfillmentActionType.DENY_SPLIT),
+    type: z.literal(FullfillmentActionType.DENY_SPLIT),
   }),
 
   z.object({
-    type: z.literal(FulfillmentActionType.USE_DROPSHIP),
+    type: z.literal(FullfillmentActionType.USE_DROPSHIP),
     supplierId: z.cuid2(),
     onlyIfOutOfStock: z.boolean().default(true),
     maxLeadDays: z.number().int().positive().optional(),
   }),
 
   z.object({
-    type: z.literal(FulfillmentActionType.BACKORDER),
+    type: z.literal(FullfillmentActionType.BACKORDER),
     maxWaitDays: z.number().int().positive().optional(),
     notifyCustomer: z.boolean().default(true),
     estimatedDate: DateValueSchema.optional(),
   }),
 
   z.object({
-    type: z.literal(FulfillmentActionType.REJECT),
+    type: z.literal(FullfillmentActionType.REJECT),
     reason: z.string().max(500).optional(),
     refundAutomatically: z.boolean().default(true),
   }),
 
   z.object({
-    type: z.literal(FulfillmentActionType.FLAG_FOR_REVIEW),
+    type: z.literal(FullfillmentActionType.FLAG_FOR_REVIEW),
     reason: z.string().max(500).optional(),
     assignTo: z.cuid2().optional(),
     priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
   }),
 ]);
 
-export type FulfillmentAction = z.infer<typeof FulfillmentActionSchema>;
+export type FullfillmentAction = z.infer<typeof FullfillmentActionSchema>;
 
-const FulfillmentStartNodeSchema = BaseStartNodeSchema;
+const FullfillmentStartNodeSchema = BaseStartNodeSchema;
 
-const FulfillmentConditionNodeSchema = z.object({
+const FullfillmentConditionNodeSchema = z.object({
   id: z.string(),
   type: z.literal(DecisionNodeType.CONDITION),
   position: PositionSchema,
   data: z.object({
-    condition: FulfillmentConditionSchema,
+    condition: FullfillmentConditionSchema,
     label: z.string().optional(),
   }),
 });
 
-const FulfillmentConditionGroupNodeSchema = z.object({
+const FullfillmentConditionGroupNodeSchema = z.object({
   id: z.string(),
   type: z.literal(DecisionNodeType.CONDITION_GROUP),
   position: PositionSchema,
   data: z.object({
     operator: LogicalOperatorSchema,
     conditions: z
-      .array(FulfillmentConditionSchema)
+      .array(FullfillmentConditionSchema)
       .min(1, "En az bir koşul gerekli"),
     label: z.string().optional(),
   }),
 });
 
-const FulfillmentResultDataSchema = z.object({
+const FullfillmentResultDataSchema = z.object({
   label: z.string().min(1, "Aksiyon adı gerekli"),
   description: z.string().max(500).optional(),
   color: z
@@ -401,113 +408,135 @@ const FulfillmentResultDataSchema = z.object({
       "Geçerli HEX renk kodu giriniz"
     )
     .optional(),
-  actions: z
-    .array(FulfillmentActionSchema)
-    .min(1, "En az bir aksiyon gerekli")
-    .refine(
-      (actions) => {
-        const hasReject = actions.some(
-          (a) => a.type === FulfillmentActionType.REJECT
-        );
+  actions: z.array(FullfillmentActionSchema).nullish(),
+  // .min(1, "En az bir aksiyon gerekli")
+  // .refine(
+  //   (actions) => {
+  //     const hasReject = actions.some(
+  //       (a) => a.type === FullfillmentActionType.REJECT
+  //     );
 
-        if (hasReject && actions.length > 1) return false;
+  //     if (hasReject && actions.length > 1) return false;
 
-        const hasAllowSplit = actions.some(
-          (a) => a.type === FulfillmentActionType.ALLOW_SPLIT
-        );
-        const hasDenySplit = actions.some(
-          (a) => a.type === FulfillmentActionType.DENY_SPLIT
-        );
+  //     const hasAllowSplit = actions.some(
+  //       (a) => a.type === FullfillmentActionType.ALLOW_SPLIT
+  //     );
+  //     const hasDenySplit = actions.some(
+  //       (a) => a.type === FullfillmentActionType.DENY_SPLIT
+  //     );
 
-        if (hasAllowSplit && hasDenySplit) return false;
+  //     if (hasAllowSplit && hasDenySplit) return false;
 
-        return true;
-      },
-      {
-        message:
-          "Çelişkili aksiyonlar tespit edildi (Örn: Hem Reddet hem Gönder seçilemez).",
-      }
-    ),
+  //     return true;
+  //   },
+  //   {
+  //     message:
+  //       "Çelişkili aksiyonlar tespit edildi (Örn: Hem Reddet hem Gönder seçilemez).",
+  //   }
+  // ),
   isTerminal: z.boolean().default(true),
 });
 
-const FulfillmentResultNodeSchema = createResultNodeSchema(
-  FulfillmentResultDataSchema
+const FullfillmentResultNodeSchema = createResultNodeSchema(
+  FullfillmentResultDataSchema
 );
 
-export const FulfillmentDecisionNodeSchema = z.discriminatedUnion("type", [
-  FulfillmentStartNodeSchema,
-  FulfillmentConditionNodeSchema,
-  FulfillmentConditionGroupNodeSchema,
-  FulfillmentResultNodeSchema,
+export const FullfillmentDecisionNodeSchema = z.discriminatedUnion("type", [
+  FullfillmentStartNodeSchema,
+  FullfillmentConditionNodeSchema,
+  FullfillmentConditionGroupNodeSchema,
+  FullfillmentResultNodeSchema,
 ]);
 
-export type FulfillmentDecisionNode = z.infer<
-  typeof FulfillmentDecisionNodeSchema
+export type FullfillmentDecisionNode = z.infer<
+  typeof FullfillmentDecisionNodeSchema
 >;
 
-const fulfillmentTreeValidations = [
+const fullfillmentTreeValidations = [
   {
     validate: (data: {
-      nodes: FulfillmentDecisionNode[];
-      edges: DecisionTreeEdge[];
-    }) => {
-      const conditionNodes = data.nodes.filter(
-        (n) => n.type === DecisionNodeType.CONDITION
-      );
-
-      return conditionNodes.every((node) => {
-        const outgoingEdges = data.edges.filter((e) => e.source === node.id);
-        const hasYes = outgoingEdges.some((e) => e.sourceHandle === "yes");
-        const hasNo = outgoingEdges.some((e) => e.sourceHandle === "no");
-        return hasYes && hasNo;
-      });
-    },
-    message:
-      "Her koşul kutusunun hem 'Evet' hem de 'Hayır' yolu bağlı olmalıdır.",
-  },
-  {
-    validate: (data: {
-      nodes: FulfillmentDecisionNode[];
+      nodes: FullfillmentDecisionNode[];
       edges: DecisionTreeEdge[];
     }) => {
       const startNode = data.nodes.find(
         (n) => n.type === DecisionNodeType.START
       );
       if (!startNode) return false;
+
       return data.edges.some((e) => e.source === startNode.id);
     },
-    message: "Başlangıç node'undan en az bir çıkış bağlantısı olmalı",
+    message: "Başlangıç kutusundan bir bağlantı yapmalısınız.",
   },
+
   {
     validate: (data: {
-      nodes: FulfillmentDecisionNode[];
+      nodes: FullfillmentDecisionNode[];
       edges: DecisionTreeEdge[];
     }) => {
       const resultNodes = data.nodes.filter(
         (n) => n.type === DecisionNodeType.RESULT
       );
+
       return resultNodes.every((node) =>
         data.edges.some((e) => e.target === node.id)
       );
     },
-    message: "Her sonuç node'una en az bir giriş bağlantısı olmalı",
+    message: "Tüm Sonuç kutularına en az bir bağlantı gelmelidir.",
+  },
+
+  {
+    validate: (data: {
+      nodes: FullfillmentDecisionNode[];
+      edges: DecisionTreeEdge[];
+    }) => {
+      const nonResultNodes = data.nodes.filter(
+        (n) => n.type !== DecisionNodeType.RESULT
+      );
+
+      return nonResultNodes.every((node) => {
+        const hasOutgoingEdge = data.edges.some((e) => e.source === node.id);
+        return hasOutgoingEdge;
+      });
+    },
+    message:
+      "Akışın ortasında sonuca bağlanmayan (yarım kalan) kutular var. Lütfen akışı tamamlayın.",
+  },
+
+  {
+    validate: (data: {
+      nodes: FullfillmentDecisionNode[];
+      edges: DecisionTreeEdge[];
+    }) => {
+      const conditionNodes = data.nodes.filter(
+        (n) =>
+          n.type === DecisionNodeType.CONDITION ||
+          n.type === DecisionNodeType.CONDITION_GROUP
+      );
+
+      return conditionNodes.every((node) => {
+        return data.edges.some(
+          (e) => e.source === node.id && e.sourceHandle === "yes"
+        );
+      });
+    },
+    message:
+      "Koşul kutularının 'Evet' (Yeşil) yolu mutlaka bir yere bağlanmalıdır.",
   },
 ];
 
-export const FulfillmentDecisionTreeSchema = createDecisionTreeSchema(
-  FulfillmentDecisionNodeSchema,
+export const FullfillmentDecisionTreeSchema = createDecisionTreeSchema(
+  FullfillmentDecisionNodeSchema,
   {
     minResultNodes: 1,
-    customValidations: fulfillmentTreeValidations,
+    customValidations: fullfillmentTreeValidations,
   }
 );
 
-export type FulfillmentDecisionTree = z.infer<
-  typeof FulfillmentDecisionTreeSchema
+export type FullfillmentDecisionTree = z.infer<
+  typeof FullfillmentDecisionTreeSchema
 >;
 
-const FulfillmentStrategySettingsSchema = z.object({
+const FullfillmentStrategySettingsSchema = z.object({
   allowSplitShipment: z.boolean().default(false),
 
   maxSplitCount: z.number().int().min(2).max(10).nullish(),
@@ -521,11 +550,11 @@ const FulfillmentStrategySettingsSchema = z.object({
   processOnHolidays: z.boolean().default(false),
 });
 
-export type FulfillmentStrategySettings = z.infer<
-  typeof FulfillmentStrategySettingsSchema
+export type FullfillmentStrategySettings = z.infer<
+  typeof FullfillmentStrategySettingsSchema
 >;
 
-export const FulfillmentStrategyZodSchema = z.object({
+export const FullfillmentStrategyZodSchema = z.object({
   uniqueId: z.cuid2().nullish(),
   name: z
     .string()
@@ -537,20 +566,20 @@ export const FulfillmentStrategyZodSchema = z.object({
     .nullish()
     .or(z.literal("")),
   type: FulfillmentStrategyTypeSchema.default(
-    FulfillmentStrategyType.PROXIMITY
+    FullfillmentStrategyType.PROXIMITY
   ),
   isActive: z.boolean().default(true),
   isDefault: z.boolean().default(false),
   priority: z.number().int().min(0).default(0),
-  settings: FulfillmentStrategySettingsSchema,
-  decisionTree: FulfillmentDecisionTreeSchema,
+  settings: FullfillmentStrategySettingsSchema,
+  decisionTree: FullfillmentDecisionTreeSchema,
 });
 
-export type FulfillmentStrategyInput = z.input<
-  typeof FulfillmentStrategyZodSchema
+export type FullfillmentStrategyInput = z.input<
+  typeof FullfillmentStrategyZodSchema
 >;
-export type FulfillmentStrategyOutput = z.output<
-  typeof FulfillmentStrategyZodSchema
+export type FullfillmentStrategyOutput = z.output<
+  typeof FullfillmentStrategyZodSchema
 >;
 
 export const GetFulfillmentStrategiesQuerySchema = z.object({

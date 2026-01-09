@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import CustomPagination from "@/components/CustomPagination";
-import CustomSearchInput from "@/components/CustomSearchInput";
-import TableSkeleton from "@/components/TableSkeleton";
-import { useInventory } from "@hooks/mutations/admin/useInventory";
+import CustomPagination from '@/components/CustomPagination';
+import CustomSearchInput from '@/components/CustomSearchInput';
+import TableSkeleton from '@/components/TableSkeleton';
+import { useInvetoryRule } from '@hooks/admin/useInventory';
 import {
   ActionIcon,
   Alert,
@@ -15,25 +15,26 @@ import {
   Text,
   Title,
   Tooltip,
-} from "@mantine/core";
-import { DateFormatter } from "@repo/shared";
+} from '@mantine/core';
+import { DateFormatter } from '@repo/shared';
 import {
   IconAlertCircle,
   IconCheck,
   IconEdit,
   IconTrash,
   IconX,
-} from "@tabler/icons-react";
-import { Route } from "next";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+} from '@tabler/icons-react';
+import { Route } from 'next';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const InventoryFullfillmentStrategyTable = () => {
   const searchParams = useSearchParams();
-  const search = (searchParams.get("search") as string) || "";
-  const page = parseInt((searchParams.get("page") as string) || "1", 10);
+  const search = (searchParams.get('search') as string) || '';
+  const router = useRouter();
+  const page = parseInt((searchParams.get('page') as string) || '1', 10);
 
-  const { data, isLoading, isError, error } = useInventory({
+  const { data, isLoading, isError, error } = useInvetoryRule({
     page,
     take: 20,
     search,
@@ -47,7 +48,7 @@ const InventoryFullfillmentStrategyTable = () => {
             {item.name}
           </Text>
           <Text c="dimmed" size="xs" truncate="end" maw={200}>
-            {item.description || "-"}
+            {item.description || '-'}
           </Text>
         </div>
       </Table.Td>
@@ -100,17 +101,23 @@ const InventoryFullfillmentStrategyTable = () => {
 
       <Table.Td>
         <Text size="xs" c="dimmed">
-          {DateFormatter.forTable(item.updatedAt)}
+          {DateFormatter.withDay(item.updatedAt)}
         </Text>
       </Table.Td>
 
       <Table.Td>
         <Group gap={0} justify="flex-end">
-          <ActionIcon variant="subtle" color="gray">
-            <IconEdit style={{ width: "70%", height: "70%" }} stroke={1.5} />
+          <ActionIcon
+            onClick={() => {
+              router.push(('/admin/inventory/rules/' + item.id) as Route);
+            }}
+            variant="subtle"
+            color="gray"
+          >
+            <IconEdit style={{ width: '70%', height: '70%' }} stroke={1.5} />
           </ActionIcon>
           <ActionIcon variant="subtle" color="red">
-            <IconTrash style={{ width: "70%", height: "70%" }} stroke={1.5} />
+            <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
           </ActionIcon>
         </Group>
       </Table.Td>
@@ -127,7 +134,7 @@ const InventoryFullfillmentStrategyTable = () => {
           <Button
             variant="outline"
             component={Link}
-            href={"/admin/inventory/rules/new" as Route}
+            href={'/admin/inventory/rules/new' as Route}
           >
             Yeni Strateji Oluştur
           </Button>
@@ -142,8 +149,8 @@ const InventoryFullfillmentStrategyTable = () => {
           title="Hata Oluştu"
           icon={<IconAlertCircle />}
         >
-          Veriler yüklenirken bir sorun oluştu:{" "}
-          {error instanceof Error ? error.message : "Bilinmeyen hata"}
+          Veriler yüklenirken bir sorun oluştu:{' '}
+          {error instanceof Error ? error.message : 'Bilinmeyen hata'}
         </Alert>
       )}
 
@@ -156,7 +163,7 @@ const InventoryFullfillmentStrategyTable = () => {
               <Table.Th>Durum</Table.Th>
               <Table.Th>Ayarlar (Drop/Back)</Table.Th>
               <Table.Th>Son Güncelleme</Table.Th>
-              <Table.Th style={{ textAlign: "right" }}>İşlemler</Table.Th>
+              <Table.Th style={{ textAlign: 'right' }}>İşlemler</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>

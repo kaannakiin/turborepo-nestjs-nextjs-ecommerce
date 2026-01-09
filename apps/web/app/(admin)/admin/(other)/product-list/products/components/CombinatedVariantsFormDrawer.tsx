@@ -1,8 +1,7 @@
-"use client";
+'use client';
 
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import GlobalSeoCard from "@/components/GlobalSeoCard";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
+import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
+import GlobalSeoCard from '@/components/GlobalSeoCard';
 import {
   Button,
   Drawer,
@@ -15,31 +14,32 @@ import {
   Switch,
   TextInput,
   Title,
-} from "@mantine/core";
-import { notifications } from "@mantine/notifications";
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import {
   Control,
   Controller,
   UseFormGetValues,
   UseFormSetValue,
   useWatch,
-} from "@repo/shared";
-import { VariantProductZodType } from "@repo/types";
-import dynamic from "next/dynamic";
-import ProductDropzone from "../../components/ProductDropzone";
-import ProductPriceNumberInput from "./ProductPriceNumberInput";
+} from '@repo/shared';
+import { VariantProductZodType } from '@repo/types';
+import dynamic from 'next/dynamic';
+import ProductDropzone from '../../components/ProductDropzone';
+import ProductPriceNumberInput from './ProductPriceNumberInput';
+import { useDeleteProductAsset } from '@hooks/admin/useProducts';
 
 const GlobalTextEditor = dynamic(
-  () => import("../.././../../../../components/GlobalTextEditor"),
+  () => import('../.././../../../../components/GlobalTextEditor'),
   {
     ssr: false,
     loading: () => <GlobalLoadingOverlay />,
-  }
+  },
 );
 
 interface CombinatedVariantsFormDrawerProps extends Pick<
   DrawerProps,
-  "opened" | "onClose"
+  'opened' | 'onClose'
 > {
   control: Control<VariantProductZodType>;
   selectedIndex: number;
@@ -55,14 +55,15 @@ const CombinatedVariantsFormDrawer = ({
   selectedIndex,
   onSave,
   setValue,
-  getValues, // Parent'tan gelen getValues fonksiyonu
+  getValues,
 }: CombinatedVariantsFormDrawerProps) => {
+  const deleteProductAssetMutation = useDeleteProductAsset();
+
   const handleSave = () => {
     onSave?.();
     onClose();
   };
 
-  // UI render için useWatch kullanmaya devam ediyoruz
   const existingImages =
     useWatch({
       control,
@@ -76,7 +77,6 @@ const CombinatedVariantsFormDrawer = ({
     }) || [];
 
   const handleAddImages = (files: File[]) => {
-    // Ekleme yaparken de en güncel veriyi baz almak daha güvenlidir
     const currentExisting =
       getValues(`combinatedVariants.${selectedIndex}.existingImages`) || [];
     const currentImages =
@@ -95,7 +95,7 @@ const CombinatedVariantsFormDrawer = ({
       {
         shouldValidate: true,
         shouldDirty: true,
-      }
+      },
     );
   };
 
@@ -111,47 +111,42 @@ const CombinatedVariantsFormDrawer = ({
   };
 
   const handleRemoveExistingImage = async (imageUrl: string) => {
-    const deleteResponse = await fetchWrapper.delete(
-      `/admin/products/delete-product-asset/${imageUrl}`
-    );
+    try {
+      await deleteProductAssetMutation.mutateAsync(imageUrl);
 
-    if (!deleteResponse.success) {
+      const currentExisting =
+        getValues(`combinatedVariants.${selectedIndex}.existingImages`) || [];
+      const filteredExisting = currentExisting.filter(
+        (img) => img.url !== imageUrl,
+      );
+
+      setValue(
+        `combinatedVariants.${selectedIndex}.existingImages`,
+        filteredExisting,
+        {
+          shouldValidate: true,
+          shouldDirty: true,
+        },
+      );
+    } catch (error) {
       notifications.show({
-        title: "Silme Hatası!",
-        message: "Ürün görseli silinirken bir hata oluştu.",
-        color: "red",
+        title: 'Silme Hatası!',
+        message: 'Ürün görseli silinirken bir hata oluştu.',
+        color: 'red',
         autoClose: 3000,
       });
-      throw new Error("Silme başarısız");
+      throw error;
     }
-
-    const currentExisting =
-      getValues(`combinatedVariants.${selectedIndex}.existingImages`) || [];
-    const filteredExisting = currentExisting.filter(
-      (img) => img.url !== imageUrl
-    );
-
-    setValue(
-      `combinatedVariants.${selectedIndex}.existingImages`,
-      filteredExisting,
-      {
-        shouldValidate: true,
-        shouldDirty: true,
-      }
-    );
   };
 
-  // --- KRİTİK DÜZELTME BURADA ---
   const handleReorder = (
     newOrderList: Array<{
       url: string;
       order: number;
       file?: File;
       isNew: boolean;
-    }>
+    }>,
   ) => {
-    // 1. Verinin en güncel halini "getValues" ile alıyoruz.
-    // useWatch, closure içinde eski veriyi tutuyor olabilir.
     const currentExistingImages =
       getValues(`combinatedVariants.${selectedIndex}.existingImages`) || [];
     const currentImages =
@@ -160,18 +155,15 @@ const CombinatedVariantsFormDrawer = ({
     const updatedExistingImages: typeof existingImages = [];
     const updatedNewImages: typeof images = [];
 
-    // 2. Yeni sıralama listesini dönerek dizileri yeniden oluşturuyoruz
     newOrderList.forEach((item) => {
       if (item.isNew && item.file) {
-        // Yeni resimler için file objesini koruyoruz
         updatedNewImages.push({
           file: item.file,
           order: item.order,
         });
       } else {
-        // Mevcut resimler için orijinal objeyi bulup order'ını güncelliyoruz
         const originalImg = currentExistingImages.find(
-          (img) => img.url === item.url
+          (img) => img.url === item.url,
         );
 
         if (originalImg) {
@@ -185,7 +177,6 @@ const CombinatedVariantsFormDrawer = ({
       }
     });
 
-    // 3. SetValue options ile render'ı zorluyoruz
     setValue(
       `combinatedVariants.${selectedIndex}.existingImages`,
       updatedExistingImages,
@@ -193,7 +184,7 @@ const CombinatedVariantsFormDrawer = ({
         shouldValidate: true,
         shouldDirty: true,
         shouldTouch: true,
-      }
+      },
     );
 
     setValue(`combinatedVariants.${selectedIndex}.images`, updatedNewImages, {
@@ -204,19 +195,20 @@ const CombinatedVariantsFormDrawer = ({
   };
   return (
     <Drawer
+      keepMounted
       opened={opened}
       onClose={onClose}
       position="bottom"
       transitionProps={{
-        transition: "slide-up",
+        transition: 'slide-up',
         duration: 400,
       }}
       size="90%"
       title="Varyant Kombinasyonu Düzenle"
       classNames={{
-        title: "text-lg font-semibold",
-        header: "border-b border-gray-400",
-        body: "pt-2",
+        title: 'text-lg font-semibold',
+        header: 'border-b border-gray-400',
+        body: 'pt-2',
       }}
     >
       <Stack gap="lg">
@@ -234,7 +226,7 @@ const CombinatedVariantsFormDrawer = ({
                   placeholder="Ürün kodunu giriniz"
                   error={fieldState.error?.message}
                   {...field}
-                  value={field.value || ""}
+                  value={field.value || ''}
                 />
               )}
             />
@@ -248,14 +240,14 @@ const CombinatedVariantsFormDrawer = ({
                   placeholder="Barkod numarasını giriniz"
                   error={fieldState.error?.message}
                   {...field}
-                  value={field.value || ""}
+                  value={field.value || ''}
                 />
               )}
             />
           </SimpleGrid>
         </div>
         <div>
-          <Title order={4} mb={"md"}>
+          <Title order={4} mb={'md'}>
             Açıklama
           </Title>
           <Controller
@@ -265,7 +257,7 @@ const CombinatedVariantsFormDrawer = ({
               <GlobalTextEditor
                 renderLabel={false}
                 {...field}
-                value={field.value ?? ""}
+                value={field.value ?? ''}
                 error={fieldState.error?.message}
                 placeholder="Varyant kombinasyonlarını düzenleyebilirsiniz. Yapay zekadan yardım almak için /ai yazabilirsiniz."
               />
@@ -357,7 +349,7 @@ const CombinatedVariantsFormDrawer = ({
               <Switch
                 {...field}
                 checked={value}
-                label={value ? "Aktif" : "Pasif"}
+                label={value ? 'Aktif' : 'Pasif'}
                 description="Bu varyantın satışta olup olmadığını belirler"
                 size="md"
               />

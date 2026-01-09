@@ -1,13 +1,13 @@
-import { getQueryClient } from "@lib/serverQueryClient";
-import { getOgImageUrl } from "@lib/ui/product-helper";
-import { createServerFetch } from "@lib/wrappers/fetchWrapper";
-import { dehydrate, HydrationBoundary } from "@repo/shared";
-import { ProductDetailType } from "@repo/types";
-import { Metadata } from "next";
-import { unstable_cache } from "next/cache";
-import { notFound } from "next/navigation";
-import { Params } from "types/GlobalTypes";
-import ProductPageClient from "./components/ProductPageClient";
+import { getQueryClient } from '@lib/serverQueryClient';
+import { getOgImageUrl } from '@lib/ui/product-helper';
+import { createServerFetch } from '@lib/wrappers/fetchWrapper';
+import { dehydrate, HydrationBoundary } from '@repo/shared';
+import { ProductDetailType } from '@repo/types';
+import { Metadata } from 'next';
+import { unstable_cache } from 'next/cache';
+import { notFound } from 'next/navigation';
+import { Params } from 'types/GlobalTypes';
+import ProductPageClient from './components/ProductPageClient';
 
 interface Props {
   params: Params;
@@ -24,11 +24,11 @@ const getCachedProductData = unstable_cache(
 
     return response.data;
   },
-  ["product-data"],
+  ['product-data'],
   {
     revalidate: 60,
-    tags: ["product"],
-  }
+    tags: ['product'],
+  },
 );
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -37,17 +37,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!product) {
     return {
-      title: "Ürün Bulunamadı",
-      description: "Aradığınız ürün bulunamadı.",
+      title: 'Ürün Bulunamadı',
+      description: 'Aradığınız ürün bulunamadı.',
       robots: { index: false, follow: false },
     };
   }
 
   const translation = product.translations[0];
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
   const productUrl = `${baseUrl}/${slug}`;
 
-  const title = translation?.metaTitle || translation?.name || "Ürün";
+  const title = translation?.metaTitle || translation?.name || 'Ürün';
   const description =
     translation?.metaDescription ||
     translation?.description ||
@@ -62,7 +62,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       canonical: productUrl,
     },
     openGraph: {
-      type: "website",
+      type: 'website',
       url: productUrl,
       title,
       description,
@@ -78,7 +78,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       }),
     },
     twitter: {
-      card: mainImage ? "summary_large_image" : "summary",
+      card: mainImage ? 'summary_large_image' : 'summary',
       title,
       description,
       ...(mainImage && { images: [getOgImageUrl(mainImage)] }),
@@ -96,7 +96,7 @@ const ProductPage = async ({ params }: Props) => {
   }
 
   const queryClient = getQueryClient();
-  queryClient.setQueryData(["product", slug], product);
+  queryClient.setQueryData(['product', slug], product);
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

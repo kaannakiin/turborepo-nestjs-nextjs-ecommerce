@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -12,8 +13,9 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { type User } from '@repo/database';
 import {
-  BaseProductSchema,
+  BaseProductSchemaCore,
   type BaseProductZodType,
   BulkActionSchema,
   type BulkActionZodType,
@@ -23,12 +25,11 @@ import {
 } from '@repo/types';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { FilesValidationPipe } from 'src/common/pipes/file-validation.pipe';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import { Roles } from 'src/user/reflectors/roles.decorator';
 import { ProductsService } from './products.service';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
-import { type User } from '@repo/database';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(['ADMIN', 'OWNER'])
@@ -50,8 +51,11 @@ export class ProductsController {
     return this.productsService.getProductById(id);
   }
 
-  @Delete('delete-product-asset/:url')
-  async deleteProductAsset(@Param('url') url: string) {
+  @Delete('delete-product-asset')
+  async deleteProductAsset(@Query('url') url: string) {
+    if (!url) {
+      throw new BadRequestException('URL is required');
+    }
     return this.productsService.deleteProductAsset(url);
   }
 
@@ -59,7 +63,7 @@ export class ProductsController {
   async createOrUpdateBasicProduct(
     @Body(
       new ZodValidationPipe(
-        BaseProductSchema.omit({
+        BaseProductSchemaCore.omit({
           images: true,
         }),
       ),

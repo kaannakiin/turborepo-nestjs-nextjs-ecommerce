@@ -5,14 +5,14 @@ import {
   createGenericEmptyCondition,
   EnumFieldMeta,
   FieldConfig,
-  FulfillmentConditionField,
+  FullfillmentConditionField,
   LocationFieldMeta,
   registerDomain,
   RelationFieldMeta,
 } from "../common";
 import {
-  FulfillmentCondition,
-  FulfillmentConditionSchema,
+  FullfillmentCondition,
+  FullfillmentConditionSchema,
 } from "./inventory-location-service-zod-schemas";
 
 interface TimeRangeMeta {
@@ -35,10 +35,10 @@ type FulfillmentMeta =
   | StockLevelMeta;
 
 export const FULFILLMENT_FIELDS: Record<
-  FulfillmentConditionField,
+  FullfillmentConditionField,
   FieldConfig<FulfillmentMeta>
 > = {
-  [FulfillmentConditionField.ORDER_TOTAL]: {
+  [FullfillmentConditionField.ORDER_TOTAL]: {
     label: "Sipariş Tutarı",
     description: "Toplam sipariş tutarı",
     type: "numeric",
@@ -54,7 +54,7 @@ export const FULFILLMENT_FIELDS: Record<
       ConditionOperator.NOT_IN,
     ],
   },
-  [FulfillmentConditionField.ORDER_ITEM_COUNT]: {
+  [FullfillmentConditionField.ORDER_ITEM_COUNT]: {
     label: "Ürün Adedi",
     description: "Siparişteki toplam ürün sayısı",
     type: "numeric",
@@ -70,7 +70,7 @@ export const FULFILLMENT_FIELDS: Record<
       ConditionOperator.NOT_IN,
     ],
   },
-  [FulfillmentConditionField.ORDER_WEIGHT]: {
+  [FullfillmentConditionField.ORDER_WEIGHT]: {
     label: "Sipariş Ağırlığı",
     description: "Toplam sipariş ağırlığı (kg)",
     type: "numeric",
@@ -87,7 +87,7 @@ export const FULFILLMENT_FIELDS: Record<
     ],
   },
 
-  [FulfillmentConditionField.ORDER_CURRENCY]: {
+  [FullfillmentConditionField.ORDER_CURRENCY]: {
     label: "Para Birimi",
     description: "Sipariş para birimi",
     type: "currency",
@@ -106,7 +106,7 @@ export const FULFILLMENT_FIELDS: Record<
     },
   },
 
-  [FulfillmentConditionField.DESTINATION_COUNTRY]: {
+  [FullfillmentConditionField.DESTINATION_COUNTRY]: {
     label: "Hedef Ülke",
     description: "Teslimat ülkesi",
     type: "location",
@@ -122,7 +122,7 @@ export const FULFILLMENT_FIELDS: Record<
       locationType: "country",
     },
   },
-  [FulfillmentConditionField.DESTINATION_STATE]: {
+  [FullfillmentConditionField.DESTINATION_STATE]: {
     label: "Hedef İl/Eyalet",
     description: "Teslimat ili",
     type: "location",
@@ -136,10 +136,10 @@ export const FULFILLMENT_FIELDS: Record<
     ],
     meta: {
       locationType: "state",
-      dependsOn: [FulfillmentConditionField.DESTINATION_COUNTRY],
+      dependsOn: [FullfillmentConditionField.DESTINATION_COUNTRY],
     },
   },
-  [FulfillmentConditionField.DESTINATION_CITY]: {
+  [FullfillmentConditionField.DESTINATION_CITY]: {
     label: "Hedef Şehir",
     description: "Teslimat şehri",
     type: "location",
@@ -153,11 +153,11 @@ export const FULFILLMENT_FIELDS: Record<
     ],
     meta: {
       locationType: "city",
-      dependsOn: [FulfillmentConditionField.DESTINATION_COUNTRY],
+      dependsOn: [FullfillmentConditionField.DESTINATION_COUNTRY],
     },
   },
 
-  [FulfillmentConditionField.PRODUCT_TAG]: {
+  [FullfillmentConditionField.PRODUCT_TAG]: {
     label: "Ürün Etiketi",
     description: "Ürün etiketleri",
     type: "relation",
@@ -174,7 +174,7 @@ export const FULFILLMENT_FIELDS: Record<
       multiple: true,
     },
   },
-  [FulfillmentConditionField.PRODUCT_CATEGORY]: {
+  [FullfillmentConditionField.PRODUCT_CATEGORY]: {
     label: "Ürün Kategorisi",
     description: "Ürün kategorileri",
     type: "relation",
@@ -192,7 +192,7 @@ export const FULFILLMENT_FIELDS: Record<
       multiple: true,
     },
   },
-  [FulfillmentConditionField.PRODUCT_BRAND]: {
+  [FullfillmentConditionField.PRODUCT_BRAND]: {
     label: "Ürün Markası",
     description: "Ürün markaları",
     type: "relation",
@@ -209,7 +209,7 @@ export const FULFILLMENT_FIELDS: Record<
       multiple: true,
     },
   },
-  [FulfillmentConditionField.CUSTOMER_GROUP]: {
+  [FullfillmentConditionField.CUSTOMER_GROUP]: {
     label: "Müşteri Grubu",
     description: "Müşteri grupları",
     type: "relation",
@@ -230,7 +230,7 @@ export const FULFILLMENT_FIELDS: Record<
     },
   },
 
-  [FulfillmentConditionField.DAY_OF_WEEK]: {
+  [FullfillmentConditionField.DAY_OF_WEEK]: {
     label: "Haftanın Günü",
     description: "Siparişin verildiği gün",
     type: "enum",
@@ -248,7 +248,7 @@ export const FULFILLMENT_FIELDS: Record<
       ],
     },
   },
-  [FulfillmentConditionField.TIME_OF_DAY]: {
+  [FullfillmentConditionField.TIME_OF_DAY]: {
     label: "Günün Saati",
     description: "Siparişin verildiği saat aralığı",
     type: "time",
@@ -257,14 +257,14 @@ export const FULFILLMENT_FIELDS: Record<
       timeRange: true,
     },
   },
-  [FulfillmentConditionField.IS_HOLIDAY]: {
+  [FullfillmentConditionField.IS_HOLIDAY]: {
     label: "Tatil Günü",
     description: "Tatil günü mü",
     type: "boolean",
     operators: [ConditionOperator.IS_TRUE, ConditionOperator.IS_FALSE],
   },
 
-  [FulfillmentConditionField.SHIPPING_METHOD]: {
+  [FullfillmentConditionField.SHIPPING_METHOD]: {
     label: "Kargo Yöntemi",
     description: "Seçilen kargo yöntemi",
     type: "relation",
@@ -281,7 +281,7 @@ export const FULFILLMENT_FIELDS: Record<
     },
   },
 
-  [FulfillmentConditionField.STOCK_LEVEL]: {
+  [FullfillmentConditionField.STOCK_LEVEL]: {
     label: "Stok Seviyesi",
     description: "Ürün stok durumu",
     type: "enum",
@@ -302,7 +302,7 @@ export const FULFILLMENT_FIELDS: Record<
     },
   },
 
-  [FulfillmentConditionField.LOCATION_TYPE]: {
+  [FullfillmentConditionField.LOCATION_TYPE]: {
     label: "Lokasyon Tipi",
     description: "Fulfillment lokasyon tipi",
     type: "enum",
@@ -323,7 +323,7 @@ export const FULFILLMENT_FIELDS: Record<
     },
   },
 
-  [FulfillmentConditionField.SUPPLIER_LEAD_TIME]: {
+  [FullfillmentConditionField.SUPPLIER_LEAD_TIME]: {
     label: "Tedarikçi Teslim Süresi",
     description: "Tedarikçiden teslim alma süresi (gün)",
     type: "numeric",
@@ -340,17 +340,17 @@ export const FULFILLMENT_FIELDS: Record<
 };
 
 export const fulfillmentDomain: ConditionDomainConfig<
-  FulfillmentConditionField,
-  FulfillmentCondition,
+  FullfillmentConditionField,
+  FullfillmentCondition,
   FulfillmentMeta
 > = {
   name: "fulfillment",
   fields: FULFILLMENT_FIELDS,
-  conditionSchema: FulfillmentConditionSchema,
+  conditionSchema: FullfillmentConditionSchema,
   createEmptyCondition: (field) =>
     createGenericEmptyCondition<
-      FulfillmentConditionField,
-      FulfillmentCondition
+      FullfillmentConditionField,
+      FullfillmentCondition
     >(field, FULFILLMENT_FIELDS),
 };
 

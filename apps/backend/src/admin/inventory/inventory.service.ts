@@ -3,14 +3,20 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { FulfillmentStrategy, LocationType, Prisma } from '@repo/database';
 import {
   AdminInventoryTableQuery,
   AdminInventoryTableReturnType,
-  FulfillmentStrategyOutput,
+  FullfillmentDecisionTree,
+  FullfillmentStrategyType,
+  FullfillmentStrategyInput,
+  FullfillmentStrategyOutput,
   InventoryLocationZodSchemaType,
   Pagination,
+  UpsertInventoryRuleFulfillmentStrategy,
+  UpsertInventoryRuleFulfillmentStrategyQuery,
 } from '@repo/types';
 import { HelperService } from 'src/common/services/helper.service';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -25,7 +31,9 @@ export class InventoryService {
     private readonly helperService: HelperService,
   ) {}
 
-  async upsertInventoryLocation(data: InventoryLocationZodSchemaType) {
+  async upsertInventoryLocation(
+    data: InventoryLocationZodSchemaType,
+  ): Promise<UpsertInventoryRuleFulfillmentStrategy> {
     const { serviceZones, ...locationInput } = data;
 
     try {
@@ -92,15 +100,7 @@ export class InventoryService {
 
         return tx.inventoryLocation.findUnique({
           where: { id: location.id },
-          include: {
-            serviceZones: {
-              orderBy: { priority: 'asc' },
-            },
-            country: true,
-            state: true,
-            city: true,
-            district: true,
-          },
+          include: UpsertInventoryRuleFulfillmentStrategyQuery,
         });
       });
     } catch (error) {
@@ -207,7 +207,7 @@ export class InventoryService {
   }
 
   async upsertInventoryRuleFulfillmentStrategy(
-    rawData: FulfillmentStrategyOutput,
+    rawData: FullfillmentStrategyOutput,
   ) {
     const data = rawData;
 
@@ -317,5 +317,41 @@ export class InventoryService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  async getFulfillmentStrategyById(
+    id: string,
+  ): Promise<FullfillmentStrategyInput> {
+    const strategy = await this.prismaService.fulfillmentStrategy.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!strategy) {
+      throw new NotFoundException('Strategy not found');
+    }
+
+    const result: FullfillmentStrategyInput = {
+      uniqueId: strategy.id,
+      name: strategy.name,
+      description: strategy.description,
+      type: strategy.type as FullfillmentStrategyType,
+      isActive: strategy.isActive,
+      isDefault: strategy.isDefault,
+      priority: strategy.priority,
+      settings: {
+        allowSplitShipment: strategy.allowSplitShipment,
+        maxSplitCount: strategy.maxSplitCount,
+        allowBackorder: strategy.allowBackorder,
+        allowDropship: strategy.allowDropship,
+        defaultLeadTimeDays: strategy.defaultLeadTimeDays,
+        processOnHolidays: strategy.processOnHolidays,
+      },
+      decisionTree:
+        strategy.decisionTree as unknown as FullfillmentDecisionTree,
+    };
+
+    return result;
   }
 }

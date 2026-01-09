@@ -1,12 +1,11 @@
-"use client";
+'use client';
 
-import { Avatar, Badge, Select } from "@mantine/core";
+import { Avatar, Badge, ColorSwatch, Select, Tooltip } from '@mantine/core';
 import {
   VariantGroupRenderType,
   VariantGroupType,
-} from "@repo/database/client";
-import { ProductDetailVariantGroup } from "@repo/types";
-import Image from "next/image";
+} from '@repo/database/client';
+import { ProductDetailVariantGroup } from '@repo/types';
 
 interface VariantSelectorProps {
   variantGroups: ProductDetailVariantGroup[];
@@ -41,7 +40,7 @@ const VariantSelector = ({
               const optionId = option.variantOption.id;
               const selectable = isOptionSelectable(
                 group.variantGroup.id,
-                optionId
+                optionId,
               );
 
               if (!optionSlug || !optionName) return null;
@@ -70,7 +69,7 @@ const VariantSelector = ({
                 placeholder={`${groupName} seçin`}
                 allowDeselect={false}
                 classNames={{
-                  input: "border-gray-300 focus:border-black",
+                  input: 'border-gray-300 focus:border-black',
                 }}
               />
             </div>
@@ -81,17 +80,6 @@ const VariantSelector = ({
           <div key={group.id} className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <span className="font-medium">{groupName}</span>
-              {selectedSlugs[groupSlug] && (
-                <span className="text-sm text-gray-500">
-                  {
-                    group.options.find(
-                      (o) =>
-                        o.variantOption.translations[0]?.slug ===
-                        selectedSlugs[groupSlug]
-                    )?.variantOption.translations[0]?.name
-                  }
-                </span>
-              )}
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -105,7 +93,7 @@ const VariantSelector = ({
                 const isSelected = isOptionSelected(groupSlug, optionSlug);
                 const selectable = isOptionSelectable(
                   group.variantGroup.id,
-                  optionId
+                  optionId,
                 );
 
                 if (groupType === VariantGroupType.COLOR) {
@@ -113,59 +101,52 @@ const VariantSelector = ({
                   const assetUrl = option.variantOption.asset?.url;
 
                   return (
-                    <button
-                      key={option.id}
-                      onClick={() => onSelectOption(groupSlug, optionSlug)}
-                      disabled={!selectable}
-                      title={optionName}
-                      className={`
+                    <Tooltip key={option.id} label={optionName}>
+                      <button
+                        onClick={() => onSelectOption(groupSlug, optionSlug)}
+                        disabled={!selectable}
+                        className={`
                         relative transition-all
-                        ${isSelected ? "ring-2 ring-black ring-offset-2 rounded-full" : ""}
-                        ${!selectable ? "opacity-30 cursor-not-allowed" : "hover:opacity-80"}
+                        ${isSelected ? 'ring-2 ring-black ring-offset-2 rounded-full' : ''}
+                        ${!selectable ? 'opacity-30 cursor-not-allowed' : 'hover:opacity-80'}
                       `}
-                    >
-                      {assetUrl ? (
-                        <Avatar
-                          src={assetUrl}
-                          alt={optionName}
-                          size="lg"
-                          radius="xl"
-                          className={`
+                      >
+                        {assetUrl ? (
+                          <Avatar
+                            src={assetUrl}
+                            alt={optionName}
+                            size="lg"
+                            radius="xl"
+                            className={`
                             border-2 
-                            ${isSelected ? "border-black" : "border-gray-200"}
+                            ${isSelected ? 'border-black' : 'border-gray-200'}
                           `}
-                        />
-                      ) : hexValue ? (
-                        <Avatar
-                          size="lg"
-                          radius="xl"
-                          className={`
-                            border-2 
-                            ${isSelected ? "border-black" : "border-gray-200"}
-                          `}
-                          styles={{
-                            root: { backgroundColor: hexValue },
-                          }}
-                        ></Avatar>
-                      ) : (
-                        <Avatar
-                          size="lg"
-                          radius="xl"
-                          className={`
+                          />
+                        ) : hexValue ? (
+                          <ColorSwatch
+                            color={hexValue}
+                            className="size-[2rem]"
+                          />
+                        ) : (
+                          <Avatar
+                            size="lg"
+                            radius="xl"
+                            className={`
                             border-2 bg-gray-200
-                            ${isSelected ? "border-black" : "border-gray-200"}
+                            ${isSelected ? 'border-black' : 'border-gray-200'}
                           `}
-                        >
-                          {optionName.charAt(0)}
-                        </Avatar>
-                      )}
+                          >
+                            {optionName.charAt(0)}
+                          </Avatar>
+                        )}
 
-                      {!selectable && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-full h-0.5 bg-gray-500 rotate-45" />
-                        </div>
-                      )}
-                    </button>
+                        {!selectable && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-full h-0.5 bg-gray-500 rotate-45" />
+                          </div>
+                        )}
+                      </button>
+                    </Tooltip>
                   );
                 }
 
@@ -177,15 +158,15 @@ const VariantSelector = ({
                     disabled={!selectable}
                     size="xl"
                     radius="md"
-                    variant={isSelected ? "filled" : "outline"}
-                    color={isSelected ? "dark" : "gray"}
+                    variant={isSelected ? 'filled' : 'outline'}
+                    color={isSelected ? 'dark' : 'gray'}
                     className={`
                       cursor-pointer transition-all px-4 py-2 h-auto
-                      ${!selectable ? "opacity-30 cursor-not-allowed line-through" : "hover:border-black"}
+                      ${!selectable ? 'opacity-30 cursor-not-allowed line-through' : 'hover:border-black'}
                     `}
                     styles={{
                       root: {
-                        textTransform: "none",
+                        textTransform: 'none',
                         fontWeight: 500,
                       },
                     }}

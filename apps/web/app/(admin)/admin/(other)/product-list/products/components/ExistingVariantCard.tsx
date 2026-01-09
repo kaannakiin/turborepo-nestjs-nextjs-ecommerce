@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   closestCenter,
@@ -8,14 +8,14 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-} from "@dnd-kit/core";
+} from '@dnd-kit/core';
 import {
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import {
   ActionIcon,
   Avatar,
@@ -35,23 +35,23 @@ import {
   Text,
   TextInput,
   Title,
-} from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
+} from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
 import {
   Control,
   Controller,
   useFieldArray,
   UseFormGetValues,
   UseFormSetValue,
-} from "@repo/shared";
-import { VariantGroupZodType, VariantProductZodType } from "@repo/types";
+} from '@repo/shared';
+import { VariantGroupZodType, VariantProductZodType } from '@repo/types';
 import {
   IconDotsVertical,
   IconEdit,
   IconPlus,
   IconPointFilled,
   IconTrash,
-} from "@tabler/icons-react";
+} from '@tabler/icons-react';
 import {
   Activity,
   useCallback,
@@ -59,12 +59,13 @@ import {
   useMemo,
   useRef,
   useState,
-} from "react";
-import { returnCombinateVariant } from "../helpers/product.helper";
-import CombinatedVariantsDropzoneDrawer from "./CombinatedVariantsDropzoneDrawer";
-import CombinatedVariantsFormDrawer from "./CombinatedVariantsFormDrawer";
-import ProductPriceNumberInput from "./ProductPriceNumberInput";
-import VariantGroupDrawer from "./VariantGroupDrawer";
+} from 'react';
+import { returnCombinateVariant } from '../helpers/product.helper';
+import CombinatedVariantsDropzoneDrawer from './CombinatedVariantsDropzoneDrawer';
+import CombinatedVariantsFormDrawer from './CombinatedVariantsFormDrawer';
+import ProductPriceNumberInput from './ProductPriceNumberInput';
+import VariantGroupDrawer from './VariantGroupDrawer';
+import OptionAvatar from './OptionAvatar';
 
 interface ExistingVariantCardProps {
   control: Control<VariantProductZodType>;
@@ -121,15 +122,15 @@ const SortableVariantItem = ({
         align="flex-start"
         justify="space-between"
         p="sm"
-        bg={isDragging ? "gray.1" : "white"}
+        bg={isDragging ? 'gray.1' : 'white'}
         style={{
-          borderRadius: "8px",
-          border: "1px solid var(--mantine-color-gray-3)",
-          cursor: isDragging ? "grabbing" : "default",
+          borderRadius: '8px',
+          border: '1px solid var(--mantine-color-gray-3)',
+          cursor: isDragging ? 'grabbing' : 'default',
         }}
       >
         <Group
-          gap={"md"}
+          gap={'md'}
           align="center"
           justify="flex-start"
           style={{ flexShrink: 0 }}
@@ -137,8 +138,8 @@ const SortableVariantItem = ({
           {isMountedRef.current ? (
             <ActionIcon
               variant="transparent"
-              size={"sm"}
-              style={{ cursor: "grab" }}
+              size={'sm'}
+              style={{ cursor: 'grab' }}
               {...attributes}
               {...listeners}
             >
@@ -147,21 +148,21 @@ const SortableVariantItem = ({
           ) : (
             <ActionIcon
               variant="transparent"
-              size={"sm"}
-              style={{ cursor: "default" }}
+              size={'sm'}
+              style={{ cursor: 'default' }}
             >
               <IconDotsVertical stroke={2} />
             </ActionIcon>
           )}
 
           {index === 0 && (
-            <Text fw={700} fz={"xs"} c={"dimmed"}>
+            <Text fw={700} fz={'xs'} c={'dimmed'}>
               (Ana Seçenek)
             </Text>
           )}
-          <Text fw={700} fz={"sm"} tt={"capitalize"}>
+          <Text fw={700} fz={'sm'} tt={'capitalize'}>
             {field?.translations?.find(
-              (translation) => translation.locale === "TR"
+              (translation) => translation.locale === 'TR',
             )?.name || field.translations[0]?.name}
           </Text>
         </Group>
@@ -180,32 +181,28 @@ const SortableVariantItem = ({
             field.options.map((option, optionIndex) => {
               const optionName =
                 option.translations.find(
-                  (translation) => translation.locale === "TR"
+                  (translation) => translation.locale === 'TR',
                 )?.name || option.translations[0]?.name;
 
               return (
                 <Flex key={option.uniqueId} gap={4} align="center">
-                  {field.type === "LIST" ? (
+                  {field.type === 'LIST' ? (
                     <Text
                       size="sm"
                       fw={500}
                       c="dimmed"
-                      style={{ whiteSpace: "nowrap" }}
+                      style={{ whiteSpace: 'nowrap' }}
                     >
                       {optionName}
                     </Text>
                   ) : option.file ? (
                     <Group gap={6} align="center" style={{ flexShrink: 0 }}>
-                      <Avatar
-                        src={URL.createObjectURL(option.file)}
-                        radius={4}
-                        size={20}
-                      />
+                      <OptionAvatar file={option.file} />
                       <Text
                         size="sm"
                         fw={500}
                         c="dimmed"
-                        style={{ whiteSpace: "nowrap" }}
+                        style={{ whiteSpace: 'nowrap' }}
                       >
                         {optionName}
                       </Text>
@@ -217,7 +214,7 @@ const SortableVariantItem = ({
                         size="sm"
                         fw={500}
                         c="dimmed"
-                        style={{ whiteSpace: "nowrap" }}
+                        style={{ whiteSpace: 'nowrap' }}
                       >
                         {optionName}
                       </Text>
@@ -226,13 +223,13 @@ const SortableVariantItem = ({
                     <Group gap={6} align="center" style={{ flexShrink: 0 }}>
                       <ColorSwatch
                         size={16}
-                        color={option.hexValue || "#000"}
+                        color={option.hexValue || '#000'}
                       />
                       <Text
                         size="sm"
                         fw={500}
                         c="dimmed"
-                        style={{ whiteSpace: "nowrap" }}
+                        style={{ whiteSpace: 'nowrap' }}
                       >
                         {optionName}
                       </Text>
@@ -243,9 +240,9 @@ const SortableVariantItem = ({
                     <IconPointFilled
                       size={8}
                       style={{
-                        color: "var(--mantine-color-gray-5)",
-                        marginLeft: "4px",
-                        marginRight: "4px",
+                        color: 'var(--mantine-color-gray-5)',
+                        marginLeft: '4px',
+                        marginRight: '4px',
                         flexShrink: 0,
                       }}
                     />
@@ -255,7 +252,7 @@ const SortableVariantItem = ({
             })}
         </Flex>
 
-        <Group gap={"md"} style={{ flexShrink: 0 }}>
+        <Group gap={'md'} style={{ flexShrink: 0 }}>
           <ActionIcon variant="transparent" onClick={onEdit}>
             <IconEdit />
           </ActionIcon>
@@ -316,18 +313,18 @@ const ExistingVariantCard = ({
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [bulkUpdateValues, setBulkUpdateValues] = useState<{
-    price: VariantProductZodType["combinatedVariants"][number]["prices"][number]["price"];
-    discountPrice: VariantProductZodType["combinatedVariants"][number]["prices"][number]["discountPrice"];
-    buyedPrice: VariantProductZodType["combinatedVariants"][number]["prices"][number]["buyedPrice"];
-    sku: VariantProductZodType["combinatedVariants"][number]["sku"];
-    barcode: VariantProductZodType["combinatedVariants"][number]["barcode"];
-    stock: VariantProductZodType["combinatedVariants"][number]["stock"];
+    price: VariantProductZodType['combinatedVariants'][number]['prices'][number]['price'];
+    discountPrice: VariantProductZodType['combinatedVariants'][number]['prices'][number]['discountPrice'];
+    buyedPrice: VariantProductZodType['combinatedVariants'][number]['prices'][number]['buyedPrice'];
+    sku: VariantProductZodType['combinatedVariants'][number]['sku'];
+    barcode: VariantProductZodType['combinatedVariants'][number]['barcode'];
+    stock: VariantProductZodType['combinatedVariants'][number]['stock'];
   }>({
     price: 0,
     discountPrice: 0,
     buyedPrice: 0,
-    sku: "",
-    barcode: "",
+    sku: '',
+    barcode: '',
     stock: 0,
   });
 
@@ -346,7 +343,7 @@ const ExistingVariantCard = ({
 
   const { fields, append, remove, update, move } = useFieldArray({
     control,
-    name: "existingVariants",
+    name: 'existingVariants',
   });
   const {
     fields: combinatedFields,
@@ -354,7 +351,7 @@ const ExistingVariantCard = ({
     update: combinatedUpdate,
   } = useFieldArray({
     control,
-    name: "combinatedVariants",
+    name: 'combinatedVariants',
   });
 
   const hasVariants = fields.length > 0;
@@ -368,7 +365,7 @@ const ExistingVariantCard = ({
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -386,34 +383,34 @@ const ExistingVariantCard = ({
       const newCombinations = returnCombinateVariant({
         existingVariants: updatedVariants,
         existingCombinatedVariants: combinatedFields,
-        productId: getValues("uniqueId")!,
+        productId: getValues('uniqueId')!,
       });
       combinatedReplace(newCombinations);
       setSelectedRows(new Set());
     },
-    [combinatedFields, combinatedReplace, getValues]
+    [combinatedFields, combinatedReplace, getValues],
   );
 
   const getVariantOptionNames = (
-    variantIds: { variantGroupId: string; variantOptionId: string }[]
+    variantIds: { variantGroupId: string; variantOptionId: string }[],
   ): string[] => {
     return variantIds.map((variantId) => {
       const field = fields.find(
-        (field) => field.uniqueId === variantId.variantGroupId
+        (field) => field.uniqueId === variantId.variantGroupId,
       );
       if (field) {
         const option = field.options.find(
-          (opt) => opt.uniqueId === variantId.variantOptionId
+          (opt) => opt.uniqueId === variantId.variantOptionId,
         );
         if (option) {
           return (
-            option.translations.find((t) => t.locale === "TR")?.name ||
+            option.translations.find((t) => t.locale === 'TR')?.name ||
             option.translations[0]?.name ||
-            ""
+            ''
           );
         }
       }
-      return "";
+      return '';
     });
   };
 
@@ -421,13 +418,13 @@ const ExistingVariantCard = ({
     (checked: boolean) => {
       if (checked) {
         setSelectedRows(
-          new Set(Array.from({ length: combinatedFields.length }, (_, i) => i))
+          new Set(Array.from({ length: combinatedFields.length }, (_, i) => i)),
         );
       } else {
         setSelectedRows(new Set());
       }
     },
-    [combinatedFields.length]
+    [combinatedFields.length],
   );
 
   const handleRowSelectionChange = useCallback(
@@ -442,19 +439,19 @@ const ExistingVariantCard = ({
         return newSet;
       });
     },
-    []
+    [],
   );
 
   const isAllSelected = useMemo(
     () =>
       combinatedFields.length > 0 &&
       selectedRows.size === combinatedFields.length,
-    [selectedRows.size, combinatedFields.length]
+    [selectedRows.size, combinatedFields.length],
   );
 
   const isIndeterminate = useMemo(
     () => selectedRows.size > 0 && selectedRows.size < combinatedFields.length,
-    [selectedRows.size, combinatedFields.length]
+    [selectedRows.size, combinatedFields.length],
   );
 
   const handleBulkUpdate = useCallback(
@@ -464,7 +461,7 @@ const ExistingVariantCard = ({
       selectedRows.forEach((index) => {
         const currentVariant = combinatedFields[index];
         if (currentVariant) {
-          if (field === "stock") {
+          if (field === 'stock') {
             const numericValue = value ? parseFloat(value) : 0;
             if (!isNaN(numericValue)) {
               combinatedUpdate(index, {
@@ -473,12 +470,12 @@ const ExistingVariantCard = ({
               });
             }
           } else if (
-            field === "price" ||
-            field === "discountPrice" ||
-            field === "buyedPrice"
+            field === 'price' ||
+            field === 'discountPrice' ||
+            field === 'buyedPrice'
           ) {
             const numericValue = value ? parseFloat(value) : null;
-            if (!isNaN(numericValue!) || value === "") {
+            if (!isNaN(numericValue!) || value === '') {
               combinatedUpdate(index, {
                 ...currentVariant,
                 prices: currentVariant.prices.map((price, priceIndex) =>
@@ -486,15 +483,15 @@ const ExistingVariantCard = ({
                     ? {
                         ...price,
                         [field]:
-                          field === "price" && value !== ""
+                          field === 'price' && value !== ''
                             ? numericValue
-                            : field !== "price"
-                              ? value === ""
+                            : field !== 'price'
+                              ? value === ''
                                 ? null
                                 : numericValue
                               : price[field],
                       }
-                    : price
+                    : price,
                 ),
               });
             }
@@ -507,7 +504,7 @@ const ExistingVariantCard = ({
         }
       });
     },
-    [selectedRows, combinatedFields, combinatedUpdate]
+    [selectedRows, combinatedFields, combinatedUpdate],
   );
 
   const handleVariantDelete = useCallback(
@@ -516,7 +513,7 @@ const ExistingVariantCard = ({
       remove(index);
       regenerateCombinations(updatedFields);
     },
-    [fields, remove, regenerateCombinations]
+    [fields, remove, regenerateCombinations],
   );
 
   const handleDropzoneOpen = useCallback(
@@ -524,16 +521,16 @@ const ExistingVariantCard = ({
       setDropzoneSelectedIndex(index);
       openDropzone();
     },
-    [openDropzone]
+    [openDropzone],
   );
 
   return (
     <>
-      <Card withBorder p={"lg"} radius="md">
+      <Card withBorder p={'lg'} radius="md">
         {hasVariants ? (
           <Card.Section inheritPadding className="border-b">
-            <Group justify="space-between" align="center" py={"md"}>
-              <Stack gap={"xs"}>
+            <Group justify="space-between" align="center" py={'md'}>
+              <Stack gap={'xs'}>
                 <Title order={4}>Varyant</Title>
                 <Controller
                   control={control}
@@ -564,7 +561,7 @@ const ExistingVariantCard = ({
           </Card.Section>
         ) : (
           <Card.Section inheritPadding className="border-b">
-            <Stack gap={"xs"} py={"md"}>
+            <Stack gap={'xs'} py={'md'}>
               <Title order={4}>Varyant</Title>
               {errors && <Input.Error>{errors}</Input.Error>}
             </Stack>
@@ -572,7 +569,7 @@ const ExistingVariantCard = ({
         )}
 
         {!hasVariants && (
-          <Stack align="center" py="xl" gap={"xs"}>
+          <Stack align="center" py="xl" gap={'xs'}>
             <Title order={4}>
               Henüz bir varyant eklemediniz. Varyant eklemek için butona
               tıklayın.
@@ -644,14 +641,14 @@ const ExistingVariantCard = ({
                     <Table.Th>
                       Satış Fiyatı
                       <Activity
-                        mode={selectedRows.size > 0 ? "visible" : "hidden"}
+                        mode={selectedRows.size > 0 ? 'visible' : 'hidden'}
                       >
                         <ProductPriceNumberInput
                           size="xs"
                           variant="filled"
                           value={bulkUpdateValues.price}
                           onChange={(value) =>
-                            handleBulkUpdate("price", value?.toString() || "")
+                            handleBulkUpdate('price', value?.toString() || '')
                           }
                           style={{ marginTop: 4 }}
                         />
@@ -660,7 +657,7 @@ const ExistingVariantCard = ({
                     <Table.Th>
                       İndirimli Fiyat
                       <Activity
-                        mode={selectedRows.size > 0 ? "visible" : "hidden"}
+                        mode={selectedRows.size > 0 ? 'visible' : 'hidden'}
                       >
                         <ProductPriceNumberInput
                           size="xs"
@@ -668,8 +665,8 @@ const ExistingVariantCard = ({
                           value={bulkUpdateValues.discountPrice || undefined}
                           onChange={(value) =>
                             handleBulkUpdate(
-                              "discountPrice",
-                              value?.toString() || ""
+                              'discountPrice',
+                              value?.toString() || '',
                             )
                           }
                           style={{ marginTop: 4 }}
@@ -679,7 +676,7 @@ const ExistingVariantCard = ({
                     <Table.Th>
                       Alış Fiyatı
                       <Activity
-                        mode={selectedRows.size > 0 ? "visible" : "hidden"}
+                        mode={selectedRows.size > 0 ? 'visible' : 'hidden'}
                       >
                         <ProductPriceNumberInput
                           size="xs"
@@ -687,8 +684,8 @@ const ExistingVariantCard = ({
                           value={bulkUpdateValues.buyedPrice || undefined}
                           onChange={(value) =>
                             handleBulkUpdate(
-                              "buyedPrice",
-                              value?.toString() || ""
+                              'buyedPrice',
+                              value?.toString() || '',
                             )
                           }
                           style={{ marginTop: 4 }}
@@ -698,14 +695,14 @@ const ExistingVariantCard = ({
                     <Table.Th>
                       SKU
                       <Activity
-                        mode={selectedRows.size > 0 ? "visible" : "hidden"}
+                        mode={selectedRows.size > 0 ? 'visible' : 'hidden'}
                       >
                         <TextInput
                           size="xs"
                           variant="filled"
                           value={bulkUpdateValues.sku}
                           onChange={(event) =>
-                            handleBulkUpdate("sku", event.currentTarget.value)
+                            handleBulkUpdate('sku', event.currentTarget.value)
                           }
                           style={{ marginTop: 4 }}
                         />
@@ -714,7 +711,7 @@ const ExistingVariantCard = ({
                     <Table.Th>
                       Barkod
                       <Activity
-                        mode={selectedRows.size > 0 ? "visible" : "hidden"}
+                        mode={selectedRows.size > 0 ? 'visible' : 'hidden'}
                       >
                         <TextInput
                           size="xs"
@@ -722,8 +719,8 @@ const ExistingVariantCard = ({
                           value={bulkUpdateValues.barcode}
                           onChange={(event) =>
                             handleBulkUpdate(
-                              "barcode",
-                              event.currentTarget.value
+                              'barcode',
+                              event.currentTarget.value,
                             )
                           }
                           style={{ marginTop: 4 }}
@@ -733,14 +730,14 @@ const ExistingVariantCard = ({
                     <Table.Th>
                       Stok
                       <Activity
-                        mode={selectedRows.size > 0 ? "visible" : "hidden"}
+                        mode={selectedRows.size > 0 ? 'visible' : 'hidden'}
                       >
                         <ProductPriceNumberInput
                           size="xs"
                           variant="filled"
                           value={bulkUpdateValues.stock}
                           onChange={(event) =>
-                            handleBulkUpdate("stock", event?.toString() || "")
+                            handleBulkUpdate('stock', event?.toString() || '')
                           }
                           style={{ marginTop: 4 }}
                         />
@@ -765,7 +762,7 @@ const ExistingVariantCard = ({
                             onChange={(event) =>
                               handleRowSelectionChange(
                                 index,
-                                event.currentTarget.checked
+                                event.currentTarget.checked,
                               )
                             }
                           />
@@ -791,11 +788,11 @@ const ExistingVariantCard = ({
                                 key={badgeIndex}
                                 variant="light"
                                 size="md"
-                                radius={"0"}
+                                radius={'0'}
                               >
                                 {name}
                               </Badge>
-                            )
+                            ),
                           )}
                         </Flex>
                       </Table.Td>
@@ -893,7 +890,7 @@ const ExistingVariantCard = ({
                             <Switch
                               {...field}
                               checked={value}
-                              label={value ? "Aktif" : "Pasif"}
+                              label={value ? 'Aktif' : 'Pasif'}
                             />
                           )}
                         />
@@ -912,7 +909,7 @@ const ExistingVariantCard = ({
         key={
           selectedExistingVariant
             ? fields.find((field) => field.id === selectedExistingVariant)?.id
-            : "new"
+            : 'new'
         }
         defaultValues={
           selectedExistingVariant
@@ -923,11 +920,11 @@ const ExistingVariantCard = ({
           const isAlreadyExists = fields.some(
             (field) =>
               field.uniqueId === data.uniqueId &&
-              field.id !== selectedExistingVariant
+              field.id !== selectedExistingVariant,
           );
 
           if (isAlreadyExists) {
-            setErrorMessage("Aynı varyant zaten eklenmiş.");
+            setErrorMessage('Aynı varyant zaten eklenmiş.');
             return;
           }
 
@@ -935,7 +932,7 @@ const ExistingVariantCard = ({
 
           if (selectedExistingVariant) {
             const index = fields.findIndex(
-              (f) => f.id === selectedExistingVariant
+              (f) => f.id === selectedExistingVariant,
             );
             if (index !== -1) {
               update(index, dataWithId);

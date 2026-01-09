@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import CustomPagination from "@/components/CustomPagination";
-import CustomSearchInput from "@/components/CustomSearchInput";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import { useGetCustomerList } from "@hooks/mutations/admin/useAdminCustomer";
-import { getSortAdminUserTableLabels, getUserRoleLabels } from "@lib/helpers";
+import CustomPagination from '@/components/CustomPagination';
+import CustomSearchInput from '@/components/CustomSearchInput';
+import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
+import { useGetCustomerList } from '@hooks/admin/useAdminCustomer';
+import { getSortAdminUserTableLabels, getUserRoleLabels } from '@lib/helpers';
 import {
   Badge,
   Button,
@@ -14,28 +14,28 @@ import {
   Stack,
   Table,
   Title,
-} from "@mantine/core";
-import { UserRole } from "@repo/database/client";
+} from '@mantine/core';
+import { UserRole } from '@repo/database/client';
 import {
   PAGINATION_PARAM_KEY,
   SEARCH_PARAM_KEY,
   SELECT_PARAM_KEY,
   SortAdminUserTable,
-} from "@repo/types";
+} from '@repo/types';
 import {
   IconDots,
   IconTrash,
   IconUserEdit,
   IconUsers,
-} from "@tabler/icons-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+} from '@tabler/icons-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 
 const UserTable = () => {
   const searchParams = useSearchParams();
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
 
-  const searchValue = searchParams.get(SEARCH_PARAM_KEY) || "";
+  const searchValue = searchParams.get(SEARCH_PARAM_KEY) || '';
   const sortValue =
     searchParams.get(SELECT_PARAM_KEY) || SortAdminUserTable.nameAsc;
   const pageValue =
@@ -48,22 +48,22 @@ const UserTable = () => {
       pageValue,
       20,
       searchValue,
-      sortValue as SortAdminUserTable
+      sortValue as SortAdminUserTable,
     );
 
   const handleBulkUpdateRole = (role: UserRole) => {
-    console.log("Bulk Update Role:", role, "Selected IDs:", selectedRows);
+    console.log('Bulk Update Role:', role, 'Selected IDs:', selectedRows);
     // Burada mutation çağrısı yapacaksın
     // bulkUpdateRoleMutation.mutate({ action: "UPDATE_ROLE", ids: selectedRows, role })
   };
 
   const handleBulkUpdateGroup = () => {
-    console.log("Bulk Update Group - Selected IDs:", selectedRows);
+    console.log('Bulk Update Group - Selected IDs:', selectedRows);
     // Grup seçimi için modal aç
   };
 
   const handleBulkDelete = () => {
-    console.log("Bulk Delete - Selected IDs:", selectedRows);
+    console.log('Bulk Delete - Selected IDs:', selectedRows);
     // Silme onayı için modal aç
   };
 
@@ -164,7 +164,7 @@ const UserTable = () => {
                 label: getSortAdminUserTableLabels(sort),
                 value: sort,
               })),
-              placeholder: "Sırala",
+              placeholder: 'Sırala',
               clearable: true,
             }}
           />
@@ -211,7 +211,7 @@ const UserTable = () => {
                   onClick={() => {
                     if (selectedRows.includes(user.id)) {
                       setSelectedRows(
-                        selectedRows.filter((id) => id !== user.id)
+                        selectedRows.filter((id) => id !== user.id),
                       );
                     } else {
                       setSelectedRows([...selectedRows, user.id]);
@@ -226,7 +226,7 @@ const UserTable = () => {
                       onChange={() => {
                         if (selectedRows.includes(user.id)) {
                           setSelectedRows(
-                            selectedRows.filter((id) => id !== user.id)
+                            selectedRows.filter((id) => id !== user.id),
                           );
                         } else {
                           setSelectedRows([...selectedRows, user.id]);
@@ -245,7 +245,7 @@ const UserTable = () => {
                     </Badge>
                   </Table.Td>
                   <Table.Td>
-                    {new Date(user.createdAt).toLocaleDateString("tr-TR")}
+                    {new Date(user.createdAt).toLocaleDateString('tr-TR')}
                   </Table.Td>
                 </Table.Tr>
               ))}
@@ -254,11 +254,11 @@ const UserTable = () => {
         </Table.ScrollContainer>
       ) : (
         <div className="flex items-center justify-center">
-          <Stack gap={"xs"}>
+          <Stack gap={'xs'}>
             <Title order={4}>Müşteri Bulunamadı</Title>
             <Button
               onClick={() => {
-                replace("?");
+                replace('?');
               }}
               color="admin"
             >

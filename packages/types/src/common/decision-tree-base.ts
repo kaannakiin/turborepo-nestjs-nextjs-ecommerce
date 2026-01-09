@@ -1,7 +1,7 @@
 //packages/types/src/common/decision-tree-base.ts
 import { LogicalOperator } from "@repo/database/client";
 import { z } from "zod";
-import { ConditionOperator, TimeUnit } from "../common";
+import { ConditionOperator, EdgeType, TimeUnit } from "../common";
 export const ConditionOperatorSchema = z.enum(ConditionOperator);
 export const LogicalOperatorSchema = z.enum(LogicalOperator);
 export const TimeUnitSchema = z.enum(TimeUnit);
@@ -218,13 +218,10 @@ export const createResultNodeSchema = <T extends z.ZodRawShape>(
     data: dataSchema,
   });
 
-export const EdgeType = {
-  DEFAULT: "default",
-  YES: "yes",
-  NO: "no",
-} as const;
-
-export type EdgeTypeValue = (typeof EdgeType)[keyof typeof EdgeType];
+export const StringOrArraySchema = z.union([
+  z.string(),
+  z.array(z.string()).min(1, "En az bir seçim yapmalısınız"),
+]);
 
 export const DecisionTreeEdgeSchema = z.object({
   id: z.string(),
@@ -250,7 +247,7 @@ export const createNodeId = (type: DecisionNodeTypeValue): string => {
 export const createEdge = (
   source: string,
   target: string,
-  type: EdgeTypeValue = EdgeType.DEFAULT
+  type: EdgeType = EdgeType.DEFAULT
 ): DecisionTreeEdge => ({
   id: `edge-${source}-${target}-${Date.now()}`,
   source,

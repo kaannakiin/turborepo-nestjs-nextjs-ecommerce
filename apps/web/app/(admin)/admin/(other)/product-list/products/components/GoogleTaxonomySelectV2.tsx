@@ -1,5 +1,5 @@
-import GlobalLoader from "@/components/GlobalLoader";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
+import GlobalLoader from '@/components/GlobalLoader';
+import { useGetGoogleTaxonomyCategories } from '@hooks/admin/useProducts';
 import {
   Accordion,
   Checkbox,
@@ -11,12 +11,11 @@ import {
   Text,
   TextInput,
   ThemeIcon,
-} from "@mantine/core";
-import { useDebouncedValue, useDisclosure } from "@mantine/hooks";
-import { useQuery } from "@repo/shared";
-import { TaxonomyCategoryWithChildren } from "@repo/types";
-import { IconSearch, IconSelector, IconTag } from "@tabler/icons-react";
-import { useState } from "react";
+} from '@mantine/core';
+import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
+import { TaxonomyCategoryWithChildren } from '@repo/types';
+import { IconSearch, IconSelector, IconTag } from '@tabler/icons-react';
+import { useState } from 'react';
 
 interface GoogleTaxonomySelectV2Props {
   value?: string;
@@ -30,29 +29,14 @@ const GoogleTaxonomySelectV2 = ({
   value,
 }: GoogleTaxonomySelectV2Props) => {
   const [opened, { open, close }] = useDisclosure();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [debounced] = useDebouncedValue(search, 200);
 
-  const { data, isLoading, isPending } = useQuery({
-    queryKey: ["googleTaxonomyCategoriesNoRoot"],
-    queryFn: async (): Promise<TaxonomyCategoryWithChildren[]> => {
-      const response = await fetchWrapper.get<TaxonomyCategoryWithChildren[]>(
-        `/admin/products/google-categories/taxonomy`
-      );
-      if (!response.success) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.data;
-    },
-    gcTime: Infinity,
-    staleTime: Infinity,
-    retryOnMount: false,
-  });
+  const { data, isLoading, isPending } = useGetGoogleTaxonomyCategories();
 
-  // Recursive function to find a category by ID in the entire tree
   const findCategoryById = (
     categories: TaxonomyCategoryWithChildren[],
-    targetId: string
+    targetId: string,
   ): TaxonomyCategoryWithChildren | null => {
     for (const category of categories) {
       if (category.id === targetId) {
@@ -66,22 +50,20 @@ const GoogleTaxonomySelectV2 = ({
     return null;
   };
 
-  // Get the selected category name
   const getSelectedCategoryName = (): string => {
     if (!value || !data || data.length === 0) {
-      return "Google Kategorisi Seç";
+      return 'Google Kategorisi Seç';
     }
 
     const selectedCategory = findCategoryById(data, value);
-    return selectedCategory?.originalName || "Google Kategorisi Seç";
+    return selectedCategory?.originalName || 'Google Kategorisi Seç';
   };
 
-  // Enhanced search function that searches in the entire tree
   const filterCategoriesRecursive = (
     categories: TaxonomyCategoryWithChildren[],
-    searchTerm: string
+    searchTerm: string,
   ): TaxonomyCategoryWithChildren[] => {
-    if (searchTerm.trim() === "") return categories;
+    if (searchTerm.trim() === '') return categories;
 
     return categories.reduce(
       (filtered: TaxonomyCategoryWithChildren[], category) => {
@@ -93,11 +75,10 @@ const GoogleTaxonomySelectV2 = ({
         if (category.children && category.children.length > 0) {
           filteredChildren = filterCategoriesRecursive(
             category.children,
-            searchTerm
+            searchTerm,
           );
         }
 
-        // Include category if it matches or has matching children
         if (matchesSearch || filteredChildren.length > 0) {
           filtered.push({
             ...category,
@@ -107,24 +88,24 @@ const GoogleTaxonomySelectV2 = ({
 
         return filtered;
       },
-      []
+      [],
     );
   };
 
   const renderCategory = (
     category: TaxonomyCategoryWithChildren,
-    level: number = 0
+    level: number = 0,
   ) => {
     const hasChildren = category.children && category.children.length > 0;
 
     if (hasChildren) {
       return (
         <Accordion.Item key={category.id} value={category.id}>
-          <Accordion.Control tt={"capitalize"}>
-            <Group gap={"xs"} align="center">
+          <Accordion.Control tt={'capitalize'}>
+            <Group gap={'xs'} align="center">
               <div className="w-1 h-6 bg-black rounded-sm"></div>
               <Checkbox
-                color={"black"}
+                color={'black'}
                 readOnly
                 checked={value === category.id}
                 onClick={(e) => {
@@ -134,7 +115,7 @@ const GoogleTaxonomySelectV2 = ({
                   }
                 }}
               />
-              <Text tt="capitalize" fz={"md"} fw={level === 0 ? 700 : 500}>
+              <Text tt="capitalize" fz={'md'} fw={level === 0 ? 700 : 500}>
                 {category.originalName}
               </Text>
             </Group>
@@ -143,13 +124,13 @@ const GoogleTaxonomySelectV2 = ({
             {level < 2 ? (
               <Accordion multiple={false} chevronIconSize={24}>
                 {category.children?.map((child) =>
-                  renderCategory(child, level + 1)
+                  renderCategory(child, level + 1),
                 )}
               </Accordion>
             ) : (
               <Stack gap="xs">
                 {category.children?.map((child) =>
-                  renderCategory(child, level + 1)
+                  renderCategory(child, level + 1),
                 )}
               </Stack>
             )}
@@ -160,7 +141,7 @@ const GoogleTaxonomySelectV2 = ({
       return (
         <div key={category.id} className={`pl-${level * 4}`}>
           <Group
-            gap={"xs"}
+            gap={'xs'}
             align="center"
             py="xs"
             className="cursor-pointer"
@@ -168,11 +149,11 @@ const GoogleTaxonomySelectV2 = ({
           >
             <div className="w-1 h-6 bg-gray-300 rounded-sm"></div>
             <Checkbox
-              color={"black"}
+              color={'black'}
               readOnly
               checked={value === category.id}
             />
-            <Text tt="capitalize" fz={"md"}>
+            <Text tt="capitalize" fz={'md'}>
               {category.originalName}
             </Text>
           </Group>
@@ -191,7 +172,7 @@ const GoogleTaxonomySelectV2 = ({
     open,
     error,
   }: CardStyleSelectorProps) => {
-    const hasSelection = cardGet() !== "Google Kategorisi Seç";
+    const hasSelection = cardGet() !== 'Google Kategorisi Seç';
 
     return (
       <Paper
@@ -199,16 +180,16 @@ const GoogleTaxonomySelectV2 = ({
         p="md"
         className={`
         cursor-pointer transition-all duration-200 hover:shadow-md
-        ${error ? "border-red-300" : "border-gray-200 hover:border-[var(--mantine-admin-3)]"}
-        ${hasSelection ? "bg-[var(--mantine-admin-5)] border-[var(--mantine-admin-2)]" : "bg-gray-50"}
+        ${error ? 'border-red-300' : 'border-gray-200 hover:border-[var(--mantine-admin-3)]'}
+        ${hasSelection ? 'bg-[var(--mantine-admin-5)] border-[var(--mantine-admin-2)]' : 'bg-gray-50'}
       `}
         onClick={open}
       >
         <Group justify="space-between" align="center">
           <Group gap="sm" align="center">
             <ThemeIcon
-              variant={hasSelection ? "filled" : "light"}
-              color={hasSelection ? "blue" : "gray"}
+              variant={hasSelection ? 'filled' : 'light'}
+              color={hasSelection ? 'blue' : 'gray'}
               size="lg"
             >
               <IconTag size={20} />
@@ -225,10 +206,10 @@ const GoogleTaxonomySelectV2 = ({
               <Text
                 size="sm"
                 fw={hasSelection ? 600 : 400}
-                c={hasSelection ? "blue" : "dimmed"}
+                c={hasSelection ? 'blue' : 'dimmed'}
                 className="truncate max-w-[250px]"
               >
-                {hasSelection ? getSelectedCategoryName() : "Kategori seçin"}
+                {hasSelection ? getSelectedCategoryName() : 'Kategori seçin'}
               </Text>
             </div>
           </Group>
@@ -238,7 +219,6 @@ const GoogleTaxonomySelectV2 = ({
     );
   };
 
-  // Filter categories based on search
   const filteredCategories = data
     ? filterCategoriesRecursive(data, debounced)
     : [];
@@ -254,10 +234,10 @@ const GoogleTaxonomySelectV2 = ({
         opened={opened}
         onClose={close}
         title="Google Kategorisi Ekle"
-        size={"lg"}
+        size={'lg'}
         classNames={{
-          header: "border-b border-gray-700",
-          body: "py-2 flex flex-col gap-4",
+          header: 'border-b border-gray-700',
+          body: 'py-2 flex flex-col gap-4',
         }}
       >
         {isLoading || isPending ? (
@@ -276,10 +256,10 @@ const GoogleTaxonomySelectV2 = ({
             />
             {data && data.length > 0 ? (
               <ScrollArea h={600} scrollbarSize={6}>
-                <Stack gap={"lg"}>
+                <Stack gap={'lg'}>
                   <Accordion chevronIconSize={24} multiple={false}>
                     {filteredCategories.map((category) =>
-                      renderCategory(category)
+                      renderCategory(category),
                     )}
                   </Accordion>
                 </Stack>

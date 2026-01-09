@@ -1,32 +1,32 @@
-import { Group, Paper, Text } from "@mantine/core";
+import { Group, Paper, Text } from '@mantine/core';
 import {
-  FulfillmentCondition,
-  FulfillmentConditionField,
+  FullfillmentCondition,
+  FullfillmentConditionField,
   getDomain,
-} from "@repo/types";
-import { IconAlertCircle } from "@tabler/icons-react";
-import { Node, NodeProps } from "@xyflow/react";
-import { memo, useMemo } from "react";
+} from '@repo/types';
+import { IconAlertCircle } from '@tabler/icons-react';
+import { Node, NodeProps } from '@xyflow/react';
+import { memo, useMemo } from 'react';
 import {
   GenericConditionGroupNode,
   GenericConditionGroupNodeData,
-} from "../builder/GenericConditionGroupNode";
+} from '../builder/GenericConditionGroupNode';
 
 export type FulfillmentGroupNodeData = GenericConditionGroupNodeData<
-  FulfillmentConditionField,
-  FulfillmentCondition
+  FullfillmentConditionField,
+  FullfillmentCondition
 >;
 
 export type FulfillmentGroupNodeType = Node<
   FulfillmentGroupNodeData,
-  "conditionGroup"
+  'conditionGroup'
 >;
 
 const InventoryConditionGroupNode = memo(
   ({ data, selected }: NodeProps<FulfillmentGroupNodeType>) => {
     const domainConfig = useMemo(() => {
-      return getDomain<FulfillmentConditionField, FulfillmentCondition>(
-        "fulfillment"
+      return getDomain<FullfillmentConditionField, FullfillmentCondition>(
+        'fulfillment',
       );
     }, []);
 
@@ -43,20 +43,20 @@ const InventoryConditionGroupNode = memo(
 
     return (
       <GenericConditionGroupNode<
-        FulfillmentConditionField,
-        FulfillmentCondition
+        FullfillmentConditionField,
+        FullfillmentCondition
       >
         data={data}
         selected={selected}
         domainConfig={domainConfig}
-        defaultField={FulfillmentConditionField.ORDER_TOTAL}
+        defaultField={FullfillmentConditionField.ORDER_TOTAL}
         headerColor="violet"
         headerBgColor="var(--mantine-color-violet-0)"
         headerTitle="KOŞUL GRUBU (VE/VEYA)"
       />
     );
-  }
+  },
 );
 
-InventoryConditionGroupNode.displayName = "InventoryGroupNode";
+InventoryConditionGroupNode.displayName = 'InventoryGroupNode';
 export default InventoryConditionGroupNode;

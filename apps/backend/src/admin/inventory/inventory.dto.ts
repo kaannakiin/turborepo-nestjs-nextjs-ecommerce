@@ -3,7 +3,7 @@ import {
   InventoryLocationZodSchema,
   UpsertServiceZoneSchema,
   BulkUpdateServiceZonesSchema,
-  FulfillmentStrategyZodSchema,
+  FullfillmentStrategyZodSchema,
   GetFulfillmentStrategiesQuerySchema,
 } from '@repo/types';
 
@@ -19,7 +19,7 @@ export class BulkUpdateServiceZonesDto extends createZodDto(
 ) {}
 
 export class FullfillmentStrategyDto extends createZodDto(
-  FulfillmentStrategyZodSchema,
+  FullfillmentStrategyZodSchema,
 ) {}
 
 export class GetFulfillmentStrategiesQueryDto extends createZodDto(

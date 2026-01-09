@@ -1,17 +1,16 @@
-"use client";
+'use client';
 
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
-import { Alert, Center, Text } from "@mantine/core";
-import { useQuery } from "@repo/shared";
-import { BaseProductZodType, VariantProductZodType } from "@repo/types";
-import { IconAlertCircle } from "@tabler/icons-react";
-import { useParams, useSearchParams } from "next/navigation";
-import BasicProductForm from "../components/BasicProductForm";
-import VariantProductForm from "../components/VariantProductForm";
+import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
+import { Alert, Center, Text } from '@mantine/core';
+import { BaseProductZodType, VariantProductZodType } from '@repo/types';
+import { IconAlertCircle } from '@tabler/icons-react';
+import { useParams, useSearchParams } from 'next/navigation';
+import BasicProductForm from '../components/BasicProductForm';
+import VariantProductForm from '../components/VariantProductForm';
+import { useGetProduct } from '@hooks/admin/useProducts';
 
 function isVariantProduct(
-  product: BaseProductZodType | VariantProductZodType
+  product: BaseProductZodType | VariantProductZodType,
 ): product is VariantProductZodType {
   return (product as VariantProductZodType).combinatedVariants !== undefined;
 }
@@ -20,34 +19,17 @@ const AdminProductFormPage = () => {
   const params = useParams();
   const searchParams = useSearchParams();
 
-  const isCreateMode = params.slug === "new";
+  const isCreateMode = params.slug === 'new';
 
   const isCreateVariantMode =
-    isCreateMode && searchParams.get("variant") === "true";
+    isCreateMode && searchParams.get('variant') === 'true';
 
   const {
     isLoading,
     isError,
     error,
     data: product,
-  } = useQuery({
-    queryKey: ["admin-product", params.slug],
-    queryFn: async () => {
-      const response = await fetchWrapper.get<{
-        success: boolean;
-        product?: VariantProductZodType | BaseProductZodType;
-      }>("/admin/products/get-product/" + params.slug);
-
-      if (!response.success) {
-        const error = response as ApiError;
-        throw new Error(error.error || "Failed to fetch product");
-      }
-      return response.data.product;
-    },
-
-    enabled: !isCreateMode && !!params.slug,
-    retry: 1,
-  });
+  } = useGetProduct(params.slug as string, !isCreateMode && !!params.slug);
 
   if (isLoading) {
     return <GlobalLoadingOverlay />;
@@ -62,7 +44,7 @@ const AdminProductFormPage = () => {
           title="Hata Oluştu"
           icon={<IconAlertCircle />}
         >
-          {error instanceof Error ? error.message : "Ürün verisi yüklenemedi."}
+          {error instanceof Error ? error.message : 'Ürün verisi yüklenemedi.'}
         </Alert>
       </Center>
     );

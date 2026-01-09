@@ -262,7 +262,7 @@ export type ShippingMethod =
 // packages/types/src/fulfillment/enums.ts
 
 // 2. Aksiyon tipi - rules JSON içinde kullanılacak
-export const FulfillmentActionType = {
+export const FullfillmentActionType = {
   USE_LOCATION: "USE_LOCATION",
   EXCLUDE_LOCATION: "EXCLUDE_LOCATION",
   PREFER_LOCATION: "PREFER_LOCATION",
@@ -273,11 +273,11 @@ export const FulfillmentActionType = {
   REJECT: "REJECT",
   FLAG_FOR_REVIEW: "FLAG_FOR_REVIEW",
 } as const;
-export type FulfillmentActionType =
-  (typeof FulfillmentActionType)[keyof typeof FulfillmentActionType];
+export type FullfillmentActionType =
+  (typeof FullfillmentActionType)[keyof typeof FullfillmentActionType];
 
 // 3. Koşul field'ları - rules JSON içinde kullanılacak
-export const FulfillmentConditionField = {
+export const FullfillmentConditionField = {
   CUSTOMER_GROUP: "CUSTOMER_GROUP",
   // Order
   ORDER_TOTAL: "ORDER_TOTAL",
@@ -302,8 +302,8 @@ export const FulfillmentConditionField = {
   TIME_OF_DAY: "TIME_OF_DAY",
   IS_HOLIDAY: "IS_HOLIDAY",
 } as const;
-export type FulfillmentConditionField =
-  (typeof FulfillmentConditionField)[keyof typeof FulfillmentConditionField];
+export type FullfillmentConditionField =
+  (typeof FullfillmentConditionField)[keyof typeof FullfillmentConditionField];
 
 // 4. Condition operatörleri - tüm rule sistemlerinde ortak
 export const ConditionOperator = {
@@ -463,12 +463,19 @@ export const TimeUnit = {
   YEARS: "YEARS",
 } as const;
 export type TimeUnit = (typeof TimeUnit)[keyof typeof TimeUnit];
-export const FulfillmentStrategyType = {
+export const FullfillmentStrategyType = {
   PROXIMITY: "PROXIMITY",
   STOCK_PRIORITY: "STOCK_PRIORITY",
   COST_OPTIMAL: "COST_OPTIMAL",
   LOAD_BALANCE: "LOAD_BALANCE",
   MANUAL: "MANUAL",
 } as const;
-export type FulfillmentStrategyType =
-  (typeof FulfillmentStrategyType)[keyof typeof FulfillmentStrategyType];
+export type FullfillmentStrategyType =
+  (typeof FullfillmentStrategyType)[keyof typeof FullfillmentStrategyType];
+
+export const EdgeType = {
+  DEFAULT: "default",
+  YES: "yes",
+  NO: "no",
+} as const;
+export type EdgeType = (typeof EdgeType)[keyof typeof EdgeType];

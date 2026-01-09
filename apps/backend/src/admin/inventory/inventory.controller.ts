@@ -127,7 +127,12 @@ export class InventoryController {
     return this.inventoryService.upsertInventoryRuleFulfillmentStrategy(body);
   }
 
-  @Get('fulfillment-strategies')
+  @Get('inventory-rule-fulfillment-strategy/:id')
+  async getFulfillmentStrategyById(@Param('id') id: string) {
+    return this.inventoryService.getFulfillmentStrategyById(id);
+  }
+
+  @Get('inventory-rule-fulfillment-strategies')
   @ApiOperation({
     summary: 'Fulfillment Stratejilerini Listele',
     description: 'Sayfalama ve arama desteği ile stratejileri getirir.',

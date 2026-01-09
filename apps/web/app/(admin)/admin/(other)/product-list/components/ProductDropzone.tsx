@@ -1,6 +1,6 @@
-"use client";
-import ActionPopover from "@/(admin)/components/ActionPopover";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+'use client';
+import ActionPopover from '@/(admin)/components/ActionPopover';
+import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
 import {
   closestCenter,
   DndContext,
@@ -9,15 +9,15 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-} from "@dnd-kit/core";
+} from '@dnd-kit/core';
 import {
   arrayMove,
   rectSortingStrategy,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import {
   ActionIcon,
   Alert,
@@ -30,15 +30,15 @@ import {
   Stack,
   StyleProp,
   Text,
-} from "@mantine/core";
+} from '@mantine/core';
 import {
   Dropzone,
   DropzoneProps,
   FileRejection,
   FileWithPath,
-} from "@mantine/dropzone";
-import { AssetType } from "@repo/database/client";
-import { MIME_TYPES } from "@repo/types";
+} from '@mantine/dropzone';
+import { AssetType } from '@repo/database/client';
+import { MIME_TYPES } from '@repo/types';
 
 import {
   IconAlertCircle,
@@ -47,8 +47,8 @@ import {
   IconTrash,
   IconUpload,
   IconX,
-} from "@tabler/icons-react";
-import { useEffect, useMemo, useState } from "react";
+} from '@tabler/icons-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface ProductDropzoneProps {
   existingImages: Array<{ url: string; type: AssetType; order: number }>;
@@ -62,7 +62,7 @@ interface ProductDropzoneProps {
       order: number;
       file?: File;
       isNew: boolean;
-    }>
+    }>,
   ) => void;
   props?: Partial<DropzoneProps>;
   cols?: StyleProp<number>;
@@ -102,11 +102,11 @@ const SortableItem = ({ id, media, index, onRemove }: SortableItemProps) => {
       ref={setNodeRef}
       style={style}
       ratio={1}
-      pos={"relative"}
+      pos={'relative'}
       className="relative group"
     >
       <Box className="relative w-full h-full rounded-lg overflow-hidden bg-gray-50 shadow-sm hover:shadow-md transition-shadow">
-        {media.type === "VIDEO" ? (
+        {media.type === 'VIDEO' ? (
           <video
             src={media.url}
             className="w-full h-full object-cover"
@@ -122,7 +122,7 @@ const SortableItem = ({ id, media, index, onRemove }: SortableItemProps) => {
 
         <Box className="absolute top-2 left-2 z-10">
           <Badge color="admin" variant="filled" size="sm" className="shadow-sm">
-            {media.isNew ? "Yeni" : "Mevcut"} • {index + 1}
+            {media.isNew ? 'Yeni' : 'Mevcut'} • {index + 1}
           </Badge>
         </Box>
 
@@ -136,7 +136,7 @@ const SortableItem = ({ id, media, index, onRemove }: SortableItemProps) => {
             color="gray"
             {...attributes}
             {...listeners}
-            className={`${isDragging ? "cursor-grabbing" : "cursor-move"} shadow-sm backdrop-blur-sm bg-white/90`}
+            className={`${isDragging ? 'cursor-grabbing' : 'cursor-move'} shadow-sm backdrop-blur-sm bg-white/90`}
           >
             <IconGripVertical size={16} />
           </ActionIcon>
@@ -144,7 +144,7 @@ const SortableItem = ({ id, media, index, onRemove }: SortableItemProps) => {
           <ActionPopover
             targetIcon={<IconTrash size={16} />}
             text={
-              "Görseli silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
+              'Görseli silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.'
             }
             onConfirm={onRemove}
             size="sm"
@@ -169,12 +169,13 @@ const ProductDropzone = ({
 }: ProductDropzoneProps) => {
   const [rejectedFiles, setRejectedFiles] = useState<FileRejection[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const blobUrlCache = useRef<Map<string, string>>(new Map());
 
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   useEffect(() => {
@@ -187,14 +188,14 @@ const ProductDropzone = ({
 
   const getErrorMessage = (code: string) => {
     switch (code) {
-      case "file-too-large":
-        return "Bazı dosyaların boyutu çok büyük (max 5MB)";
-      case "file-invalid-type":
-        return "Bazı dosyaların türü geçersiz";
-      case "too-many-files":
-        return "Çok fazla dosya seçildi (max 10 adet)";
+      case 'file-too-large':
+        return 'Bazı dosyaların boyutu çok büyük (max 5MB)';
+      case 'file-invalid-type':
+        return 'Bazı dosyaların türü geçersiz';
+      case 'too-many-files':
+        return 'Çok fazla dosya seçildi (max 10 adet)';
       default:
-        return "Dosya yükleme hatası";
+        return 'Dosya yükleme hatası';
     }
   };
 
@@ -231,12 +232,30 @@ const ProductDropzone = ({
     }
 
     if (images) {
+      const currentFileKeys = new Set(
+        images.map((img) => `${img.file.name}-${img.file.size}`),
+      );
+      blobUrlCache.current.forEach((url, key) => {
+        if (!currentFileKeys.has(key)) {
+          URL.revokeObjectURL(url);
+          blobUrlCache.current.delete(key);
+        }
+      });
+
       images.forEach((img) => {
-        const isVideo = img.file.type.startsWith("video/");
+        const isVideo = img.file.type.startsWith('video/');
+        const cacheKey = `${img.file.name}-${img.file.size}`;
+
+        let blobUrl = blobUrlCache.current.get(cacheKey);
+        if (!blobUrl) {
+          blobUrl = URL.createObjectURL(img.file);
+          blobUrlCache.current.set(cacheKey, blobUrl);
+        }
+
         allMedia.push({
-          id: `new-${img.file.name}-${img.file.size}`,
-          url: URL.createObjectURL(img.file),
-          type: isVideo ? "VIDEO" : "IMAGE",
+          id: `new-${cacheKey}`,
+          url: blobUrl,
+          type: isVideo ? 'VIDEO' : 'IMAGE',
           order: img.order,
           isNew: true,
           file: img.file,
@@ -248,14 +267,12 @@ const ProductDropzone = ({
   }, [existingImages, images]);
 
   useEffect(() => {
-    const blobUrls = sortedMedia
-      .filter((media) => media.isNew && media.url.startsWith("blob:"))
-      .map((media) => media.url);
-
+    const cache = blobUrlCache.current;
     return () => {
-      blobUrls.forEach((url) => URL.revokeObjectURL(url));
+      cache.forEach((url) => URL.revokeObjectURL(url));
+      cache.clear();
     };
-  }, [sortedMedia]);
+  }, []);
 
   const handleRemove = async (media: (typeof sortedMedia)[0]) => {
     if (media.isNew && media.file && onRemoveNewImage) {
@@ -265,7 +282,7 @@ const ProductDropzone = ({
         setLoading(true);
         await onRemoveExistingImage(media.url);
       } catch (error) {
-        console.error("Mevcut görseli silerken hata oluştu:", error);
+        console.error('Mevcut görseli silerken hata oluştu:', error);
       } finally {
         setLoading(false);
       }
@@ -295,7 +312,7 @@ const ProductDropzone = ({
   };
 
   return (
-    <Stack gap={"xs"}>
+    <Stack gap={'xs'}>
       {loading && <GlobalLoadingOverlay />}
       {rejectedFiles.length > 0 && (
         <Alert
@@ -326,7 +343,7 @@ const ProductDropzone = ({
           setRejectedFiles((current) => [...current, ...files]);
         }}
         maxSize={10 * 1024 ** 2}
-        accept={[...MIME_TYPES["IMAGE"], ...MIME_TYPES["VIDEO"]]}
+        accept={[...MIME_TYPES['IMAGE'], ...MIME_TYPES['VIDEO']]}
         multiple
         maxFiles={10 - ((existingImages?.length || 0) + (images?.length || 0))}
         {...props}
@@ -335,7 +352,7 @@ const ProductDropzone = ({
           justify="center"
           gap="xl"
           mih={220}
-          style={{ pointerEvents: "none" }}
+          style={{ pointerEvents: 'none' }}
         >
           <Dropzone.Accept>
             <IconUpload

@@ -1,7 +1,16 @@
-"use client";
+'use client';
 
-import PriceFormatter from "@/(user)/components/PriceFormatter";
-import CustomImage from "@/components/CustomImage";
+import PriceFormatter from '@/(user)/components/PriceFormatter';
+import CustomImage from '@/components/CustomImage';
+import {
+  buildSwatchUrlParams,
+  buildVariantUrlParams,
+  calculatePriceInfo,
+  getCurrentVariantOptionText,
+  getDisplayImage,
+  getPrimaryVariantGroup,
+  shouldShowSwatches,
+} from '@lib/ui/product-helper';
 import {
   AspectRatio,
   Box,
@@ -10,14 +19,14 @@ import {
   Stack,
   Text,
   Tooltip,
-} from "@mantine/core";
-import { UiProductType } from "@repo/types";
-import { Route } from "next";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+} from '@mantine/core';
+import { UiProductType } from '@repo/types';
+import { Route } from 'next';
+import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
 
 type Product = UiProductType;
-type Variant = Product["variants"][number];
+type Variant = Product['variants'][number];
 
 interface StoreProductCardProps {
   product: Product;
@@ -27,149 +36,48 @@ interface StoreProductCardProps {
 const StoreProductCard = ({ product, variant }: StoreProductCardProps) => {
   const router = useRouter();
   const [hoveredOptionIndex, setHoveredOptionIndex] = useState<number | null>(
-    null
+    null,
   );
 
   const productName = product.translations?.[0]?.name || variant.sku;
   const productSlug = product.translations?.[0]?.slug || product.id;
-  const isVisibleAllCombinations = product.visibleAllCombinations;
 
-  const price = variant.prices?.[0];
-  const originalPrice = price?.price || 0;
-  const discountedPrice = price?.discountedPrice;
-  const hasDiscount = discountedPrice && discountedPrice < originalPrice;
-  const discountPercentage = hasDiscount
-    ? Math.round(((originalPrice - discountedPrice) / originalPrice) * 100)
-    : 0;
+  const primaryGroup = useMemo(
+    () => getPrimaryVariantGroup(product),
+    [product],
+  );
+  const priceInfo = useMemo(() => calculatePriceInfo(variant), [variant]);
 
-  const displayPrice = discountedPrice || originalPrice;
-  const currency = price?.currency || "TRY";
+  const currentOptionText = useMemo(
+    () => getCurrentVariantOptionText(product, variant),
+    [product, variant],
+  );
 
-  const getPrimaryVariantGroup = () => {
-    if (isVisibleAllCombinations) return null;
+  const showSwatches = useMemo(
+    () => shouldShowSwatches(primaryGroup),
+    [primaryGroup],
+  );
 
-    const primaryGroup = product.variantGroups?.[0];
-    if (!primaryGroup) return null;
-
-    const groupType = primaryGroup.variantGroup.type;
-    const renderType = primaryGroup.renderVisibleType;
-    const groupSlug = primaryGroup.variantGroup.translations?.[0]?.slug || "";
-
-    const options = primaryGroup.options.map((opt) => {
-      const matchedVariant = product.variants.find((v) =>
-        v.options?.some(
-          (vOpt) =>
-            vOpt.productVariantOption.variantOption.id === opt.variantOption.id
-        )
-      );
-
-      return {
-        optionId: opt.variantOption.id,
-        name: opt.variantOption.translations?.[0]?.name || "",
-        slug: opt.variantOption.translations?.[0]?.slug || "",
-        hexValue: opt.variantOption.hexValue,
-        optionAssetUrl: opt.variantOption.asset?.url,
-        variantImageUrl:
-          matchedVariant?.assets?.[0]?.asset?.url ||
-          product.assets?.[0]?.asset?.url,
-      };
-    });
-
-    const hasHexValues = options.some((opt) => opt.hexValue);
-    const hasOptionAssets = options.some((opt) => opt.optionAssetUrl);
-
-    let swatchType: "color" | "image" | null = null;
-
-    if (groupType === "COLOR") {
-      if (hasHexValues) {
-        swatchType = "color";
-      } else if (hasOptionAssets) {
-        swatchType = "image";
-      }
-    } else if (groupType === "LIST") {
-      if (renderType !== "DROPDOWN" && hasOptionAssets) {
-        swatchType = "image";
-      }
-    }
-
-    return {
-      groupName: primaryGroup.variantGroup.translations?.[0]?.name || "",
-      groupSlug,
-      groupType,
-      renderType,
-      swatchType,
-      optionCount: primaryGroup.options.length,
-      options: options.map((opt) => ({
-        ...opt,
-        imageUrl: opt.optionAssetUrl || opt.variantImageUrl,
-      })),
-    };
-  };
+  const displayImage = getDisplayImage(
+    product,
+    variant,
+    primaryGroup,
+    hoveredOptionIndex,
+  );
 
   const handleSwatchClick = (optionSlug: string) => {
     if (!primaryGroup) return;
-
-    const params = new URLSearchParams();
-    params.set(primaryGroup.groupSlug, optionSlug);
-
+    const params = buildSwatchUrlParams(primaryGroup, optionSlug);
     router.push(`/${productSlug}?${params.toString()}` as Route);
   };
 
   const handleCardClick = () => {
-    const params = new URLSearchParams();
-
-    variant.options?.forEach((opt) => {
-      const groupSlug =
-        opt.productVariantOption.variantOption.variantGroup?.translations?.[0]
-          ?.slug;
-      const optionSlug =
-        opt.productVariantOption.variantOption.translations?.[0]?.slug;
-
-      if (groupSlug && optionSlug) {
-        params.set(groupSlug, optionSlug);
-      }
-    });
-
+    const params = buildVariantUrlParams(variant);
     const queryString = params.toString();
     router.push(
-      `/${productSlug}${queryString ? `?${queryString}` : ""}` as Route
+      `/${productSlug}${queryString ? `?${queryString}` : ''}` as Route,
     );
   };
-
-  const getCurrentVariantOptionText = () => {
-    if (!isVisibleAllCombinations) return null;
-
-    const options = variant.options || [];
-    if (options.length === 0) return null;
-
-    return options
-      .map(
-        (opt) =>
-          opt.productVariantOption.variantOption.translations?.[0]?.name || ""
-      )
-      .filter(Boolean)
-      .join(" / ");
-  };
-
-  const getDisplayImage = () => {
-    const primaryGroup = getPrimaryVariantGroup();
-
-    if (hoveredOptionIndex !== null && primaryGroup) {
-      const hoveredOption = primaryGroup.options[hoveredOptionIndex];
-      if (hoveredOption?.imageUrl) {
-        return hoveredOption.imageUrl;
-      }
-    }
-
-    return variant.assets?.[0]?.asset?.url || product.assets?.[0]?.asset?.url;
-  };
-
-  const primaryGroup = getPrimaryVariantGroup();
-  const currentOptionText = getCurrentVariantOptionText();
-  const displayImage = getDisplayImage();
-
-  const showSwatches =
-    primaryGroup?.swatchType && primaryGroup.options.length > 1;
 
   return (
     <Card
@@ -179,17 +87,17 @@ const StoreProductCard = ({ product, variant }: StoreProductCardProps) => {
       onClick={handleCardClick}
     >
       <AspectRatio ratio={1}>
-        <Box className="relative   overflow-hidden">
-          {hasDiscount && (
+        <Box className="relative overflow-hidden">
+          {priceInfo.hasDiscount && (
             <Box className="absolute top-2 right-2 z-10 bg-red-500 text-white px-2 py-1 text-xs font-semibold rounded">
-              %{discountPercentage}
+              %{priceInfo.discountPercentage}
             </Box>
           )}
 
           <CustomImage
-            src={displayImage || "/placeholder-product.png"}
+            src={displayImage || '/placeholder-product.png'}
             alt={productName}
-            className="w-full h-full"
+            className="w-full h-full transition-opacity duration-200"
           />
         </Box>
       </AspectRatio>
@@ -200,7 +108,7 @@ const StoreProductCard = ({ product, variant }: StoreProductCardProps) => {
         </Text>
 
         <Text size="xs" c="dimmed" lineClamp={1}>
-          {product.categories?.[0]?.category?.translations?.[0]?.name || "Ürün"}
+          {product.categories?.[0]?.category?.translations?.[0]?.name || 'Ürün'}
         </Text>
 
         {primaryGroup && primaryGroup.optionCount > 0 && !showSwatches && (
@@ -215,7 +123,7 @@ const StoreProductCard = ({ product, variant }: StoreProductCardProps) => {
           </Text>
         )}
 
-        {showSwatches && (
+        {showSwatches && primaryGroup && (
           <Box className="relative h-5 overflow-visible">
             <Text
               size="xs"
@@ -230,48 +138,52 @@ const StoreProductCard = ({ product, variant }: StoreProductCardProps) => {
               className="absolute inset-0 transition-all duration-300 ease-out opacity-0 group-hover:opacity-100"
               wrap="nowrap"
             >
-              {primaryGroup.options.slice(0, 6).map((opt, index) => (
-                <Tooltip
-                  key={opt.optionId}
-                  label={opt.name}
-                  withArrow
-                  position="top"
-                  openDelay={200}
-                >
-                  <Box
-                    component="button"
-                    onClick={(e: React.MouseEvent) => {
-                      e.stopPropagation();
-                      handleSwatchClick(opt.slug);
-                    }}
-                    onMouseEnter={() => setHoveredOptionIndex(index)}
-                    onMouseLeave={() => setHoveredOptionIndex(null)}
-                    className={`w-5 h-5 rounded-full border-2 transition-all duration-200 overflow-hidden flex-shrink-0
-                      ${
-                        hoveredOptionIndex === index
-                          ? "border-gray-900 scale-125"
-                          : "border-gray-300 hover:border-gray-500"
-                      }`}
+              {primaryGroup.options.slice(0, 6).map((opt, index) => {
+                const isHovered = hoveredOptionIndex === index;
+                const hasHex = opt.hexValue;
+                const hasOptionImage = opt.optionAssetUrl;
+
+                return (
+                  <Tooltip
+                    key={opt.optionId}
+                    label={opt.name}
+                    withArrow
+                    position="top"
+                    openDelay={200}
                   >
-                    {primaryGroup.swatchType === "color" && opt.hexValue ? (
-                      <Box
-                        className="w-full h-full"
-                        style={{ backgroundColor: opt.hexValue }}
-                      />
-                    ) : (
-                      <CustomImage
-                        src={
-                          opt.optionAssetUrl ||
-                          opt.imageUrl ||
-                          "/placeholder-product.png"
-                        }
-                        alt={opt.name}
-                        className="w-full h-full object-cover"
-                      />
-                    )}
-                  </Box>
-                </Tooltip>
-              ))}
+                    <Box
+                      component="button"
+                      onClick={(e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        handleSwatchClick(opt.slug);
+                      }}
+                      onMouseEnter={() => setHoveredOptionIndex(index)}
+                      onMouseLeave={() => setHoveredOptionIndex(null)}
+                      className={`size-6 rounded-full border-2 transition-all duration-200 overflow-hidden flex-shrink-0
+                        ${
+                          isHovered
+                            ? 'border-gray-900 scale-110'
+                            : 'border-gray-300 hover:border-gray-500'
+                        }`}
+                    >
+                      {hasHex ? (
+                        <Box
+                          className="w-full h-full"
+                          style={{ backgroundColor: opt.hexValue! }}
+                        />
+                      ) : hasOptionImage ? (
+                        <CustomImage
+                          src={opt.optionAssetUrl!}
+                          alt={opt.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Box className="w-full h-full bg-gray-200" />
+                      )}
+                    </Box>
+                  </Tooltip>
+                );
+              })}
               {primaryGroup.options.length > 6 && (
                 <Text size="xs" c="dimmed" fw={500} className="flex-shrink-0">
                   +{primaryGroup.options.length - 6}
@@ -283,16 +195,16 @@ const StoreProductCard = ({ product, variant }: StoreProductCardProps) => {
 
         <Group gap="xs" align="center" mt={4}>
           <PriceFormatter
-            price={displayPrice}
-            currency={currency}
+            price={priceInfo.displayPrice}
+            currency={priceInfo.currency}
             size="md"
             fw={700}
             className="text-gray-900"
           />
-          {hasDiscount && (
+          {priceInfo.hasDiscount && (
             <PriceFormatter
-              price={originalPrice}
-              currency={currency}
+              price={priceInfo.originalPrice}
+              currency={priceInfo.currency}
               size="xs"
               td="line-through"
               c="dimmed"

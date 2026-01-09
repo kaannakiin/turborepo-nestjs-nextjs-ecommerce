@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   ActionIcon,
@@ -12,8 +12,8 @@ import {
   Stack,
   TextInput,
   Title,
-} from "@mantine/core";
-import { notifications } from "@mantine/notifications";
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import {
   Controller,
   createId,
@@ -23,33 +23,36 @@ import {
   useForm,
   useMutation,
   zodResolver,
-} from "@repo/shared";
-import { BaseProductSchema, BaseProductZodType } from "@repo/types";
+} from '@repo/shared';
+import { BaseProductSchema, BaseProductZodType } from '@repo/types';
 
-import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
+import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
-
-import TaxonomySelect from "@/(admin)/admin/(other)/components/TaxonomySelect";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import GlobalSeoCard from "@/components/GlobalSeoCard";
-import AdminBrandDataSelect from "@/components/inputs/admin/AdminBrandDataSelect";
-import AdminCategoryDataSelect from "@/components/inputs/admin/AdminCategoryDataSelect";
-import AdminTagDataSelect from "@/components/inputs/admin/AdminTagDataSelect";
-import { getProductTypeLabel } from "@lib/helpers";
-import { getQueryClient } from "@lib/serverQueryClient";
-import { ProductType } from "@repo/database/client";
-import { IconPencilPlus } from "@tabler/icons-react";
-import ProductDropzone from "../../components/ProductDropzone";
-import ProductPriceNumberInput from "./ProductPriceNumberInput";
+import TaxonomySelect from '@/(admin)/admin/(other)/components/TaxonomySelect';
+import {
+  useCreateOrUpdateBasicProduct,
+  useUploadProductImage,
+  useDeleteProductAsset,
+} from '@hooks/admin/useProducts';
+import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
+import GlobalSeoCard from '@/components/GlobalSeoCard';
+import AdminBrandDataSelect from '@/components/inputs/admin/AdminBrandDataSelect';
+import AdminCategoryDataSelect from '@/components/inputs/admin/AdminCategoryDataSelect';
+import AdminTagDataSelect from '@/components/inputs/admin/AdminTagDataSelect';
+import { getProductTypeLabel } from '@lib/helpers';
+import { getQueryClient } from '@lib/serverQueryClient';
+import { ProductType } from '@repo/database/client';
+import { IconPencilPlus } from '@tabler/icons-react';
+import ProductDropzone from '../../components/ProductDropzone';
+import ProductPriceNumberInput from './ProductPriceNumberInput';
 
 const GlobalTextEditor = dynamic(
-  () => import("../../../../../../components/GlobalTextEditor"),
+  () => import('../../../../../../components/GlobalTextEditor'),
   {
     ssr: false,
     loading: () => <GlobalLoadingOverlay />,
-  }
+  },
 );
 
 interface BasicProductFormProps {
@@ -57,6 +60,10 @@ interface BasicProductFormProps {
 }
 
 const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
+  const createOrUpdateProductMutation = useCreateOrUpdateBasicProduct();
+  const uploadProductImageMutation = useUploadProductImage();
+  const deleteProductAssetMutation = useDeleteProductAsset();
+
   const {
     control,
     handleSubmit,
@@ -70,11 +77,11 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
       categories: [],
       existingImages: [],
       images: [],
-      type: "PHYSICAL",
+      type: 'PHYSICAL',
       googleTaxonomyId: null,
       prices: [
         {
-          currency: "TRY",
+          currency: 'TRY',
           price: 0,
           buyedPrice: null,
           discountPrice: null,
@@ -82,9 +89,9 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
       ],
       translations: [
         {
-          locale: "TR",
-          name: "",
-          slug: "",
+          locale: 'TR',
+          name: '',
+          slug: '',
           description: null,
           metaDescription: null,
           metaTitle: null,
@@ -96,29 +103,23 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
     },
   });
 
-  const name = watch("translations.0.name");
-  const sku = watch("sku") || null;
-  const barcode = watch("barcode") || null;
-  const slug = watch("translations.0.slug") || null;
+  const name = watch('translations.0.name');
+  const sku = watch('sku') || null;
+  const barcode = watch('barcode') || null;
+  const slug = watch('translations.0.slug') || null;
   const { push } = useRouter();
 
   const mutation = useMutation({
     mutationFn: async (data: BaseProductZodType) => {
       const { images, existingImages, ...productDataWithoutImages } = data;
 
-      const productResponse = await fetchWrapper.post<{
-        success: boolean;
-        message: string;
-        productId: string;
-      }>(`/admin/products/basic-product`, productDataWithoutImages);
-
-      if (!productResponse.success || !productResponse.data.success) {
-        throw new Error("Ürün işlemi sırasında bir hata oluştu.");
-      }
+      const productResponse = await createOrUpdateProductMutation.mutateAsync(
+        productDataWithoutImages,
+      );
 
       return {
         data,
-        productId: productResponse.data.productId,
+        productId: productResponse.productId,
       };
     },
 
@@ -126,76 +127,103 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
       const { data, productId } = result;
 
       notifications.show({
-        title: "Başarılı!",
+        title: 'Başarılı!',
         message: defaultValues
-          ? "Ürün başarıyla güncellendi."
-          : "Ürün başarıyla oluşturuldu.",
-        color: "green",
+          ? 'Ürün başarıyla güncellendi.'
+          : 'Ürün başarıyla oluşturuldu.',
+        color: 'green',
         autoClose: 3000,
       });
 
       uploadImagesInBackground(data.images, productId);
 
       context.client.invalidateQueries({
-        queryKey: ["admin-product", productId],
+        queryKey: ['admin-product', productId],
       });
 
-      push("/admin/product-list");
+      push('/admin/product-list');
     },
 
     onError: (error: Error) => {
       notifications.show({
-        title: "Hata!",
-        message: error.message || "Beklenmeyen bir hata oluştu.",
-        color: "red",
+        title: 'Hata!',
+        message: error.message || 'Beklenmeyen bir hata oluştu.',
+        color: 'red',
         autoClose: 5000,
       });
     },
   });
 
   const uploadImagesInBackground = async (
-    images: BaseProductZodType["images"],
-    productId: string
+    images: BaseProductZodType['images'],
+    productId: string,
   ) => {
     if (!images || images.length === 0) return;
 
-    const errors: string[] = [];
+    const errors: Array<{ title: string; message: string }> = [];
 
     const results = await Promise.allSettled(
       images.map(async (imageItem) => {
-        const fd = new FormData();
-        fd.append("file", imageItem.file);
-        fd.append("productId", productId);
-        fd.append("order", String(imageItem.order));
-
-        return fetchWrapper.postFormData(
-          `/admin/products/create-product-image`,
-          fd
-        );
-      })
+        return uploadProductImageMutation.mutateAsync({
+          file: imageItem.file,
+          productId,
+          order: imageItem.order,
+        });
+      }),
     );
 
     results.forEach((result, index) => {
-      if (result.status === "rejected") {
-        errors.push(`Görsel ${index + 1} yüklenemedi`);
+      // fulfilled olarak dönüyor ama success: false olabilir
+      if (result.status === 'fulfilled' && result.value?.success === false) {
+        const errorMessage = result.value?.error || 'Bilinmeyen hata';
+        errors.push({
+          title: `Ürün Görseli ${index + 1}`,
+          message: errorMessage,
+        });
+      } else if (result.status === 'rejected') {
+        let errorMessage = 'Bilinmeyen hata';
+
+        if (result.reason?.value?.error) {
+          errorMessage = result.reason.value.error;
+        } else if (result.reason instanceof Error) {
+          errorMessage = result.reason.message;
+        } else if (typeof result.reason === 'string') {
+          errorMessage = result.reason;
+        }
+
+        errors.push({
+          title: `Ürün Görseli ${index + 1}`,
+          message: errorMessage,
+        });
       }
     });
 
     if (errors.length > 0) {
-      console.warn("Bazı görseller yüklenemedi:", errors);
-      notifications.show({
-        title: "Uyarı",
-        message: `${errors.length} görsel yüklenemedi. Ürün sayfasından tekrar deneyebilirsiniz.`,
-        color: "yellow",
+      errors.slice(0, 5).forEach((error) => {
+        notifications.show({
+          title: error.title,
+          message: error.message,
+          color: 'red',
+          autoClose: 5000,
+        });
       });
+
+      if (errors.length > 5) {
+        notifications.show({
+          title: 'Daha Fazla Hata',
+          message: `${errors.length - 5} görsel daha yüklenemedi.`,
+          color: 'orange',
+          autoClose: 5000,
+        });
+      }
     }
 
     getQueryClient().invalidateQueries({
-      queryKey: ["admin-product", productId],
+      queryKey: ['admin-product', productId],
     });
 
     getQueryClient().invalidateQueries({
-      queryKey: ["admin-products"],
+      queryKey: ['admin-products'],
     });
   };
 
@@ -203,8 +231,8 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
     mutation.mutate(data);
   };
 
-  const watchedImages = watch("images") || [];
-  const watchedExistingImages = watch("existingImages") || [];
+  const watchedImages = watch('images') || [];
+  const watchedExistingImages = watch('existingImages') || [];
 
   const handleAddImages = (newFiles: File[]) => {
     const currentImages = watchedImages;
@@ -216,32 +244,26 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
       order: startOrder + index,
     }));
 
-    setValue("images", [...currentImages, ...newImagesWithOrder], {
+    setValue('images', [...currentImages, ...newImagesWithOrder], {
       shouldValidate: true,
     });
   };
 
   const handleRemoveExistingImage = async (urlToRemove: string) => {
     try {
-      const deleteResponse = await fetchWrapper.delete(
-        `/admin/products/delete-product-asset/${urlToRemove}`
-      );
-
-      if (!deleteResponse.success) {
-        throw new Error("Resim silinemedi");
-      }
+      await deleteProductAssetMutation.mutateAsync(urlToRemove);
 
       const filteredImages = watchedExistingImages.filter(
-        (image) => image.url !== urlToRemove
+        (image) => image.url !== urlToRemove,
       );
 
       const removedImage = watchedExistingImages.find(
-        (image) => image.url === urlToRemove
+        (image) => image.url === urlToRemove,
       );
       const removedOrder = removedImage?.order;
 
       if (removedOrder === undefined) {
-        throw new Error("Silinen görsel bulunamadı");
+        throw new Error('Silinen görsel bulunamadı');
       }
 
       const reorderedExistingImages = filteredImages.map((img) => {
@@ -258,22 +280,22 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
         return img;
       });
 
-      setValue("existingImages", reorderedExistingImages, {
+      setValue('existingImages', reorderedExistingImages, {
         shouldValidate: true,
       });
-      setValue("images", reorderedNewImages, { shouldValidate: true });
+      setValue('images', reorderedNewImages, { shouldValidate: true });
 
       notifications.show({
-        title: "Başarılı!",
-        message: "Görsel başarıyla silindi.",
-        color: "green",
+        title: 'Başarılı!',
+        message: 'Görsel başarıyla silindi.',
+        color: 'green',
         autoClose: 3000,
       });
     } catch (error) {
       notifications.show({
-        title: "Hata!",
-        message: "Görsel silinirken bir hata oluştu.",
-        color: "red",
+        title: 'Hata!',
+        message: 'Görsel silinirken bir hata oluştu.',
+        color: 'red',
         autoClose: 3000,
       });
       throw error;
@@ -282,16 +304,16 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
 
   const handleRemoveNewImage = (fileToRemove: File) => {
     const filteredImages = watchedImages.filter(
-      (item) => item.file !== fileToRemove
+      (item) => item.file !== fileToRemove,
     );
 
     const removedImage = watchedImages.find(
-      (item) => item.file === fileToRemove
+      (item) => item.file === fileToRemove,
     );
     const removedOrder = removedImage?.order;
 
     if (removedOrder === undefined) {
-      console.error("Silinen görsel bulunamadı");
+      console.error('Silinen görsel bulunamadı');
       return;
     }
 
@@ -309,11 +331,11 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
       return img;
     });
 
-    setValue("existingImages", reorderedExistingImages, {
+    setValue('existingImages', reorderedExistingImages, {
       shouldValidate: true,
     });
 
-    setValue("images", reorderedNewImages, { shouldValidate: true });
+    setValue('images', reorderedNewImages, { shouldValidate: true });
   };
 
   const handleReorder = (
@@ -322,7 +344,7 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
       order: number;
       file?: File;
       isNew: boolean;
-    }>
+    }>,
   ) => {
     const existingImagesInOrder = newOrder.filter((item) => !item.isNew);
     const newImagesInOrder = newOrder.filter((item) => item.isNew);
@@ -330,7 +352,7 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
     const updatedExistingImages = existingImagesInOrder
       .map((item) => {
         const existingImage = watchedExistingImages.find(
-          (img) => img.url === item.url
+          (img) => img.url === item.url,
         );
 
         if (!existingImage) {
@@ -351,7 +373,7 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
         }
 
         const existingNewImage = watchedImages.find(
-          (img) => img.file === item.file
+          (img) => img.file === item.file,
         );
 
         if (existingNewImage) {
@@ -364,7 +386,7 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
         const fallbackMatch = watchedImages.find(
           (img) =>
             img.file.name === item.file!.name &&
-            img.file.size === item.file!.size
+            img.file.size === item.file!.size,
         );
 
         if (fallbackMatch) {
@@ -378,16 +400,16 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
       })
       .filter((img): img is NonNullable<typeof img> => img !== null);
 
-    setValue("existingImages", updatedExistingImages, { shouldValidate: true });
-    setValue("images", updatedNewImages, { shouldValidate: true });
+    setValue('existingImages', updatedExistingImages, { shouldValidate: true });
+    setValue('images', updatedNewImages, { shouldValidate: true });
   };
 
   return (
-    <Stack gap={"lg"}>
+    <Stack gap={'lg'}>
       {isSubmitting || mutation.isPending ? <GlobalLoadingOverlay /> : null}
       <Group align="center" justify="space-between">
         <Title order={4}>
-          Basit Ürün {defaultValues ? "Güncelle" : "Oluştur"}
+          Basit Ürün {defaultValues ? 'Güncelle' : 'Oluştur'}
         </Title>
         <Group gap="md" justify="end">
           <Button
@@ -395,44 +417,44 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
             variant="outline"
             onClick={() => {
               if (!slug) {
-                setValue("translations.0.slug", slugify(name));
+                setValue('translations.0.slug', slugify(name));
               }
 
               if (!sku || !barcode) {
                 const codes = generateProductCodes(name);
                 if (!sku) {
-                  setValue("sku", codes.sku);
+                  setValue('sku', codes.sku);
                 }
                 if (!barcode) {
-                  setValue("barcode", codes.barcode);
+                  setValue('barcode', codes.barcode);
                 }
               }
-              setValue("active", false);
+              setValue('active', false);
               handleSubmit(onSubmit)();
             }}
           >
-            {defaultValues ? "Pasif Olarak Güncelle" : "Pasif Olarak Kaydet"}
+            {defaultValues ? 'Pasif Olarak Güncelle' : 'Pasif Olarak Kaydet'}
           </Button>
           <Button
             type="button"
             onClick={() => {
               if (!slug) {
-                setValue("translations.0.slug", slugify(name));
+                setValue('translations.0.slug', slugify(name));
               }
 
               if (!sku || !barcode) {
                 const codes = generateProductCodes(name);
                 if (!sku) {
-                  setValue("sku", codes.sku);
+                  setValue('sku', codes.sku);
                 }
                 if (!barcode) {
-                  setValue("barcode", codes.barcode);
+                  setValue('barcode', codes.barcode);
                 }
               }
               handleSubmit(onSubmit)();
             }}
           >
-            {defaultValues ? "Güncelle" : "Kaydet"}
+            {defaultValues ? 'Güncelle' : 'Kaydet'}
           </Button>
         </Group>
       </Group>
@@ -447,8 +469,8 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
                 onChange={(event) => {
                   field.onChange(event);
                   setValue(
-                    "translations.0.slug",
-                    slugify(event.currentTarget.value)
+                    'translations.0.slug',
+                    slugify(event.currentTarget.value),
                   );
                 }}
                 error={fieldState.error?.message}
@@ -537,7 +559,7 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
           render={({ field, fieldState }) => (
             <TextInput
               {...field}
-              value={field.value || ""}
+              value={field.value || ''}
               error={fieldState.error?.message}
               label="SKU (Stok Kodu)"
               placeholder="Otomatik oluşturulacak"
@@ -549,7 +571,7 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
                   onClick={() => {
                     if (name) {
                       const codes = generateProductCodes(name);
-                      setValue("sku", codes.sku);
+                      setValue('sku', codes.sku);
                     }
                   }}
                 >
@@ -565,7 +587,7 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
           render={({ field, fieldState }) => (
             <TextInput
               {...field}
-              value={field.value || ""}
+              value={field.value || ''}
               error={fieldState.error?.message}
               label="Barcode"
               placeholder="Otomatik oluşturulacak"
@@ -577,7 +599,7 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
                   onClick={() => {
                     if (name) {
                       const codes = generateProductCodes(name);
-                      setValue("barcode", codes.barcode);
+                      setValue('barcode', codes.barcode);
                     }
                   }}
                 >
@@ -660,7 +682,7 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
           />
         )}
       />
-      <Stack gap={"xs"}>
+      <Stack gap={'xs'}>
         <InputLabel>Ürün Görselleri</InputLabel>
 
         <Controller

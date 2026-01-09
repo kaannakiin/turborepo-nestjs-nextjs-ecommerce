@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import CustomPagination from "@/components/CustomPagination";
-import CustomSearchInput from "@/components/CustomSearchInput";
-import { useGetCustomerSegments } from "@hooks/mutations/admin/useAdminCustomer";
+import CustomPagination from '@/components/CustomPagination';
+import CustomSearchInput from '@/components/CustomSearchInput';
+import { useGetCustomerSegments } from '@hooks/admin/useAdminCustomer';
 import {
   ActionIcon,
   Badge,
@@ -15,8 +15,8 @@ import {
   ThemeIcon,
   Title,
   Tooltip,
-} from "@mantine/core";
-import { DateFormatter } from "@repo/shared";
+} from '@mantine/core';
+import { DateFormatter } from '@repo/shared';
 import {
   IconBrain,
   IconClock,
@@ -25,16 +25,16 @@ import {
   IconTrash,
   IconUser,
   IconUsers,
-} from "@tabler/icons-react";
-import { Route } from "next";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+} from '@tabler/icons-react';
+import { Route } from 'next';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 interface SegmentWithCount {
   id: string;
   name: string;
   description?: string | null;
-  type: "MANUAL" | "SMART";
+  type: 'MANUAL' | 'SMART';
   createdAt: string | Date;
   updatedAt: string | Date;
   _count?: {
@@ -46,9 +46,9 @@ const CustomerSegmentsTable = () => {
   const searchParams = useSearchParams();
 
   const { data, isLoading, isError } = useGetCustomerSegments(
-    parseInt(searchParams.get("page") as string) || 1,
+    parseInt(searchParams.get('page') as string) || 1,
     20,
-    (searchParams.get("search") as string) || undefined
+    (searchParams.get('search') as string) || undefined,
   );
 
   const renderTableBody = () => {
@@ -87,8 +87,8 @@ const CustomerSegmentsTable = () => {
               </ThemeIcon>
               <Text c="dimmed">
                 {isError
-                  ? "Segmentler yüklenirken bir hata oluştu."
-                  : "Henüz herhangi bir müşteri segmenti oluşturulmamış."}
+                  ? 'Segmentler yüklenirken bir hata oluştu.'
+                  : 'Henüz herhangi bir müşteri segmenti oluşturulmamış.'}
               </Text>
             </Stack>
           </Table.Td>
@@ -97,7 +97,7 @@ const CustomerSegmentsTable = () => {
     }
 
     return (data.groups as unknown as SegmentWithCount[]).map((segment) => {
-      const isManual = segment.type === "MANUAL";
+      const isManual = segment.type === 'MANUAL';
 
       return (
         <Table.Tr key={segment.id}>
@@ -105,7 +105,7 @@ const CustomerSegmentsTable = () => {
             <Group gap="xs" wrap="nowrap">
               <ThemeIcon
                 variant="light"
-                color={isManual ? "teal" : "violet"}
+                color={isManual ? 'teal' : 'violet'}
                 size="lg"
                 radius="md"
               >
@@ -129,8 +129,8 @@ const CustomerSegmentsTable = () => {
           </Table.Td>
 
           <Table.Td>
-            <Badge color={isManual ? "teal" : "violet"} variant="dot" size="sm">
-              {isManual ? "Manuel Grup" : "Akıllı Segment"}
+            <Badge color={isManual ? 'teal' : 'violet'} variant="dot" size="sm">
+              {isManual ? 'Manuel Grup' : 'Akıllı Segment'}
             </Badge>
           </Table.Td>
 
@@ -186,7 +186,7 @@ const CustomerSegmentsTable = () => {
                   variant="light"
                   color="red"
                   onClick={() => {
-                    console.log("Delete clicked", segment.id);
+                    console.log('Delete clicked', segment.id);
                   }}
                 >
                   <IconTrash size={16} />
@@ -208,13 +208,13 @@ const CustomerSegmentsTable = () => {
             Müşterilerinizi gruplayarak özel kampanyalar oluşturun.
           </Text>
         </div>
-        <Group gap={"md"}>
+        <Group gap={'md'}>
           <CustomSearchInput placeholder="Segment Ara..." />
           <Button
             leftSection={<IconUsers size={18} />}
             variant="filled"
             component={Link}
-            href={"/admin/customers/customer-groups/new" as Route}
+            href={'/admin/customers/customer-groups/new' as Route}
           >
             Yeni Segment Oluştur
           </Button>

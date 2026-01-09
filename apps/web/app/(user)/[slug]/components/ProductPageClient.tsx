@@ -1,23 +1,23 @@
-"use client";
+'use client';
 
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import { useTheme } from "@/context/theme-context/ThemeContext";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
-import { Container, Grid, Stack, Text } from "@mantine/core";
-import { useQuery } from "@repo/shared";
-import { ProductDetailType } from "@repo/types";
-import dynamic from "next/dynamic";
-import { useMemo } from "react";
-import { useVariantSelection } from "../../../../hooks/useVariantSelection";
-import VariantSelector from "./VariantSelector";
-import PriceFormatter from "@/(user)/components/PriceFormatter";
+import PriceFormatter from '@/(user)/components/PriceFormatter';
+import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
+import { useTheme } from '@/context/theme-context/ThemeContext';
+import fetchWrapper from '@lib/wrappers/fetchWrapper';
+import { Grid, Text } from '@mantine/core';
+import { useQuery } from '@repo/shared';
+import { ProductDetailType } from '@repo/types';
+import dynamic from 'next/dynamic';
+import { useMemo } from 'react';
+import { useVariantSelection } from '../../../../hooks/useVariantSelection';
+import VariantSelector from './VariantSelector';
 
-const DesktopAssetViewer = dynamic(() => import("./DesktopAssetViewer"), {
+const DesktopAssetViewer = dynamic(() => import('./DesktopAssetViewer'), {
   ssr: false,
   loading: () => <GlobalLoadingOverlay />,
 });
 
-const MobileAssetViewer = dynamic(() => import("./MobileAssetViewer"), {
+const MobileAssetViewer = dynamic(() => import('./MobileAssetViewer'), {
   ssr: false,
   loading: () => <GlobalLoadingOverlay />,
 });
@@ -28,15 +28,15 @@ interface ProductPageClientProps {
 
 const ProductPageClient = ({ slug }: ProductPageClientProps) => {
   const { actualMedia } = useTheme();
-  const isMobile = actualMedia === "mobile" || actualMedia === "tablet";
+  const isMobile = actualMedia === 'mobile';
 
   const { data: product } = useQuery({
-    queryKey: ["product", slug],
+    queryKey: ['product', slug],
     queryFn: async () => {
       const response = await fetchWrapper.get<ProductDetailType>(
-        `/product/${slug}`
+        `/product/${slug}`,
       );
-      if (!response.success) throw new Error("Ürün alınamadı");
+      if (!response.success) throw new Error('Ürün alınamadı');
       return response.data;
     },
   });
@@ -76,9 +76,15 @@ const ProductPageClient = ({ slug }: ProductPageClientProps) => {
       <Grid gutter="xl">
         <Grid.Col span={{ base: 12, lg: 7 }}>
           {isMobile ? (
-            <MobileAssetViewer assets={assets} />
+            <MobileAssetViewer
+              assets={assets}
+              key={selectedVariant?.id || 'key'}
+            />
           ) : (
-            <DesktopAssetViewer assets={assets} />
+            <DesktopAssetViewer
+              assets={assets}
+              key={selectedVariant?.id || 'key'}
+            />
           )}
         </Grid.Col>
 
@@ -130,12 +136,12 @@ const ProductPageClient = ({ slug }: ProductPageClientProps) => {
                 w-full py-4 rounded-full font-medium mt-4 transition-colors
                 ${
                   isInStock
-                    ? "bg-black text-white hover:bg-gray-800"
-                    : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                    ? 'bg-black text-white hover:bg-gray-800'
+                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                 }
               `}
             >
-              {isInStock ? "Sepete Ekle" : "Stokta Yok"}
+              {isInStock ? 'Sepete Ekle' : 'Stokta Yok'}
             </button>
 
             <button className="w-full border border-gray-300 py-4 rounded-full font-medium hover:border-gray-400 transition-colors">
