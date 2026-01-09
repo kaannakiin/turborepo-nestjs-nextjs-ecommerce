@@ -1,18 +1,7 @@
-import { Prisma } from "@repo/database/client";
+import { User } from "@repo/database/client";
 
 export type GetUsersQueriesReturnType = {
-  users: Prisma.UserGetPayload<{
-    select: {
-      id: true;
-      name: true;
-      email: true;
-      role: true;
-      surname: true;
-      phone: true;
-      createdAt: true;
-      updatedAt: true;
-    };
-  }>[];
+  users: User[];
   pagination: {
     total: number;
     page: number;
@@ -21,3 +10,12 @@ export type GetUsersQueriesReturnType = {
     hasPrev: boolean;
   };
 };
+
+export const AdminUserTableBulkActions = {
+  DELETE: "DELETE",
+  UPDATE_ROLE: "UPDATE_ROLE",
+  UPDATE_GROUP: "UPDATE_GROUP",
+} as const;
+
+export type AdminUserTableBulkActions =
+  (typeof AdminUserTableBulkActions)[keyof typeof AdminUserTableBulkActions];

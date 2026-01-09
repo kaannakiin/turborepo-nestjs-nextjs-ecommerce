@@ -45,22 +45,45 @@ export class AuthService {
   }
 
   async register(data: RegisterSchemaType) {
-    const isUserExists = await this.prismaService.user.findUnique({
+    const existingUser = await this.prismaService.user.findFirst({
       where: {
-        ...(data.email
-          ? { email: data.email }
-          : data.phone
-            ? { phone: data.phone }
-            : { email: '' }),
+        OR: [
+          data.email ? { email: data.email } : {},
+          data.phone ? { phone: data.phone } : {},
+        ],
       },
     });
 
-    if (isUserExists) {
-      return {
-        success: false,
-        message:
-          'Bu kullanıcı zaten mevcut. Lütfen giriş yaparak tekrar devam ediniz.',
-      };
+    if (existingUser) {
+      if (existingUser.accountStatus === 'ACTIVE') {
+        return {
+          success: false,
+          message: 'Bu kullanıcı zaten mevcut. Lütfen giriş yapınız.',
+        };
+      }
+
+      if (existingUser.accountStatus === 'PASSIVE') {
+        return {
+          success: false,
+          message:
+            'Hesabınız pasif durumdadır. Tekrar aktif hale getirmek için lütfen destek ekibiyle iletişime geçiniz.',
+        };
+      }
+
+      if (existingUser.accountStatus === 'BANNED') {
+        return {
+          success: false,
+          message:
+            'Hesabınız erişime kapatılmıştır. Lütfen destek ekibiyle iletişime geçiniz.',
+        };
+      }
+
+      if (existingUser.accountStatus === 'PENDING_APPROVAL') {
+        return {
+          success: false,
+          message: 'Hesabınız şu an onay sürecindedir. Lütfen bekleyiniz.',
+        };
+      }
     }
 
     try {
@@ -77,8 +100,11 @@ export class AuthService {
             : {}),
           password: hashedPassword,
           role: 'USER',
+          accountStatus: 'ACTIVE',
+          registrationSource: 'WEB_REGISTER',
         },
       });
+
       return {
         success: true,
         message: 'Kullanıcı başarıyla oluşturuldu',

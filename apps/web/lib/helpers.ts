@@ -1,5 +1,5 @@
-import { Media } from "@/context/theme-context/ThemeContext";
-import { MantineColor, MantineColorsTuple } from "@mantine/core";
+import { Media } from '@/context/theme-context/ThemeContext';
+import { MantineColor, MantineColorsTuple } from '@mantine/core';
 import {
   CampaignOfferTargetPage,
   CampaignStatus,
@@ -8,25 +8,18 @@ import {
   CartStatus,
   Currency,
   DiscountType,
-  FulfillmentDecisionType,
   Locale,
-  LogicalOperator,
   OrderStatus,
   PaymentStatus,
   PaymentType,
   ProductType,
-  RegistrationSource,
   UserRole,
-} from "@repo/database/client";
+} from '@repo/database/client';
 import {
   AspectRatio,
-  ConditionOperator,
-  CustomerGroupSmartFields,
   FontFamily,
   FontType,
-  FulfillmentActionType,
-  FulfillmentConditionField,
-  FulfillmentStrategyType,
+  FullfillmentStrategyType,
   LocationType,
   MantineFontWeight,
   MantineSize,
@@ -37,89 +30,88 @@ import {
   ThemeComponents,
   ThemePages,
   ThemeSections,
-  TimeUnit,
-} from "@repo/types";
+} from '@repo/types';
 
 export function getUserRoleLabels(role: UserRole) {
   switch (role) {
-    case "ADMIN":
-      return "Admin";
-    case "OWNER":
-      return "Yönetici";
+    case 'ADMIN':
+      return 'Admin';
+    case 'OWNER':
+      return 'Yönetici';
     default:
-      return "Kullanıcı";
+      return 'Kullanıcı';
   }
 }
 
 export function getMantineSizeLabel(size: MantineSize) {
   switch (size) {
     case MantineSize.xs:
-      return "Ekstra Küçük";
+      return 'Ekstra Küçük';
     case MantineSize.sm:
-      return "Küçük";
+      return 'Küçük';
     case MantineSize.md:
-      return "Orta";
+      return 'Orta';
     case MantineSize.lg:
-      return "Büyük";
+      return 'Büyük';
     case MantineSize.xl:
-      return "Ekstra Büyük";
+      return 'Ekstra Büyük';
   }
 }
 
 export function getMantineFontWeightLabel(weight: MantineFontWeight) {
   switch (weight) {
-    case "thin":
-      return "İnce";
-    case "normal":
-      return "Normal";
-    case "bold":
-      return "Kalın";
-    case "extralight":
-      return "Ekstra İnce";
-    case "light":
-      return "Hafif";
-    case "semibold":
-      return "Yarı Kalın";
-    case "medium":
-      return "Medium";
+    case 'thin':
+      return 'İnce';
+    case 'normal':
+      return 'Normal';
+    case 'bold':
+      return 'Kalın';
+    case 'extralight':
+      return 'Ekstra İnce';
+    case 'light':
+      return 'Hafif';
+    case 'semibold':
+      return 'Yarı Kalın';
+    case 'medium':
+      return 'Medium';
   }
 }
 
 export function getSortAdminUserTableLabels(sort: SortAdminUserTable) {
   switch (sort) {
     case SortAdminUserTable.nameAsc:
-      return "İsim A → Z";
+      return 'İsim A → Z';
     case SortAdminUserTable.nameDesc:
-      return "İsim Z → A";
+      return 'İsim Z → A';
     case SortAdminUserTable.createdAtAsc:
-      return "Eski → Yeni";
+      return 'Eski → Yeni';
     case SortAdminUserTable.createdAtDesc:
-      return "Yeni → Eski";
+      return 'Yeni → Eski';
     default:
-      return "Eski → Yeni";
+      return 'Eski → Yeni';
   }
 }
 
 export function getProductTypeLabel(type: ProductType) {
   switch (type) {
-    case "PHYSICAL":
-      return "Fiziksel";
-    case "DIGITAL":
-      return "Dijital";
+    case 'PHYSICAL':
+      return 'Fiziksel';
+    case 'DIGITAL':
+      return 'Dijital';
     default:
-      return "Fiziksel";
+      return 'Fiziksel';
   }
 }
 export function getCurrencyLabel(currency: Currency) {
   switch (currency) {
-    case "TRY":
-      return "Türk Lirası (₺)";
-    case "USD":
-      return "ABD Doları ($)";
-    case "EUR":
-      return "Euro (€)";
-    case "GBP":
-      return "İngiliz Sterlini (£)";
+    case 'TRY':
+      return 'Türk Lirası (₺)';
+    case 'USD':
+      return 'ABD Doları ($)';
+    case 'EUR':
+      return 'Euro (€)';
+    case 'GBP':
+      return 'İngiliz Sterlini (£)';
     default:
       return currency;
   }
@@ -127,14 +119,14 @@ export function getCurrencyLabel(currency: Currency) {
 
 export function getCurrencySymbol(currency: Currency) {
   switch (currency) {
-    case "TRY":
-      return "₺";
-    case "USD":
-      return "$";
-    case "EUR":
-      return "€";
-    case "GBP":
-      return "£";
+    case 'TRY':
+      return '₺';
+    case 'USD':
+      return '$';
+    case 'EUR':
+      return '€';
+    case 'GBP':
+      return '£';
     default:
       return currency;
   }
@@ -142,23 +134,23 @@ export function getCurrencySymbol(currency: Currency) {
 
 export function getCurrencyIntlFormat(currency: Currency) {
   switch (currency) {
-    case "TRY":
-      return "tr-TR";
-    case "USD":
-      return "en-US";
-    case "EUR":
-      return "de-DE";
-    case "GBP":
-      return "en-GB";
+    case 'TRY':
+      return 'tr-TR';
+    case 'USD':
+      return 'en-US';
+    case 'EUR':
+      return 'de-DE';
+    case 'GBP':
+      return 'en-GB';
     default:
-      return "tr-TR";
+      return 'tr-TR';
   }
 }
 
 export function buildVariantOrProductUrl(
-  productInfos: ProductPageDataType["translations"],
-  variantInfos?: ProductPageDataType["variants"][number]["options"][number][],
-  locale: Locale = "TR"
+  productInfos: ProductPageDataType['translations'],
+  variantInfos?: ProductPageDataType['variants'][number]['options'][number][],
+  locale: Locale = 'TR',
 ) {
   const productTranslation =
     productInfos.find((tr) => tr.locale === locale) || productInfos[0];
@@ -173,12 +165,12 @@ export function buildVariantOrProductUrl(
     variantInfos.forEach((variant) => {
       const variantTranslation =
         variant.productVariantOption.variantOption.translations.find(
-          (t) => t.locale === locale
+          (t) => t.locale === locale,
         ) || variant.productVariantOption.variantOption.translations[0];
 
       const variantGroupTranslation =
         variant.productVariantOption.variantOption.variantGroup.translations.find(
-          (t) => t.locale === locale
+          (t) => t.locale === locale,
         ) ||
         variant.productVariantOption.variantOption.variantGroup.translations[0];
 
@@ -271,13 +263,13 @@ function hslToHex(h: number, s: number, l: number): string {
 
   const rHex = Math.round((r + m) * 255)
     .toString(16)
-    .padStart(2, "0");
+    .padStart(2, '0');
   const gHex = Math.round((g + m) * 255)
     .toString(16)
-    .padStart(2, "0");
+    .padStart(2, '0');
   const bHex = Math.round((b + m) * 255)
     .toString(16)
-    .padStart(2, "0");
+    .padStart(2, '0');
 
   return `#${rHex}${gHex}${bHex}`;
 }
@@ -307,12 +299,12 @@ function adjustColorForExtreme(hex: string): string {
 }
 
 export function hexToMantineColorsTuple(hex: string): MantineColorsTuple {
-  let cleanHex = hex.replace("#", "");
+  let cleanHex = hex.replace('#', '');
   if (cleanHex.length === 3) {
     cleanHex = cleanHex
-      .split("")
+      .split('')
       .map((c) => c + c)
-      .join("");
+      .join('');
   }
   cleanHex = `#${cleanHex}`;
 
@@ -362,115 +354,115 @@ export function hexToMantineColorsTuple(hex: string): MantineColorsTuple {
 export function getTextAlignLabel(align: TextAlign): string {
   switch (align) {
     case TextAlign.center:
-      return "Ortala";
+      return 'Ortala';
     case TextAlign.right:
-      return "Sağa Hizala";
+      return 'Sağa Hizala';
     case TextAlign.left:
-      return "Sola Hizala";
+      return 'Sola Hizala';
   }
 }
 
 export function getFontFamilyLabel(fontFamily: FontFamily): string {
   switch (fontFamily) {
     case FontFamily.system:
-      return "Sistem Font";
+      return 'Sistem Font';
     case FontFamily.mantineDefault:
-      return "Mantine Varsayılan";
+      return 'Mantine Varsayılan';
 
     case FontFamily.inter:
-      return "Inter";
+      return 'Inter';
     case FontFamily.roboto:
-      return "Roboto";
+      return 'Roboto';
     case FontFamily.openSans:
-      return "Open Sans";
+      return 'Open Sans';
     case FontFamily.lato:
-      return "Lato";
+      return 'Lato';
     case FontFamily.montserrat:
-      return "Montserrat";
+      return 'Montserrat';
     case FontFamily.nunito:
-      return "Nunito";
+      return 'Nunito';
     case FontFamily.poppins:
-      return "Poppins";
+      return 'Poppins';
     case FontFamily.quicksand:
-      return "Quicksand";
+      return 'Quicksand';
     case FontFamily.raleway:
-      return "Raleway";
+      return 'Raleway';
 
     case FontFamily.timesNewRoman:
-      return "Times New Roman";
+      return 'Times New Roman';
     case FontFamily.georgia:
-      return "Georgia";
+      return 'Georgia';
     case FontFamily.playfairDisplay:
-      return "Playfair Display";
+      return 'Playfair Display';
     case FontFamily.merriweather:
-      return "Merriweather";
+      return 'Merriweather';
     case FontFamily.crimsonText:
-      return "Crimson Text";
+      return 'Crimson Text';
 
     case FontFamily.jetBrainsMono:
-      return "JetBrains Mono";
+      return 'JetBrains Mono';
     case FontFamily.firaCode:
-      return "Fira Code";
+      return 'Fira Code';
     case FontFamily.sourceCodePro:
-      return "Source Code Pro";
+      return 'Source Code Pro';
     case FontFamily.courierNew:
-      return "Courier New";
+      return 'Courier New';
 
     case FontFamily.dancingScript:
-      return "Dancing Script";
+      return 'Dancing Script';
     case FontFamily.greatVibes:
-      return "Great Vibes";
+      return 'Great Vibes';
 
     case FontFamily.sansSerif:
-      return "Sans Serif";
+      return 'Sans Serif';
     case FontFamily.serif:
-      return "Serif";
+      return 'Serif';
     case FontFamily.monospace:
-      return "Monospace";
+      return 'Monospace';
     case FontFamily.cursive:
-      return "Cursive";
+      return 'Cursive';
 
     default:
-      return "Bilinmeyen Font";
+      return 'Bilinmeyen Font';
   }
 }
 
 export function getSelectionTextShipping(data: LocationType) {
-  if (data.countryType === "NONE") {
-    return "Tüm ülke";
+  if (data.countryType === 'NONE') {
+    return 'Tüm ülke';
   }
 
-  if (data.countryType === "STATE") {
+  if (data.countryType === 'STATE') {
     if (!data.stateIds || data.stateIds.length === 0) {
-      return "Tüm ülke";
+      return 'Tüm ülke';
     }
 
     const selectedCount = data.stateIds.length;
     if (selectedCount === 0) {
-      return "Tüm ülke";
+      return 'Tüm ülke';
     }
 
     return `${selectedCount} eyalet`;
   }
 
-  if (data.countryType === "CITY") {
+  if (data.countryType === 'CITY') {
     if (!data.cityIds || data.cityIds.length === 0) {
-      return "Tüm ülke";
+      return 'Tüm ülke';
     }
 
     const selectedCount = data.cityIds.length;
     if (selectedCount === 0) {
-      return "Tüm ülke";
+      return 'Tüm ülke';
     }
 
     return `${selectedCount} şehir`;
   }
 
-  return "Tüm ülke";
+  return 'Tüm ülke';
 }
 
 export const getConditionText = (data: ShippingRuleType) => {
-  if (data.condition.type === "SalesPrice") {
+  if (data.condition.type === 'SalesPrice') {
     const min = data.condition.minSalesPrice;
     const max = data.condition.maxSalesPrice;
     const currency = getCurrencySymbol(data.currency);
@@ -482,7 +474,7 @@ export const getConditionText = (data: ShippingRuleType) => {
     } else if (max) {
       return `${currency}${max}  altı`;
     }
-    return "-";
+    return '-';
   } else {
     const min = data.condition.minProductWeight;
     const max = data.condition.maxProductWeight;
@@ -494,16 +486,16 @@ export const getConditionText = (data: ShippingRuleType) => {
     } else if (max) {
       return `${max}g altı`;
     }
-    return "-";
+    return '-';
   }
 };
 
 export function calculateDiscountRate(
   price: number,
-  discountedPrice: number
+  discountedPrice: number,
 ): string {
-  if (price <= 0) return "0%";
-  if (discountedPrice >= price) return "0%";
+  if (price <= 0) return '0%';
+  if (discountedPrice >= price) return '0%';
 
   const discount = price - discountedPrice;
   const discountRate = (discount / price) * 100;
@@ -515,10 +507,10 @@ export const cartStatusConfig: Record<
   CartStatus,
   { label: string; color: MantineColor }
 > = {
-  ABANDONED: { label: "Terkedilmiş", color: "red" },
-  ACTIVE: { label: "Aktif", color: "green" },
-  CONVERTED: { label: "Satın Alınmış", color: "blue" },
-  MERGED: { label: "Birleştirilmiş", color: "gray" },
+  ABANDONED: { label: 'Terkedilmiş', color: 'red' },
+  ACTIVE: { label: 'Aktif', color: 'green' },
+  CONVERTED: { label: 'Satın Alınmış', color: 'blue' },
+  MERGED: { label: 'Birleştirilmiş', color: 'gray' },
 };
 
 export function getCartStatusLabel(status: CartStatus): string {
@@ -531,105 +523,105 @@ export function getCartStatusColor(status: CartStatus): MantineColor {
 
 export function getCartAssociationUrl(type: CardAssociation) {
   switch (type) {
-    case "VISA":
-      return "/visa.svg";
-    case "AMERICAN_EXPRESS":
-      return "/american-express.svg";
-    case "MASTER_CARD":
-      return "/mastercard.svg";
-    case "TROY":
-      return "/troy.svg";
+    case 'VISA':
+      return '/visa.svg';
+    case 'AMERICAN_EXPRESS':
+      return '/american-express.svg';
+    case 'MASTER_CARD':
+      return '/mastercard.svg';
+    case 'TROY':
+      return '/troy.svg';
   }
 }
 
 export function getOrderStatusInfos(status: OrderStatus): string {
   switch (status) {
-    case "CANCELLED":
-      return "Kargolanmadı";
-    case "CONFIRMED":
-      return "Onaylandı";
-    case "DELIVERED":
-      return "Teslim Edildi";
-    case "PENDING":
-      return "Beklemede";
-    case "PROCESSING":
-      return "İşleniyor";
-    case "SHIPPED":
-      return "Kargolandı";
-    case "REFUNDED":
-      return "İade Edildi";
+    case 'CANCELLED':
+      return 'Kargolanmadı';
+    case 'CONFIRMED':
+      return 'Onaylandı';
+    case 'DELIVERED':
+      return 'Teslim Edildi';
+    case 'PENDING':
+      return 'Beklemede';
+    case 'PROCESSING':
+      return 'İşleniyor';
+    case 'SHIPPED':
+      return 'Kargolandı';
+    case 'REFUNDED':
+      return 'İade Edildi';
   }
 }
 export function getOrderStatusColor(status: OrderStatus): MantineColor {
   switch (status) {
-    case "CANCELLED":
-      return "red.5";
-    case "CONFIRMED":
-      return "green.5";
-    case "DELIVERED":
-      return "blue.5";
-    case "PENDING":
-      return "yellow.5";
-    case "PROCESSING":
-      return "cyan.5";
-    case "REFUNDED":
-      return "grape.5";
-    case "SHIPPED":
-      return "teal.5";
+    case 'CANCELLED':
+      return 'red.5';
+    case 'CONFIRMED':
+      return 'green.5';
+    case 'DELIVERED':
+      return 'blue.5';
+    case 'PENDING':
+      return 'yellow.5';
+    case 'PROCESSING':
+      return 'cyan.5';
+    case 'REFUNDED':
+      return 'grape.5';
+    case 'SHIPPED':
+      return 'teal.5';
   }
 }
 
 export function getDiscountTypeLabel(type: DiscountType): string {
   switch (type) {
-    case "FIXED_AMOUNT":
-      return "Sabit Tutar";
-    case "FREE_SHIPPING":
-      return "Ücretsiz Kargo";
-    case "PERCENTAGE":
-      return "Yüzdelik";
-    case "FIXED_AMOUNT_GROW_PRICE":
-      return "Sabit Tutar - Fiyat Bazlı Artan";
-    case "FIXED_AMOUNT_GROW_QUANTITY":
-      return "Sabit Tutar - Miktar Bazlı Artan";
-    case "PERCENTAGE_GROW_PRICE":
-      return "Yüzdelik - Fiyat Bazlı Artan";
-    case "PERCENTAGE_GROW_QUANTITY":
-      return "Yüzdelik - Miktar Bazlı Artan";
+    case 'FIXED_AMOUNT':
+      return 'Sabit Tutar';
+    case 'FREE_SHIPPING':
+      return 'Ücretsiz Kargo';
+    case 'PERCENTAGE':
+      return 'Yüzdelik';
+    case 'FIXED_AMOUNT_GROW_PRICE':
+      return 'Sabit Tutar - Fiyat Bazlı Artan';
+    case 'FIXED_AMOUNT_GROW_QUANTITY':
+      return 'Sabit Tutar - Miktar Bazlı Artan';
+    case 'PERCENTAGE_GROW_PRICE':
+      return 'Yüzdelik - Fiyat Bazlı Artan';
+    case 'PERCENTAGE_GROW_QUANTITY':
+      return 'Yüzdelik - Miktar Bazlı Artan';
   }
 }
 
 export function getCampaignStatusLabel(status: CampaignStatus): string {
   switch (status) {
-    case "ACTIVE":
-      return "Aktif";
-    case "DRAFT":
-      return "Taslak";
-    case "ARCHIVED":
-      return "Arşivlenmiş";
-    case "SCHEDULED":
-      return "Planlanmış";
+    case 'ACTIVE':
+      return 'Aktif';
+    case 'DRAFT':
+      return 'Taslak';
+    case 'ARCHIVED':
+      return 'Arşivlenmiş';
+    case 'SCHEDULED':
+      return 'Planlanmış';
   }
 }
 
 export function getCampaignTypeLabel(type: CampaignType): string {
   switch (type) {
-    case "CROSS_SELLING":
-      return "(Cross Sell) Çapraz Satış";
-    case "UP_SELLING":
-      return "(Up Sell) Yukarı Satış";
+    case 'CROSS_SELLING':
+      return '(Cross Sell) Çapraz Satış';
+    case 'UP_SELLING':
+      return '(Up Sell) Yukarı Satış';
   }
 }
 
 export function getCampaignOfferPageLabel(
-  type: CampaignOfferTargetPage
+  type: CampaignOfferTargetPage,
 ): string {
   switch (type) {
-    case "CHECKOUT_PAGE":
-      return "Ödeme Sayfası";
-    case "POST_CHECKOUT":
-      return "Ödeme Sonrası";
-    case "PRODUCT":
-      return "Ürün Sayfası";
+    case 'CHECKOUT_PAGE':
+      return 'Ödeme Sayfası';
+    case 'POST_CHECKOUT':
+      return 'Ödeme Sonrası';
+    case 'PRODUCT':
+      return 'Ürün Sayfası';
   }
 }
 
@@ -637,10 +629,10 @@ const PaymentStatusInfos: Record<
   PaymentStatus,
   { label: string; color: MantineColor }
 > = {
-  FAILED: { label: "Başarısız", color: "red.5" },
-  PENDING: { label: "Beklemede", color: "yellow.5" },
-  PARTIALLY_PAID: { label: "Kısmen Ödendi", color: "orange.5" },
-  PAID: { label: "Ödendi", color: "green.5" },
+  FAILED: { label: 'Başarısız', color: 'red.5' },
+  PENDING: { label: 'Beklemede', color: 'yellow.5' },
+  PARTIALLY_PAID: { label: 'Kısmen Ödendi', color: 'orange.5' },
+  PAID: { label: 'Ödendi', color: 'green.5' },
 };
 
 export function getPaymentStatusLabel(status: PaymentStatus): string {
@@ -651,27 +643,27 @@ const PaymentTypeConfigs: Record<
   PaymentType,
   { label: string; color: MantineColor }
 > = {
-  CREDIT_CARD: { label: "Kredi Kartı", color: "blue.5" },
-  DIRECT_DEBIT: { label: "Banka Kartı", color: "indigo.5" },
-  APP_PAYMENT: { label: "Uygulama İçi Ödeme", color: "cyan.5" },
-  CASH_ON_DELIVERY: { label: "Kapıda Ödeme", color: "teal.5" },
-  CREDIT_CARD_ON_DELIVERY: { label: "Kapıda Kredi Kartı", color: "green.5" },
-  CASH: { label: "Nakit", color: "lime.5" },
-  BANK_REDIRECT: { label: "Banka Yönlendirme", color: "violet.5" },
-  WALLET: { label: "Dijital Cüzdan", color: "grape.5" },
+  CREDIT_CARD: { label: 'Kredi Kartı', color: 'blue.5' },
+  DIRECT_DEBIT: { label: 'Banka Kartı', color: 'indigo.5' },
+  APP_PAYMENT: { label: 'Uygulama İçi Ödeme', color: 'cyan.5' },
+  CASH_ON_DELIVERY: { label: 'Kapıda Ödeme', color: 'teal.5' },
+  CREDIT_CARD_ON_DELIVERY: { label: 'Kapıda Kredi Kartı', color: 'green.5' },
+  CASH: { label: 'Nakit', color: 'lime.5' },
+  BANK_REDIRECT: { label: 'Banka Yönlendirme', color: 'violet.5' },
+  WALLET: { label: 'Dijital Cüzdan', color: 'grape.5' },
   BUY_ONLINE_PAY_AT_STORE: {
-    label: "Online Al Mağazada Öde",
-    color: "orange.5",
+    label: 'Online Al Mağazada Öde',
+    color: 'orange.5',
   },
-  PAY_LATER: { label: "Sonra Öde", color: "yellow.5" },
-  SLICE_IT: { label: "Taksitle Öde", color: "pink.5" },
-  GIFT_CARD: { label: "Hediye Kartı", color: "red.5" },
-  MONEY_ORDER: { label: "Havale/EFT", color: "gray.5" },
-  OTHER: { label: "Diğer", color: "dark.3" },
+  PAY_LATER: { label: 'Sonra Öde', color: 'yellow.5' },
+  SLICE_IT: { label: 'Taksitle Öde', color: 'pink.5' },
+  GIFT_CARD: { label: 'Hediye Kartı', color: 'red.5' },
+  MONEY_ORDER: { label: 'Havale/EFT', color: 'gray.5' },
+  OTHER: { label: 'Diğer', color: 'dark.3' },
 };
 
 export function getPaymentTypeLabel(type: PaymentType): string {
-  return PaymentTypeConfigs[type]?.label || "Bilinmeyen";
+  return PaymentTypeConfigs[type]?.label || 'Bilinmeyen';
 }
 
 export const AspectRatioConfigs: Record<
@@ -681,22 +673,22 @@ export const AspectRatioConfigs: Record<
     value: number;
   }
 > = {
-  auto: { label: "Otomatik", value: 0 },
-  "1/1": { label: "1:1 (Kare - Instagram Post)", value: 1 },
-  "4/3": { label: "4:3 (Klasik TV)", value: 4 / 3 },
-  "3/4": { label: "3:4 (Dikey - Portre)", value: 3 / 4 },
-  "16/9": { label: "16:9 (Geniş Ekran - YouTube)", value: 16 / 9 },
-  "9/16": { label: "9:16 (Dikey Video - TikTok, Reels)", value: 9 / 16 },
-  "21/9": { label: "21:9 (Ultra Geniş - Sinema)", value: 21 / 9 },
-  "2/1": { label: "2:1 (Panorama)", value: 2 / 1 },
-  "3/2": { label: "3:2 (DSLR Fotoğraf)", value: 3 / 2 },
-  "2/3": { label: "2/3 (Portre Fotoğraf)", value: 2 / 3 },
-  "5/4": { label: "5:4 (Klasik Monitor)", value: 5 / 4 },
-  "4/5": { label: "4:5 (Instagram Portre)", value: 4 / 5 },
+  auto: { label: 'Otomatik', value: 0 },
+  '1/1': { label: '1:1 (Kare - Instagram Post)', value: 1 },
+  '4/3': { label: '4:3 (Klasik TV)', value: 4 / 3 },
+  '3/4': { label: '3:4 (Dikey - Portre)', value: 3 / 4 },
+  '16/9': { label: '16:9 (Geniş Ekran - YouTube)', value: 16 / 9 },
+  '9/16': { label: '9:16 (Dikey Video - TikTok, Reels)', value: 9 / 16 },
+  '21/9': { label: '21:9 (Ultra Geniş - Sinema)', value: 21 / 9 },
+  '2/1': { label: '2:1 (Panorama)', value: 2 / 1 },
+  '3/2': { label: '3:2 (DSLR Fotoğraf)', value: 3 / 2 },
+  '2/3': { label: '2/3 (Portre Fotoğraf)', value: 2 / 3 },
+  '5/4': { label: '5:4 (Klasik Monitor)', value: 5 / 4 },
+  '4/5': { label: '4:5 (Instagram Portre)', value: 4 / 5 },
 };
 
 export const getAspectRatioLabel = (ratio: AspectRatio): string => {
-  return AspectRatioConfigs[ratio]?.label || "Bilinmeyen";
+  return AspectRatioConfigs[ratio]?.label || 'Bilinmeyen';
 };
 
 export const getAspectRatioValue = (ratio: AspectRatio): number => {
@@ -708,30 +700,30 @@ const ThemePageConfigs: Record<
   { label: string; value: ThemePages; createbleComponents?: ThemeComponents[] }
 > = {
   HOMEPAGE: {
-    label: "Anasayfa",
-    value: "HOMEPAGE",
-    createbleComponents: ["MARQUEE", "PRODUCT_CAROUSEL", "SLIDER"],
+    label: 'Anasayfa',
+    value: 'HOMEPAGE',
+    createbleComponents: ['MARQUEE', 'PRODUCT_CAROUSEL', 'SLIDER'],
   },
   PRODUCT: {
-    label: "Ürün Sayfası",
-    value: "PRODUCT",
-    createbleComponents: ["MARQUEE"],
+    label: 'Ürün Sayfası',
+    value: 'PRODUCT',
+    createbleComponents: ['MARQUEE'],
   },
 };
 
 export function getThemePageLabel(page: ThemePages): string {
-  return ThemePageConfigs[page]?.label || "Bilinmeyen";
+  return ThemePageConfigs[page]?.label || 'Bilinmeyen';
 }
 
 export function getThemePageValue(page: ThemePages): ThemePages {
-  return ThemePageConfigs[page]?.value || "HOMEPAGE";
+  return ThemePageConfigs[page]?.value || 'HOMEPAGE';
 }
 
 export function getThemePageCreatebleComponents(
-  page: ThemePages
+  page: ThemePages,
 ): ThemeComponents[] {
   const createbleComponentSet = new Set(
-    ThemePageConfigs[page]?.createbleComponents
+    ThemePageConfigs[page]?.createbleComponents,
   );
   return [...createbleComponentSet];
 }
@@ -750,56 +742,56 @@ const ThemeSectionConfigs: Record<
   ThemeSections,
   { label: string; value: ThemeSections }
 > = {
-  HEADER: { label: "Header", value: "HEADER" },
-  FOOTER: { label: "Footer", value: "FOOTER" },
+  HEADER: { label: 'Header', value: 'HEADER' },
+  FOOTER: { label: 'Footer', value: 'FOOTER' },
 };
 
 export const getThemeSectionLabel = (section: ThemeSections): string => {
-  return ThemeSectionConfigs[section]?.label || "Bilinmeyen";
+  return ThemeSectionConfigs[section]?.label || 'Bilinmeyen';
 };
 
 export const getThemeSectionValue = (section: ThemeSections): ThemeSections => {
-  return ThemeSectionConfigs[section]?.value || "HEADER";
+  return ThemeSectionConfigs[section]?.value || 'HEADER';
 };
 
 export const fontSelectData = [
   {
-    group: "Sans Serif (Modern & Temiz)",
+    group: 'Sans Serif (Modern & Temiz)',
     items: [
-      { value: FontType.Inter, label: "Inter" },
-      { value: FontType.Roboto, label: "Roboto" },
-      { value: FontType.Open_Sans, label: "Open Sans" },
-      { value: FontType.Lato, label: "Lato" },
-      { value: FontType.Poppins, label: "Poppins" },
-      { value: FontType.Montserrat, label: "Montserrat" },
-      { value: FontType.Nunito, label: "Nunito" },
-      { value: FontType.Geist, label: "Geist" },
+      { value: FontType.Inter, label: 'Inter' },
+      { value: FontType.Roboto, label: 'Roboto' },
+      { value: FontType.Open_Sans, label: 'Open Sans' },
+      { value: FontType.Lato, label: 'Lato' },
+      { value: FontType.Poppins, label: 'Poppins' },
+      { value: FontType.Montserrat, label: 'Montserrat' },
+      { value: FontType.Nunito, label: 'Nunito' },
+      { value: FontType.Geist, label: 'Geist' },
     ],
   },
   {
-    group: "Serif (Klasik & Şık)",
+    group: 'Serif (Klasik & Şık)',
     items: [
-      { value: FontType.Playfair_Display, label: "Playfair Display" },
-      { value: FontType.Merriweather, label: "Merriweather" },
-      { value: FontType.Lora, label: "Lora" },
-      { value: FontType.Crimson_Text, label: "Crimson Text" },
+      { value: FontType.Playfair_Display, label: 'Playfair Display' },
+      { value: FontType.Merriweather, label: 'Merriweather' },
+      { value: FontType.Lora, label: 'Lora' },
+      { value: FontType.Crimson_Text, label: 'Crimson Text' },
     ],
   },
   {
-    group: "Monospace (Kod & Teknik)",
+    group: 'Monospace (Kod & Teknik)',
     items: [
-      { value: FontType.Roboto_Mono, label: "Roboto Mono" },
-      { value: FontType.Fira_Code, label: "Fira Code" },
-      { value: FontType.JetBrains_Mono, label: "JetBrains Mono" },
-      { value: FontType.Geist_Mono, label: "Geist Mono" },
+      { value: FontType.Roboto_Mono, label: 'Roboto Mono' },
+      { value: FontType.Fira_Code, label: 'Fira Code' },
+      { value: FontType.JetBrains_Mono, label: 'JetBrains Mono' },
+      { value: FontType.Geist_Mono, label: 'Geist Mono' },
     ],
   },
   {
-    group: "Display & Diğerleri",
+    group: 'Display & Diğerleri',
     items: [
-      { value: FontType.Oswald, label: "Oswald" },
-      { value: FontType.Bebas_Neue, label: "Bebas Neue" },
-      { value: FontType.Anton, label: "Anton" },
+      { value: FontType.Oswald, label: 'Oswald' },
+      { value: FontType.Bebas_Neue, label: 'Bebas Neue' },
+      { value: FontType.Anton, label: 'Anton' },
     ],
   },
 ];
@@ -809,7 +801,7 @@ export const fontSelectData = [
  * Mantine'in colors-generator mantığına benzer
  */
 export function generateColorTuple(baseColor: string): MantineColorsTuple {
-  const hex = baseColor.replace("#", "");
+  const hex = baseColor.replace('#', '');
 
   const r = parseInt(hex.slice(0, 2), 16);
   const g = parseInt(hex.slice(2, 4), 16);
@@ -847,7 +839,7 @@ export function generateColorTuple(baseColor: string): MantineColorsTuple {
 function rgbToHsl(
   r: number,
   g: number,
-  b: number
+  b: number,
 ): { h: number; s: number; l: number } {
   r /= 255;
   g /= 255;
@@ -882,7 +874,7 @@ function rgbToHsl(
 function hslToRgb(
   h: number,
   s: number,
-  l: number
+  l: number,
 ): { r: number; g: number; b: number } {
   let r, g, b;
 
@@ -914,751 +906,32 @@ function hslToRgb(
 }
 
 function rgbToHex(r: number, g: number, b: number): string {
-  return `#${[r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("")}`;
+  return `#${[r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('')}`;
 }
 
-const FULFILLMENT_DECISION_TYPE_LABELS: Record<
-  FulfillmentDecisionType,
-  { label: string; description?: string }
-> = {
-  AUTO_ASSIGNED: {
-    label: "Otomatik Atandı",
-    description: "Sistem tarafından otomatik olarak atandı",
-  },
-  SPLIT_SHIPMENT: {
-    label: "Bölündü",
-    description: "Sipariş birden fazla gönderiye bölündü",
-  },
-  DROPSHIP: {
-    label: "Dropship",
-    description: "Dropship tedarikçisine yönlendirildi",
-  },
-  BACKORDER: {
-    label: "Backorder",
-    description: "Stok beklemesine alındı",
-  },
-  MANUAL_REQUIRED: {
-    label: "Manuel Müdahale",
-    description: "Manuel müdahale gerekli",
-  },
-  REJECTED: {
-    label: "Reddedildi",
-    description: "Sipariş karşılanamadı",
-  },
-};
-
-export const getFulfillmentDecisionTypeLabel = (
-  type: FulfillmentDecisionType
-): string => {
-  return FULFILLMENT_DECISION_TYPE_LABELS[type]?.label ?? "Bilinmeyen";
-};
-
-export const getFulfillmentDecisionTypeInfo = (
-  type: FulfillmentDecisionType
-) => {
-  return FULFILLMENT_DECISION_TYPE_LABELS[type] ?? { label: "Bilinmeyen" };
-};
-
-const LOGICAL_OPERATOR_LABELS: Record<
-  LogicalOperator,
-  { label: string; description: string }
-> = {
-  AND: {
-    label: "VE",
-    description: "Tüm koşullar sağlanmalı",
-  },
-  OR: {
-    label: "VEYA",
-    description: "Koşullardan en az biri sağlanmalı",
-  },
-};
-
-export const getLogicalOperatorLabel = (operator: LogicalOperator): string => {
-  return LOGICAL_OPERATOR_LABELS[operator]?.label ?? "Bilinmeyen";
-};
-
-export const getLogicalOperatorInfo = (operator: LogicalOperator) => {
-  return LOGICAL_OPERATOR_LABELS[operator] ?? { label: "Bilinmeyen" };
-};
-
-const CONDITION_OPERATOR_LABELS: Record<
-  ConditionOperator,
-  { label: string; shortLabel: string; description: string; symbol?: string }
-> = {
-  EQ: {
-    label: "Eşit",
-    shortLabel: "=",
-    description: "Değer eşit olmalı",
-    symbol: "=",
-  },
-  NEQ: {
-    label: "Eşit Değil",
-    shortLabel: "≠",
-    description: "Değer eşit olmamalı",
-    symbol: "≠",
-  },
-  GT: {
-    label: "Büyük",
-    shortLabel: ">",
-    description: "Değer büyük olmalı",
-    symbol: ">",
-  },
-  GTE: {
-    label: "Büyük veya Eşit",
-    shortLabel: "≥",
-    description: "Değer büyük veya eşit olmalı",
-    symbol: "≥",
-  },
-  LT: {
-    label: "Küçük",
-    shortLabel: "<",
-    description: "Değer küçük olmalı",
-    symbol: "<",
-  },
-  LTE: {
-    label: "Küçük veya Eşit",
-    shortLabel: "≤",
-    description: "Değer küçük veya eşit olmalı",
-    symbol: "≤",
-  },
-
-  IN: {
-    label: "İçinde",
-    shortLabel: "içinde",
-    description: "Değer listede bulunmalı",
-  },
-  NOT_IN: {
-    label: "İçinde Değil",
-    shortLabel: "içinde değil",
-    description: "Değer listede bulunmamalı",
-  },
-
-  BETWEEN: {
-    label: "Arasında",
-    shortLabel: "arasında",
-    description: "Değer belirtilen aralıkta olmalı",
-  },
-
-  CONTAINS: {
-    label: "İçerir",
-    shortLabel: "içerir",
-    description: "Metin belirtilen değeri içermeli",
-  },
-  NOT_CONTAINS: {
-    label: "İçermez",
-    shortLabel: "içermez",
-    description: "Metin belirtilen değeri içermemeli",
-  },
-  STARTS_WITH: {
-    label: "İle Başlar",
-    shortLabel: "ile başlar",
-    description: "Metin belirtilen değer ile başlamalı",
-  },
-  ENDS_WITH: {
-    label: "İle Biter",
-    shortLabel: "ile biter",
-    description: "Metin belirtilen değer ile bitmeli",
-  },
-  IS_EMPTY: {
-    label: "Boş",
-    shortLabel: "boş",
-    description: "Değer boş olmalı",
-  },
-  IS_NOT_EMPTY: {
-    label: "Boş Değil",
-    shortLabel: "boş değil",
-    description: "Değer boş olmamalı",
-  },
-
-  HAS_ANY: {
-    label: "Herhangi Birini İçerir",
-    shortLabel: "birini içerir",
-    description: "Belirtilen değerlerden en az birini içermeli",
-  },
-  HAS_ALL: {
-    label: "Hepsini İçerir",
-    shortLabel: "hepsini içerir",
-    description: "Belirtilen değerlerin tamamını içermeli",
-  },
-  HAS_NONE: {
-    label: "Hiçbirini İçermez",
-    shortLabel: "hiçbirini içermez",
-    description: "Belirtilen değerlerin hiçbirini içermemeli",
-  },
-  EXISTS: {
-    label: "Var",
-    shortLabel: "var",
-    description: "İlişki mevcut olmalı",
-  },
-  NOT_EXISTS: {
-    label: "Yok",
-    shortLabel: "yok",
-    description: "İlişki mevcut olmamalı",
-  },
-
-  IS_NULL: {
-    label: "Boş (Null)",
-    shortLabel: "null",
-    description: "Değer null olmalı",
-  },
-  IS_NOT_NULL: {
-    label: "Dolu (Not Null)",
-    shortLabel: "not null",
-    description: "Değer null olmamalı",
-  },
-
-  IS_TRUE: {
-    label: "Doğru",
-    shortLabel: "doğru",
-    description: "Değer true olmalı",
-  },
-  IS_FALSE: {
-    label: "Yanlış",
-    shortLabel: "yanlış",
-    description: "Değer false olmalı",
-  },
-
-  BEFORE: {
-    label: "Önce",
-    shortLabel: "önce",
-    description: "Tarih belirtilen tarihten önce olmalı",
-  },
-  AFTER: {
-    label: "Sonra",
-    shortLabel: "sonra",
-    description: "Tarih belirtilen tarihten sonra olmalı",
-  },
-  ON_DATE: {
-    label: "O Tarihte",
-    shortLabel: "tarihinde",
-    description: "Tarih belirtilen tarihte olmalı",
-  },
-  WITHIN_LAST: {
-    label: "Son ... İçinde",
-    shortLabel: "son ... içinde",
-    description: "Tarih son belirtilen süre içinde olmalı",
-  },
-  NOT_WITHIN_LAST: {
-    label: "Son ... İçinde Değil",
-    shortLabel: "son ... içinde değil",
-    description: "Tarih son belirtilen süre içinde olmamalı",
-  },
-  WITHIN_NEXT: {
-    label: "Gelecek ... İçinde",
-    shortLabel: "gelecek ... içinde",
-    description: "Tarih gelecek belirtilen süre içinde olmalı",
-  },
-  NOT_WITHIN_NEXT: {
-    label: "",
-    shortLabel: "",
-    description: "",
-    symbol: "",
-  },
-};
-
-export const getConditionOperatorLabel = (
-  operator: ConditionOperator
-): string => {
-  return CONDITION_OPERATOR_LABELS[operator]?.label ?? "Bilinmeyen";
-};
-
-export const getConditionOperatorShortLabel = (
-  operator: ConditionOperator
-): string => {
-  return CONDITION_OPERATOR_LABELS[operator]?.shortLabel ?? "?";
-};
-
-export const getConditionOperatorInfo = (operator: ConditionOperator) => {
-  return CONDITION_OPERATOR_LABELS[operator] ?? { label: "Bilinmeyen" };
-};
-
-type FieldType =
-  | "numeric"
-  | "date"
-  | "boolean"
-  | "enum"
-  | "relation"
-  | "string";
-
-const CUSTOMER_SEGMENT_FIELD_LABELS: Record<
-  CustomerGroupSmartFields,
-  { label: string; description: string; type: FieldType }
-> = {
-  ORDER_COUNT: {
-    label: "Sipariş Sayısı",
-    description: "Toplam sipariş adedi",
-    type: "numeric",
-  },
-  TOTAL_SPENT: {
-    label: "Toplam Harcama",
-    description: "Toplam harcanan tutar",
-    type: "numeric",
-  },
-  AVERAGE_ORDER_VALUE: {
-    label: "Ortalama Sipariş Tutarı",
-    description: "Ortalama sipariş değeri",
-    type: "numeric",
-  },
-
-  LAST_ORDER_DATE: {
-    label: "Son Sipariş Tarihi",
-    description: "En son sipariş verilen tarih",
-    type: "date",
-  },
-  FIRST_ORDER_DATE: {
-    label: "İlk Sipariş Tarihi",
-    description: "İlk sipariş verilen tarih",
-    type: "date",
-  },
-  CREATED_AT: {
-    label: "Kayıt Tarihi",
-    description: "Müşteri kayıt tarihi",
-    type: "date",
-  },
-  EMAIL_VERIFIED_AT: {
-    label: "E-posta Doğrulama Tarihi",
-    description: "E-posta doğrulama tarihi",
-    type: "date",
-  },
-  PHONE_VERIFIED_AT: {
-    label: "Telefon Doğrulama Tarihi",
-    description: "Telefon doğrulama tarihi",
-    type: "date",
-  },
-
-  IS_EMAIL_VERIFIED: {
-    label: "E-posta Doğrulandı",
-    description: "E-posta adresi doğrulandı mı",
-    type: "boolean",
-  },
-  IS_PHONE_VERIFIED: {
-    label: "Telefon Doğrulandı",
-    description: "Telefon numarası doğrulandı mı",
-    type: "boolean",
-  },
-  HAS_ORDERS: {
-    label: "Siparişi Var",
-    description: "En az bir siparişi var mı",
-    type: "boolean",
-  },
-  HAS_ADDRESS: {
-    label: "Adresi Var",
-    description: "Kayıtlı adresi var mı",
-    type: "boolean",
-  },
-
-  ACCOUNT_STATUS: {
-    label: "Hesap Durumu",
-    description: "Müşteri hesap durumu",
-    type: "enum",
-  },
-  REGISTRATION_SOURCE: {
-    label: "Kayıt Kaynağı",
-    description: "Müşterinin kayıt olduğu kaynak",
-    type: "enum",
-  },
-  SUBSCRIPTION_STATUS: {
-    label: "Abonelik Durumu",
-    description: "Bülten abonelik durumu",
-    type: "enum",
-  },
-
-  CUSTOMER_TAGS: {
-    label: "Müşteri Etiketleri",
-    description: "Müşteriye atanan etiketler",
-    type: "relation",
-  },
-  CUSTOMER_GROUPS: {
-    label: "Müşteri Grupları",
-    description: "Müşterinin dahil olduğu gruplar",
-    type: "relation",
-  },
-  PRICE_LIST: {
-    label: "Fiyat Listesi",
-    description: "Müşteriye atanan fiyat listesi",
-    type: "relation",
-  },
-
-  COUNTRY: {
-    label: "Ülke",
-    description: "Müşteri adresi ülkesi",
-    type: "string",
-  },
-  STATE: {
-    label: "İl/Eyalet",
-    description: "Müşteri adresi ili",
-    type: "string",
-  },
-  CITY: {
-    label: "İlçe/Şehir",
-    description: "Müşteri adresi ilçesi",
-    type: "string",
-  },
-  DISTRICT: {
-    label: "Mahalle/Semt",
-    description: "Müşteri adresi mahallesi",
-    type: "string",
-  },
-};
-
-export const getCustomerSegmentFieldLabel = (
-  field: CustomerGroupSmartFields
-): string => {
-  return CUSTOMER_SEGMENT_FIELD_LABELS[field]?.label ?? "Bilinmeyen";
-};
-
-export const getCustomerSegmentFieldInfo = (
-  field: CustomerGroupSmartFields
-) => {
-  return CUSTOMER_SEGMENT_FIELD_LABELS[field] ?? { label: "Bilinmeyen" };
-};
-
-const FULFILLMENT_CONDITION_FIELD_LABELS: Record<
-  FulfillmentConditionField,
-  { label: string; description: string; type: FieldType }
-> = {
-  CUSTOMER_TYPE: {
-    label: "Müşteri Tipi",
-    description: "Müşteri tipi (bireysel/kurumsal)",
-    type: "enum",
-  },
-  CUSTOMER_GROUP: {
-    label: "Müşteri Grubu",
-    description: "Müşterinin grubu",
-    type: "relation",
-  },
-
-  ORDER_TOTAL: {
-    label: "Sipariş Toplamı",
-    description: "Sipariş toplam tutarı",
-    type: "numeric",
-  },
-  ORDER_ITEM_COUNT: {
-    label: "Ürün Adedi",
-    description: "Siparişdeki toplam ürün sayısı",
-    type: "numeric",
-  },
-  ORDER_WEIGHT: {
-    label: "Sipariş Ağırlığı",
-    description: "Sipariş toplam ağırlığı",
-    type: "numeric",
-  },
-  ORDER_CURRENCY: {
-    label: "Para Birimi",
-    description: "Sipariş para birimi",
-    type: "enum",
-  },
-
-  PRODUCT_TAG: {
-    label: "Ürün Etiketi",
-    description: "Ürünlerin etiketleri",
-    type: "relation",
-  },
-  PRODUCT_CATEGORY: {
-    label: "Ürün Kategorisi",
-    description: "Ürünlerin kategorileri",
-    type: "relation",
-  },
-  PRODUCT_BRAND: {
-    label: "Ürün Markası",
-    description: "Ürünlerin markaları",
-    type: "relation",
-  },
-
-  SHIPPING_METHOD: {
-    label: "Kargo Yöntemi",
-    description: "Seçilen kargo yöntemi",
-    type: "relation",
-  },
-  DESTINATION_COUNTRY: {
-    label: "Hedef Ülke",
-    description: "Teslimat adresi ülkesi",
-    type: "string",
-  },
-  DESTINATION_STATE: {
-    label: "Hedef İl",
-    description: "Teslimat adresi ili",
-    type: "string",
-  },
-  DESTINATION_CITY: {
-    label: "Hedef İlçe",
-    description: "Teslimat adresi ilçesi",
-    type: "string",
-  },
-
-  DAY_OF_WEEK: {
-    label: "Haftanın Günü",
-    description: "Siparişin verildiği gün",
-    type: "enum",
-  },
-  TIME_OF_DAY: {
-    label: "Günün Saati",
-    description: "Siparişin verildiği saat aralığı",
-    type: "string",
-  },
-  IS_HOLIDAY: {
-    label: "Tatil Günü",
-    description: "Resmi tatil günü mü",
-    type: "boolean",
-  },
-  STOCK_LEVEL: {
-    label: "",
-    description: "",
-    type: "string",
-  },
-  LOCATION_TYPE: {
-    label: "",
-    description: "",
-    type: "string",
-  },
-  SUPPLIER_LEAD_TIME: {
-    label: "",
-    description: "",
-    type: "string",
-  },
-};
-
-export const getFulfillmentConditionFieldLabel = (
-  field: FulfillmentConditionField
-): string => {
-  return FULFILLMENT_CONDITION_FIELD_LABELS[field]?.label ?? "Bilinmeyen";
-};
-
-export const getFulfillmentConditionFieldInfo = (
-  field: FulfillmentConditionField
-) => {
-  return FULFILLMENT_CONDITION_FIELD_LABELS[field] ?? { label: "Bilinmeyen" };
-};
-
-const TIME_UNIT_LABELS: Record<
-  TimeUnit,
-  { label: string; pluralLabel: string; shortLabel: string }
-> = {
-  MINUTES: {
-    label: "Dakika",
-    pluralLabel: "Dakika",
-    shortLabel: "dk",
-  },
-  HOURS: {
-    label: "Saat",
-    pluralLabel: "Saat",
-    shortLabel: "sa",
-  },
-  DAYS: {
-    label: "Gün",
-    pluralLabel: "Gün",
-    shortLabel: "gün",
-  },
-  WEEKS: {
-    label: "Hafta",
-    pluralLabel: "Hafta",
-    shortLabel: "hf",
-  },
-  MONTHS: {
-    label: "Ay",
-    pluralLabel: "Ay",
-    shortLabel: "ay",
-  },
-  YEARS: {
-    label: "Yıl",
-    pluralLabel: "Yıl",
-    shortLabel: "yıl",
-  },
-};
-
-export const getTimeUnitLabel = (unit: TimeUnit): string => {
-  return TIME_UNIT_LABELS[unit]?.label ?? "Bilinmeyen";
-};
-
-export const getTimeUnitShortLabel = (unit: TimeUnit): string => {
-  return TIME_UNIT_LABELS[unit]?.shortLabel ?? "?";
-};
-
-export const getTimeUnitInfo = (unit: TimeUnit) => {
-  return TIME_UNIT_LABELS[unit] ?? { label: "Bilinmeyen" };
-};
-
-export const getEnumOptions = <T extends string>(
-  labels: Record<T, { label: string }>
-): Array<{ value: T; label: string }> => {
-  return Object.entries(labels).map(([value, info]) => ({
-    value: value as T,
-    label: (info as { label: string }).label,
-  }));
-};
-
-export const fulfillmentDecisionTypeOptions = getEnumOptions(
-  FULFILLMENT_DECISION_TYPE_LABELS
-);
-export const logicalOperatorOptions = getEnumOptions(LOGICAL_OPERATOR_LABELS);
-export const conditionOperatorOptions = getEnumOptions(
-  CONDITION_OPERATOR_LABELS
-);
-export const customerSegmentFieldOptions = getEnumOptions(
-  CUSTOMER_SEGMENT_FIELD_LABELS
-);
-export const fulfillmentConditionFieldOptions = getEnumOptions(
-  FULFILLMENT_CONDITION_FIELD_LABELS
-);
-
-export const timeUnitOptions = getEnumOptions(TIME_UNIT_LABELS);
-
-const OPERATORS_BY_FIELD_TYPE: Record<FieldType, ConditionOperator[]> = {
-  numeric: ["EQ", "NEQ", "GT", "GTE", "LT", "LTE", "BETWEEN"],
-  string: [
-    "EQ",
-    "NEQ",
-    "CONTAINS",
-    "NOT_CONTAINS",
-    "STARTS_WITH",
-    "ENDS_WITH",
-    "IS_EMPTY",
-    "IS_NOT_EMPTY",
-    "IN",
-    "NOT_IN",
-  ],
-  date: [
-    "EQ",
-    "BEFORE",
-    "AFTER",
-    "ON_DATE",
-    "BETWEEN",
-    "WITHIN_LAST",
-    "NOT_WITHIN_LAST",
-    "WITHIN_NEXT",
-    "IS_NULL",
-    "IS_NOT_NULL",
-  ],
-  boolean: ["IS_TRUE", "IS_FALSE", "IS_NULL", "IS_NOT_NULL"],
-  enum: ["EQ", "NEQ", "IN", "NOT_IN", "IS_NULL", "IS_NOT_NULL"],
-  relation: ["HAS_ANY", "HAS_ALL", "HAS_NONE", "EXISTS", "NOT_EXISTS"],
-};
-
-export const getOperatorsForFieldType = (
-  fieldType: FieldType
-): Array<{ value: ConditionOperator; label: string; shortLabel: string }> => {
-  const operators = OPERATORS_BY_FIELD_TYPE[fieldType] || [];
-  return operators.map((op) => ({
-    value: op,
-    label: CONDITION_OPERATOR_LABELS[op].label,
-    shortLabel: CONDITION_OPERATOR_LABELS[op].shortLabel,
-  }));
-};
-
-export const getOperatorsForCustomerSegmentField = (
-  field: CustomerGroupSmartFields
-) => {
-  const fieldInfo = CUSTOMER_SEGMENT_FIELD_LABELS[field];
-  return getOperatorsForFieldType(fieldInfo?.type || "string");
-};
-
-export const getOperatorsForFulfillmentConditionField = (
-  field: FulfillmentConditionField
-) => {
-  const fieldInfo = FULFILLMENT_CONDITION_FIELD_LABELS[field];
-  return getOperatorsForFieldType(fieldInfo?.type || "string");
-};
-
-const REGISTRATION_SOURCE: Record<
-  RegistrationSource,
-  { label: string; color: string }
-> = {
-  ADMIN_PANEL: { label: "Yönetim Paneli", color: "blue.6" },
-  WEB_REGISTER: { label: "Web Sitesi", color: "green.6" },
-  API: { label: "API", color: "cyan.6" },
-  CHECKOUT_GUEST: { label: "Misafir Ödeme", color: "teal.6" },
-  IMPORT_EXCEL: { label: "Excel İçe Aktarma", color: "orange.6" },
-  PROVIDER_OAUTH: { label: "OAuth Sağlayıcı", color: "pink.6" },
-};
-
-export const getRegistrationSourceLabel = (
-  source: RegistrationSource
-): string => {
-  return REGISTRATION_SOURCE[source]?.label || "Bilinmeyen";
-};
-
-export const getRegistrationSourceColor = (
-  source: RegistrationSource
-): string => {
-  return REGISTRATION_SOURCE[source]?.color || "gray.6";
-};
-
-const FulfillmentFieldLabels: Record<
-  FulfillmentConditionField,
+const fulfillmentStrategyTypesConfigs: Record<
+  FullfillmentStrategyType,
   { label: string }
 > = {
-  ORDER_TOTAL: { label: "Sipariş Tutarı" },
-  ORDER_ITEM_COUNT: { label: "Ürün Adedi" },
-  ORDER_WEIGHT: { label: "Sipariş Ağırlığı (kg)" },
-  ORDER_CURRENCY: { label: "Para Birimi" },
-  DESTINATION_COUNTRY: { label: "Hedef Ülke" },
-  DESTINATION_STATE: { label: "Hedef Eyalet/İl" },
-  DESTINATION_CITY: { label: "Hedef Şehir" },
-  PRODUCT_TAG: { label: "Ürün Etiketi" },
-  PRODUCT_CATEGORY: { label: "Ürün Kategorisi" },
-  PRODUCT_BRAND: { label: "Ürün Markası" },
-  CUSTOMER_TYPE: { label: "Müşteri Tipi" },
-  CUSTOMER_GROUP: { label: "Müşteri Grubu" },
-  SHIPPING_METHOD: { label: "Kargo Yöntemi" },
-  DAY_OF_WEEK: { label: "Haftanın Günü" },
-  TIME_OF_DAY: { label: "Günün Saati" },
-  IS_HOLIDAY: { label: "Tatil Günü" },
-  STOCK_LEVEL: {
-    label: "Stok Seviyesi",
+  COST_OPTIMAL: {
+    label: 'Maliyet Optimizasyonu',
   },
-  LOCATION_TYPE: {
-    label: "Lokasyon Türü",
+  LOAD_BALANCE: {
+    label: 'Yük Dengeleme',
   },
-  SUPPLIER_LEAD_TIME: {
-    label: "Tedarikçi Teslim Süresi",
+  MANUAL: {
+    label: 'Manuel',
   },
-};
-
-export const getFulfillmentFieldLabel = (
-  field: FulfillmentConditionField
-): string => {
-  return (
-    FulfillmentFieldLabels[field]?.label ||
-    getFulfillmentConditionFieldLabel(field)
-  );
-};
-
-const FulfillmentActionLabels: Record<
-  FulfillmentActionType,
-  { label: string }
-> = {
-  USE_LOCATION: { label: "Lokasyon Kullan" },
-  EXCLUDE_LOCATION: { label: "Lokasyon Hariç Tut" },
-  PREFER_LOCATION: { label: "Öncelikli Lokasyon" },
-  ALLOW_SPLIT: { label: "Bölünmüş Gönderime İzin Ver" },
-  DENY_SPLIT: { label: "Bölünmüş Gönderimi Engelle" },
-  USE_DROPSHIP: { label: "Dropship Kullan" },
-  BACKORDER: { label: "Ön Siparişe Al" },
-  REJECT: { label: "Siparişi Reddet" },
-  FLAG_FOR_REVIEW: {
-    label: "Manuel İncelemeye Gönder",
+  PROXIMITY: {
+    label: 'Yakınlık',
   },
-};
-
-export const getFulfillmentActionLabel = (
-  action: FulfillmentActionType
-): string => {
-  return FulfillmentActionLabels[action]?.label || "Bilinmeyen İşlem Türü";
-};
-
-const fullfillmentStrategyTypeConfigs: Record<
-  FulfillmentStrategyType,
-  { label: string }
-> = {
-  COST_OPTIMAL: { label: "Maliyet Optimizasyonu" },
-  LOAD_BALANCE: { label: "Yük Dengeleme" },
-  MANUAL: { label: "Manuel Müdahale" },
-  PROXIMITY: { label: "Yakınlık Bazlı" },
-  STOCK_PRIORITY: { label: "Stok Önceliği" },
+  STOCK_PRIORITY: {
+    label: 'Stok Önceliği',
+  },
 };
 
 export const getFulfillmentStrategyTypeLabel = (
-  type: FulfillmentStrategyType
+  type: FullfillmentStrategyType,
 ): string => {
-  return fullfillmentStrategyTypeConfigs[type]?.label || "Bilinmeyen";
+  return fulfillmentStrategyTypesConfigs[type]?.label || 'Bilinmeyen';
 };

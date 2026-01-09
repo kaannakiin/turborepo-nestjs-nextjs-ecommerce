@@ -1,5 +1,5 @@
-"use client";
-import GlobalDropzone from "@/components/GlobalDropzone";
+'use client';
+import GlobalDropzone from '@/components/GlobalDropzone';
 import {
   ActionIcon,
   Avatar,
@@ -22,7 +22,7 @@ import {
   TextInput,
   UnstyledButton,
   useCombobox,
-} from "@mantine/core";
+} from '@mantine/core';
 import {
   Control,
   Controller,
@@ -31,22 +31,21 @@ import {
   SubmitHandler,
   useFieldArray,
   useForm,
-  useQuery,
   useWatch,
   zodResolver,
-} from "@repo/shared";
-import { VariantGroupSchema, VariantGroupZodType } from "@repo/types";
+} from '@repo/shared';
+import { VariantGroupSchema, VariantGroupZodType } from '@repo/types';
 import {
   IconChevronDown,
   IconDotsVertical,
   IconEdit,
   IconPlus,
   IconTrash,
-} from "@tabler/icons-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import classes from "./RadioCard.module.css";
+} from '@tabler/icons-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import classes from './RadioCard.module.css';
 
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
 import {
   closestCenter,
   DndContext,
@@ -55,30 +54,32 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-} from "@dnd-kit/core";
+} from '@dnd-kit/core';
 import {
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { useDeleteOptionAsset, useGetVariants } from '@hooks/admin/useProducts';
 import {
   VariantGroupRenderType,
   VariantGroupType,
-} from "@repo/database/client";
-import CreatableSelect from "./CreatableSelect";
+} from '@repo/database/client';
+import CreatableSelect from './CreatableSelect';
 
-interface VariantGroupDrawerProps
-  extends Pick<DrawerProps, "opened" | "onClose"> {
+interface VariantGroupDrawerProps extends Pick<
+  DrawerProps,
+  'opened' | 'onClose'
+> {
   onSubmit: SubmitHandler<VariantGroupZodType>;
   defaultValues?: VariantGroupZodType;
   errorMessage?: string;
 }
 
-type VariantOption = VariantGroupZodType["options"][number];
-type DeletedVariant = Omit<VariantOption, "id">;
+type VariantOption = VariantGroupZodType['options'][number];
+type DeletedVariant = Omit<VariantOption, 'id'>;
 
 interface SortableVariantItemProps {
   id: string;
@@ -138,7 +139,7 @@ const SortableVariantItem = ({
   });
 
   const getImageUrl = () => {
-    if (fieldFile && typeof fieldFile !== "string") {
+    if (fieldFile && typeof fieldFile !== 'string') {
       return URL.createObjectURL(fieldFile);
     }
     return fieldExistingFile || null;
@@ -147,7 +148,7 @@ const SortableVariantItem = ({
   const imageUrl = getImageUrl();
 
   const renderVisual = () => {
-    if (type === "COLOR") {
+    if (type === 'COLOR') {
       if (imageUrl) {
         return <Avatar src={imageUrl} size="sm" radius="xs" />;
       } else if (fieldHexValue) {
@@ -160,24 +161,24 @@ const SortableVariantItem = ({
   return (
     <div ref={setNodeRef} style={style}>
       <Group
-        gap={"xs"}
+        gap={'xs'}
         align="center"
         justify="space-between"
-        bg={"gray.1"}
+        bg={'gray.1'}
         p="xs"
         style={{
-          borderRadius: "8px",
-          cursor: isDragging ? "grabbing" : "default",
+          borderRadius: '8px',
+          cursor: isDragging ? 'grabbing' : 'default',
         }}
       >
-        <Group gap={"xs"} align="center">
+        <Group gap={'xs'} align="center">
           <Group gap="xs">
             <ActionIcon
               variant="transparent"
-              size={"lg"}
-              c={"admin"}
+              size={'lg'}
+              c={'admin'}
               color="admin"
-              style={{ cursor: "grab" }}
+              style={{ cursor: 'grab' }}
               {...attributes}
               {...listeners}
             >
@@ -195,16 +196,16 @@ const SortableVariantItem = ({
                   {...field}
                   error={fieldState.error?.message}
                   onChange={(value) => {
-                    if (value.currentTarget.value !== "") {
+                    if (value.currentTarget.value !== '') {
                       field.onChange(value.currentTarget.value);
                     }
                   }}
                   variant="filled"
-                  c={"admin"}
+                  c={'admin'}
                   autoFocus
                   onBlur={() => setIsEditing(false)}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === "Escape") {
+                    if (event.key === 'Enter' || event.key === 'Escape') {
                       setIsEditing(false);
                     }
                   }}
@@ -214,26 +215,26 @@ const SortableVariantItem = ({
           ) : (
             <Text
               style={{
-                cursor: "pointer",
+                cursor: 'pointer',
                 flex: 1,
-                padding: "8px 12px",
-                borderRadius: "4px",
-                minHeight: "36px",
-                display: "flex",
-                alignItems: "center",
+                padding: '8px 12px',
+                borderRadius: '4px',
+                minHeight: '36px',
+                display: 'flex',
+                alignItems: 'center',
               }}
               onDoubleClick={() => setIsEditing(true)}
             >
-              {fieldTranslations?.[0]?.name || ""}
+              {fieldTranslations?.[0]?.name || ''}
             </Text>
           )}
         </Group>
-        <Group gap={"md"} align="center" justify="flex-end">
-          {type === "COLOR" && (
+        <Group gap={'md'} align="center" justify="flex-end">
+          {type === 'COLOR' && (
             <ActionIcon
-              size={"sm"}
-              variant={"transparent"}
-              color={"admin"}
+              size={'sm'}
+              variant={'transparent'}
+              color={'admin'}
               onClick={onEdit}
             >
               <IconEdit />
@@ -249,9 +250,9 @@ const SortableVariantItem = ({
           >
             <Popover.Target>
               <ActionIcon
-                size={"sm"}
-                variant={"transparent"}
-                color={"admin"}
+                size={'sm'}
+                variant={'transparent'}
+                color={'admin'}
                 onClick={() => setDeletePopoverOpened(true)}
               >
                 <IconTrash />
@@ -291,11 +292,13 @@ const VariantGroupDrawer = ({
   defaultValues,
   errorMessage,
 }: VariantGroupDrawerProps) => {
+  const deleteOptionAssetMutation = useDeleteOptionAsset();
+
   const [variantError, setVariantError] = useState<string | null>(null);
   const optionCombobox = useCombobox({
     onDropdownClose: () => optionCombobox.resetSelectedOption(),
   });
-  const [variantName, setVariantName] = useState<string>("");
+  const [variantName, setVariantName] = useState<string>('');
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedVariantOptionModal, setSelectedVariantOptionModal] = useState<
     string | null
@@ -304,30 +307,18 @@ const VariantGroupDrawer = ({
 
   const [deletedVariants, setDeletedVariants] = useState<DeletedVariant[]>([]);
 
-  const { data: allVariants, isLoading } = useQuery({
-    queryKey: ["variants"],
-    queryFn: async (): Promise<VariantGroupZodType[]> => {
-      const response = await fetchWrapper.get<VariantGroupZodType[]>(
-        `/admin/products/variants`
-      );
-      if (!response.success) {
-        throw new Error("Failed to fetch variants");
-      }
-
-      return response.data;
-    },
-  });
+  const { data: allVariants, isLoading } = useGetVariants();
 
   const initialValues: VariantGroupZodType = {
-    type: "LIST",
+    type: 'LIST',
     uniqueId: createId(),
     options: [],
-    renderVisibleType: "DROPDOWN",
+    renderVisibleType: 'DROPDOWN',
     translations: [
       {
-        locale: "TR",
-        name: "",
-        slug: "",
+        locale: 'TR',
+        name: '',
+        slug: '',
       },
     ],
   };
@@ -353,15 +344,15 @@ const VariantGroupDrawer = ({
       reset(initialValues);
     }
     setDeletedVariants([]);
-    setVariantName("");
+    setVariantName('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opened]);
 
-  const type = watch("type") || "LIST";
-  const uniqueId = watch("uniqueId");
+  const type = watch('type') || 'LIST';
+  const uniqueId = watch('uniqueId');
   const { fields, append, remove, move } = useFieldArray({
     control,
-    name: "options",
+    name: 'options',
   });
 
   const sensors = useSensors(
@@ -372,7 +363,7 @@ const VariantGroupDrawer = ({
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const handleAddVariant = () => {
@@ -382,18 +373,18 @@ const VariantGroupDrawer = ({
     const trimmedSlug = slugify(trimmedName);
 
     const existsInForm = fields.some((field) => {
-      const slug = field.translations?.find((t) => t.locale === "TR")?.slug;
+      const slug = field.translations?.find((t) => t.locale === 'TR')?.slug;
       return slug === trimmedSlug;
     });
 
     if (existsInForm) {
-      setVariantError("Bu varyant zaten eklendi");
+      setVariantError('Bu varyant zaten eklendi');
       setTimeout(() => setVariantError(null), 2000);
       return;
     }
 
     const existingOption = existingGroupOptions.find((opt) => {
-      const slug = opt.translations?.find((t) => t.locale === "TR")?.slug;
+      const slug = opt.translations?.find((t) => t.locale === 'TR')?.slug;
       return slug === trimmedSlug;
     });
 
@@ -401,7 +392,7 @@ const VariantGroupDrawer = ({
       append({
         uniqueId: existingOption.uniqueId,
         translations: existingOption.translations,
-        hexValue: existingOption.hexValue || "#000000",
+        hexValue: existingOption.hexValue || '#000000',
         file: null,
         existingFile: existingOption.existingFile,
       });
@@ -411,17 +402,17 @@ const VariantGroupDrawer = ({
         translations: [
           {
             name: trimmedName,
-            locale: "TR",
+            locale: 'TR',
             slug: trimmedSlug,
           },
         ],
-        hexValue: "#000000",
+        hexValue: '#000000',
         file: null,
         existingFile: null,
       });
     }
 
-    setVariantName("");
+    setVariantName('');
     setVariantError(null);
 
     setTimeout(() => {
@@ -434,7 +425,7 @@ const VariantGroupDrawer = ({
     if (!existing) return;
 
     if (addedOptionIds.has(existing.uniqueId)) {
-      setVariantError("Bu varyant zaten eklendi");
+      setVariantError('Bu varyant zaten eklendi');
       setTimeout(() => setVariantError(null), 2000);
       return;
     }
@@ -442,12 +433,12 @@ const VariantGroupDrawer = ({
     append({
       uniqueId: existing.uniqueId,
       translations: existing.translations,
-      hexValue: existing.hexValue || "#000000",
+      hexValue: existing.hexValue || '#000000',
       file: null,
       existingFile: existing.existingFile,
     });
 
-    setVariantName("");
+    setVariantName('');
     setVariantError(null);
 
     setTimeout(() => {
@@ -525,7 +516,7 @@ const VariantGroupDrawer = ({
     const trimmed = variantName.trim();
     if (!trimmed) {
       return existingGroupOptions.filter(
-        (opt) => !addedOptionIds.has(opt.uniqueId)
+        (opt) => !addedOptionIds.has(opt.uniqueId),
       );
     }
 
@@ -535,8 +526,8 @@ const VariantGroupDrawer = ({
     return existingGroupOptions.filter((opt) => {
       if (addedOptionIds.has(opt.uniqueId)) return false;
 
-      const name = opt.translations?.find((t) => t.locale === "TR")?.name || "";
-      const slug = opt.translations?.find((t) => t.locale === "TR")?.slug || "";
+      const name = opt.translations?.find((t) => t.locale === 'TR')?.name || '';
+      const slug = opt.translations?.find((t) => t.locale === 'TR')?.slug || '';
 
       return (
         name.toLowerCase().includes(trimmedLower) || slug.includes(trimmedSlug)
@@ -550,18 +541,18 @@ const VariantGroupDrawer = ({
     const trimmedSlug = slugify(variantName.trim());
 
     const inForm = fields.find((f) => {
-      const slug = f.translations?.find((t) => t.locale === "TR")?.slug;
+      const slug = f.translations?.find((t) => t.locale === 'TR')?.slug;
       return slug === trimmedSlug;
     });
 
-    if (inForm) return { type: "form" as const, option: inForm };
+    if (inForm) return { type: 'form' as const, option: inForm };
 
     const inDb = existingGroupOptions.find((opt) => {
-      const slug = opt.translations?.find((t) => t.locale === "TR")?.slug;
+      const slug = opt.translations?.find((t) => t.locale === 'TR')?.slug;
       return slug === trimmedSlug;
     });
 
-    if (inDb) return { type: "db" as const, option: inDb };
+    if (inDb) return { type: 'db' as const, option: inDb };
 
     return null;
   }, [variantName, fields, existingGroupOptions]);
@@ -573,43 +564,43 @@ const VariantGroupDrawer = ({
         opened={opened}
         onClose={onClose}
         position="right"
-        size={"lg"}
+        size={'lg'}
         closeOnClickOutside={!selectedVariantOptionModal}
         closeOnEscape={!selectedVariantOptionModal}
       >
         <Drawer.Overlay />
         <Drawer.Content>
           <Drawer.Header>
-            <Drawer.Title fw={700} fz={"lg"}>
+            <Drawer.Title fw={700} fz={'lg'}>
               Varyant
             </Drawer.Title>
 
-            <Group gap={"md"}>
+            <Group gap={'md'}>
               <Button variant="outline" color="gray" onClick={onClose}>
                 Vazgeç
               </Button>
               <Button
                 variant="filled"
                 onClick={() => {
-                  if (!uniqueId || uniqueId === "") {
-                    setValue("uniqueId", createId());
+                  if (!uniqueId || uniqueId === '') {
+                    setValue('uniqueId', createId());
                   }
                   handleSubmit(onSubmit)();
                 }}
               >
-                {defaultValues ? "Güncelle" : "Kaydet"}
+                {defaultValues ? 'Güncelle' : 'Kaydet'}
               </Button>
             </Group>
           </Drawer.Header>
           <Drawer.Body>
-            <Stack gap={"lg"}>
+            <Stack gap={'lg'}>
               <Controller
                 control={control}
                 name="translations.0.name"
                 render={({ field, fieldState }) => (
                   <CreatableSelect
                     {...field}
-                    value={field.value || ""}
+                    value={field.value || ''}
                     onChange={field.onChange}
                     reset={reset}
                     setValue={setValue}
@@ -622,7 +613,7 @@ const VariantGroupDrawer = ({
                 )}
               />
               {errorMessage && <InputError>{errorMessage}</InputError>}
-              <Stack gap={"xs"}>
+              <Stack gap={'xs'}>
                 <Controller
                   control={control}
                   name="type"
@@ -637,17 +628,17 @@ const VariantGroupDrawer = ({
                         label="Seçim Stili"
                         withAsterisk
                       >
-                        <SimpleGrid cols={{ xs: 1, sm: 2 }} pt={"2px"}>
+                        <SimpleGrid cols={{ xs: 1, sm: 2 }} pt={'2px'}>
                           <Radio.Card
                             value={VariantGroupType.LIST}
                             className={classes.root}
                             radius="md"
                           >
-                            <Group wrap="nowrap" gap={"xs"} align="flex-start">
-                              <Radio.Indicator c={"admin"} color="admin" />
-                              <Stack gap={"xs"}>
+                            <Group wrap="nowrap" gap={'xs'} align="flex-start">
+                              <Radio.Indicator c={'admin'} color="admin" />
+                              <Stack gap={'xs'}>
                                 <Text className={classes.label}>Liste</Text>
-                                <Group gap={"xs"}>
+                                <Group gap={'xs'}>
                                   <Badge
                                     variant="light"
                                     size="xl"
@@ -683,13 +674,13 @@ const VariantGroupDrawer = ({
                             color="admin"
                             c="admin"
                           >
-                            <Group wrap="nowrap" gap={"xs"} align="flex-start">
-                              <Radio.Indicator c={"admin"} color="admin" />
-                              <Stack gap={"xs"}>
+                            <Group wrap="nowrap" gap={'xs'} align="flex-start">
+                              <Radio.Indicator c={'admin'} color="admin" />
+                              <Stack gap={'xs'}>
                                 <Text className={classes.label}>
                                   Renk/Görsel
                                 </Text>
-                                <Group gap={"xs"}>
+                                <Group gap={'xs'}>
                                   <ColorSwatch color="gray" />
                                   <ColorSwatch color="white" />
                                 </Group>
@@ -716,19 +707,19 @@ const VariantGroupDrawer = ({
                       withAsterisk
                       mt="md"
                     >
-                      <SimpleGrid cols={{ xs: 1, sm: 2 }} pt={"2px"}>
+                      <SimpleGrid cols={{ xs: 1, sm: 2 }} pt={'2px'}>
                         <Radio.Card
                           value={VariantGroupRenderType.BADGE}
                           className={classes.root}
                           radius="md"
                         >
-                          <Group wrap="nowrap" gap={"xs"} align="flex-start">
-                            <Radio.Indicator c={"admin"} color="admin" />
-                            <Stack gap={"xs"}>
+                          <Group wrap="nowrap" gap={'xs'} align="flex-start">
+                            <Radio.Indicator c={'admin'} color="admin" />
+                            <Stack gap={'xs'}>
                               <Text className={classes.label}>
                                 Buton/Etiket (Badge)
                               </Text>
-                              <Group gap={"xs"}>
+                              <Group gap={'xs'}>
                                 <Badge
                                   variant="light"
                                   size="md"
@@ -765,19 +756,19 @@ const VariantGroupDrawer = ({
                           className={classes.root}
                           radius="md"
                         >
-                          <Group wrap="nowrap" gap={"xs"} align="flex-start">
-                            <Radio.Indicator c={"admin"} color="admin" />
-                            <Stack gap={"xs"}>
+                          <Group wrap="nowrap" gap={'xs'} align="flex-start">
+                            <Radio.Indicator c={'admin'} color="admin" />
+                            <Stack gap={'xs'}>
                               <Text className={classes.label}>
                                 Açılır Liste (Dropdown)
                               </Text>
                               <Group
-                                gap={"xs"}
+                                gap={'xs'}
                                 style={{
                                   border:
-                                    "1px solid var(--mantine-color-gray-3)",
-                                  borderRadius: "4px",
-                                  padding: "4px 8px",
+                                    '1px solid var(--mantine-color-gray-3)',
+                                  borderRadius: '4px',
+                                  padding: '4px 8px',
                                 }}
                               >
                                 <Text size="sm" color="gray.6">
@@ -786,7 +777,7 @@ const VariantGroupDrawer = ({
                                 <IconChevronDown
                                   size={16}
                                   color="var(--mantine-color-gray-6)"
-                                  style={{ marginLeft: "auto" }}
+                                  style={{ marginLeft: 'auto' }}
                                 />
                               </Group>
                               <Text size="xs" c="gray.6">
@@ -804,7 +795,7 @@ const VariantGroupDrawer = ({
               <Combobox
                 store={optionCombobox}
                 onOptionSubmit={(val) => {
-                  if (val === "$create") {
+                  if (val === '$create') {
                     handleAddVariant();
                   } else {
                     handleSelectExistingOption(val);
@@ -816,10 +807,10 @@ const VariantGroupDrawer = ({
                   <TextInput
                     ref={inputRef}
                     labelProps={{
-                      className: "w-full",
+                      className: 'w-full',
                     }}
                     label={
-                      <Group justify="space-between" my={"xs"}>
+                      <Group justify="space-between" my={'xs'}>
                         <Text>
                           Varyantlar <span className="text-red-500">*</span>
                         </Text>
@@ -900,7 +891,7 @@ const VariantGroupDrawer = ({
                     onFocus={() => optionCombobox.openDropdown()}
                     onBlur={() => optionCombobox.closeDropdown()}
                     onKeyDown={(event) => {
-                      if (event.key === "Enter") {
+                      if (event.key === 'Enter') {
                         event.preventDefault();
                         handleAddVariant();
                         optionCombobox.closeDropdown();
@@ -923,8 +914,8 @@ const VariantGroupDrawer = ({
                       <Combobox.Group label="Mevcut Seçenekler">
                         {optionSuggestions.map((opt) => {
                           const name =
-                            opt.translations?.find((t) => t.locale === "TR")
-                              ?.name || "";
+                            opt.translations?.find((t) => t.locale === 'TR')
+                              ?.name || '';
                           return (
                             <Combobox.Option
                               key={opt.uniqueId}
@@ -956,7 +947,7 @@ const VariantGroupDrawer = ({
 
                     {!isLoading &&
                       variantName.trim() &&
-                      exactOptionMatch?.type === "db" &&
+                      exactOptionMatch?.type === 'db' &&
                       !addedOptionIds.has(exactOptionMatch.option.uniqueId) && (
                         <Combobox.Option
                           value={exactOptionMatch.option.uniqueId}
@@ -971,7 +962,7 @@ const VariantGroupDrawer = ({
                             <span>
                               {
                                 exactOptionMatch.option.translations?.find(
-                                  (t) => t.locale === "TR"
+                                  (t) => t.locale === 'TR',
                                 )?.name
                               }
                             </span>
@@ -984,7 +975,7 @@ const VariantGroupDrawer = ({
 
                     {!isLoading &&
                       variantName.trim() &&
-                      exactOptionMatch?.type === "form" && (
+                      exactOptionMatch?.type === 'form' && (
                         <Combobox.Option value="" disabled>
                           <Text size="sm" c="red">
                             Bu varyant zaten eklendi
@@ -1021,7 +1012,7 @@ const VariantGroupDrawer = ({
                   items={fields.map((field) => field.id)}
                   strategy={verticalListSortingStrategy}
                 >
-                  <Stack gap={"xs"}>
+                  <Stack gap={'xs'}>
                     {fields.map((field, index) => (
                       <SortableVariantItem
                         key={field.id}
@@ -1043,16 +1034,16 @@ const VariantGroupDrawer = ({
 
       {selectedVariantOptionModal !== null && selectedVariantIndex !== -1 && (
         <Modal
-          size={"lg"}
+          size={'lg'}
           opened={selectedVariantOptionModal !== null}
           onClose={() => setSelectedVariantOptionModal(null)}
           centered
           title="Varyant Seçeneği Düzenle"
           classNames={{
-            title: "font-semibold text-lg",
+            title: 'font-semibold text-lg',
           }}
         >
-          <Tabs defaultValue={"color"}>
+          <Tabs defaultValue={'color'}>
             <Tabs.List grow>
               <Tabs.Tab value="color">Renk</Tabs.Tab>
               <Tabs.Tab value="image">Görsel</Tabs.Tab>
@@ -1067,12 +1058,12 @@ const VariantGroupDrawer = ({
                     onChangeEnd={(value) => {
                       onChange(value);
                     }}
-                    value={field.value || "#ab7676"}
+                    value={field.value || '#ab7676'}
                     withPicker
                     error={fieldState.error?.message}
                     variant="filled"
                     label="Renk"
-                    c={"admin"}
+                    c={'admin'}
                   />
                 )}
               />
@@ -1083,7 +1074,7 @@ const VariantGroupDrawer = ({
                 name={`options.${selectedVariantIndex}.file`}
                 render={({ field, fieldState }) => (
                   <GlobalDropzone
-                    accept={"IMAGE"}
+                    accept={'IMAGE'}
                     onDrop={(files) => {
                       field.onChange(files[0]);
                     }}
@@ -1092,27 +1083,25 @@ const VariantGroupDrawer = ({
                         ? [
                             {
                               url: fields[selectedVariantIndex].existingFile,
-                              type: "IMAGE",
+                              type: 'IMAGE',
                             },
                           ]
                         : []
                     }
                     existingImagesDelete={async (imageUrl) => {
-                      const fetchRes = await fetchWrapper.delete(
-                        `/admin/products/delete-option-asset/${encodeURIComponent(imageUrl)}`
-                      );
-                      if (!fetchRes.success) {
-                        console.warn("Görsel silinirken bir hata oluştu.");
-                      } else {
-                        const currentOptions = watch("options");
+                      try {
+                        await deleteOptionAssetMutation.mutateAsync(imageUrl);
+                        const currentOptions = watch('options');
                         const updatedOptions = [...currentOptions];
                         updatedOptions[selectedVariantIndex] = {
                           ...updatedOptions[selectedVariantIndex],
                           existingFile: null,
                         };
-                        setValue("options", updatedOptions, {
+                        setValue('options', updatedOptions, {
                           shouldDirty: true,
                         });
+                      } catch (error) {
+                        console.warn('Görsel silinirken bir hata oluştu.');
                       }
                     }}
                     {...field}

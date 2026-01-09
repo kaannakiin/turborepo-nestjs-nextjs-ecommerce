@@ -34,7 +34,7 @@ const MobileAssetViewer = ({ assets }: MobileAssetViewerProps) => {
   }
 
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <Swiper
         modules={[Pagination]}
         spaceBetween={0}
@@ -42,23 +42,23 @@ const MobileAssetViewer = ({ assets }: MobileAssetViewerProps) => {
         pagination={{
           clickable: true,
           bulletClass: "swiper-pagination-bullet !bg-gray-300 !opacity-100",
-          bulletActiveClass: "!bg-black !w-4 !rounded-full",
+          bulletActiveClass: "!bg-black !w-6 !rounded-full",
         }}
         onSlideChange={(swiper: SwiperType) =>
           setActiveIndex(swiper.activeIndex)
         }
-        className="rounded-lg overflow-hidden"
+        className="mobile-asset-viewer"
       >
         {assets.map((asset, index) => {
           const isVideo = asset.type === AssetType.VIDEO;
 
           return (
             <SwiperSlide key={index}>
-              <AspectRatio ratio={1} className="relative">
+              <AspectRatio ratio={1} w={"100%"}>
                 {isVideo ? (
                   <video
                     src={asset.url}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover rounded-lg"
                     controls
                     muted
                     loop
@@ -66,10 +66,12 @@ const MobileAssetViewer = ({ assets }: MobileAssetViewerProps) => {
                     autoPlay={activeIndex === index}
                   />
                 ) : (
-                  <CustomImage
-                    src={asset.url}
-                    alt={`Ürün görseli ${index + 1}`}
-                  />
+                  <div className="w-full h-full overflow-hidden ">
+                    <CustomImage
+                      src={asset.url}
+                      alt={`Ürün görseli ${index + 1}`}
+                    />
+                  </div>
                 )}
               </AspectRatio>
             </SwiperSlide>

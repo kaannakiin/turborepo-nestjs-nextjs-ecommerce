@@ -2,24 +2,38 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  Logger,
+  NotFoundException,
 } from '@nestjs/common';
-import { LocationType, Prisma } from '@repo/database';
+import { FulfillmentStrategy, LocationType, Prisma } from '@repo/database';
 import {
   AdminInventoryTableQuery,
   AdminInventoryTableReturnType,
+  FullfillmentDecisionTree,
+  FullfillmentStrategyType,
+  FullfillmentStrategyInput,
+  FullfillmentStrategyOutput,
   InventoryLocationZodSchemaType,
+  Pagination,
+  UpsertInventoryRuleFulfillmentStrategy,
+  UpsertInventoryRuleFulfillmentStrategyQuery,
 } from '@repo/types';
 import { HelperService } from 'src/common/services/helper.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { GetFulfillmentStrategiesQueryDto } from './inventory.dto';
 
 @Injectable()
 export class InventoryService {
+  private readonly logger = new Logger(InventoryService.name);
+
   constructor(
     private readonly prismaService: PrismaService,
     private readonly helperService: HelperService,
   ) {}
 
-  async upsertInventoryLocation(data: InventoryLocationZodSchemaType) {
+  async upsertInventoryLocation(
+    data: InventoryLocationZodSchemaType,
+  ): Promise<UpsertInventoryRuleFulfillmentStrategy> {
     const { serviceZones, ...locationInput } = data;
 
     try {
@@ -86,15 +100,7 @@ export class InventoryService {
 
         return tx.inventoryLocation.findUnique({
           where: { id: location.id },
-          include: {
-            serviceZones: {
-              orderBy: { priority: 'asc' },
-            },
-            country: true,
-            state: true,
-            city: true,
-            district: true,
-          },
+          include: UpsertInventoryRuleFulfillmentStrategyQuery,
         });
       });
     } catch (error) {
@@ -104,6 +110,7 @@ export class InventoryService {
       );
     }
   }
+
   async getInventoryLocations(
     page: number,
     limit: number,
@@ -197,5 +204,154 @@ export class InventoryService {
         'Stok lokasyonu getirilirken bir hata oluştu.',
       );
     }
+  }
+
+  async upsertInventoryRuleFulfillmentStrategy(
+    rawData: FullfillmentStrategyOutput,
+  ) {
+    const data = rawData;
+
+    const strategyId = data.uniqueId;
+
+    const prismaDataInput: Prisma.FulfillmentStrategyCreateInput = {
+      name: data.name,
+      description: data.description,
+      type: data.type,
+      isActive: data.isActive,
+      priority: data.priority,
+      isDefault: data.isDefault,
+      allowSplitShipment: data.settings.allowSplitShipment,
+      maxSplitCount: data.settings.maxSplitCount,
+      allowBackorder: data.settings.allowBackorder,
+      allowDropship: data.settings.allowDropship,
+      defaultLeadTimeDays: data.settings.defaultLeadTimeDays,
+      processOnHolidays: data.settings.processOnHolidays,
+      decisionTree: data.decisionTree as unknown as Prisma.InputJsonValue,
+    };
+
+    try {
+      return await this.prismaService.$transaction(async (tx) => {
+        if (data.isDefault) {
+          await tx.fulfillmentStrategy.updateMany({
+            where: {
+              isActive: true,
+              ...(strategyId ? { id: { not: strategyId } } : {}),
+            },
+            data: { isDefault: false },
+          });
+        }
+
+        if (strategyId) {
+          const existing = await tx.fulfillmentStrategy.findUnique({
+            where: { id: strategyId },
+          });
+
+          if (!existing) {
+            throw new BadRequestException(`Strateji bulunamadı: ${strategyId}`);
+          }
+
+          return await tx.fulfillmentStrategy.update({
+            where: { id: strategyId },
+            data: prismaDataInput,
+          });
+        } else {
+          return await tx.fulfillmentStrategy.create({
+            data: prismaDataInput,
+          });
+        }
+      });
+    } catch (error) {
+      this.logger.error(
+        `Fulfillment strategy upsert error: ${error instanceof Error ? error.message : error}`,
+        error instanceof Error ? error.stack : '',
+      );
+
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Strateji kaydedilirken sistemsel bir hata oluştu.',
+      );
+    }
+  }
+
+  async getFulfillmentStrategies(
+    query: GetFulfillmentStrategiesQueryDto,
+  ): Promise<{
+    data: FulfillmentStrategy[];
+    pagination: Pagination;
+  }> {
+    const { page, take: limit, search } = query;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.FulfillmentStrategyWhereInput = search
+      ? {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { description: { contains: search, mode: 'insensitive' } },
+          ],
+        }
+      : {};
+
+    const [data, total] = await Promise.all([
+      this.prismaService.fulfillmentStrategy.findMany({
+        where,
+        take: limit,
+        skip: skip,
+        orderBy: [
+          { isDefault: 'desc' },
+          { priority: 'desc' },
+          { updatedAt: 'desc' },
+        ],
+      }),
+      this.prismaService.fulfillmentStrategy.count({ where }),
+    ]);
+
+    return {
+      data,
+      pagination: {
+        currentPage: page,
+        perPage: limit,
+        totalCount: total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getFulfillmentStrategyById(
+    id: string,
+  ): Promise<FullfillmentStrategyInput> {
+    const strategy = await this.prismaService.fulfillmentStrategy.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!strategy) {
+      throw new NotFoundException('Strategy not found');
+    }
+
+    const result: FullfillmentStrategyInput = {
+      uniqueId: strategy.id,
+      name: strategy.name,
+      description: strategy.description,
+      type: strategy.type as FullfillmentStrategyType,
+      isActive: strategy.isActive,
+      isDefault: strategy.isDefault,
+      priority: strategy.priority,
+      settings: {
+        allowSplitShipment: strategy.allowSplitShipment,
+        maxSplitCount: strategy.maxSplitCount,
+        allowBackorder: strategy.allowBackorder,
+        allowDropship: strategy.allowDropship,
+        defaultLeadTimeDays: strategy.defaultLeadTimeDays,
+        processOnHolidays: strategy.processOnHolidays,
+      },
+      decisionTree:
+        strategy.decisionTree as unknown as FullfillmentDecisionTree,
+    };
+
+    return result;
   }
 }

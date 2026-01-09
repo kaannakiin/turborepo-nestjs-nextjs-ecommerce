@@ -1,19 +1,21 @@
-"use client";
+'use client';
 
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
-import { Drawer, DrawerProps, Stack } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
+import { useDeleteProductAsset } from '@hooks/admin/useProducts';
+import { Drawer, DrawerProps, Stack } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import {
   Control,
   UseFormGetValues,
   UseFormSetValue,
   useWatch,
-} from "@repo/shared";
-import { VariantProductZodType } from "@repo/types";
-import ProductDropzone from "../../components/ProductDropzone";
+} from '@repo/shared';
+import { VariantProductZodType } from '@repo/types';
+import ProductDropzone from '../../components/ProductDropzone';
 
-interface CombinatedVariantsDropzoneDrawerProps
-  extends Pick<DrawerProps, "opened" | "onClose"> {
+interface CombinatedVariantsDropzoneDrawerProps extends Pick<
+  DrawerProps,
+  'opened' | 'onClose'
+> {
   selectedIndexs: number[];
   selectedIndex: number;
   control: Control<VariantProductZodType>;
@@ -30,6 +32,8 @@ const CombinatedVariantsDropzoneDrawer = ({
   setValue,
   getValues,
 }: CombinatedVariantsDropzoneDrawerProps) => {
+  const deleteProductAssetMutation = useDeleteProductAsset();
+
   const existingImages =
     useWatch({
       control,
@@ -66,15 +70,15 @@ const CombinatedVariantsDropzoneDrawer = ({
         {
           shouldDirty: true,
           shouldValidate: true,
-        }
+        },
       );
     });
 
     if (targetIndices.length > 1) {
       notifications.show({
-        title: "Toplu Yükleme",
+        title: 'Toplu Yükleme',
         message: `${files.length} görsel ${targetIndices.length} varyanta başarıyla eklendi.`,
-        color: "blue",
+        color: 'blue',
       });
     }
   };
@@ -92,18 +96,12 @@ const CombinatedVariantsDropzoneDrawer = ({
 
   const handleRemoveExistingImage = async (imageUrl: string) => {
     try {
-      const deleteResponse = await fetchWrapper.delete(
-        `/admin/products/delete-product-asset/${imageUrl}`
-      );
-
-      if (!deleteResponse.success) {
-        throw new Error("Silme başarısız");
-      }
+      await deleteProductAssetMutation.mutateAsync(imageUrl);
 
       const currentExisting =
         getValues(`combinatedVariants.${selectedIndex}.existingImages`) || [];
       const filteredExisting = currentExisting.filter(
-        (img) => img.url !== imageUrl
+        (img) => img.url !== imageUrl,
       );
 
       setValue(
@@ -112,13 +110,13 @@ const CombinatedVariantsDropzoneDrawer = ({
         {
           shouldDirty: true,
           shouldValidate: true,
-        }
+        },
       );
     } catch (error) {
       notifications.show({
-        title: "Hata",
-        message: "Görsel silinemedi.",
-        color: "red",
+        title: 'Hata',
+        message: 'Görsel silinemedi.',
+        color: 'red',
       });
       throw error;
     }
@@ -130,7 +128,7 @@ const CombinatedVariantsDropzoneDrawer = ({
       order: number;
       file?: File;
       isNew: boolean;
-    }>
+    }>,
   ) => {
     const currentExisting =
       getValues(`combinatedVariants.${selectedIndex}.existingImages`) || [];
@@ -163,7 +161,7 @@ const CombinatedVariantsDropzoneDrawer = ({
       {
         shouldDirty: true,
         shouldValidate: true,
-      }
+      },
     );
     setValue(`combinatedVariants.${selectedIndex}.images`, updatedNewImages, {
       shouldDirty: true,
@@ -174,13 +172,14 @@ const CombinatedVariantsDropzoneDrawer = ({
   return (
     <Drawer
       opened={opened}
+      keepMounted
       onClose={onClose}
       position="right"
       size="xl"
       title={
         selectedIndexs.length > 1
           ? `Medya Yükle (${selectedIndexs.length} varyant seçili)`
-          : "Medya Yükle"
+          : 'Medya Yükle'
       }
     >
       <Stack>

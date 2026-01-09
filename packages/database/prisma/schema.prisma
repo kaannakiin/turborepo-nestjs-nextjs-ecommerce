@@ -2113,25 +2113,31 @@ model FulfillmentStrategy {
   id          String  @id @default(cuid())
   name        String
   description String?
-  type        String  @default("PROXIMITY") // Enum yerine String
-  isDefault   Boolean @default(false)
-  isActive    Boolean @default(true)
-  priority    Int     @default(0)
 
-  allowSplitShipment Boolean @default(false)
-  maxSplitCount      Int?
-  allowBackorder     Boolean @default(false)
-  allowDropship      Boolean @default(false)
+  // Zod: FulfillmentStrategyType
+  type String @default("PROXIMITY")
 
-  // Tüm kurallar JSON'da
-  rules Json @default("[]") // FulfillmentRule[]
+  // Yönetim Flagleri
+  isDefault Boolean @default(false)
+  isActive  Boolean @default(true)
+  priority  Int     @default(0)
+
+  allowSplitShipment  Boolean @default(false)
+  maxSplitCount       Int?
+  allowBackorder      Boolean @default(false)
+  allowDropship       Boolean @default(false)
+  defaultLeadTimeDays Int     @default(0)
+  processOnHolidays   Boolean @default(false)
+
+  decisionTree Json
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  decisions FulfillmentDecision[]
+  decisions FulfillmentDecision[] // Loglar ile ilişki
 
   @@index([isActive, priority])
+  @@index([isDefault])
 }
 
 model FulfillmentDecision {

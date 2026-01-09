@@ -12,6 +12,16 @@ import {
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
+import {
+  ApiBody,
+  ApiCookieAuth,
+  ApiExcludeEndpoint, // <--- GİZLEMEK İÇİN BUNU KULLANACAĞIZ
+  ApiExtraModels,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  getSchemaPath,
+} from '@nestjs/swagger';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { type User } from '@repo/database';
 import {
@@ -23,6 +33,7 @@ import { type Request, type Response } from 'express';
 import { RealIP } from 'nestjs-real-ip';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
+import { LoginWithEmailDTO, LoginWithPhoneDTO } from './auth.dto';
 import { AuthService } from './auth.service';
 import { CsrfService } from './csrf.service';
 import { FacebookAuthGuard } from './guards/facebook-auth.guard';
@@ -31,6 +42,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -38,7 +50,10 @@ export class AuthController {
     private readonly csrfService: CsrfService,
   ) {}
 
+  // --- GÖRÜNECEK ENDPOINTLER ---
+
   @Post('register')
+  @ApiOperation({ summary: 'Kayıt Ol' })
   @HttpCode(HttpStatus.CREATED)
   @SkipThrottle({ default: true })
   @Throttle({ auth: { limit: 5, ttl: 60000 } })
@@ -48,6 +63,23 @@ export class AuthController {
   }
 
   @Post('login')
+  @ApiOperation({ summary: 'Giriş Yap' })
+  @ApiExtraModels(LoginWithEmailDTO, LoginWithPhoneDTO)
+  @ApiBody({
+    schema: {
+      oneOf: [
+        { $ref: getSchemaPath(LoginWithEmailDTO) },
+        { $ref: getSchemaPath(LoginWithPhoneDTO) },
+      ],
+      discriminator: {
+        propertyName: 'type',
+        mapping: {
+          email: getSchemaPath(LoginWithEmailDTO),
+          phone: getSchemaPath(LoginWithPhoneDTO),
+        },
+      },
+    },
+  })
   @HttpCode(HttpStatus.OK)
   @SkipThrottle({ default: true })
   @Throttle({ auth: { limit: 5, ttl: 60000 } })
@@ -62,6 +94,8 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @ApiOperation({ summary: 'Access Token Yenile' })
+  @ApiCookieAuth('token')
   @HttpCode(HttpStatus.OK)
   @SkipThrottle({ default: true })
   @Throttle({ refresh: { limit: 10, ttl: 60000 } })
@@ -75,11 +109,39 @@ export class AuthController {
     return await this.authService.login(user, response, false, req, ip);
   }
 
+  @Get('me')
+  @ApiOperation({ summary: 'Kullanıcı Bilgileri' })
+  @ApiCookieAuth('token')
+  @UseGuards(JwtAuthGuard)
+  @SkipThrottle()
+  me(@CurrentUser() user: User & { jti: string }) {
+    return {
+      id: user.id,
+      name: `${user.name || ''} ${user.surname || ''}`.trim() || 'Unknown',
+      role: user.role,
+      jti: user.jti,
+      ...(user.email && { email: user.email }),
+      ...(user.phone && { phone: user.phone }),
+      ...(user.imageUrl && { image: user.imageUrl }),
+    } as TokenPayload;
+  }
+
+  @Post('sign-out')
+  @ApiOperation({ summary: 'Çıkış Yap' })
+  @HttpCode(HttpStatus.OK)
+  logOut(@Res({ passthrough: true }) res: Response, @Req() req: Request) {
+    return this.authService.logOut(res, req);
+  }
+
+  // --- GİZLENEN ENDPOINTLER (@ApiExcludeEndpoint) ---
+
   @Get('google')
+  @ApiExcludeEndpoint() // <--- GİZLENDİ
   @UseGuards(GoogleAuthGuard)
   async googleAuth() {}
 
   @Get('google/callback')
+  @ApiExcludeEndpoint() // <--- GİZLENDİ
   @UseGuards(GoogleAuthGuard)
   async googleCallback(
     @CurrentUser() user: User,
@@ -91,10 +153,12 @@ export class AuthController {
   }
 
   @Get('facebook')
+  @ApiExcludeEndpoint() // <--- GİZLENDİ
   @UseGuards(FacebookAuthGuard)
   async facebookAuth() {}
 
   @Get('facebook/callback')
+  @ApiExcludeEndpoint() // <--- GİZLENDİ
   @UseGuards(FacebookAuthGuard)
   async facebookCallback(
     @CurrentUser() user: User,
@@ -105,22 +169,8 @@ export class AuthController {
     await this.authService.login(user, response, true, req, ip);
   }
 
-  @Get('me')
-  @UseGuards(JwtAuthGuard)
-  @SkipThrottle()
-  me(@CurrentUser() user: User & { jti: string }) {
-    return {
-      id: user.id,
-      name: `${user.name || ''} ${user.surname || ''}`.trim() || 'Unknown',
-      role: user.role,
-      jti: user.jti,
-      ...(user.email && { email: user.email }),
-      ...(user.phone && { phone: user.phone }),
-      ...(user.imageUrl && { image: user.imageUrl }), // imageUrl -> image
-    } as TokenPayload;
-  }
-
   @Get('csrf')
+  @ApiExcludeEndpoint() // <--- GİZLENDİ (Genelde frontend otomatik halleder, dökümana gerek yok)
   @HttpCode(200)
   @SkipThrottle()
   getCsrfToken(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
@@ -133,6 +183,7 @@ export class AuthController {
   }
 
   @Get('sessions')
+  @ApiExcludeEndpoint() // <--- GİZLENDİ (Gelişmiş özellik, temel auth dökümanında kafa karıştırabilir)
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async getSessions(@CurrentUser() user: User) {
@@ -140,6 +191,7 @@ export class AuthController {
   }
 
   @Delete('sessions/:sessionId')
+  @ApiExcludeEndpoint() // <--- GİZLENDİ
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async revokeSession(
@@ -148,28 +200,4 @@ export class AuthController {
   ) {
     return this.authService.revokeSession(user.id, sessionId);
   }
-
-  @Post('sign-out')
-  @HttpCode(HttpStatus.OK)
-  logOut(@Res({ passthrough: true }) res: Response, @Req() req: Request) {
-    return this.authService.logOut(res, req);
-  }
-
-  // FORGOT PASSWORD - 'auth-strict' throttler (3 istek/5dk)
-  // @Post('forgot-password')
-  // @HttpCode(HttpStatus.OK)
-  // @SkipThrottle({ default: true })
-  // @Throttle({ 'auth-strict': { limit: 3, ttl: 300000 } })
-  // async forgotPassword(@Body() dto: any) {
-  //   return this.authService.forgotPassword(dto);
-  // }
-
-  // RESEND VERIFICATION - 'auth-strict' throttler
-  // @Post('resend-verification')
-  // @HttpCode(HttpStatus.OK)
-  // @SkipThrottle({ default: true })
-  // @Throttle({ 'auth-strict': { limit: 3, ttl: 300000 } })
-  // async resendVerification(@Body() dto: any) {
-  //   return this.authService.resendVerification(dto);
-  // }
 }

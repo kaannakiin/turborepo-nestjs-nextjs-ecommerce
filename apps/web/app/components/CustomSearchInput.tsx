@@ -8,6 +8,7 @@ import {
   TextInputProps,
 } from "@mantine/core";
 import { useDebouncedCallback } from "@mantine/hooks";
+import { SEARCH_PARAM_KEY, SELECT_PARAM_KEY } from "@repo/types";
 import { IconSearch, IconX } from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -23,7 +24,7 @@ interface CustomSearchInputProps extends TextInputProps {
 }
 
 const CustomSearchInput = ({
-  searchKey = "search",
+  searchKey = SEARCH_PARAM_KEY,
   isSortActive = false,
   selectProps,
   ...props
@@ -31,14 +32,12 @@ const CustomSearchInput = ({
   const searchParams = useSearchParams();
   const { replace } = useRouter();
 
-  // Search state
   const [search, setSearch] = useState<string | undefined>(
     (searchParams.get(searchKey) as string) || ""
   );
 
-  // Select state
   const [selectValue, setSelectValue] = useState<string | null>(
-    searchParams.get(selectProps?.selectkey || "sort") || null
+    searchParams.get(selectProps?.selectkey || SELECT_PARAM_KEY) || null
   );
 
   const updateUrl = (updates: Record<string, string | null>) => {

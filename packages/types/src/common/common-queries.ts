@@ -188,6 +188,15 @@ export const uiProductInclude = ({
           select: {
             id: true,
             order: true,
+            combinations: {
+              select: {
+                combination: {
+                  select: {
+                    assets: commonProductAssetsQuery,
+                  },
+                },
+              },
+            },
             variantOption: {
               select: {
                 id: true,
@@ -308,7 +317,6 @@ export const productDetailInclude = (locale: Locale, currency: Currency) => {
           select: {
             id: true,
             order: true,
-
             combinations: {
               select: {
                 combinationId: true,

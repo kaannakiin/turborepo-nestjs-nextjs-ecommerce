@@ -6,3 +6,4 @@ export * from "./helpers";
 export * from "./types";
 export * from "./zod-schemas";
 export * from "./prisma-types";
+export * from "./decision-tree-registry";

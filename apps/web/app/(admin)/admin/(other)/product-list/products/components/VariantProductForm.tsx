@@ -1,10 +1,15 @@
-"use client";
+'use client';
 
-import AdminBrandDataSelect from "@/components/inputs/admin/AdminBrandDataSelect";
-import AdminCategoryDataSelect from "@/components/inputs/admin/AdminCategoryDataSelect";
-import AdminTagDataSelect from "@/components/inputs/admin/AdminTagDataSelect";
-import { getProductTypeLabel } from "@lib/helpers";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
+import AdminBrandDataSelect from '@/components/inputs/admin/AdminBrandDataSelect';
+import AdminCategoryDataSelect from '@/components/inputs/admin/AdminCategoryDataSelect';
+import AdminTagDataSelect from '@/components/inputs/admin/AdminTagDataSelect';
+import { getProductTypeLabel } from '@lib/helpers';
+import {
+  useCreateOrUpdateVariantProduct,
+  useUploadProductImage,
+  useUploadVariantOptionFile,
+  useDeleteProductAsset,
+} from '@hooks/admin/useProducts';
 import {
   Button,
   Grid,
@@ -17,9 +22,9 @@ import {
   Switch,
   TextInput,
   Title,
-} from "@mantine/core";
-import { notifications } from "@mantine/notifications";
-import { ProductType } from "@repo/database/client";
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import { ProductType } from '@repo/database/client';
 import {
   Controller,
   createId,
@@ -30,22 +35,22 @@ import {
   useMutation,
   useWatch,
   zodResolver,
-} from "@repo/shared";
-import { VariantProductSchema, VariantProductZodType } from "@repo/types";
-import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
-import GlobalLoadingOverlay from "../../../../../../components/GlobalLoadingOverlay";
-import GlobalSeoCard from "../../../../../../components/GlobalSeoCard";
-import TaxonomySelect from "../../../components/TaxonomySelect";
-import ProductDropzone from "../../components/ProductDropzone";
-import ExistingVariantCard from "./ExistingVariantCard";
+} from '@repo/shared';
+import { VariantProductSchema, VariantProductZodType } from '@repo/types';
+import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
+import GlobalLoadingOverlay from '../../../../../../components/GlobalLoadingOverlay';
+import GlobalSeoCard from '../../../../../../components/GlobalSeoCard';
+import TaxonomySelect from '../../../components/TaxonomySelect';
+import ProductDropzone from '../../components/ProductDropzone';
+import ExistingVariantCard from './ExistingVariantCard';
 
 const GlobalTextEditor = dynamic(
-  () => import("../../../../../../components/GlobalTextEditor"),
+  () => import('../../../../../../components/GlobalTextEditor'),
   {
     ssr: false,
     loading: () => <GlobalLoadingOverlay />,
-  }
+  },
 );
 
 interface VariantProductFormProps {
@@ -53,6 +58,11 @@ interface VariantProductFormProps {
 }
 
 const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
+  const createOrUpdateProductMutation = useCreateOrUpdateVariantProduct();
+  const uploadProductImageMutation = useUploadProductImage();
+  const uploadVariantOptionFileMutation = useUploadVariantOptionFile();
+  const deleteProductAssetMutation = useDeleteProductAsset();
+
   const {
     control,
     formState: { isSubmitting, errors },
@@ -63,16 +73,16 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
     resolver: zodResolver(VariantProductSchema),
     defaultValues: defaultValues || {
       uniqueId: createId(),
-      type: "PHYSICAL",
+      type: 'PHYSICAL',
       combinatedVariants: [],
       existingImages: [],
       existingVariants: [],
       images: [],
       translations: [
         {
-          locale: "TR",
-          name: "",
-          slug: "",
+          locale: 'TR',
+          name: '',
+          slug: '',
           description: null,
           metaDescription: null,
           metaTitle: null,
@@ -80,8 +90,8 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
       ],
     },
   });
-  const existingImages = useWatch({ control, name: "existingImages" }) || [];
-  const images = useWatch({ control, name: "images" }) || [];
+  const existingImages = useWatch({ control, name: 'existingImages' }) || [];
+  const images = useWatch({ control, name: 'images' }) || [];
   const { push } = useRouter();
 
   const createOrUpdateVariantProductMutation = useMutation({
@@ -94,35 +104,23 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
           images: variantImages,
           existingImages: variantExistingImages,
           ...variant
-        }) => variant
+        }) => variant,
       );
 
       const cleanExistingVariants = data.existingVariants.map(
         ({ options, ...variant }) => ({
           ...variant,
           options: options.map(({ file, ...option }) => option),
-        })
+        }),
       );
 
-      const mainDataResponse = await fetchWrapper.post<{
-        productId: string;
-        combinations: {
-          id: string;
-          sku: string | null;
-        }[];
-      }>(`/admin/products/variant-product`, {
+      const mainDataResponse = await createOrUpdateProductMutation.mutateAsync({
         ...productData,
         combinatedVariants: cleanCombinatedVariants,
         existingVariants: cleanExistingVariants,
       });
 
-      if (!mainDataResponse.success) {
-        throw new Error(
-          "Ürün kaydedilirken bir hata oluştu. Lütfen tekrar deneyin."
-        );
-      }
-
-      const { combinations, productId } = mainDataResponse.data;
+      const { combinations, productId } = mainDataResponse;
 
       return { data, productId, combinations };
     },
@@ -131,32 +129,31 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
       const { data, productId, combinations } = result;
 
       notifications.show({
-        title: "Başarılı!",
+        title: 'Başarılı!',
         message: defaultValues
-          ? "Ürün başarıyla güncellendi."
-          : "Ürün başarıyla kaydedildi.",
-        color: "green",
+          ? 'Ürün başarıyla güncellendi.'
+          : 'Ürün başarıyla kaydedildi.',
+        color: 'green',
       });
-
       uploadAllImagesInBackground(data, productId, combinations, context);
 
       context.client.invalidateQueries({
-        queryKey: ["admin-product", productId],
+        queryKey: ['admin-product', productId],
       });
 
-      push("/admin/product-list");
+      push('/admin/product-list');
     },
 
     onError: (error) => {
       const errorMessage =
         error instanceof Error
           ? error.message
-          : "İnternet bağlantınızı kontrol edin.";
+          : 'İnternet bağlantınızı kontrol edin.';
 
       notifications.show({
-        title: "Bağlantı Hatası!",
+        title: 'Bağlantı Hatası!',
         message: errorMessage,
-        color: "red",
+        color: 'red',
       });
     },
   });
@@ -169,77 +166,158 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
     formData: VariantProductZodType,
     productId: string,
     updatedCombinations: { id: string; sku: string | null }[],
-    context: MutationFunctionContext
+    context: MutationFunctionContext,
   ) => {
+    const errors: Array<{ title: string; message: string }> = [];
+
     try {
       if (formData.images && formData.images.length > 0) {
-        await Promise.allSettled(
+        const productImageResults = await Promise.allSettled(
           formData.images.map(async (imageItem) => {
-            const fd = new FormData();
-            fd.append("file", imageItem.file);
-            fd.append("productId", productId);
-            fd.append("order", String(imageItem.order));
-
-            return fetchWrapper.postFormData(
-              `/admin/products/create-product-image`,
-              fd
-            );
-          })
+            return uploadProductImageMutation.mutateAsync({
+              file: imageItem.file,
+              productId,
+              order: imageItem.order,
+            });
+          }),
         );
+
+        productImageResults.forEach((result, index) => {
+          // fulfilled olarak dönüyor ama success: false olabilir
+          if (result.status === 'fulfilled' && result.value?.success === false) {
+            const errorMessage = result.value?.error || 'Bilinmeyen hata';
+            errors.push({
+              title: `Ürün Görseli ${index + 1}`,
+              message: errorMessage,
+            });
+          } else if (result.status === 'rejected') {
+            let errorMessage = 'Bilinmeyen hata';
+
+            if (result.reason?.value?.error) {
+              errorMessage = result.reason.value.error;
+            } else if (result.reason instanceof Error) {
+              errorMessage = result.reason.message;
+            } else if (typeof result.reason === 'string') {
+              errorMessage = result.reason;
+            }
+
+            errors.push({
+              title: `Ürün Görseli ${index + 1}`,
+              message: errorMessage,
+            });
+          }
+        });
       }
 
       for (const variant of formData.combinatedVariants) {
         if (!variant.images || variant.images.length === 0) continue;
 
         const combinationInfo = updatedCombinations.find(
-          (c) => c.sku === variant.sku
+          (c) => c.sku === variant.sku,
         );
 
         if (!combinationInfo) {
-          console.warn(`SKU: ${variant.sku} için ID bulunamadı.`);
           continue;
         }
 
-        await Promise.allSettled(
+        const variantImageResults = await Promise.allSettled(
           variant.images.map(async (imageItem) => {
-            const fd = new FormData();
-            fd.append("file", imageItem.file);
-            fd.append("variantId", combinationInfo.id);
-            fd.append("order", String(imageItem.order));
-
-            return fetchWrapper.postFormData(
-              `/admin/products/create-product-image`,
-              fd
-            );
-          })
+            return uploadProductImageMutation.mutateAsync({
+              file: imageItem.file,
+              variantId: combinationInfo.id,
+              order: imageItem.order,
+            });
+          }),
         );
+
+        variantImageResults.forEach((result, index) => {
+          // fulfilled olarak dönüyor ama success: false olabilir
+          if (result.status === 'fulfilled' && result.value?.success === false) {
+            const errorMessage = result.value?.error || 'Bilinmeyen hata';
+            errors.push({
+              title: `Varyant Görseli (SKU: ${variant.sku})`,
+              message: `Görsel ${index + 1}: ${errorMessage}`,
+            });
+          } else if (result.status === 'rejected') {
+            let errorMessage = 'Bilinmeyen hata';
+
+            if (result.reason?.value?.error) {
+              errorMessage = result.reason.value.error;
+            } else if (result.reason instanceof Error) {
+              errorMessage = result.reason.message;
+            } else if (typeof result.reason === 'string') {
+              errorMessage = result.reason;
+            }
+
+            errors.push({
+              title: `Varyant Görseli (SKU: ${variant.sku})`,
+              message: `Görsel ${index + 1}: ${errorMessage}`,
+            });
+          }
+        });
       }
 
       if (formData.existingVariants) {
         for (const existingVariant of formData.existingVariants) {
           for (const option of existingVariant.options) {
             if (option.file) {
-              const fd = new FormData();
-              fd.append("file", option.file);
+              const result = await uploadVariantOptionFileMutation
+                .mutateAsync({
+                  file: option.file,
+                  uniqueId: option.uniqueId,
+                })
+                .catch((error) => error);
 
-              await fetchWrapper.postFormData(
-                `/admin/products/variants/upload-variant-option-file/${option.uniqueId}`,
-                fd
-              );
+              // fulfilled olarak dönüyor ama success: false olabilir
+              if (result?.success === false) {
+                const errorMessage = result?.error || 'Bilinmeyen hata';
+                errors.push({
+                  title: 'Varyant Opsiyon Dosyası',
+                  message: errorMessage,
+                });
+              }
             }
           }
         }
       }
 
+      if (errors.length > 0) {
+        errors.slice(0, 5).forEach((error) => {
+          notifications.show({
+            title: error.title,
+            message: error.message,
+            color: 'red',
+            autoClose: 5000,
+          });
+        });
+
+        if (errors.length > 5) {
+          notifications.show({
+            title: 'Daha Fazla Hata',
+            message: `${errors.length - 5} dosya daha yüklenemedi.`,
+            color: 'orange',
+            autoClose: 5000,
+          });
+        }
+      }
+
       context.client.invalidateQueries({
-        queryKey: ["admin-product", productId],
+        queryKey: ['admin-product', productId],
       });
 
       context.client.invalidateQueries({
-        queryKey: ["admin-products"],
+        queryKey: ['admin-products'],
       });
     } catch (error) {
-      console.error("Resimler yüklenirken hata oluştu:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Bilinmeyen bir hata oluştu';
+      console.error('Resimler yüklenirken hata oluştu:', errorMessage);
+      notifications.show({
+        title: 'Kritik Hata',
+        message: errorMessage,
+        color: 'red',
+        autoClose: 5000,
+      });
     }
   };
 
@@ -253,7 +331,7 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
       order: startOrder + index,
     }));
 
-    setValue("images", [...currentImages, ...newImagesWithOrder], {
+    setValue('images', [...currentImages, ...newImagesWithOrder], {
       shouldValidate: true,
     });
   };
@@ -265,7 +343,7 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
     const removedOrder = removedImage?.order;
 
     if (removedOrder === undefined) {
-      console.error("Silinen görsel bulunamadı");
+      console.error('Silinen görsel bulunamadı');
       return;
     }
 
@@ -283,11 +361,11 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
       return img;
     });
 
-    setValue("existingImages", reorderedExistingImages, {
+    setValue('existingImages', reorderedExistingImages, {
       shouldValidate: true,
     });
 
-    setValue("images", reorderedNewImages, { shouldValidate: true });
+    setValue('images', reorderedNewImages, { shouldValidate: true });
   };
 
   const handleReorder = (
@@ -296,7 +374,7 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
       order: number;
       file?: File;
       isNew: boolean;
-    }>
+    }>,
   ) => {
     const existingImagesInOrder = newOrder.filter((item) => !item.isNew);
     const newImagesInOrder = newOrder.filter((item) => item.isNew);
@@ -304,7 +382,7 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
     const updatedExistingImages = existingImagesInOrder
       .map((item) => {
         const existingImage = existingImages.find(
-          (img) => img.url === item.url
+          (img) => img.url === item.url,
         );
 
         if (!existingImage) {
@@ -336,7 +414,7 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
         const fallbackMatch = images.find(
           (img) =>
             img.file.name === item.file!.name &&
-            img.file.size === item.file!.size
+            img.file.size === item.file!.size,
         );
 
         if (fallbackMatch) {
@@ -350,31 +428,25 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
       })
       .filter((img): img is NonNullable<typeof img> => img !== null);
 
-    setValue("existingImages", updatedExistingImages, { shouldValidate: true });
-    setValue("images", updatedNewImages, { shouldValidate: true });
+    setValue('existingImages', updatedExistingImages, { shouldValidate: true });
+    setValue('images', updatedNewImages, { shouldValidate: true });
   };
 
   const handleRemoveExistingImage = async (urlToRemove: string) => {
     try {
-      const deleteResponse = await fetchWrapper.delete(
-        `/admin/products/delete-product-asset/${urlToRemove}`
-      );
-
-      if (!deleteResponse.success) {
-        throw new Error("Resim silinemedi");
-      }
+      await deleteProductAssetMutation.mutateAsync(urlToRemove);
 
       const filteredImages = existingImages.filter(
-        (image) => image.url !== urlToRemove
+        (image) => image.url !== urlToRemove,
       );
 
       const removedImage = existingImages.find(
-        (image) => image.url === urlToRemove
+        (image) => image.url === urlToRemove,
       );
       const removedOrder = removedImage?.order;
 
       if (removedOrder === undefined) {
-        throw new Error("Silinen görsel bulunamadı");
+        throw new Error('Silinen görsel bulunamadı');
       }
 
       const reorderedExistingImages = filteredImages.map((img) => {
@@ -391,22 +463,22 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
         return img;
       });
 
-      setValue("existingImages", reorderedExistingImages, {
+      setValue('existingImages', reorderedExistingImages, {
         shouldValidate: true,
       });
-      setValue("images", reorderedNewImages, { shouldValidate: true });
+      setValue('images', reorderedNewImages, { shouldValidate: true });
 
       notifications.show({
-        title: "Başarılı!",
-        message: "Görsel başarıyla silindi.",
-        color: "green",
+        title: 'Başarılı!',
+        message: 'Görsel başarıyla silindi.',
+        color: 'green',
         autoClose: 3000,
       });
     } catch (error) {
       notifications.show({
-        title: "Hata!",
-        message: "Görsel silinirken bir hata oluştu.",
-        color: "red",
+        title: 'Hata!',
+        message: 'Görsel silinirken bir hata oluştu.',
+        color: 'red',
         autoClose: 3000,
       });
       throw error;
@@ -414,27 +486,27 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
   };
 
   return (
-    <Stack gap={"lg"}>
+    <Stack gap={'lg'}>
       {(isSubmitting || createOrUpdateVariantProductMutation.isPending) && (
         <GlobalLoadingOverlay />
       )}
       <Group align="center" justify="space-between">
         <Title order={4}>
-          Varyantlı Ürün {defaultValues ? "Güncelle" : "Oluştur"}
+          Varyantlı Ürün {defaultValues ? 'Güncelle' : 'Oluştur'}
         </Title>
         <Group gap="md" justify="end">
           <Button
             type="button"
             variant="outline"
             onClick={() => {
-              setValue("active", false);
+              setValue('active', false);
               handleSubmit(onSubmit)();
             }}
           >
-            {defaultValues ? "Pasif Olarak Güncelle" : "Taslak Olarak Kaydet"}
+            {defaultValues ? 'Pasif Olarak Güncelle' : 'Taslak Olarak Kaydet'}
           </Button>
           <Button type="button" onClick={handleSubmit(onSubmit)}>
-            {defaultValues ? "Güncelle" : "Kaydet"}
+            {defaultValues ? 'Güncelle' : 'Kaydet'}
           </Button>
         </Group>
       </Group>
@@ -449,8 +521,8 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
                 onChange={(event) => {
                   field.onChange(event);
                   setValue(
-                    "translations.0.slug",
-                    slugify(event.currentTarget.value)
+                    'translations.0.slug',
+                    slugify(event.currentTarget.value),
                   );
                 }}
                 error={fieldState.error?.message}
@@ -487,7 +559,7 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
           <Switch
             {...field}
             checked={value}
-            label={value ? "Aktif" : "Pasif"}
+            label={value ? 'Aktif' : 'Pasif'}
           />
         )}
       />
@@ -509,7 +581,7 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
         control={control}
         name="images"
         render={({ fieldState }) => (
-          <Stack gap={"xs"}>
+          <Stack gap={'xs'}>
             <InputLabel>Ürün Görselleri</InputLabel>
             <ProductDropzone
               existingImages={existingImages}

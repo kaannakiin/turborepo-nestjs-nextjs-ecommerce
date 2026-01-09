@@ -24,7 +24,7 @@ export class FilesValidationPipe implements PipeTransform {
 
     if (!value) {
       if (isRequired) {
-        throw new BadRequestException('No files uploaded.');
+        throw new BadRequestException('Dosya yüklenmedi.');
       }
       return [];
     }
@@ -46,7 +46,7 @@ export class FilesValidationPipe implements PipeTransform {
 
     if (files.length === 0) {
       if (isRequired) {
-        throw new BadRequestException('At least one file must be uploaded.');
+        throw new BadRequestException('En az bir dosya yüklenmelidir.');
       }
       return value;
     }
@@ -62,7 +62,7 @@ export class FilesValidationPipe implements PipeTransform {
     for (const file of files) {
       if (file.size > this.options.maxSize) {
         throw new BadRequestException(
-          `File ${file.originalname} is too large. Max allowed size is ${Math.round(
+          `${file.originalname} dosyası çok büyük. İzin verilen maksimum boyut: ${Math.round(
             this.options.maxSize / 1024 / 1024,
           )}MB.`,
         );
@@ -70,9 +70,9 @@ export class FilesValidationPipe implements PipeTransform {
 
       if (!allowedMimes.includes(file.mimetype)) {
         throw new BadRequestException(
-          `File ${file.originalname} has invalid type (${file.mimetype}). Allowed: ${allowedMimes.join(
-            ', ',
-          )}`,
+          `${file.originalname} dosyası geçersiz türde (${
+            file.mimetype
+          }). İzin verilenler: ${allowedMimes.join(', ')}`,
         );
       }
     }

@@ -1,12 +1,13 @@
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { doubleCsrf } from 'csrf-csrf';
 import * as ExpressUseragent from 'express-useragent';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { CsrfService } from './auth/csrf.service';
-
+import { cleanupOpenApiDoc } from 'nestjs-zod';
 async function bootstrap() {
   try {
     const app = await NestFactory.create(AppModule, {
@@ -18,6 +19,7 @@ async function bootstrap() {
     const isProduction = nodeEnv === 'production';
     const domain = configService.get<string>('DOMAIN');
     const csrfService = app.get(CsrfService);
+
     app.use(
       helmet({
         contentSecurityPolicy: false,
@@ -26,7 +28,6 @@ async function bootstrap() {
     );
 
     app.use(cookieParser(configService.get<string>('COOKIE_SECRET')));
-
     app.use(ExpressUseragent.express());
 
     let allowedOrigins: string[] | boolean;
@@ -59,18 +60,41 @@ async function bootstrap() {
         'Expires',
       ],
       exposedHeaders: ['Cache-Control', 'Pragma', 'Expires'],
-
       credentials: true,
       maxAge: 86400,
     });
+    if (!isProduction) {
+      const config = new DocumentBuilder()
+        .setTitle('API Dokümantasyonu')
+        .setDescription('B2C Projesi API')
+        .setVersion('1.0')
+        .addSecurity('token', {
+          type: 'apiKey',
+          in: 'cookie',
+          name: 'token',
+        })
+
+        .addSecurity('csrf_header', {
+          type: 'apiKey',
+          in: 'header',
+          name: 'x-csrf-token',
+        })
+        .build();
+
+      const document = SwaggerModule.createDocument(app, config);
+      SwaggerModule.setup('api', app, cleanupOpenApiDoc(document), {
+        swaggerOptions: {
+          withCredentials: true,
+        },
+        customSiteTitle: 'B2C Projesi API Dokümantasyonu',
+      });
+    }
 
     const csrfEnabled = configService.get<boolean>('CSRF_ENABLED', true);
     if (csrfEnabled) {
       const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
         getSecret: () => configService.getOrThrow<string>('CSRF_SECRET'),
-
         cookieName: isProduction ? '__Secure-csrf-token' : 'csrf-token',
-
         cookieOptions: {
           httpOnly: true,
           sameSite: isProduction ? 'none' : 'lax',
@@ -84,6 +108,7 @@ async function bootstrap() {
         getSessionIdentifier: (req) => req.ip || 'unknown',
       });
       csrfService.generateCsrfToken = generateCsrfToken;
+
       app.use((req, res, next) => {
         const paymentCallback = configService.get<string>(
           'IYZICO_CALLBACK_URL',
@@ -97,6 +122,8 @@ async function bootstrap() {
           paymentCallbackUrl.pathname,
           '/payment',
           '/auth',
+          '/api',
+          '/api-json',
         ];
 
         if (
@@ -114,6 +141,10 @@ async function bootstrap() {
 
     const port = configService.get<number>('PORT', 3001);
     await app.listen(port);
+
+    if (!isProduction) {
+      console.log(`🚀 Swagger UI is running on: http://localhost:${port}/api`);
+    }
 
     process.on('unhandledRejection', (reason, promise) => {
       console.error('Unhandled Rejection at:', promise, 'reason:', reason);

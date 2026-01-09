@@ -1,16 +1,15 @@
 /** @type {import('next').NextConfig} */
 
 // eslint-disable-next-line no-undef
-const envDomains = process.env.ALLOWED_IMAGE_DOMAINS || "";
-
+const envDomains = process.env.ALLOWED_IMAGE_DOMAINS || '';
 const dynamicRemotePatterns = envDomains
-  .split(",")
+  .split(',')
   .map((domain) => {
     const cleanDomain = domain.trim();
     if (!cleanDomain) return null;
 
     let hostname = cleanDomain;
-    if (cleanDomain.startsWith("http")) {
+    if (cleanDomain.startsWith('http')) {
       try {
         hostname = new URL(cleanDomain).hostname;
       } catch (e) {
@@ -19,10 +18,10 @@ const dynamicRemotePatterns = envDomains
     }
 
     return {
-      protocol: "https",
+      protocol: 'https',
       hostname: hostname,
-      port: "",
-      pathname: "/**",
+      port: '',
+      pathname: '/**',
     };
   })
   .filter(Boolean);
@@ -30,10 +29,11 @@ const dynamicRemotePatterns = envDomains
 const nextConfig = {
   // reactCompiler: true,
   typedRoutes: true,
-  transpilePackages: ["@repo/database"],
-  serverExternalPackages: ["@prisma/client", "pg"],
+  transpilePackages: ['@repo/database'],
+  serverExternalPackages: ['@prisma/client', 'pg'],
   images: {
     remotePatterns: [...dynamicRemotePatterns],
+    unoptimized: true,
   },
 };
 

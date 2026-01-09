@@ -1,63 +1,71 @@
-"use client";
+'use client';
 
-import CustomPagination from "@/components/CustomPagination";
-import CustomSearchInput from "@/components/CustomSearchInput";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
-import { getSortAdminUserTableLabels, getUserRoleLabels } from "@lib/helpers";
+import CustomPagination from '@/components/CustomPagination';
+import CustomSearchInput from '@/components/CustomSearchInput';
+import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
+import { useGetCustomerList } from '@hooks/admin/useAdminCustomer';
+import { getSortAdminUserTableLabels, getUserRoleLabels } from '@lib/helpers';
 import {
   Badge,
   Button,
   Checkbox,
   Group,
+  Menu,
   Stack,
   Table,
   Title,
-} from "@mantine/core";
-import { useQuery } from "@repo/shared";
-import { GetUsersQueriesReturnType, SortAdminUserTable } from "@repo/types";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+} from '@mantine/core';
+import { UserRole } from '@repo/database/client';
+import {
+  PAGINATION_PARAM_KEY,
+  SEARCH_PARAM_KEY,
+  SELECT_PARAM_KEY,
+  SortAdminUserTable,
+} from '@repo/types';
+import {
+  IconDots,
+  IconTrash,
+  IconUserEdit,
+  IconUsers,
+} from '@tabler/icons-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 
 const UserTable = () => {
-  const SEARCH_PARAM_KEY = "search";
-  const SELECT_PARAM_KEY = "sort";
-  const PAGINATION_PARAM_KEY = "page";
   const searchParams = useSearchParams();
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
 
-  const searchValue = searchParams.get(SEARCH_PARAM_KEY) || "";
-  const sortValue = searchParams.get(SELECT_PARAM_KEY) || "";
+  const searchValue = searchParams.get(SEARCH_PARAM_KEY) || '';
+  const sortValue =
+    searchParams.get(SELECT_PARAM_KEY) || SortAdminUserTable.nameAsc;
   const pageValue =
     parseInt(searchParams.get(PAGINATION_PARAM_KEY) as string) || 1;
+
   const { replace } = useRouter();
-  const { data, isLoading, isPending, isError, refetch, isFetching } = useQuery(
-    {
-      queryKey: ["users", searchValue, sortValue, pageValue],
-      queryFn: async () => {
-        const fetchSearchParams = new URLSearchParams();
-        if (searchValue) fetchSearchParams.append("search", searchValue);
-        if (sortValue) fetchSearchParams.append("sortBy", sortValue);
-        if (pageValue) fetchSearchParams.append("page", pageValue.toString());
 
-        const response = await fetchWrapper.get<GetUsersQueriesReturnType>(
-          `/admin/users/get-users${
-            fetchSearchParams.toString()
-              ? `?${fetchSearchParams.toString()}`
-              : ""
-          }`
-        );
+  const { data, isLoading, isPending, isError, refetch, isFetching } =
+    useGetCustomerList(
+      pageValue,
+      20,
+      searchValue,
+      sortValue as SortAdminUserTable,
+    );
 
-        if (!response?.success) {
-          throw new Error(`Failed to fetch users`);
-        }
-        return response.data;
-      },
-      staleTime: 1000 * 60,
-      refetchOnWindowFocus: false,
-      gcTime: 1000 * 60 * 5,
-    }
-  );
+  const handleBulkUpdateRole = (role: UserRole) => {
+    console.log('Bulk Update Role:', role, 'Selected IDs:', selectedRows);
+    // Burada mutation çağrısı yapacaksın
+    // bulkUpdateRoleMutation.mutate({ action: "UPDATE_ROLE", ids: selectedRows, role })
+  };
+
+  const handleBulkUpdateGroup = () => {
+    console.log('Bulk Update Group - Selected IDs:', selectedRows);
+    // Grup seçimi için modal aç
+  };
+
+  const handleBulkDelete = () => {
+    console.log('Bulk Delete - Selected IDs:', selectedRows);
+    // Silme onayı için modal aç
+  };
 
   if (isError) {
     return (
@@ -78,28 +86,93 @@ const UserTable = () => {
     <Stack gap="lg">
       <Group align="center" justify="space-between">
         <Title order={3}>Kullanıcılar ({data.users.length})</Title>
-        <CustomSearchInput
-          searchKey={SEARCH_PARAM_KEY}
-          placeholder="Müşteri ara"
-          radius="md"
-          c="admin"
-          color="admin"
-          isSortActive
-          selectProps={{
-            selectkey: SELECT_PARAM_KEY,
-            data: Object.values(SortAdminUserTable).map((sort) => ({
-              label: getSortAdminUserTableLabels(sort),
-              value: sort,
-            })),
-            placeholder: "Sırala",
-            clearable: true,
-          }}
-        />
+        <Group gap="sm">
+          {selectedRows.length > 0 && (
+            <Menu shadow="md" width={200}>
+              <Menu.Target>
+                <Button
+                  color="admin"
+                  leftSection={<IconDots size={18} />}
+                  variant="light"
+                >
+                  Toplu İşlem ({selectedRows.length})
+                </Button>
+              </Menu.Target>
+
+              <Menu.Dropdown>
+                <Menu.Label>{selectedRows.length} kullanıcı seçildi</Menu.Label>
+
+                {/* Rol Değiştir - Submenu */}
+                <Menu.Sub openDelay={120} closeDelay={150}>
+                  <Menu.Sub.Target>
+                    <Menu.Sub.Item leftSection={<IconUserEdit size={16} />}>
+                      Rol Değiştir
+                    </Menu.Sub.Item>
+                  </Menu.Sub.Target>
+
+                  <Menu.Sub.Dropdown>
+                    <Menu.Item
+                      onClick={() => handleBulkUpdateRole(UserRole.USER)}
+                    >
+                      {getUserRoleLabels(UserRole.USER)}
+                    </Menu.Item>
+                    <Menu.Item
+                      onClick={() => handleBulkUpdateRole(UserRole.ADMIN)}
+                    >
+                      {getUserRoleLabels(UserRole.ADMIN)}
+                    </Menu.Item>
+                    <Menu.Item
+                      onClick={() => handleBulkUpdateRole(UserRole.OWNER)}
+                    >
+                      {getUserRoleLabels(UserRole.OWNER)}
+                    </Menu.Item>
+                  </Menu.Sub.Dropdown>
+                </Menu.Sub>
+
+                {/* Gruba Ekle */}
+                <Menu.Item
+                  leftSection={<IconUsers size={16} />}
+                  onClick={handleBulkUpdateGroup}
+                >
+                  Gruba Ekle
+                </Menu.Item>
+
+                <Menu.Divider />
+
+                {/* Sil */}
+                <Menu.Item
+                  color="red"
+                  leftSection={<IconTrash size={16} />}
+                  onClick={handleBulkDelete}
+                >
+                  Sil
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          )}
+          <CustomSearchInput
+            searchKey={SEARCH_PARAM_KEY}
+            placeholder="Müşteri ara"
+            radius="md"
+            c="admin"
+            color="admin"
+            isSortActive
+            selectProps={{
+              selectkey: SELECT_PARAM_KEY,
+              defaultValue: sortValue,
+              data: Object.values(SortAdminUserTable).map((sort) => ({
+                label: getSortAdminUserTableLabels(sort),
+                value: sort,
+              })),
+              placeholder: 'Sırala',
+              clearable: true,
+            }}
+          />
+        </Group>
       </Group>
       {data?.users?.length > 0 ? (
         <Table.ScrollContainer minWidth={800}>
           <Table
-            striped
             highlightOnHover
             verticalSpacing="sm"
             highlightOnHoverColor="admin.0"
@@ -138,7 +211,7 @@ const UserTable = () => {
                   onClick={() => {
                     if (selectedRows.includes(user.id)) {
                       setSelectedRows(
-                        selectedRows.filter((id) => id !== user.id)
+                        selectedRows.filter((id) => id !== user.id),
                       );
                     } else {
                       setSelectedRows([...selectedRows, user.id]);
@@ -153,7 +226,7 @@ const UserTable = () => {
                       onChange={() => {
                         if (selectedRows.includes(user.id)) {
                           setSelectedRows(
-                            selectedRows.filter((id) => id !== user.id)
+                            selectedRows.filter((id) => id !== user.id),
                           );
                         } else {
                           setSelectedRows([...selectedRows, user.id]);
@@ -172,7 +245,7 @@ const UserTable = () => {
                     </Badge>
                   </Table.Td>
                   <Table.Td>
-                    {new Date(user.createdAt).toLocaleDateString("tr-TR")}
+                    {new Date(user.createdAt).toLocaleDateString('tr-TR')}
                   </Table.Td>
                 </Table.Tr>
               ))}
@@ -181,11 +254,11 @@ const UserTable = () => {
         </Table.ScrollContainer>
       ) : (
         <div className="flex items-center justify-center">
-          <Stack gap={"xs"}>
+          <Stack gap={'xs'}>
             <Title order={4}>Müşteri Bulunamadı</Title>
             <Button
               onClick={() => {
-                replace("?");
+                replace('?');
               }}
               color="admin"
             >

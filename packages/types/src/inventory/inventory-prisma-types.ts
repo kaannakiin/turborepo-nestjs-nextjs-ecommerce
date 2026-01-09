@@ -60,3 +60,18 @@ export type AdminInventoryTableReturnType = {
   data: AdminInventoryTableQueryType[];
   pagination?: Pagination;
 };
+
+export const UpsertInventoryRuleFulfillmentStrategyQuery = {
+  serviceZones: {
+    orderBy: { priority: "asc" },
+  },
+  country: true,
+  state: true,
+  city: true,
+  district: true,
+} as const satisfies Prisma.InventoryLocationInclude;
+
+export type UpsertInventoryRuleFulfillmentStrategy =
+  Prisma.InventoryLocationGetPayload<{
+    include: typeof UpsertInventoryRuleFulfillmentStrategyQuery;
+  }>;

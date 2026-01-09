@@ -1,0 +1,62 @@
+import { Group, Paper, Text } from '@mantine/core';
+import {
+  FullfillmentCondition,
+  FullfillmentConditionField,
+  getDomain,
+} from '@repo/types';
+import { IconAlertCircle } from '@tabler/icons-react';
+import { Node, NodeProps } from '@xyflow/react';
+import { memo, useMemo } from 'react';
+import {
+  GenericConditionGroupNode,
+  GenericConditionGroupNodeData,
+} from '../builder/GenericConditionGroupNode';
+
+export type FulfillmentGroupNodeData = GenericConditionGroupNodeData<
+  FullfillmentConditionField,
+  FullfillmentCondition
+>;
+
+export type FulfillmentGroupNodeType = Node<
+  FulfillmentGroupNodeData,
+  'conditionGroup'
+>;
+
+const InventoryConditionGroupNode = memo(
+  ({ data, selected }: NodeProps<FulfillmentGroupNodeType>) => {
+    const domainConfig = useMemo(() => {
+      return getDomain<FullfillmentConditionField, FullfillmentCondition>(
+        'fulfillment',
+      );
+    }, []);
+
+    if (!domainConfig) {
+      return (
+        <Paper p="xs" withBorder c="red">
+          <Group>
+            <IconAlertCircle size={16} />
+            <Text size="xs">Fulfillment domain not registered!</Text>
+          </Group>
+        </Paper>
+      );
+    }
+
+    return (
+      <GenericConditionGroupNode<
+        FullfillmentConditionField,
+        FullfillmentCondition
+      >
+        data={data}
+        selected={selected}
+        domainConfig={domainConfig}
+        defaultField={FullfillmentConditionField.ORDER_TOTAL}
+        headerColor="violet"
+        headerBgColor="var(--mantine-color-violet-0)"
+        headerTitle="KOŞUL GRUBU (VE/VEYA)"
+      />
+    );
+  },
+);
+
+InventoryConditionGroupNode.displayName = 'InventoryGroupNode';
+export default InventoryConditionGroupNode;

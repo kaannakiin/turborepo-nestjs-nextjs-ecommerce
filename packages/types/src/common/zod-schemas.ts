@@ -139,3 +139,5 @@ export const colorHex = z
   .regex(/^#([A-Fa-f0-9]{6})$/, {
     error: "Geçersiz renk kodu. Hex formatında olmalıdır.",
   });
+
+export const tcKimlikNoRegex = /^[1-9]{1}[0-9]{9}[02468]{1}$/;
