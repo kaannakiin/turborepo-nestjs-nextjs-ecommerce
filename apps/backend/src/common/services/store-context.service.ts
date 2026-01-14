@@ -1,14 +1,12 @@
-// modules/common/locale.service.ts
 import { Injectable, Scope, Inject } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { type Request } from 'express';
-import { Locale } from '@repo/database';
 
 @Injectable({ scope: Scope.REQUEST })
-export class LocaleService {
+export class StoreContextService {
   constructor(@Inject(REQUEST) private readonly request: Request) {}
 
-  getLocale(): Locale {
-    return this.request.locale || Locale.TR;
+  getStoreId(): string {
+    return this.request.storeId;
   }
 }

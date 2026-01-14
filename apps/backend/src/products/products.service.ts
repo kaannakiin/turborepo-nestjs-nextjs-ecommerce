@@ -30,7 +30,7 @@ export class ProductsService {
     slug: string,
   ): Promise<ProductDetailType | null> {
     const locale = this.localeService.getLocale();
-    const currency = this.currencyService.getCurrencyLocaleMap(locale);
+    const currency = await this.currencyService.getCurrencyForLocale(locale);
 
     const productWhere = commonProductWhereClause(currency, locale);
 

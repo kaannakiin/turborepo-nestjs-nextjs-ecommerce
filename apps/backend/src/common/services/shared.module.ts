@@ -5,6 +5,7 @@ import { ProductMapService } from './product-map.service';
 import { ProductViewService } from './product-view.service';
 import { ProductBulkActionService } from './product-bulk-action.service';
 import { HelperService } from './helper.service';
+import { StoreContextService } from './store-context.service';
 
 @Global()
 @Module({
@@ -15,6 +16,7 @@ import { HelperService } from './helper.service';
     PrismaLoggerService,
     ProductBulkActionService,
     HelperService,
+    StoreContextService,
   ],
   exports: [
     CurrencyLocaleService,
@@ -23,6 +25,7 @@ import { HelperService } from './helper.service';
     PrismaLoggerService,
     ProductBulkActionService,
     HelperService,
+    StoreContextService,
   ],
 })
 export class SharedModule {}

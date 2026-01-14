@@ -11,6 +11,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { ProductsModule } from './products/products.module';
 import { Themev2Module } from './themev2/themev2.module';
 import { UsersModule } from './users/users.module';
+import { StoreModule } from './store/store.module';
 
 @Module({
   controllers: [AdminController],
@@ -26,6 +27,7 @@ import { UsersModule } from './users/users.module';
     Themev2Module,
     ProductsModule,
     InventoryModule,
+    StoreModule,
   ],
 })
 export class AdminModule {}

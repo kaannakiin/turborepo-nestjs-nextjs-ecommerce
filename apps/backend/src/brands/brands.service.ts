@@ -28,7 +28,8 @@ export class BrandsService {
     filters: BrandPageFilters,
   ): Promise<BrandProductsResponse> {
     const locale = this.localeService.getLocale();
-    const currency = this.currencyLocaleService.getCurrencyLocaleMap(locale);
+    const currency =
+      await this.currencyLocaleService.getCurrencyForLocale(locale);
 
     const { brandNode, allBrandIds } = await this.getBrandMetadata(
       slug,
@@ -68,7 +69,8 @@ export class BrandsService {
     filters: Omit<BrandPageFilters, 'sort' | 'page' | 'limit'>,
   ): Promise<FiltersResponse> {
     const locale = this.localeService.getLocale();
-    const currency = this.currencyLocaleService.getCurrencyLocaleMap(locale);
+    const currency =
+      await this.currencyLocaleService.getCurrencyForLocale(locale);
 
     const { allBrandIds } = await this.getBrandMetadata(slug, locale);
 

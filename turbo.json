@@ -50,7 +50,8 @@
         "CSRF_SECRET",
         "NODE_ENV",
         "CSRF_ENABLED",
-        "REDIS_URL",
+        "REDIS_CACHE_URL",
+        "REDIS_RATE_LIMIT_URL",
         "DATABASE_URL",
         "GOOGLE_API_KEY",
         "GROQ_API_KEY"
@@ -86,7 +87,8 @@
         "CSRF_SECRET",
         "NODE_ENV",
         "CSRF_ENABLED",
-        "REDIS_URL",
+        "REDIS_CACHE_URL",
+        "REDIS_RATE_LIMIT_URL",
         "DATABASE_URL",
         "GOOGLE_API_KEY",
         "GROQ_API_KEY"

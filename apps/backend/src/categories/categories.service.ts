@@ -28,7 +28,8 @@ export class CategoriesService {
     filters: CategoryPageFilters,
   ): Promise<CategoryProductsResponse> {
     const locale = this.localeService.getLocale();
-    const currency = this.currencyLocaleService.getCurrencyLocaleMap(locale);
+    const currency =
+      await this.currencyLocaleService.getCurrencyForLocale(locale);
 
     const { categoryTree, allCategoryIds } = await this.getCategoryMetadata(
       slug,
@@ -68,7 +69,8 @@ export class CategoriesService {
     filters: Omit<CategoryPageFilters, 'sort' | 'page' | 'limit'>,
   ): Promise<FiltersResponse> {
     const locale = this.localeService.getLocale();
-    const currency = this.currencyLocaleService.getCurrencyLocaleMap(locale);
+    const currency =
+      await this.currencyLocaleService.getCurrencyForLocale(locale);
 
     const { allCategoryIds } = await this.getCategoryMetadata(slug, locale);
 

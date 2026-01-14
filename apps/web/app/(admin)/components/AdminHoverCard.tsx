@@ -1,7 +1,8 @@
-"use client";
+'use client';
 import {
   Box,
   Card,
+  DrawerProps,
   Group,
   SimpleGrid,
   Stack,
@@ -9,40 +10,46 @@ import {
   ThemeIcon,
   Title,
   Transition,
-} from "@mantine/core";
-import { useHover } from "@mantine/hooks";
-import { IconChevronRight } from "@tabler/icons-react";
-import { Route } from "next";
-import { useRouter } from "next/navigation";
+} from '@mantine/core';
+import { useHover } from '@mantine/hooks';
+import { IconChevronRight } from '@tabler/icons-react';
+import { Route } from 'next';
+import { useRouter } from 'next/navigation';
 
 export interface AdminHoverCardProps {
   title: string;
   description?: string;
   icon?: React.ReactNode;
-  href: string;
-  gradient?: string;
+  href?: string;
+  onClick?: () => void;
 }
 
-const AdminCard = ({ item }: { item: AdminHoverCardProps }) => {
+const AdminCard = ({
+  item,
+  onClick,
+}: {
+  item: AdminHoverCardProps;
+  onClick: () => void;
+}) => {
   const { hovered, ref } = useHover();
-  const { push } = useRouter();
+
   return (
     <Card
       ref={ref}
       withBorder
       p="xl"
       radius="lg"
+      onClick={onClick}
       className="cursor-pointer transition-all duration-300 hover:shadow-xl hover:shadow-var(--mantine-primary-color-9)"
       style={{
         background: hovered
-          ? "linear-gradient(135deg, var(--mantine-primary-color-0) 0%, var(--mantine-primary-color-1) 100%)"
-          : "white",
+          ? 'linear-gradient(135deg, var(--mantine-primary-color-0) 0%, var(--mantine-primary-color-1) 100%)'
+          : 'white',
         borderColor: hovered
-          ? "var(--mantine-primary-color-3)"
-          : "var(--mantine-color-gray-3)",
-        transform: hovered ? "translateY(-4px)" : "translateY(0px)",
+          ? 'var(--mantine-primary-color-3)'
+          : 'var(--mantine-color-gray-3)',
+        transform: hovered ? 'translateY(-4px)' : 'translateY(0px)',
       }}
-      onClick={() => push(item.href as Route)}
     >
       <Stack gap="md" h="100%">
         <Group justify="space-between" align="flex-start" wrap="nowrap">
@@ -54,13 +61,13 @@ const AdminCard = ({ item }: { item: AdminHoverCardProps }) => {
               color="var(--mantine-color-primary-6)"
               style={{
                 backgroundColor: hovered
-                  ? "var(--mantine-color-admin-1)"
-                  : "var(--mantine-color-admin-0)",
+                  ? 'var(--mantine-color-admin-1)'
+                  : 'var(--mantine-color-admin-0)',
                 color: hovered
-                  ? "var(--mantine-color-admin-7)"
-                  : "var(--mantine-color-admin-6)",
-                transition: "all 300ms ease",
-                transform: hovered ? "scale(1.1)" : "scale(1)",
+                  ? 'var(--mantine-color-admin-7)'
+                  : 'var(--mantine-color-admin-6)',
+                transition: 'all 300ms ease',
+                transform: hovered ? 'scale(1.1)' : 'scale(1)',
               }}
             >
               {item.icon}
@@ -71,8 +78,8 @@ const AdminCard = ({ item }: { item: AdminHoverCardProps }) => {
                 order={4}
                 style={{
                   color: hovered
-                    ? "var(--mantine-color-admin-8)"
-                    : "var(--mantine-color-dark-7)",
+                    ? 'var(--mantine-color-admin-8)'
+                    : 'var(--mantine-color-dark-7)',
                   fontWeight: 600,
                   lineHeight: 1.3,
                 }}
@@ -89,7 +96,7 @@ const AdminCard = ({ item }: { item: AdminHoverCardProps }) => {
                 size="sm"
                 style={{
                   ...styles,
-                  color: "var(--mantine-color-admin-6)",
+                  color: 'var(--mantine-color-admin-6)',
                 }}
               >
                 <IconChevronRight size={16} />
@@ -98,32 +105,30 @@ const AdminCard = ({ item }: { item: AdminHoverCardProps }) => {
           </Transition>
         </Group>
 
-        {/* Description */}
         {item.description && (
           <Text
             size="sm"
             style={{
               color: hovered
-                ? "var(--mantine-color-admin-7)"
-                : "var(--mantine-color-dimmed)",
+                ? 'var(--mantine-color-admin-7)'
+                : 'var(--mantine-color-dimmed)',
               lineHeight: 1.5,
-              marginTop: "auto",
+              marginTop: 'auto',
             }}
           >
             {item.description}
           </Text>
         )}
 
-        {/* Subtle bottom accent line */}
         <Box
           style={{
             height: 3,
             background: hovered
-              ? "linear-gradient(90deg, var(--mantine-color-admin-4), var(--mantine-color-admin-6))"
-              : "var(--mantine-color-gray-2)",
+              ? 'linear-gradient(90deg, var(--mantine-color-admin-4), var(--mantine-color-admin-6))'
+              : 'var(--mantine-color-gray-2)',
             borderRadius: 2,
-            transition: "all 300ms ease",
-            marginTop: "auto",
+            transition: 'all 300ms ease',
+            marginTop: 'auto',
           }}
         />
       </Stack>
@@ -132,10 +137,24 @@ const AdminCard = ({ item }: { item: AdminHoverCardProps }) => {
 };
 
 const AdminHoverCard = ({ data }: { data: AdminHoverCardProps[] }) => {
+  const { push } = useRouter();
+
+  const handleCardClick = (item: AdminHoverCardProps) => {
+    if (item.onClick) {
+      item.onClick();
+    } else if (item.href) {
+      push(item.href as Route);
+    }
+  };
+
   return (
     <SimpleGrid cols={{ xs: 1, sm: 2, md: 3, lg: 4 }} spacing="md">
       {data.map((item, index) => (
-        <AdminCard key={index} item={item} />
+        <AdminCard
+          key={index}
+          item={item}
+          onClick={() => handleCardClick(item)}
+        />
       ))}
     </SimpleGrid>
   );
