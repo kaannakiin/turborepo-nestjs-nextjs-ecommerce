@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import { ActionIcon, AspectRatio } from "@mantine/core";
-import { AssetType } from "@repo/database/client";
+import { ActionIcon, AspectRatio } from '@mantine/core';
+import { AssetType } from '@repo/database/client';
 import {
   IconChevronLeft,
   IconChevronRight,
   IconPlayerPlay,
-} from "@tabler/icons-react";
-import { Activity, useRef, useState } from "react";
-import type { Swiper as SwiperType } from "swiper";
-import { Thumbs } from "swiper/modules";
-import { Swiper, SwiperSlide } from "swiper/react";
+} from '@tabler/icons-react';
+import { Activity, useRef, useState } from 'react';
+import type { Swiper as SwiperType } from 'swiper';
+import { Thumbs } from 'swiper/modules';
+import { Swiper, SwiperSlide } from 'swiper/react';
 
-import CustomImage from "@/components/CustomImage";
-import "swiper/css";
-import "swiper/css/thumbs";
+import Image from '@/components/Image';
+import 'swiper/css';
+import 'swiper/css/thumbs';
 
 interface Asset {
   url: string;
@@ -96,13 +96,13 @@ const DesktopAssetViewer = ({ assets }: DesktopAssetViewerProps) => {
             return (
               <SwiperSlide
                 key={index}
-                style={{ height: "112px", width: "112px" }}
+                style={{ height: '112px', width: '112px' }}
               >
                 <button
                   onClick={() => handleThumbClick(index)}
                   className={`
                     relative w-full h-full block rounded-lg overflow-hidden border-2 transition-all
-                    ${activeIndex === index ? "border-black" : "border-gray-200 hover:border-gray-400"}
+                    ${activeIndex === index ? 'border-black' : 'border-gray-200 hover:border-gray-400'}
                   `}
                 >
                   <AspectRatio ratio={1} className="w-full h-full">
@@ -123,7 +123,7 @@ const DesktopAssetViewer = ({ assets }: DesktopAssetViewerProps) => {
                         </div>
                       </div>
                     ) : (
-                      <CustomImage src={asset.url} />
+                      <Image src={asset.url} />
                     )}
                   </AspectRatio>
                 </button>
@@ -154,7 +154,7 @@ const DesktopAssetViewer = ({ assets }: DesktopAssetViewerProps) => {
             return (
               <SwiperSlide key={index} className="h-full w-full">
                 <div className="relative w-full h-full">
-                  <Activity mode={isAssetVideo ? "visible" : "hidden"}>
+                  <Activity mode={isAssetVideo ? 'visible' : 'hidden'}>
                     <video
                       key={`video-${index}`}
                       src={asset.url}
@@ -166,9 +166,9 @@ const DesktopAssetViewer = ({ assets }: DesktopAssetViewerProps) => {
                       playsInline
                     />
                   </Activity>
-                  <Activity mode={!isAssetVideo ? "visible" : "hidden"}>
+                  <Activity mode={!isAssetVideo ? 'visible' : 'hidden'}>
                     <div className="relative w-full h-full">
-                      <CustomImage
+                      <Image
                         src={asset.url}
                         alt={`Ürün görseli ${index + 1}`}
                       />
@@ -180,7 +180,7 @@ const DesktopAssetViewer = ({ assets }: DesktopAssetViewerProps) => {
           })}
         </Swiper>
 
-        <Activity mode={assets?.length > 1 ? "visible" : "hidden"}>
+        <Activity mode={assets?.length > 1 ? 'visible' : 'hidden'}>
           <div className="absolute bottom-4 right-4 z-10 flex gap-2">
             <ActionIcon
               variant="default"

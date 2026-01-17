@@ -1,25 +1,20 @@
-"use client";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
-import { Card, SimpleGrid, Stack, Text, Title } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
-import { PaymentProvider } from "@repo/database/client";
-import { useQuery } from "@repo/shared";
-import {
-  GetPaymentMethodResponseType,
-  IyzicoPaymentMethodType,
-  PayTRPaymentMethodType,
-} from "@repo/types";
-import dynamic from "next/dynamic";
-import Image from "next/image";
-import { useState } from "react";
-const Iyzicoform = dynamic(() => import("./components/IyzicoForm"), {
+'use client';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import { usePaymentMethod } from '@hooks/admin/usePayments';
+import { Card, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { PaymentProvider } from '@repo/database/client';
+import { IyzicoPaymentMethodType, PayTRPaymentMethodType } from '@repo/types';
+import dynamic from 'next/dynamic';
+import Image from 'next/image';
+import { useState } from 'react';
+const Iyzicoform = dynamic(() => import('./components/IyzicoForm'), {
   ssr: false,
-  loading: () => <GlobalLoadingOverlay />,
+  loading: () => <LoadingOverlay />,
 });
-const PayTRform = dynamic(() => import("./components/PayTrForm"), {
+const PayTRform = dynamic(() => import('./components/PayTrForm'), {
   ssr: false,
-  loading: () => <GlobalLoadingOverlay />,
+  loading: () => <LoadingOverlay />,
 });
 interface PaymentMethodInfo {
   type: PaymentProvider;
@@ -30,18 +25,18 @@ interface PaymentMethodInfo {
 
 const paymentMethods: Array<PaymentMethodInfo> = [
   {
-    type: "IYZICO",
-    name: "Iyzico",
+    type: 'IYZICO',
+    name: 'Iyzico',
     description:
-      "Tüm kredi kartları, banka kartları ve alternatif ödeme yöntemleriyle güvenli ve hızlı ödeme alın. Taksit seçenekleri, 3D Secure güvenlik ve anında onay özelliklerinden yararlanın.",
-    logo: "/methods/iyzico-logo.png",
+      'Tüm kredi kartları, banka kartları ve alternatif ödeme yöntemleriyle güvenli ve hızlı ödeme alın. Taksit seçenekleri, 3D Secure güvenlik ve anında onay özelliklerinden yararlanın.',
+    logo: '/methods/iyzico-logo.png',
   },
   {
-    type: "PAYTR",
-    name: "PayTR",
+    type: 'PAYTR',
+    name: 'PayTR',
     description:
-      "Tüm kredi kartları, banka kartları ve alternatif ödeme yöntemleriyle güvenli ve hızlı ödeme alın. Taksit seçenekleri, 3D Secure güvenlik ve anında onay özelliklerinden yararlanın.",
-    logo: "/methods/paytr-logo.png",
+      'Tüm kredi kartları, banka kartları ve alternatif ödeme yöntemleriyle güvenli ve hızlı ödeme alın. Taksit seçenekleri, 3D Secure güvenlik ve anında onay özelliklerinden yararlanın.',
+    logo: '/methods/paytr-logo.png',
   },
 ];
 
@@ -54,31 +49,14 @@ const PaymentMethods = ({
 }) => {
   const [opened, { open, close: mantineClose }] = useDisclosure();
   const [selectedMethod, setSelectedMethod] = useState<PaymentProvider | null>(
-    null
+    null,
   );
 
   const {
     data: queryResponse,
     isLoading,
     refetch,
-  } = useQuery({
-    queryKey: ["adminPaymentMethod", selectedMethod],
-    queryFn: async () => {
-      const res = await fetchWrapper.get<GetPaymentMethodResponseType>(
-        `/admin/payments/payment-method/${selectedMethod}`
-      );
-      if (!res.success) {
-        throw new Error("Failed to fetch payment method");
-      }
-      if (!res.data.success || !res.data.data) {
-        throw new Error(res.data.message);
-      }
-      return res.data.data;
-    },
-    enabled: !!selectedMethod,
-    retry: false,
-    refetchOnWindowFocus: false,
-  });
+  } = usePaymentMethod(selectedMethod);
 
   const onClickCards = (type: PaymentProvider) => {
     setSelectedMethod(type);
@@ -92,13 +70,13 @@ const PaymentMethods = ({
 
   return (
     <>
-      <Stack gap={"lg"}>
+      <Stack gap={'lg'}>
         {renderTitle && <Title order={3}>Mevcut Ödeme Yöntemleri</Title>}
         <SimpleGrid cols={{ base: 2, md: 3, lg: 4 }} spacing="md">
           {paymentMethods
             .filter(
               (method) =>
-                !renderPayments || renderPayments.includes(method.type)
+                !renderPayments || renderPayments.includes(method.type),
             )
             .map((method, index) => (
               <Card
@@ -134,7 +112,7 @@ const PaymentMethods = ({
         </SimpleGrid>
       </Stack>
 
-      {selectedMethod === "IYZICO" && (
+      {selectedMethod === 'IYZICO' && (
         <Iyzicoform
           isLoading={isLoading}
           close={handleClose}
@@ -144,7 +122,7 @@ const PaymentMethods = ({
         />
       )}
 
-      {selectedMethod === "PAYTR" && (
+      {selectedMethod === 'PAYTR' && (
         <PayTRform
           isLoading={isLoading}
           close={handleClose}

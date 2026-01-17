@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import CustomPhoneInput from "@/components/inputs/CustomPhoneInput";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import { Button, Card, Group, SimpleGrid, TextInput } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
-import { Controller, SubmitHandler, useForm, zodResolver } from "@repo/shared";
+import CustomPhoneInput from '@/components/inputs/CustomPhoneInput';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import { Button, Card, Group, SimpleGrid, TextInput } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import { Controller, SubmitHandler, useForm, zodResolver } from '@repo/shared';
 import {
   TokenPayload,
   UserDashboardInfoSchema,
   UserDashboardInfoType,
-} from "@repo/types";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+} from '@repo/types';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 interface UserInfoFormProps {
   session: TokenPayload;
 }
@@ -27,42 +27,42 @@ const UserInfoForm = ({ session }: UserInfoFormProps) => {
   } = useForm<UserDashboardInfoType>({
     resolver: zodResolver(UserDashboardInfoSchema),
     defaultValues: {
-      name: "",
-      surname: "",
+      name: '',
+      surname: '',
       email: null,
-      phone: "",
+      phone: '',
     },
   });
 
   useEffect(() => {
     if (session) {
       reset({
-        name: session.name.split(" ")[0] || "",
-        surname: session.name.split(" ").slice(-1)[0] || "",
+        name: session.name.split(' ')[0] || '',
+        surname: session.name.split(' ').slice(-1)[0] || '',
         email: session.email || null,
-        phone: session.phone || "",
+        phone: session.phone || '',
       });
     }
   }, [session, reset]); // reset'i ekledik
   if (isSubmitting) {
-    return <GlobalLoadingOverlay />;
+    return <LoadingOverlay />;
   }
 
   if (!session) {
-    push("/auth?redirectUri=/dashboard");
+    push('/auth?redirectUri=/dashboard');
   }
   const onSubmit: SubmitHandler<UserDashboardInfoType> = async (data) => {
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     notifications.show({
-      title: "Başarılı",
-      message: "Bilgileriniz güncellendi",
-      color: "green",
+      title: 'Başarılı',
+      message: 'Bilgileriniz güncellendi',
+      color: 'green',
     });
   };
 
   return (
-    <Card withBorder p={"md"} className="max-w-3xl mx-auto w-full gap-3">
+    <Card withBorder p={'md'} className="max-w-3xl mx-auto w-full gap-3">
       <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-4">
         <SimpleGrid
           cols={{
@@ -79,7 +79,7 @@ const UserInfoForm = ({ session }: UserInfoFormProps) => {
                 error={fieldState.error?.message}
                 label="İsim"
                 size="md"
-                radius={"md"}
+                radius={'md'}
               />
             )}
           />
@@ -92,7 +92,7 @@ const UserInfoForm = ({ session }: UserInfoFormProps) => {
                 error={fieldState.error?.message}
                 label="Soyisim"
                 size="md"
-                radius={"md"}
+                radius={'md'}
               />
             )}
           />
@@ -105,7 +105,7 @@ const UserInfoForm = ({ session }: UserInfoFormProps) => {
                 error={fieldState.error?.message}
                 label="Telefon Numarası"
                 size="md"
-                radius={"md"}
+                radius={'md'}
                 disabled
               />
             )}
@@ -120,14 +120,14 @@ const UserInfoForm = ({ session }: UserInfoFormProps) => {
                 error={fieldState.error?.message}
                 label="E-Posta"
                 size="md"
-                radius={"md"}
+                radius={'md'}
                 disabled
               />
             )}
           />
         </SimpleGrid>
         <Group justify="center">
-          <Button type="submit" size="md" radius={"md"}>
+          <Button type="submit" size="md" radius={'md'}>
             Güncelle
           </Button>
         </Group>

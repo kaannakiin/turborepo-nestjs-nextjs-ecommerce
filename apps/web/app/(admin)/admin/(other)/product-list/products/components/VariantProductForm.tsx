@@ -39,17 +39,17 @@ import {
 import { VariantProductSchema, VariantProductZodType } from '@repo/types';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import GlobalLoadingOverlay from '../../../../../../components/GlobalLoadingOverlay';
-import GlobalSeoCard from '../../../../../../components/GlobalSeoCard';
+import LoadingOverlay from '../../../../../../components/LoadingOverlay';
+import SeoCard from '../../../../../../components/SeoCard';
 import TaxonomySelect from '../../../components/TaxonomySelect';
 import ProductDropzone from '../../components/ProductDropzone';
 import ExistingVariantCard from './ExistingVariantCard';
 
 const GlobalTextEditor = dynamic(
-  () => import('../../../../../../components/GlobalTextEditor'),
+  () => import('../../../../../../components/TextEditor'),
   {
     ssr: false,
-    loading: () => <GlobalLoadingOverlay />,
+    loading: () => <LoadingOverlay />,
   },
 );
 
@@ -77,6 +77,12 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
       combinatedVariants: [],
       existingImages: [],
       existingVariants: [],
+      visibleAllCombinations: false,
+      active: true,
+      brandId: null,
+      categories: [],
+      tagIds: [],
+      googleTaxonomyId: null,
       images: [],
       translations: [
         {
@@ -137,7 +143,11 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
       });
       uploadAllImagesInBackground(data, productId, combinations, context);
 
-      context.client.invalidateQueries({
+      // Cache'i invalidate et ve yüklenmeyi bekle
+      await context.client.invalidateQueries({
+        queryKey: ['admin-products'],
+      });
+      await context.client.invalidateQueries({
         queryKey: ['admin-product', productId],
       });
 
@@ -157,6 +167,7 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
       });
     },
   });
+  console.log(errors);
 
   const onSubmit: SubmitHandler<VariantProductZodType> = async (data) => {
     createOrUpdateVariantProductMutation.mutate(data);
@@ -184,7 +195,10 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
 
         productImageResults.forEach((result, index) => {
           // fulfilled olarak dönüyor ama success: false olabilir
-          if (result.status === 'fulfilled' && result.value?.success === false) {
+          if (
+            result.status === 'fulfilled' &&
+            result.value?.success === false
+          ) {
             const errorMessage = result.value?.error || 'Bilinmeyen hata';
             errors.push({
               title: `Ürün Görseli ${index + 1}`,
@@ -232,7 +246,10 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
 
         variantImageResults.forEach((result, index) => {
           // fulfilled olarak dönüyor ama success: false olabilir
-          if (result.status === 'fulfilled' && result.value?.success === false) {
+          if (
+            result.status === 'fulfilled' &&
+            result.value?.success === false
+          ) {
             const errorMessage = result.value?.error || 'Bilinmeyen hata';
             errors.push({
               title: `Varyant Görseli (SKU: ${variant.sku})`,
@@ -488,7 +505,7 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
   return (
     <Stack gap={'lg'}>
       {(isSubmitting || createOrUpdateVariantProductMutation.isPending) && (
-        <GlobalLoadingOverlay />
+        <LoadingOverlay />
       )}
       <Group align="center" justify="space-between">
         <Title order={4}>
@@ -663,7 +680,7 @@ const VariantProductForm = ({ defaultValues }: VariantProductFormProps) => {
         setValue={setValue}
         getValues={getValues}
       />
-      <GlobalSeoCard
+      <SeoCard
         control={control}
         metaDescriptionFieldName="translations.0.metaDescription"
         metaTitleFieldName="translations.0.metaTitle"

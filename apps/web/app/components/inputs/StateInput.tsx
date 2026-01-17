@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { turkishSelectFilter } from "@lib/ui/product-helper";
-import { ComboboxItem, Select, SelectProps } from "@mantine/core";
-import { CountryType } from "@repo/database/client";
-import { GetAllStateReturnType } from "@repo/types";
-import { useMemo } from "react";
-import { useStates } from "../../../hooks/useLocations";
+import { turkishSelectFilter } from '@lib/product-helper';
+import { ComboboxItem, Select, SelectProps } from '@mantine/core';
+import { CountryType } from '@repo/database/client';
+import { GetAllStateReturnType } from '@repo/types';
+import { useMemo } from 'react';
+import { useStates } from '../../../hooks/useLocations';
 
 export interface StateSelectData {
   value: string;
@@ -16,7 +16,7 @@ export interface StateSelectData {
 interface StateInputProps {
   countryId: string;
   addressType: CountryType;
-  selectProps?: Omit<SelectProps, "data">;
+  selectProps?: Omit<SelectProps, 'data'>;
   onSelect?: (selectedData: StateSelectData | null) => void;
 }
 
@@ -42,12 +42,12 @@ const StateInput = ({
         value: state.id.toString(),
         label: state.name,
         state: state,
-      })
+      }),
     );
   }, [states]);
 
   const isDisabled =
-    isLoading || isError || !countryId || addressType !== "STATE";
+    isLoading || isError || !countryId || addressType !== 'STATE';
 
   const handleChange = (val: string | null, option: ComboboxItem | null) => {
     const selectedItem = val
@@ -66,10 +66,10 @@ const StateInput = ({
       disabled={isDisabled}
       placeholder={
         !countryId
-          ? "Önce ülke seçin"
+          ? 'Önce ülke seçin'
           : isLoading
-            ? "Yükleniyor..."
-            : "Şehir/Eyalet seçin"
+            ? 'Yükleniyor...'
+            : 'Şehir/Eyalet seçin'
       }
       searchable
       nothingFoundMessage="Sonuç bulunamadı"

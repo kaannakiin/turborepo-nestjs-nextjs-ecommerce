@@ -479,3 +479,26 @@ export const EdgeType = {
   NO: "no",
 } as const;
 export type EdgeType = (typeof EdgeType)[keyof typeof EdgeType];
+
+export const ProductPageSortOption = {
+  NEWEST: "newest",
+  OLDEST: "oldest",
+  PRICE_DESC: "price-desc",
+  PRICE_ASC: "price-asc",
+  BEST_SELLING: "best-selling",
+  A_Z: "a-z",
+  Z_A: "z-a",
+} as const;
+
+export type ProductPageSortOption =
+  (typeof ProductPageSortOption)[keyof typeof ProductPageSortOption];
+
+export const SORT_OPTIONS_ARRAY: ProductPageSortOption[] = [
+  ProductPageSortOption.NEWEST,
+  ProductPageSortOption.OLDEST,
+  ProductPageSortOption.PRICE_DESC,
+  ProductPageSortOption.PRICE_ASC,
+  ProductPageSortOption.BEST_SELLING,
+  ProductPageSortOption.A_Z,
+  ProductPageSortOption.Z_A,
+];

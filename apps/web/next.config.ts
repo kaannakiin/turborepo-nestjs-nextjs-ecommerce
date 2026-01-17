@@ -32,7 +32,15 @@ const nextConfig: NextConfig = {
   transpilePackages: ['@repo/database'],
   serverExternalPackages: ['@prisma/client', 'pg'],
   images: {
-    remotePatterns: [...dynamicRemotePatterns],
+    remotePatterns: [
+      ...dynamicRemotePatterns,
+      {
+        protocol: 'https',
+        hostname: 'flagcdn.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
     unoptimized: true,
   },
 };

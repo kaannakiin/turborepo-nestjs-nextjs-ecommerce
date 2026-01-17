@@ -1,4 +1,5 @@
 import { $Enums, LocationType } from "@repo/database";
+import { ProductPageSortOption } from "@repo/types";
 export function slugify(text: string): string {
   if (!text || typeof text !== "string") return "";
 
@@ -57,7 +58,7 @@ export function generateSKU(
     prefix?: string;
     maxLength?: number;
     includeTimestamp?: boolean;
-  }
+  },
 ): string {
   const {
     prefix = "",
@@ -86,7 +87,7 @@ export function generateSKU(
       maxLength - timestampLength - randomLength - separatorLength;
     const trimmedPrefix = productPrefix.substring(
       0,
-      Math.max(availableLength, 3)
+      Math.max(availableLength, 3),
     );
 
     sku = [trimmedPrefix, timestamp, randomPart]
@@ -106,7 +107,7 @@ export function generateEAN13Barcode(
   options?: {
     countryCode?: string;
     companyCode?: string;
-  }
+  },
 ): string {
   const { countryCode = "869", companyCode = "" } = options || {};
 
@@ -148,7 +149,7 @@ export function generateProductCodes(
   options?: {
     skuOptions?: Parameters<typeof generateSKU>[1];
     barcodeOptions?: Parameters<typeof generateEAN13Barcode>[1];
-  }
+  },
 ) {
   const { skuOptions, barcodeOptions } = options || {};
 
@@ -158,60 +159,6 @@ export function generateProductCodes(
   };
 }
 
-export const ProductPageSortOption = {
-  NEWEST: "newest",
-  OLDEST: "oldest",
-  PRICE_DESC: "price-desc",
-  PRICE_ASC: "price-asc",
-  BEST_SELLING: "best-selling",
-  A_Z: "a-z",
-  Z_A: "z-a",
-} as const;
-
-export type ProductPageSortOption =
-  (typeof ProductPageSortOption)[keyof typeof ProductPageSortOption];
-
-export const SORT_OPTIONS_ARRAY: ProductPageSortOption[] = [
-  ProductPageSortOption.NEWEST,
-  ProductPageSortOption.OLDEST,
-  ProductPageSortOption.PRICE_DESC,
-  ProductPageSortOption.PRICE_ASC,
-  ProductPageSortOption.BEST_SELLING,
-  ProductPageSortOption.A_Z,
-  ProductPageSortOption.Z_A,
-];
-
-export function getSortProductPageLabel(sortOption: ProductPageSortOption) {
-  switch (sortOption) {
-    case ProductPageSortOption.NEWEST:
-      return "En Yeni";
-    case ProductPageSortOption.OLDEST:
-      return "En Eski";
-    case ProductPageSortOption.PRICE_DESC:
-      return "Fiyat: Yüksekten Düşüğe";
-    case ProductPageSortOption.PRICE_ASC:
-      return "Fiyat: Düşükten Yükseğe";
-    case ProductPageSortOption.BEST_SELLING:
-      return "En Çok Satan";
-    case ProductPageSortOption.A_Z:
-      return "İsim: A'dan Z'ye";
-    case ProductPageSortOption.Z_A:
-      return "İsim: Z'den A'ya";
-    default:
-      return "En Yeni";
-  }
-}
-
-export function getSortIndexFromQuery(index: number): ProductPageSortOption {
-  return SORT_OPTIONS_ARRAY[index] || ProductPageSortOption.NEWEST;
-}
-
-export function getIndexFromSortOption(
-  sortOption: ProductPageSortOption
-): number {
-  const index = SORT_OPTIONS_ARRAY.indexOf(sortOption);
-  return index !== -1 ? index : 0;
-}
 const ORDER_STATUS_CONFIG = {
   PENDING: {
     value: 1,
@@ -294,7 +241,7 @@ export function getOrderStatusLabel(status: $Enums.OrderStatus): string {
 
 export function convertIntToOrderStatus(status: number): $Enums.OrderStatus {
   const entry = Object.entries(ORDER_STATUS_CONFIG).find(
-    ([_, config]) => config.value === status
+    ([_, config]) => config.value === status,
   );
   return (entry?.[0] as $Enums.OrderStatus) ?? "PENDING";
 }
@@ -328,7 +275,7 @@ export function getOrderStatusOptions() {
  * @returns Eşleşen '$Enums.Currency' (örn: 'TRY', 'EUR'). Eşleşme bulunamazsa 'TRY' olarak fallback yapar.
  */
 export const getDefaultCurrencyForLocale = (
-  locale: $Enums.Locale
+  locale: $Enums.Locale,
 ): $Enums.Currency => {
   const mapping: Record<$Enums.Locale, $Enums.Currency> = {
     TR: "TRY",
@@ -436,13 +383,13 @@ const cartActivityOptions: Record<
 };
 
 export function getCartActivityLabel(
-  activityType: $Enums.CartActivityType
+  activityType: $Enums.CartActivityType,
 ): string {
   return cartActivityOptions[activityType]?.label || "Bilinmeyen";
 }
 
 export function getCartActivityColor(
-  activityType: $Enums.CartActivityType
+  activityType: $Enums.CartActivityType,
 ): string {
   return cartActivityOptions[activityType]?.color || "gray";
 }
@@ -498,7 +445,7 @@ export function getCartStatusSortValue(status: $Enums.CartStatus): number {
 
 export function getCartStatusByValue(value: number): $Enums.CartStatus | null {
   const entry = Object.entries(cartStatusConfigs).find(
-    ([_, config]) => config.sortValue === value
+    ([_, config]) => config.sortValue === value,
   );
   return (entry?.[0] as $Enums.CartStatus) || null;
 }

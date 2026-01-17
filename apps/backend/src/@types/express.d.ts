@@ -3,8 +3,9 @@ import { Locale } from '@repo/database';
 declare global {
   namespace Express {
     interface Request {
-      storeId: string;
-      locale: Locale;
+      STORE_TYPE?: string;
+      localization?: Locale;
+      cart_id?: string;
     }
   }
 }

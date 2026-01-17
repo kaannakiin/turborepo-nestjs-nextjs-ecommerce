@@ -27,7 +27,7 @@ import {
   StringArraySchema,
   TimeUnit,
 } from "../common";
-import { createId } from "@repo/shared";
+import { createId } from "@paralleldrive/cuid2";
 
 export const CustomerSegmentFieldSchema = z.enum(CustomerGroupSmartFields);
 export const AccountStatusSchema = z.enum(AccountStatus);
@@ -280,7 +280,7 @@ const StartNodeSchema = BaseStartNodeSchema;
 const ConditionNodeSchema = createConditionNodeSchema(SegmentConditionSchema);
 
 const ConditionGroupNodeSchema = createConditionGroupNodeSchema(
-  SegmentConditionSchema
+  SegmentConditionSchema,
 );
 
 const ResultNodeSchema = createResultNodeSchema(
@@ -288,7 +288,7 @@ const ResultNodeSchema = createResultNodeSchema(
     label: z.string().min(1, "Segment adı gerekli"),
     color: z.string().optional(),
     description: z.string().optional(),
-  })
+  }),
 );
 
 export const DecisionTreeNodeSchema = z.discriminatedUnion("type", [
@@ -304,7 +304,7 @@ export const DecisionTreeSchema = createDecisionTreeSchema(
   DecisionTreeNodeSchema,
   {
     minResultNodes: 1,
-  }
+  },
 );
 export type DecisionTree = z.infer<typeof DecisionTreeSchema>;
 
@@ -352,7 +352,7 @@ export const customerSegmentDefaultValues: CustomerGroupInputZodType = {
 };
 
 export const createEmptyCondition = (
-  field: CustomerGroupSmartFields
+  field: CustomerGroupSmartFields,
 ): SegmentCondition => {
   if (NumericFields.includes(field as (typeof NumericFields)[number])) {
     return {
@@ -430,7 +430,7 @@ export const createEmptyCondition = (
 
 export const createConditionNode = (
   field: CustomerGroupSmartFields,
-  position: { x: number; y: number }
+  position: { x: number; y: number },
 ): DecisionTreeNode => ({
   id: createNodeId(DecisionNodeType.CONDITION),
   type: DecisionNodeType.CONDITION,
@@ -443,7 +443,7 @@ export const createConditionNode = (
 export const createConditionGroupNode = (
   operator: LogicalOperator,
   conditions: SegmentCondition[],
-  position: { x: number; y: number }
+  position: { x: number; y: number },
 ): DecisionTreeNode => ({
   id: createNodeId(DecisionNodeType.CONDITION_GROUP),
   type: DecisionNodeType.CONDITION_GROUP,
@@ -457,7 +457,7 @@ export const createConditionGroupNode = (
 export const createResultNode = (
   label: string,
   position: { x: number; y: number },
-  color?: string
+  color?: string,
 ): DecisionTreeNode => ({
   id: createNodeId(DecisionNodeType.RESULT),
   type: DecisionNodeType.RESULT,

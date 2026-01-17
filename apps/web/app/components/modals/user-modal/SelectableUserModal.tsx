@@ -1,6 +1,5 @@
-"use client";
+'use client';
 
-import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
 import {
   Avatar,
   Badge,
@@ -15,13 +14,12 @@ import {
   Stack,
   Text,
   TextInput,
-} from "@mantine/core";
-import { useDebouncedState } from "@mantine/hooks";
-import { User } from "@repo/database/client";
-import { keepPreviousData, useQuery } from "@repo/shared";
-import { Pagination as PaginationType } from "@repo/types";
-import { IconSearch } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+} from '@mantine/core';
+import { useDebouncedState } from '@mantine/hooks';
+import { User } from '@repo/database/client';
+import { useAdminSelectableUsers } from '@hooks/admin/useAdminUsers';
+import { IconSearch } from '@tabler/icons-react';
+import { useEffect, useState } from 'react';
 
 interface SelectableUserModalProps {
   opened: boolean;
@@ -38,43 +36,25 @@ const SelectableUserModal = ({
   selectedIds = [],
   onSubmit,
   multiple = true,
-  title = "Kullanıcı Seç",
+  title = 'Kullanıcı Seç',
 }: SelectableUserModalProps) => {
   const [page, setPage] = useState<number>(1);
-  const [search, setSearch] = useDebouncedState<string>("", 500);
+  const [search, setSearch] = useDebouncedState<string>('', 500);
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(
-    new Set(selectedIds)
+    new Set(selectedIds),
   );
   const [selectedUsersData, setSelectedUsersData] = useState<Map<string, User>>(
-    new Map()
+    new Map(),
   );
   useEffect(() => {
     if (opened) {
       setSelectedUserIds(new Set(selectedIds));
     }
   }, [opened, selectedIds]);
-  const { data, isLoading } = useQuery({
-    queryKey: ["selectable-user-modal-users", page, search],
-    queryFn: async () => {
-      const res = await fetchWrapper.get<{
-        users: User[];
-        pagination?: PaginationType;
-      }>("/admin/users/get-user-infos", {
-        params: {
-          ...(page > 1 ? { page } : {}),
-          ...(search?.trim() ? { search: search.trim() } : {}),
-        },
-      });
-      if (!res.success) {
-        const error = res as ApiError;
-        throw new Error(
-          error.error || "Kullanıcılar getirilirken bir hata oluştu."
-        );
-      }
-      return res.data;
-    },
+  const { data, isLoading } = useAdminSelectableUsers({
+    page,
+    search,
     enabled: opened,
-    placeholderData: keepPreviousData,
   });
 
   const users = data?.users ?? [];
@@ -121,7 +101,7 @@ const SelectableUserModal = ({
   };
 
   const getInitials = (name: string, surname: string) => {
-    return `${name?.[0] ?? ""}${surname?.[0] ?? ""}`.toUpperCase();
+    return `${name?.[0] ?? ''}${surname?.[0] ?? ''}`.toUpperCase();
   };
 
   return (
@@ -160,9 +140,9 @@ const SelectableUserModal = ({
                     p="sm"
                     withBorder
                     style={{
-                      cursor: "pointer",
+                      cursor: 'pointer',
                       backgroundColor: isSelected
-                        ? "var(--mantine-color-blue-0)"
+                        ? 'var(--mantine-color-blue-0)'
                         : undefined,
                     }}
                     onClick={() => handleUserToggle(user)}
@@ -188,7 +168,7 @@ const SelectableUserModal = ({
                             {user.name} {user.surname}
                           </Text>
                           <Text size="xs" c="dimmed">
-                            {user.email ?? user.phone ?? "—"}
+                            {user.email ?? user.phone ?? '—'}
                           </Text>
                         </div>
                       </Group>
@@ -221,7 +201,7 @@ const SelectableUserModal = ({
           <Button onClick={handleSubmit} disabled={selectedUserIds.size === 0}>
             {selectedUserIds.size > 0
               ? `${selectedUserIds.size} Kullanıcı Seç`
-              : "Seç"}
+              : 'Seç'}
           </Button>
         </Group>
       </Stack>

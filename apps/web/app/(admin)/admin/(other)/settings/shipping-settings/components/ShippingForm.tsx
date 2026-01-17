@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import ActionPopover from "@/(admin)/components/ActionPopover";
-import PriceFormatter from "@/(user)/components/PriceFormatter";
-import GlobalLoader from "@/components/GlobalLoader";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import { getConditionText, getSelectionTextShipping } from "@lib/helpers";
+import ActionPopover from '@/(admin)/components/ActionPopover';
+import PriceFormatter from '@/(user)/components/PriceFormatter';
+import Loader from '@/components/Loader';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import { getConditionText, getSelectionTextShipping } from '@lib/helpers';
 import {
   ActionIcon,
   Alert,
@@ -18,29 +18,28 @@ import {
   Text,
   TextInput,
   Title,
-} from "@mantine/core";
-import { useDebouncedState, useDisclosure } from "@mantine/hooks";
-import { notifications } from "@mantine/notifications";
+} from '@mantine/core';
+import { useDebouncedState, useDisclosure } from '@mantine/hooks';
+import { notifications } from '@mantine/notifications';
 import {
   createId,
   SubmitHandler,
   useFieldArray,
   useForm,
-  useQuery,
   zodResolver,
-} from "@repo/shared";
+} from '@repo/shared';
 import {
   CargoZoneConfigSchema,
   CargoZoneType,
-  GetAllCountryReturnType,
   LocationType,
-} from "@repo/types";
-import { IconEdit, IconInfoCircle, IconTrash } from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import ShippingLocationDrawer from "./ShippingLocationDrawer";
-import ShippingRuleDrawer from "./ShippingRuleDrawer";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
+} from '@repo/types';
+import { IconEdit, IconInfoCircle, IconTrash } from '@tabler/icons-react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import ShippingLocationDrawer from './ShippingLocationDrawer';
+import ShippingRuleDrawer from './ShippingRuleDrawer';
+import { useCountries } from '@hooks/useLocations';
+import { useCreateOrUpdateCargoZone } from '@hooks/admin/useShipping';
 
 interface ShippingFormProps {
   defaultValues?: CargoZoneType;
@@ -51,7 +50,7 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] =
     useDisclosure();
   const [editingLocation, setEditingLocation] = useState<LocationType | null>(
-    null
+    null,
   );
   const [openedRuleModal, { open: openRuleModal, close: closeRuleModal }] =
     useDisclosure();
@@ -68,15 +67,15 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
 
   const handleUpdateLocation = (
     updatedLocation: LocationType,
-    index: number
+    index: number,
   ) => {
     updateLocation(index, updatedLocation);
     handleCloseDrawer();
   };
 
   const [countryFilters, setCountryFilters] = useDebouncedState<string>(
-    "",
-    500
+    '',
+    500,
   );
 
   const {
@@ -100,7 +99,7 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
     remove: removeLocation,
   } = useFieldArray({
     control,
-    name: "locations",
+    name: 'locations',
   });
 
   const {
@@ -110,64 +109,53 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
     remove: removeRule,
   } = useFieldArray({
     control,
-    name: "rules",
+    name: 'rules',
   });
 
-  const { data: countries, isLoading: countriesIsLoading } = useQuery({
-    queryKey: ["get-all-countries"],
-    queryFn: async () => {
-      const res = await fetchWrapper.get<GetAllCountryReturnType[]>(
-        `/locations/get-all-countries`
-      );
-      if (!res.success) {
-        throw new Error("Failed to fetch countries");
-      }
-      return res.data;
-    },
+  const { data: countries, isLoading: countriesIsLoading } = useCountries({
     refetchOnMount: false,
   });
-  const locations = watch("locations");
+  const locations = watch('locations');
   const filteredCountries =
-    countryFilters.trim() !== "" ||
+    countryFilters.trim() !== '' ||
     countryFilters !== null ||
     countryFilters !== undefined
       ? countries?.filter((country) =>
           country.translations[0].name
             .toLowerCase()
-            .includes(countryFilters.trim().toLowerCase())
+            .includes(countryFilters.trim().toLowerCase()),
         )
       : countries;
 
   const { push } = useRouter();
 
+  const { mutateAsync: createOrUpdateZone } = useCreateOrUpdateCargoZone();
+
   const onSubmit: SubmitHandler<CargoZoneType> = async (
-    data: CargoZoneType
+    data: CargoZoneType,
   ) => {
-    const req = await fetchWrapper.post<{ success: boolean; message: string }>(
-      `/shipping/create-or-update-cargo-zone`,
-      data
-    );
-    if (!req.success) {
+    try {
+      const result = await createOrUpdateZone(data);
+      if (result.success) {
+        notifications.show({
+          title: 'Başarılı',
+          message: result.message,
+          color: 'green',
+        });
+        push('/admin/settings/shipping-settings');
+      }
+    } catch (error) {
       notifications.show({
-        title: "Hata",
-        message: "Bölge kaydedilirken bir hata oluştu",
-        color: "red",
+        title: 'Hata',
+        message: 'Bölge kaydedilirken bir hata oluştu',
+        color: 'red',
       });
-      return;
-    }
-    if (req.data.success) {
-      notifications.show({
-        title: "Başarılı",
-        message: req.data.message,
-        color: "green",
-      });
-      push("/admin/settings/shipping-settings");
     }
   };
 
   return (
     <>
-      {isSubmitting && <GlobalLoadingOverlay />}
+      {isSubmitting && <LoadingOverlay />}
       <div className="flex flex-col gap-5">
         <Group justify="end">
           <Button onClick={handleSubmit(onSubmit)}>Kaydet</Button>
@@ -181,13 +169,13 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
           ayarlanacaktır. Eğer bir bölge için para birimi seçilmezse, o bölgeye
           gönderim sağlanmayacaktır.
         </Alert>
-        <Card p={"xs"} withBorder>
+        <Card p={'xs'} withBorder>
           <Card.Section className="border-b border-b-gray-400">
-            <Group justify="space-between" p={"md"}>
-              <Stack gap={"xs"}>
+            <Group justify="space-between" p={'md'}>
+              <Stack gap={'xs'}>
                 <Title order={4}>Bölgeler</Title>
                 {errors.locations && (
-                  <Text c={"red"} size="sm">
+                  <Text c={'red'} size="sm">
                     {errors.locations.message}
                   </Text>
                 )}
@@ -204,7 +192,7 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
               <ScrollArea py="sm" mah={500} className="flex flex-col gap-3">
                 {locationFields.map((location, index) => {
                   const country = countries?.find(
-                    (c) => c.id === location.countryId
+                    (c) => c.id === location.countryId,
                   );
                   if (!country) return null;
                   return (
@@ -214,22 +202,22 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
                       className="hover:bg-gray-100 transition-colors duration-200 ease-in-out px-3 py-2 rounded"
                       align="center"
                     >
-                      <Group gap={"xs"}>
-                        <Stack gap={"xs"}>
+                      <Group gap={'xs'}>
+                        <Stack gap={'xs'}>
                           <Text>{country.translations[0].name}</Text>
-                          <Text c={"dimmed"} fz={"sm"}>
+                          <Text c={'dimmed'} fz={'sm'}>
                             {getSelectionTextShipping(location)}
                           </Text>
                         </Stack>
                       </Group>
-                      <Group align="center" gap={"md"} justify="end">
-                        {location.countryType !== "NONE" && (
+                      <Group align="center" gap={'md'} justify="end">
+                        {location.countryType !== 'NONE' && (
                           <ActionIcon
                             onClick={() => {
                               handleEditLocation(location);
                             }}
                             variant="transparent"
-                            size={"xs"}
+                            size={'xs'}
                           >
                             <IconEdit />
                           </ActionIcon>
@@ -253,13 +241,13 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
           </div>
         </Card>
 
-        <Card p={"xs"} withBorder>
+        <Card p={'xs'} withBorder>
           <Card.Section className="border-b border-b-gray-400">
-            <Group justify="space-between" p={"md"}>
-              <Stack gap={"xs"}>
+            <Group justify="space-between" p={'md'}>
+              <Stack gap={'xs'}>
                 <Title order={4}>Kurallar</Title>
                 {errors.rules && (
-                  <Text c={"red"} size="sm">
+                  <Text c={'red'} size="sm">
                     {errors.rules.message}
                   </Text>
                 )}
@@ -284,33 +272,33 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
                     className="hover:bg-gray-100 transition-colors duration-200 ease-in-out px-3 py-2 rounded"
                     key={rule.id}
                     justify="space-between"
-                    mb={index === ruleFields.length - 1 ? 0 : "xs"}
+                    mb={index === ruleFields.length - 1 ? 0 : 'xs'}
                     align="center"
                   >
-                    <Stack gap={"xs"}>
-                      <Group fz={"md"} c={"black"}>
+                    <Stack gap={'xs'}>
+                      <Group fz={'md'} c={'black'}>
                         <Text>{rule.name}</Text>
                         {rule.shippingPrice > 0 ? (
-                          <Group gap={"1px"} wrap="nowrap" align="center">
+                          <Group gap={'1px'} wrap="nowrap" align="center">
                             <PriceFormatter
-                              fz={"xs"}
+                              fz={'xs'}
                               price={rule.shippingPrice}
                               currency={rule.currency}
                             />
-                            <Text fz={"xs"}> - Kargo Ücreti</Text>
+                            <Text fz={'xs'}> - Kargo Ücreti</Text>
                           </Group>
                         ) : (
-                          <Text fz={"xs"}>Ücretsiz Kargo</Text>
+                          <Text fz={'xs'}>Ücretsiz Kargo</Text>
                         )}
                       </Group>
-                      <Text fz={"md"} c={"dimmed"}>
+                      <Text fz={'md'} c={'dimmed'}>
                         {getConditionText(rule)}
                       </Text>
                     </Stack>
                     <Group>
                       <ActionIcon
                         variant="transparent"
-                        size={"xs"}
+                        size={'xs'}
                         onClick={() => {
                           setEditingRule(index);
                           openRuleModal();
@@ -339,19 +327,19 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
       <Modal.Root
         opened={opened}
         classNames={{
-          title: "text-lg font-medium",
-          header: "border-b border-b-gray-500",
-          body: "py-4 max-h-[50vh]",
+          title: 'text-lg font-medium',
+          header: 'border-b border-b-gray-500',
+          body: 'py-4 max-h-[50vh]',
         }}
         centered
         size="md"
         onClose={() => {
           close();
-          setCountryFilters("");
+          setCountryFilters('');
         }}
       >
         <Modal.Overlay
-          transitionProps={{ transition: "scale", duration: 300 }}
+          transitionProps={{ transition: 'scale', duration: 300 }}
         />
         <Modal.Content>
           <Modal.Header className="flex flex-col gap-3">
@@ -368,9 +356,9 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
             />
           </Modal.Header>
           <Modal.Body>
-            <Stack gap={"lg"}>
+            <Stack gap={'lg'}>
               {countriesIsLoading ? (
-                <GlobalLoader />
+                <Loader />
               ) : (
                 filteredCountries &&
                 filteredCountries.length > 0 &&
@@ -379,25 +367,25 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
                     className="cursor-pointer hover:bg-gray-200 p-2 rounded"
                     key={country.id}
                     align="center"
-                    gap={"lg"}
+                    gap={'lg'}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       if (
                         locationFields.find(
-                          (loc) => loc.countryId === country.id
+                          (loc) => loc.countryId === country.id,
                         )
                       ) {
                         const index = locations.findIndex(
-                          (loc) => loc.countryId === country.id
+                          (loc) => loc.countryId === country.id,
                         );
                         removeLocation(index);
                       } else {
                         appendLocation({
                           countryId: country.id,
                           countryType: country.type,
-                          stateIds: country.type === "STATE" ? [] : null,
-                          cityIds: country.type === "CITY" ? [] : null,
+                          stateIds: country.type === 'STATE' ? [] : null,
+                          cityIds: country.type === 'CITY' ? [] : null,
                         });
                       }
                     }}
@@ -405,7 +393,7 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
                     <Checkbox
                       readOnly
                       checked={locationFields.some(
-                        (loc) => loc.countryId === country.id
+                        (loc) => loc.countryId === country.id,
                       )}
                     />
                     <Text>
@@ -429,7 +417,7 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
         }
         onSubmit={(data) => {
           const isExists = ruleFields.findIndex(
-            (rule) => rule.uniqueId === data.uniqueId
+            (rule) => rule.uniqueId === data.uniqueId,
           );
           if (isExists !== -1) {
             updateRule(isExists, data);
@@ -450,7 +438,7 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
           }
           onSubmit={(updateLocation) => {
             const index = locations.findIndex(
-              (loc) => loc.countryId === editingLocation.countryId
+              (loc) => loc.countryId === editingLocation.countryId,
             );
             handleUpdateLocation(updateLocation, index);
           }}

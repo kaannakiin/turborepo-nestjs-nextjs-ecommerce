@@ -1,15 +1,15 @@
-"use client";
-import GlobalDropzone from "@/components/GlobalDropzone";
-import { InputLabel, Switch } from "@mantine/core";
-import { DateTimePicker } from "@mantine/dates";
+'use client';
+import Dropzone from '@/components/Dropzone';
+import { InputLabel, Switch } from '@mantine/core';
+import { DateTimePicker } from '@mantine/dates';
 import {
   Control,
   Controller,
   DateFormatter,
   UseFormSetValue,
   useWatch,
-} from "@repo/shared";
-import { ThemeInputType } from "@repo/types";
+} from '@repo/shared';
+import { ThemeInputType } from '@repo/types';
 
 interface SlideFormProps {
   control: Control<ThemeInputType>;
@@ -54,7 +54,7 @@ const AsideSlideForm = ({
         render={({ field, fieldState }) => (
           <div className="flex flex-col gap-1">
             <InputLabel>Desktop Görünümü</InputLabel>
-            <GlobalDropzone
+            <Dropzone
               {...field}
               multiple={false}
               maxSize={5 * 1024 * 1024}
@@ -63,7 +63,7 @@ const AsideSlideForm = ({
                 if (!files.length) return;
                 field.onChange(files[0]);
               }}
-              accept={["IMAGE", "VIDEO"]}
+              accept={['IMAGE', 'VIDEO']}
               cols={1}
               error={fieldState.error?.message}
               existingImages={
@@ -85,7 +85,7 @@ const AsideSlideForm = ({
         render={({ field, fieldState }) => (
           <div className="flex flex-col gap-1">
             <InputLabel>Mobil Görünümü</InputLabel>
-            <GlobalDropzone
+            <Dropzone
               {...field}
               multiple={false}
               maxSize={5 * 1024 * 1024}
@@ -94,7 +94,7 @@ const AsideSlideForm = ({
                 if (!files.length) return;
                 field.onChange(files[0]);
               }}
-              accept={["IMAGE", "VIDEO"]}
+              accept={['IMAGE', 'VIDEO']}
               cols={1}
               error={fieldState.error?.message}
               existingImages={
@@ -103,7 +103,7 @@ const AsideSlideForm = ({
                   : []
               }
               existingImagesDelete={async (url) => {
-                console.log("Delete mobile image:", url);
+                console.log('Delete mobile image:', url);
               }}
             />
           </div>

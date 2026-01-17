@@ -1,10 +1,10 @@
-"use client";
-import { AspectRatio, Modal } from "@mantine/core";
-import { useClickOutside, useHotkeys } from "@mantine/hooks";
-import { AssetType } from "@repo/database/client";
-import { IconPhoto, IconVideo, IconZoomIn } from "@tabler/icons-react";
-import { useState } from "react";
-import CustomImage from "../../components/CustomImage";
+'use client';
+import { AspectRatio, Modal } from '@mantine/core';
+import { useClickOutside, useHotkeys } from '@mantine/hooks';
+import { AssetType } from '@repo/database/client';
+import { IconPhoto, IconVideo, IconZoomIn } from '@tabler/icons-react';
+import { useState } from 'react';
+import Image from '../../components/Image';
 
 interface TableAssetProps {
   url?: string;
@@ -16,9 +16,9 @@ const TableAsset = ({ url, type, withModal = true }: TableAssetProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const lightboxRef = useClickOutside(() => setIsOpen(false));
 
-  useHotkeys([["Escape", () => setIsOpen(false)]]);
+  useHotkeys([['Escape', () => setIsOpen(false)]]);
 
-  if (type === "AUDIO" || type === "DOCUMENT") {
+  if (type === 'AUDIO' || type === 'DOCUMENT') {
     return null;
   }
 
@@ -28,7 +28,7 @@ const TableAsset = ({ url, type, withModal = true }: TableAssetProps) => {
     return (
       <div className="relative w-full h-full min-h-16">
         <div className="w-full h-full p-4 flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200/50">
-          {type === "IMAGE" ? (
+          {type === 'IMAGE' ? (
             <IconPhoto size={24} className="text-gray-300" />
           ) : (
             <IconVideo size={24} className="text-gray-300" />
@@ -41,8 +41,8 @@ const TableAsset = ({ url, type, withModal = true }: TableAssetProps) => {
   if (!withModal) {
     return (
       <div className="relative w-full h-full min-h-12 rounded-lg overflow-hidden bg-gray-100">
-        {type === "IMAGE" ? (
-          <CustomImage src={url} alt="Asset" />
+        {type === 'IMAGE' ? (
+          <Image src={url} alt="Asset" />
         ) : (
           <video
             src={url}
@@ -61,12 +61,8 @@ const TableAsset = ({ url, type, withModal = true }: TableAssetProps) => {
         className="relative w-full h-full min-h-12 cursor-pointer group rounded-lg overflow-hidden bg-gray-100"
         onClick={() => setIsOpen(true)}
       >
-        {type === "IMAGE" ? (
-          <CustomImage
-            src={url}
-            alt="Asset"
-            className="object-cover w-full h-full"
-          />
+        {type === 'IMAGE' ? (
+          <Image src={url} alt="Asset" className="object-cover w-full h-full" />
         ) : (
           <video
             src={url}
@@ -93,11 +89,11 @@ const TableAsset = ({ url, type, withModal = true }: TableAssetProps) => {
       >
         <AspectRatio
           ratio={1}
-          pos={"relative"}
+          pos={'relative'}
           className="h-[80vh] w-auto object-contain rounded-lg"
         >
-          {type === "IMAGE" ? (
-            <CustomImage src={url} alt="Asset - Enlarged" />
+          {type === 'IMAGE' ? (
+            <Image src={url} alt="Asset - Enlarged" />
           ) : (
             <video
               src={url}

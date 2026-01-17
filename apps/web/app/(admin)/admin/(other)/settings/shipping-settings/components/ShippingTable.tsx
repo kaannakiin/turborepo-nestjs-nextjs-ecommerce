@@ -1,7 +1,6 @@
-"use client";
+'use client';
 
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
+import LoadingOverlay from '@/components/LoadingOverlay';
 import {
   ActionIcon,
   Badge,
@@ -12,35 +11,18 @@ import {
   Table,
   Text,
   Title,
-} from "@mantine/core";
-import { DateFormatter, useQuery } from "@repo/shared";
-import { CargoZones } from "@repo/types";
-import { IconEdit } from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
+} from '@mantine/core';
+import { DateFormatter } from '@repo/shared';
+import { IconEdit } from '@tabler/icons-react';
+import { useRouter } from 'next/navigation';
+import { useCargoZones } from '@hooks/admin/useShipping';
 
 const ShippingTable = () => {
   const { push } = useRouter();
 
-  const { isLoading, isPending, isFetching, data } = useQuery({
-    queryKey: ["get-all-cargo-zones"],
-    queryFn: async () => {
-      const req = await fetchWrapper.get<{
-        success: boolean;
-        cargoZones: Array<CargoZones>;
-      }>(`/shipping/get-all-cargo-zones`, {});
-      if (!req.success) {
-        return null;
-      }
-
-      if (!req.data.success) {
-        return null;
-      }
-      return req.data.cargoZones;
-    },
-    refetchOnMount: false,
-  });
+  const { isLoading, isPending, isFetching, data } = useCargoZones();
   if (isLoading || isPending || isFetching) {
-    return <GlobalLoadingOverlay />;
+    return <LoadingOverlay />;
   }
   const dataExists = data && data.length > 0;
 
@@ -48,8 +30,8 @@ const ShippingTable = () => {
     <>
       <Card withBorder>
         <Card.Section className="border-b-gray-400">
-          <Group p={"md"} justify="space-between" align="center">
-            <Stack gap={"xs"}>
+          <Group p={'md'} justify="space-between" align="center">
+            <Stack gap={'xs'}>
               <Title order={4}>Kurallar</Title>
               <Text>
                 Kargo fiyatlarınızı ve ücretsiz kargo şartlarınızı buradan
@@ -60,7 +42,7 @@ const ShippingTable = () => {
               <Button
                 variant="outline"
                 onClick={() => {
-                  push("/admin/settings/shipping-settings/new");
+                  push('/admin/settings/shipping-settings/new');
                 }}
               >
                 Yeni Kargo Seti Ekle
@@ -70,11 +52,11 @@ const ShippingTable = () => {
         </Card.Section>
         <Card.Section>
           {dataExists ? (
-            <Table.ScrollContainer minWidth={800} py={"md"}>
+            <Table.ScrollContainer minWidth={800} py={'md'}>
               <Table
                 highlightOnHover
                 highlightOnHoverColor="admin.0"
-                verticalSpacing={"sm"}
+                verticalSpacing={'sm'}
               >
                 <Table.Thead bg="gray.2">
                   <Table.Tr>
@@ -88,10 +70,10 @@ const ShippingTable = () => {
                   {data.map((zone) => (
                     <Table.Tr key={zone.id}>
                       <Table.Td maw={180}>
-                        <Group gap={"xs"} wrap="wrap">
+                        <Group gap={'xs'} wrap="wrap">
                           {zone.locations.slice(0, 5).map((loc) => (
                             <Badge radius={0} variant="outline" key={loc.id}>
-                              {loc.country.emoji}{" "}
+                              {loc.country.emoji}{' '}
                               {loc.country.translations[0]?.name ||
                                 loc.country.name}
                             </Badge>
@@ -128,7 +110,7 @@ const ShippingTable = () => {
               <Text>Henüz bir kargo bölgesi oluşturulmamış.</Text>
               <Button
                 onClick={() => {
-                  push("/admin/settings/shipping-settings/new");
+                  push('/admin/settings/shipping-settings/new');
                 }}
               >
                 Yeni Kargo Seti Ekle

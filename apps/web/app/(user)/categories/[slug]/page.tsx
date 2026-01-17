@@ -1,11 +1,11 @@
 import InfinityQueryPage from '@/components/pages/store-components/InfinityQueryPage';
 import StoreNotFound from '@/components/pages/store-components/StoreNotFound';
 import { getQueryClient } from '@lib/serverQueryClient';
-import { generateCategoryJsonLd } from '@lib/ui/json-ld-generator';
+import { generateCategoryJsonLd } from '@lib/json-ld-generator';
 import {
   getOgImageUrl,
   getServerSideAllSearchParams,
-} from '@lib/ui/product-helper';
+} from '@lib/product-helper';
 import { ApiError, createServerFetch } from '@lib/wrappers/fetchWrapper';
 import { Currency, Locale } from '@repo/database/client';
 import { dehydrate, HydrationBoundary } from '@repo/shared';
@@ -14,7 +14,7 @@ import { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import Script from 'next/script';
 import { cache } from 'react';
-import { Params, SearchParams } from 'types/GlobalTypes';
+import { Params, SearchParams } from 'types/types';
 
 interface Props {
   params: Params;
@@ -46,11 +46,13 @@ const getCategoryData = cache(
     ]);
 
     if (!productsRes.success) {
-      throw new Error((productsRes as ApiError).error || 'Ürünler alınamadı');
+      return null;
+      // throw new Error((productsRes as ApiError).error || 'Ürünler alınamadı');
     }
 
     if (!filtersRes.success) {
-      throw new Error((filtersRes as ApiError).error || 'Filtreler alınamadı');
+      return null;
+      // throw new Error((filtersRes as ApiError).error || 'Filtreler alınamadı');
     }
 
     return {
@@ -173,7 +175,7 @@ const CategoryPage = async ({ params, searchParams }: Props) => {
 
   const data = await getCategoryData(slug, 1, cacheKeyParams, currency, locale);
 
-  if (!data.products || !data.filters) {
+  if (!data || !data.products || !data.filters) {
     return <StoreNotFound type="category" />;
   }
 

@@ -1,7 +1,11 @@
 import { ComboboxItem, ComboboxParsedItem } from '@mantine/core';
 import { Currency, Locale } from '@repo/database/client';
 import { RESERVED_KEYS_CONFIGS, ReservedKeysType } from '@repo/shared';
-import { AdminProductTableProductData, UiProductType } from '@repo/types';
+import {
+  AdminProductTableProductData,
+  CartItemWithVariant,
+  UiProductType,
+} from '@repo/types';
 
 type Product = UiProductType;
 type Variant = Product['variants'][number];
@@ -383,4 +387,40 @@ export const buildSwatchUrlParams = (
   const params = new URLSearchParams();
   params.set(primaryGroup.groupSlug, optionSlug);
   return params;
+};
+
+export const getProductImageForCart = (
+  cartItem: CartItemWithVariant,
+): string | undefined => {
+  return (
+    cartItem.variant.assets[0]?.asset.url ||
+    cartItem.variant.product.assets[0]?.asset.url
+  );
+};
+
+export const getProductSlugForCart = (
+  cartItem: CartItemWithVariant,
+): string => {
+  const productSlug =
+    cartItem.variant.product.translations[0]?.slug ||
+    cartItem.variant.product.translations.find((t) => t.slug)?.slug ||
+    '';
+
+  if (cartItem.variant.options.length > 0) {
+    const searchParams = new URLSearchParams();
+    cartItem.variant.options.forEach((vo) => {
+      const groupSlug =
+        vo.productVariantOption.variantOption.variantGroup?.translations?.[0]
+          ?.slug;
+      const optionSlug =
+        vo.productVariantOption.variantOption.translations?.[0]?.slug;
+
+      if (groupSlug && optionSlug) {
+        searchParams.append(groupSlug, optionSlug);
+      }
+    });
+    return `${productSlug}?${searchParams.toString()}`;
+  }
+
+  return productSlug;
 };

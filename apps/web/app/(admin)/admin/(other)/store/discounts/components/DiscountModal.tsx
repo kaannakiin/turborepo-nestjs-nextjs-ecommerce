@@ -1,5 +1,5 @@
-"use client";
-import GlobalLoader from "@/components/GlobalLoader";
+'use client';
+import Loader from '@/components/Loader';
 import {
   Accordion,
   Box,
@@ -11,9 +11,9 @@ import {
   ModalProps,
   Stack,
   Text,
-} from "@mantine/core";
-import { DiscountItem } from "@repo/types";
-import { useEffect, useState } from "react";
+} from '@mantine/core';
+import { DiscountItem } from '@repo/types';
+import { useEffect, useState } from 'react';
 
 interface DiscountModalProps {
   opened: boolean;
@@ -21,7 +21,7 @@ interface DiscountModalProps {
   data: DiscountItem[];
   dataTitle?: string;
   isLoading: boolean;
-  modalProps?: Omit<ModalProps, "onClose" | "opened">;
+  modalProps?: Omit<ModalProps, 'onClose' | 'opened'>;
   selectedItems?: string[];
   onSave: (selectedIds: string[]) => void;
 
@@ -177,21 +177,21 @@ const DiscountModal = ({
       <Stack gap="xs">
         {isLoading ? (
           <Center h={400}>
-            <GlobalLoader />
+            <Loader />
           </Center>
         ) : (
           <Box
             style={{
-              maxHeight: "60vh",
-              overflowY: "auto",
-              paddingRight: "1rem",
+              maxHeight: '60vh',
+              overflowY: 'auto',
+              paddingRight: '1rem',
             }}
           >
             {renderTree(data)}
           </Box>
         )}
         <Group
-          justify={dataTitle && selected.size > 0 ? "space-between" : "end"}
+          justify={dataTitle && selected.size > 0 ? 'space-between' : 'end'}
           mt="lg"
         >
           {dataTitle && selected.size > 0 && (
@@ -199,7 +199,7 @@ const DiscountModal = ({
               {selected.size} {dataTitle} seçildi
             </Text>
           )}
-          <Group gap={"xs"}>
+          <Group gap={'xs'}>
             <Button variant="default" onClick={onClose}>
               İptal
             </Button>

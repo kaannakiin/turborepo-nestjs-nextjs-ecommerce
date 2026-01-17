@@ -36,12 +36,6 @@ enum StoreType {
   B2B // Bayilere satış
 }
 
-enum RoutingStrategy {
-  PATH_PREFIX // site.com/tr, b2b.site.com/en (En güvenlisi, Standart)
-  SUBDOMAIN // tr.site.com, en.site.com (Sadece B2C için)
-  COOKIE_ONLY // site.com (URL değişmez, dil cookie'den okunur)
-}
-
 model Organization {
   id     String  @id @default(cuid())
   name   String
@@ -77,9 +71,7 @@ model StoreSettings {
   storeId String @unique
   store   Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
-  // B2C için
-  customDomain String?         @unique
-  routing      RoutingStrategy @default(PATH_PREFIX)
+  customDomain String? @unique
 
   // Genel
   defaultLocale Locale @default(TR)

@@ -1,5 +1,4 @@
-import GlobalLoader from "@/components/GlobalLoader";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
+import Loader from '@/components/Loader';
 import {
   ActionIcon,
   Avatar,
@@ -14,26 +13,23 @@ import {
   Stack,
   Text,
   TextInput,
-} from "@mantine/core";
-import { useDebouncedState } from "@mantine/hooks";
-import { useQuery } from "@repo/shared";
-import {
-  ProductSelectResult,
-  SearchableProductModalResponseType,
-} from "@repo/types";
+} from '@mantine/core';
+import { useDebouncedState } from '@mantine/hooks';
+import { useAdminSelectableProducts } from '@hooks/admin/useProducts';
+import { ProductSelectResult } from '@repo/types';
 import {
   IconCheck,
   IconChevronDown,
   IconChevronRight,
   IconSearch,
-} from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+} from '@tabler/icons-react';
+import { useEffect, useRef, useState } from 'react';
 
 interface SelectableProductModalProps {
   multiple: boolean;
   opened: boolean;
   onClose: () => void;
-  props?: Omit<ModalProps, "opened" | "onClose">;
+  props?: Omit<ModalProps, 'opened' | 'onClose'>;
   selectedItems?: ProductSelectResult[]; // selectedIds yerine selectedItems
   onSubmit: (selectedProducts: ProductSelectResult[]) => void;
 }
@@ -48,7 +44,7 @@ const SelectableProductModal = ({
 }: SelectableProductModalProps) => {
   const [page, setPage] = useState<number>(1);
   const [limit] = useState<number>(10);
-  const [search, setSearch] = useDebouncedState<string>("", 500);
+  const [search, setSearch] = useDebouncedState<string>('', 500);
 
   const [localSelected, setLocalSelected] = useState<ProductSelectResult[]>([]);
 
@@ -56,19 +52,10 @@ const SelectableProductModal = ({
 
   const [expandedParents, setExpandedParents] = useState<string[]>([]);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["selectable-products-modal", { page, limit, search }],
-    queryFn: async () => {
-      const res = await fetchWrapper.get<SearchableProductModalResponseType>(
-        "/admin/themev2/selectable-products",
-        {
-          params: { limit, page, search: search ? search.trim() : undefined },
-        }
-      );
-      if (!res.success) throw new Error("Failed to fetch products");
-      if (!res.data.success) throw new Error("Failed to fetch products data");
-      return res.data;
-    },
+  const { data, isLoading } = useAdminSelectableProducts({
+    page,
+    limit,
+    search,
     enabled: opened,
   });
 
@@ -124,7 +111,7 @@ const SelectableProductModal = ({
 
   const toggleExpand = (id: string) => {
     setExpandedParents((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
 
@@ -163,7 +150,7 @@ const SelectableProductModal = ({
         return prev.filter((p) => !allVariantIds.includes(p.id));
       } else {
         const newVariants = parent.variants!.filter(
-          (v) => !prev.some((selected) => selected.id === v.id)
+          (v) => !prev.some((selected) => selected.id === v.id),
         );
         return [...prev, ...newVariants];
       }
@@ -186,7 +173,7 @@ const SelectableProductModal = ({
     if (hasVariants) {
       const totalVariants = item.variants!.length;
       const selectedCount = item.variants!.filter((v) =>
-        isSelected(v.id)
+        isSelected(v.id),
       ).length;
 
       checkboxChecked = totalVariants > 0 && totalVariants === selectedCount;
@@ -206,7 +193,7 @@ const SelectableProductModal = ({
       <div
         key={item.id}
         className={`border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors ${
-          isChild ? "bg-gray-50/50" : ""
+          isChild ? 'bg-gray-50/50' : ''
         }`}
       >
         <Group
@@ -214,7 +201,7 @@ const SelectableProductModal = ({
           wrap="nowrap"
           align="center"
           onClick={handleRowClick}
-          style={{ cursor: hasVariants ? "default" : "pointer" }}
+          style={{ cursor: hasVariants ? 'default' : 'pointer' }}
         >
           <Checkbox
             checked={checkboxChecked}
@@ -235,23 +222,23 @@ const SelectableProductModal = ({
           <Avatar
             src={item.image?.url}
             radius="md"
-            size={isChild ? "sm" : "md"}
+            size={isChild ? 'sm' : 'md'}
             className="bg-gray-100"
           >
-            {item.name?.charAt(0) || "?"}
+            {item.name?.charAt(0) || '?'}
           </Avatar>
 
           <div className="flex-1 min-w-0">
             <Text size="sm" fw={500} lineClamp={1}>
-              {item.name || "Yükleniyor..."}
+              {item.name || 'Yükleniyor...'}
             </Text>
             <Group gap="xs">
               {!hasVariants && (
                 <>
                   <Text size="xs" c="dimmed">
-                    SKU: {item.sku || "-"}
+                    SKU: {item.sku || '-'}
                   </Text>
-                  <Text size="xs" c={item.stock > 0 ? "teal" : "red"}>
+                  <Text size="xs" c={item.stock > 0 ? 'teal' : 'red'}>
                     Stok: {item.stock}
                   </Text>
                 </>
@@ -300,8 +287,8 @@ const SelectableProductModal = ({
       title="Ürün Seçimi"
       size="lg"
       classNames={{
-        header: "border-b border-gray-200",
-        body: "p-0 flex flex-col h-[600px]",
+        header: 'border-b border-gray-200',
+        body: 'p-0 flex flex-col h-[600px]',
       }}
       {...props}
     >
@@ -316,7 +303,7 @@ const SelectableProductModal = ({
 
       <ScrollArea className="flex-1 bg-white">
         {isLoading ? (
-          <GlobalLoader />
+          <Loader />
         ) : data?.data && data.data.length > 0 ? (
           <Stack gap={0}>{data.data.map((item) => renderRow(item))}</Stack>
         ) : (

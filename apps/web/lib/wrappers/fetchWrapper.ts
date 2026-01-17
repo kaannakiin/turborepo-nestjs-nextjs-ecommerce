@@ -1,8 +1,4 @@
-import {
-  CURRENCY_COOKIE_NAME,
-  LOCALE_COOKIE_NAME,
-  STORE_TYPE_COOKIE_NAME,
-} from '@lib/constants';
+import { LOCALE_COOKIE_NAME, STORE_TYPE_COOKIE_NAME } from '@repo/types';
 import axios, {
   AxiosError,
   AxiosInstance,
@@ -46,15 +42,12 @@ class ServerAxiosWrapper {
 
           // Locale header'larını cookie'den oku ve ekle
           const localeCookie = this.cookieStore.get(LOCALE_COOKIE_NAME);
-          const currencyCookie = this.cookieStore.get(CURRENCY_COOKIE_NAME);
           const storeTypeCookie = this.cookieStore.get(STORE_TYPE_COOKIE_NAME);
 
           if (localeCookie?.value) {
             config.headers['X-Locale'] = localeCookie.value;
           }
-          if (currencyCookie?.value) {
-            config.headers['X-Currency'] = currencyCookie.value;
-          }
+
           if (storeTypeCookie?.value) {
             config.headers['X-Store-Type'] = storeTypeCookie.value;
           }
@@ -214,15 +207,12 @@ class ClientAxiosWrapper {
       async (config) => {
         // Locale header'larını cookie'den oku ve ekle
         const locale = getCookie(LOCALE_COOKIE_NAME);
-        const currency = getCookie(CURRENCY_COOKIE_NAME);
         const storeType = getCookie(STORE_TYPE_COOKIE_NAME);
 
         if (locale) {
           config.headers['X-Locale'] = locale;
         }
-        if (currency) {
-          config.headers['X-Currency'] = currency;
-        }
+
         if (storeType) {
           config.headers['X-Store-Type'] = storeType;
         }

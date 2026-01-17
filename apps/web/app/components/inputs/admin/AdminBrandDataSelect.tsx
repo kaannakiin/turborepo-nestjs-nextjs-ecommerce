@@ -1,25 +1,14 @@
-"use client";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
+'use client';
 import {
   Loader,
   MultiSelect,
   MultiSelectProps,
   Select,
   SelectProps,
-} from "@mantine/core";
-import { useQuery } from "@repo/shared";
-import { BrandIdAndName } from "@repo/types";
-import { useState } from "react";
-
-const fetchBrands = async () => {
-  const response = await fetchWrapper.get<BrandIdAndName[]>(
-    "/admin/products/brands/get-all-brands-only-id-and-name"
-  );
-  if (!response.success) {
-    throw new Error("Veri alınamadı");
-  }
-  return response.data;
-};
+} from '@mantine/core';
+import { BrandIdAndName } from '@repo/types';
+import { useState } from 'react';
+import { useAllBrandsSimple } from '@hooks/admin/useAdminBrands';
 
 export interface SelectOption {
   value: string;
@@ -45,13 +34,9 @@ const AdminBrandDataSelect = ({
     ? Array.isArray(value) && value.length > 0
     : !!value;
 
-  const { data, isLoading, isError, isFetched } = useQuery({
-    queryKey: ["data-select-brands"],
-    queryFn: fetchBrands,
-    enabled: isDropdownOpened || hasValue,
-    staleTime: 1000 * 60 * 5,
-    retry: 1,
-  });
+  const { data, isLoading, isError, isFetched } = useAllBrandsSimple(
+    isDropdownOpened || hasValue,
+  );
 
   const handleOpen = () => {
     if (!isDropdownOpened) {
@@ -61,11 +46,11 @@ const AdminBrandDataSelect = ({
 
   const isEmpty = isFetched && Array.isArray(data) && data.length === 0;
 
-  let dynamicPlaceholder = "Marka seçiniz";
-  if (isError) dynamicPlaceholder = "⚠️ Veri alınamadı";
-  else if (isLoading && hasValue) dynamicPlaceholder = "Seçim yükleniyor...";
-  else if (isLoading) dynamicPlaceholder = "Yükleniyor...";
-  else if (isEmpty) dynamicPlaceholder = "Tanımlı marka bulunmuyor";
+  let dynamicPlaceholder = 'Marka seçiniz';
+  if (isError) dynamicPlaceholder = '⚠️ Veri alınamadı';
+  else if (isLoading && hasValue) dynamicPlaceholder = 'Seçim yükleniyor...';
+  else if (isLoading) dynamicPlaceholder = 'Yükleniyor...';
+  else if (isEmpty) dynamicPlaceholder = 'Tanımlı marka bulunmuyor';
 
   const isComponentDisabled = isError || (isEmpty && !isLoading);
   const isReady = !isLoading && !isError && data && data.length > 0;
@@ -80,7 +65,7 @@ const AdminBrandDataSelect = ({
   const logicProps = {
     data: selectData,
     onDropdownOpen: handleOpen,
-    nothingFoundMessage: isLoading ? "Yükleniyor..." : "Marka bulunamadı",
+    nothingFoundMessage: isLoading ? 'Yükleniyor...' : 'Marka bulunamadı',
     rightSection: isLoading ? <Loader size={18} /> : null,
     disabled: isComponentDisabled,
     searchable: true,
@@ -88,7 +73,7 @@ const AdminBrandDataSelect = ({
 
   const defaultStyles = {
     placeholder: dynamicPlaceholder,
-    label: "Marka Seçiniz",
+    label: 'Marka Seçiniz',
   };
 
   if (multiple) {
@@ -100,7 +85,7 @@ const AdminBrandDataSelect = ({
         value={safeValue as string[]}
         onChange={(val) => {
           const selectedOptions = selectData.filter((opt) =>
-            val.includes(opt.value)
+            val.includes(opt.value),
           );
           onChange(val, selectedOptions);
         }}

@@ -1,10 +1,11 @@
+import { DataKeys } from '@lib/data-keys';
 import fetchWrapper, { ApiError } from '@lib/wrappers/fetchWrapper';
 import { useMutation, useQuery } from '@repo/shared';
 import { StoreZodInputType, StoreZodOutputType } from '@repo/types';
 
 export const useStoreUpsertMutation = () => {
   return useMutation({
-    mutationKey: ['admin', 'store', 'upsert'],
+    mutationKey: DataKeys.admin.store.upsert,
     mutationFn: async (data: StoreZodOutputType) => {
       const res = await fetchWrapper.post('/admin/store', data);
       if (!res.success) {
@@ -15,7 +16,7 @@ export const useStoreUpsertMutation = () => {
     },
     onSuccess: (data, variables, res, context) => {
       context.client.invalidateQueries({
-        queryKey: ['admin', 'store', 'get'],
+        queryKey: DataKeys.admin.store.get,
       });
     },
   });
@@ -23,7 +24,7 @@ export const useStoreUpsertMutation = () => {
 
 export const useStoreGetQuery = () => {
   return useQuery({
-    queryKey: ['admin', 'store', 'get'],
+    queryKey: DataKeys.admin.store.get,
     queryFn: async () => {
       const res = await fetchWrapper.get<StoreZodInputType>('/admin/store');
       if (!res.success) {

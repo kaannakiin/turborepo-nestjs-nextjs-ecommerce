@@ -35,8 +35,8 @@ import {
   useUploadProductImage,
   useDeleteProductAsset,
 } from '@hooks/admin/useProducts';
-import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
-import GlobalSeoCard from '@/components/GlobalSeoCard';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import SeoCard from '@/components/SeoCard';
 import AdminBrandDataSelect from '@/components/inputs/admin/AdminBrandDataSelect';
 import AdminCategoryDataSelect from '@/components/inputs/admin/AdminCategoryDataSelect';
 import AdminTagDataSelect from '@/components/inputs/admin/AdminTagDataSelect';
@@ -48,10 +48,10 @@ import ProductDropzone from '../../components/ProductDropzone';
 import ProductPriceNumberInput from './ProductPriceNumberInput';
 
 const GlobalTextEditor = dynamic(
-  () => import('../../../../../../components/GlobalTextEditor'),
+  () => import('../../../../../../components/TextEditor'),
   {
     ssr: false,
-    loading: () => <GlobalLoadingOverlay />,
+    loading: () => <LoadingOverlay />,
   },
 );
 
@@ -79,6 +79,9 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
       images: [],
       type: 'PHYSICAL',
       googleTaxonomyId: null,
+      barcode: null,
+      sku: null,
+      tagIds: [],
       prices: [
         {
           currency: 'TRY',
@@ -137,8 +140,12 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
 
       uploadImagesInBackground(data.images, productId);
 
-      context.client.invalidateQueries({
+      await context.client.invalidateQueries({
         queryKey: ['admin-product', productId],
+      });
+
+      await context.client.invalidateQueries({
+        queryKey: ['admin-products'],
       });
 
       push('/admin/product-list');
@@ -406,7 +413,7 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
 
   return (
     <Stack gap={'lg'}>
-      {isSubmitting || mutation.isPending ? <GlobalLoadingOverlay /> : null}
+      {isSubmitting || mutation.isPending ? <LoadingOverlay /> : null}
       <Group align="center" justify="space-between">
         <Title order={4}>
           Basit Ürün {defaultValues ? 'Güncelle' : 'Oluştur'}
@@ -705,7 +712,7 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
           )}
         />
       </Stack>
-      <GlobalSeoCard
+      <SeoCard
         control={control}
         metaDescriptionFieldName="translations.0.metaDescription"
         metaTitleFieldName="translations.0.metaTitle"

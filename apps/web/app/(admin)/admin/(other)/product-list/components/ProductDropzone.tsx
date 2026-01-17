@@ -1,6 +1,6 @@
 'use client';
 import ActionPopover from '@/(admin)/components/ActionPopover';
-import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
+import LoadingOverlay from '@/components/LoadingOverlay';
 import {
   closestCenter,
   DndContext,
@@ -313,7 +313,7 @@ const ProductDropzone = ({
 
   return (
     <Stack gap={'xs'}>
-      {loading && <GlobalLoadingOverlay />}
+      {loading && <LoadingOverlay />}
       {rejectedFiles.length > 0 && (
         <Alert
           icon={<IconAlertCircle size={16} />}

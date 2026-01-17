@@ -11,13 +11,15 @@ import {
   TextInput,
   TextInputProps,
   Title,
-} from "@mantine/core";
-import { Control, Controller, FieldPath, useWatch } from "@repo/shared";
+} from '@mantine/core';
+import { Control, Controller, FieldPath, useWatch } from '@repo/shared';
 
-interface SlugProps extends Omit<TextInputProps, "value" | "onChange"> {}
-interface MetaTitleProps extends Omit<TextInputProps, "value" | "onChange"> {}
-interface MetaDescriptionProps
-  extends Omit<TextareaProps, "value" | "onChange"> {}
+interface SlugProps extends Omit<TextInputProps, 'value' | 'onChange'> {}
+interface MetaTitleProps extends Omit<TextInputProps, 'value' | 'onChange'> {}
+interface MetaDescriptionProps extends Omit<
+  TextareaProps,
+  'value' | 'onChange'
+> {}
 
 interface SeoCardProps<T extends Record<string, any>> {
   control: Control<T>;
@@ -29,7 +31,7 @@ interface SeoCardProps<T extends Record<string, any>> {
   metaDescriptionProps?: MetaDescriptionProps;
 }
 
-const GlobalSeoCard = <T extends Record<string, any>>({
+const SeoCard = <T extends Record<string, any>>({
   control,
   slugFieldName,
   metaTitleFieldName,
@@ -80,18 +82,18 @@ const GlobalSeoCard = <T extends Record<string, any>>({
                       label="Slug"
                       leftSection={<span className="font-bold">/</span>}
                       leftSectionProps={{
-                        className: "text-black bg-gray-100",
+                        className: 'text-black bg-gray-100',
                       }}
                       classNames={{
-                        input: "!pl-10",
+                        input: '!pl-10',
                       }}
-                      value={field.value || ""}
+                      value={field.value || ''}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
                       error={fieldState.error?.message}
                     />
                     <Group justify="flex-end">
-                      <Text fz={"xs"} c={"dimmed"}>
+                      <Text fz={'xs'} c={'dimmed'}>
                         {field.value ? field.value.length : 0}/256
                       </Text>
                     </Group>
@@ -108,13 +110,13 @@ const GlobalSeoCard = <T extends Record<string, any>>({
                   <TextInput
                     {...metaTitleProps}
                     label="Meta Başlığı"
-                    value={field.value || ""}
+                    value={field.value || ''}
                     onChange={field.onChange}
                     onBlur={field.onBlur}
                     error={fieldState.error?.message}
                   />
                   <Group justify="flex-end">
-                    <Text fz={"xs"} c={"dimmed"}>
+                    <Text fz={'xs'} c={'dimmed'}>
                       {field.value ? field.value.length : 0}/256
                     </Text>
                   </Group>
@@ -133,13 +135,13 @@ const GlobalSeoCard = <T extends Record<string, any>>({
                     autosize
                     minRows={2}
                     maxRows={4}
-                    value={field.value || ""}
+                    value={field.value || ''}
                     onChange={field.onChange}
                     onBlur={field.onBlur}
                     error={fieldState.error?.message}
                   />
                   <Group justify="flex-end">
-                    <Text fz={"xs"} c={"dimmed"}>
+                    <Text fz={'xs'} c={'dimmed'}>
                       {field.value ? field.value.length : 0}/512
                     </Text>
                   </Group>
@@ -158,22 +160,22 @@ const GlobalSeoCard = <T extends Record<string, any>>({
                   <div className="flex items-center gap-1 text-sm">
                     <span className="text-gray-600">https://example.com/</span>
                     <span className="text-blue-600 font-medium">
-                      {slug || "url-slug"}
+                      {slug || 'url-slug'}
                     </span>
                   </div>
                 )}
 
                 <div className="text-blue-600 hover:underline cursor-pointer text-xl font-medium mb-1">
-                  {metaTitle || "Sayfa Başlığı Buraya Gelecek"}
+                  {metaTitle || 'Sayfa Başlığı Buraya Gelecek'}
                 </div>
 
                 <div className="text-gray-700 text-sm leading-relaxed">
                   {metaDescription ||
-                    "Bu açıklama Google arama sonuçlarında görünecek kısa açıklamadır."}
+                    'Bu açıklama Google arama sonuçlarında görünecek kısa açıklamadır.'}
                 </div>
 
                 <div className="text-gray-500 text-xs mt-1">
-                  {new Date().toLocaleDateString("tr-TR")}
+                  {new Date().toLocaleDateString('tr-TR')}
                 </div>
               </div>
             </Card>
@@ -184,4 +186,4 @@ const GlobalSeoCard = <T extends Record<string, any>>({
   );
 };
 
-export default GlobalSeoCard;
+export default SeoCard;

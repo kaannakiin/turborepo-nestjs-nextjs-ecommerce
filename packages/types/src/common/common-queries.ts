@@ -1,5 +1,31 @@
 import { Currency, Locale, Prisma } from "@repo/database/client";
 
+export const commonProductVariantWhereClause = (
+  currency?: Currency,
+  locale?: Locale
+): Prisma.ProductVariantCombinationWhereInput => {
+  return {
+    active: true,
+    prices: {
+      some: {
+        currency: currency || "TRY",
+      },
+    },
+    deletedAt: null,
+    product: {
+      active: true,
+      translations: {
+        some: {
+          locale: locale || "TR",
+        },
+      },
+      deletedAt: null,
+      deletedBy: null,
+      deleteReason: null,
+    },
+  };
+};
+
 export const commonProductAssetsQuery = {
   orderBy: {
     order: "asc",

@@ -1,9 +1,9 @@
-"use client";
-import NextImage from "next/image";
-import { Image as MantineImage } from "@mantine/core";
-import { MouseEventHandler, useState, useMemo, useEffect } from "react";
+'use client';
+import NextImage from 'next/image';
+import { Image as MantineImage } from '@mantine/core';
+import { MouseEventHandler, useState, useMemo, useEffect } from 'react';
 
-interface CustomImageProps {
+interface ImageProps {
   alt?: string;
   src: string;
   className?: string;
@@ -11,20 +11,20 @@ interface CustomImageProps {
   priority?: boolean;
 }
 
-const CustomImage = ({
-  alt = "Product image",
+const Image = ({
+  alt = 'Product image',
   src,
-  className = "",
+  className = '',
   onClick,
   priority = false,
-}: CustomImageProps) => {
+}: ImageProps) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setIsLoading(true);
   }, [src]);
 
-  const IGNORED_HOSTS = ["placehold.co"];
+  const IGNORED_HOSTS = ['placehold.co'];
 
   const isIgnoredHost = useMemo(() => {
     if (!src) return false;
@@ -52,7 +52,7 @@ const CustomImage = ({
     if (!originalSrc) return null;
 
     try {
-      const lastDotIndex = originalSrc.lastIndexOf(".");
+      const lastDotIndex = originalSrc.lastIndexOf('.');
       if (lastDotIndex === -1) return null;
 
       const base = originalSrc.substring(0, lastDotIndex);
@@ -69,7 +69,7 @@ const CustomImage = ({
     <div
       className={`relative overflow-hidden  w-full h-full ${className}`}
       onClick={onClick}
-      style={{ minHeight: "100%" }} // Parent'tan height almasını sağla
+      style={{ minHeight: '100%' }} // Parent'tan height almasını sağla
     >
       {showThumbnail && (
         <NextImage
@@ -81,7 +81,7 @@ const CustomImage = ({
             object-contain 
             filter blur-xl 
             transition-opacity duration-700 ease-in-out
-            ${isLoading ? "opacity-100" : "opacity-0"}
+            ${isLoading ? 'opacity-100' : 'opacity-0'}
           `}
         />
       )}
@@ -98,8 +98,8 @@ const CustomImage = ({
           transition-all duration-500 ease-in-out
           ${
             !showThumbnail || isLoading
-              ? "opacity-0 scale-95 grayscale"
-              : "opacity-100 scale-100 grayscale-0"
+              ? 'opacity-0 scale-95 grayscale'
+              : 'opacity-100 scale-100 grayscale-0'
           }
         `}
       />
@@ -107,4 +107,4 @@ const CustomImage = ({
   );
 };
 
-export default CustomImage;
+export default Image;

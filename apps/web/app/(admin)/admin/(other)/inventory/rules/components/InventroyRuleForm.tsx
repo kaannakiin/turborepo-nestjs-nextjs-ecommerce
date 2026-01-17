@@ -1,7 +1,7 @@
 'use client';
 
 import FormCard from '@/components/cards/FormCard';
-import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
+import LoadingOverlay from '@/components/LoadingOverlay';
 import LabelWithTooltip from '@/components/inputs/LabelWithTooltip';
 import { FlowDrawer } from '@/components/react-flow/FlowDrawer';
 import FlowDrawerButton from '@/components/react-flow/FlowDrawerButton';
@@ -152,7 +152,7 @@ const InventoryRuleForm = ({ defaultValues }: InventoryRuleFormProps) => {
   return (
     <>
       <Activity mode={upsertMutation?.isPending ? 'visible' : 'hidden'}>
-        <GlobalLoadingOverlay />
+        <LoadingOverlay />
       </Activity>
       <form onSubmit={handleSubmit(onSubmit)}>
         <Stack gap="lg">

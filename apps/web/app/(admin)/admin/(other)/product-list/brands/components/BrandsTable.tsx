@@ -1,11 +1,14 @@
-"use client";
-import TableAsset from "@/(admin)/components/TableAsset";
-import CustomPagination from "@/components/CustomPagination";
-import CustomSearchInput from "@/components/CustomSearchInput";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
+'use client';
+import TableAsset from '@/(admin)/components/TableAsset';
+import Pagination from '@/components/Pagination';
+import SearchInput from '@/components/SearchInput';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import { useBrands, useDeleteBrand } from '@hooks/admin/useAdminBrands';
+import { DateFormatter } from '@repo/shared';
+import { AdminBrandTableData } from '@repo/types';
 import {
   ActionIcon,
+  AspectRatio,
   Badge,
   Button,
   Group,
@@ -14,25 +17,23 @@ import {
   Table,
   Text,
   Title,
-} from "@mantine/core";
-import { notifications } from "@mantine/notifications";
-import { Locale } from "@repo/database/client";
-import { DateFormatter, useMutation, useQuery } from "@repo/shared";
-import { AdminBrandTableData, BrandTableApiResponse } from "@repo/types";
-import { IconEdit, IconTrash } from "@tabler/icons-react";
-import { Route } from "next";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import { Locale } from '@repo/database/client';
+import { IconEdit, IconTrash } from '@tabler/icons-react';
+import { Route } from 'next';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 const getBrandName = (
   brand:
-    | Pick<AdminBrandTableData, "translations">
-    | Pick<AdminBrandTableData["parentBrand"], "translations">,
-  locale: Locale = "TR"
+    | Pick<AdminBrandTableData, 'translations'>
+    | Pick<AdminBrandTableData['parentBrand'], 'translations'>,
+  locale: Locale = 'TR',
 ) => {
-  if (!brand || !brand.translations) return "İsimsiz Marka";
+  if (!brand || !brand.translations) return 'İsimsiz Marka';
   const translation = brand.translations.find((t) => t.locale === locale);
-  return translation?.name || brand.translations[0]?.name || "İsimsiz Marka";
+  return translation?.name || brand.translations[0]?.name || 'İsimsiz Marka';
 };
 const BrandsTable = () => {
   const searchParams = useSearchParams();
@@ -42,80 +43,44 @@ const BrandsTable = () => {
     Record<string, boolean>
   >({});
 
-  const { data, isLoading, isFetching, isError } = useQuery({
-    queryKey: [
-      "admin-brands",
-      searchParams.get("search") || undefined,
-      parseInt(searchParams.get("page") as string) || 1,
-    ],
-    queryFn: async ({ queryKey }) => {
-      const [, search, page] = queryKey;
+  const { data, isLoading, isFetching, isError } = useBrands(
+    searchParams.get('search') || undefined,
+    parseInt(searchParams.get('page') as string) || 1,
+  );
 
-      const params = new URLSearchParams();
-      if (search) params.set("search", search as string);
-      params.set("page", page.toString());
+  const deleteBrandMutation = useDeleteBrand();
 
-      const result = await fetchWrapper.get<BrandTableApiResponse>(
-        `/admin/products/brands?${params}`
-      );
+  const handleDeleteBrand = async (brandId: string) => {
+    try {
+      const result = await deleteBrandMutation.mutateAsync(brandId);
 
-      if (!result.success) {
-        throw new Error("Markalar yüklenirken bir hata oluştu");
-      }
-
-      return result.data;
-    },
-    refetchOnWindowFocus: false,
-    gcTime: 1000 * 60 * 5,
-    staleTime: 1000 * 30,
-  });
-
-  const deleteBrandMutation = useMutation({
-    mutationFn: async (brandId: string) => {
-      const result = await fetchWrapper.delete<{ message: string }>(
-        `/admin/products/brands/delete-brand/${brandId}`
-      );
-
-      if (!result.success) {
-        throw new Error("Marka silinirken bir hata oluştu");
-      }
-
-      return result.data;
-    },
-    onSuccess: (data, brandId, result, context) => {
       setOpenedDeletePopover((prev) => ({
         ...prev,
         [brandId]: false,
       }));
 
       notifications.show({
-        title: "Başarılı",
-        message: data.message || "Marka başarıyla silindi",
-        color: "green",
+        title: 'Başarılı',
+        message: result.message || 'Marka başarıyla silindi',
+        color: 'green',
         autoClose: 3000,
       });
-
-      context.client.invalidateQueries({
-        queryKey: ["admin-brands"],
-      });
-    },
-    onError: (error: Error, brandId) => {
+    } catch (error) {
       setOpenedDeletePopover((prev) => ({
         ...prev,
         [brandId]: false,
       }));
 
       notifications.show({
-        title: "Hata",
-        message: error.message || "Marka silinirken bir hata oluştu",
-        color: "red",
+        title: 'Hata',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Marka silinirken bir hata oluştu',
+        color: 'red',
         autoClose: 5000,
       });
-    },
-  });
-
-  const handleDeleteBrand = (brandId: string) => {
-    deleteBrandMutation.mutate(brandId);
+    }
   };
 
   if (isError) {
@@ -134,7 +99,7 @@ const BrandsTable = () => {
   return (
     <>
       {(isLoading || isFetching || deleteBrandMutation.isPending) && (
-        <GlobalLoadingOverlay />
+        <LoadingOverlay />
       )}
 
       <Stack gap="lg">
@@ -143,11 +108,11 @@ const BrandsTable = () => {
           <Group gap="lg">
             <Button
               component={Link}
-              href={"/admin/product-list/brands/new" as Route}
+              href={'/admin/product-list/brands/new' as Route}
             >
               Yeni Marka Ekle
             </Button>
-            <CustomSearchInput />
+            <SearchInput />
           </Group>
         </Group>
 
@@ -156,7 +121,7 @@ const BrandsTable = () => {
             striped
             highlightOnHover
             highlightOnHoverColor="admin.0"
-            verticalSpacing={"md"}
+            verticalSpacing={'md'}
           >
             <Table.Thead>
               <Table.Tr>
@@ -173,9 +138,11 @@ const BrandsTable = () => {
               {data?.brands?.map((brand) => (
                 <Table.Tr key={brand.id}>
                   <Table.Td
-                    style={{ width: 120, maxHeight: 120, position: "relative" }}
+                    style={{ width: 120, maxHeight: 120, position: 'relative' }}
                   >
-                    <TableAsset url={brand.image?.url} type="IMAGE" />
+                    <AspectRatio ratio={1}>
+                      <TableAsset url={brand.image?.url} type="IMAGE" />
+                    </AspectRatio>
                   </Table.Td>
 
                   <Table.Td>
@@ -185,7 +152,7 @@ const BrandsTable = () => {
                   <Table.Td>
                     {brand.parentBrandId ? (
                       <Text size="sm" c="dimmed">
-                        {getBrandName(brand.parentBrand, "TR")}
+                        {getBrandName(brand.parentBrand, 'TR')}
                       </Text>
                     ) : (
                       <Text size="sm" c="dimmed" fs="italic">
@@ -215,7 +182,7 @@ const BrandsTable = () => {
                   <Table.Td align="center">
                     <Group gap="xs">
                       <ActionIcon
-                        size={"sm"}
+                        size={'sm'}
                         variant="transparent"
                         onClick={() =>
                           push(`/admin/product-list/brands/${brand.id}`)
@@ -238,9 +205,9 @@ const BrandsTable = () => {
                       >
                         <Popover.Target>
                           <ActionIcon
-                            size={"sm"}
+                            size={'sm'}
                             variant="transparent"
-                            c={"red"}
+                            c={'red'}
                             onClick={() => {
                               setOpenedDeletePopover((prev) => ({
                                 ...prev,
@@ -258,7 +225,7 @@ const BrandsTable = () => {
                             <Text size="sm">
                               <Text fw={600} span>
                                 &quot;{getBrandName(brand)}&quot;
-                              </Text>{" "}
+                              </Text>{' '}
                               markasını silmek istediğinize emin misiniz?
                             </Text>
 
@@ -311,9 +278,9 @@ const BrandsTable = () => {
                 <Table.Tr>
                   <Table.Td colSpan={7}>
                     <Text ta="center" c="dimmed" py="xl">
-                      {searchParams.get("search")
-                        ? "Arama kriterinize uygun marka bulunamadı"
-                        : "Henüz marka eklenmemiş"}
+                      {searchParams.get('search')
+                        ? 'Arama kriterinize uygun marka bulunamadı'
+                        : 'Henüz marka eklenmemiş'}
                     </Text>
                   </Table.Td>
                 </Table.Tr>
@@ -323,7 +290,7 @@ const BrandsTable = () => {
         </Table.ScrollContainer>
 
         {data?.pagination && data.pagination.totalPages > 1 && (
-          <CustomPagination total={data.pagination.totalPages} />
+          <Pagination total={data.pagination.totalPages} />
         )}
       </Stack>
     </>

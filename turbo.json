@@ -17,7 +17,8 @@
         "NEXT_PUBLIC_BACKEND_URL",
         "NEXT_PUBLIC_APP_URL",
         "JWT_ACCESS_TOKEN_SECRET",
-        "ALLOWED_IMAGE_DOMAINS"
+        "ALLOWED_IMAGE_DOMAINS",
+        "REVALIDATE_SECRET"
       ],
       "outputs": [".next/**", "!.next/cache/**"]
     },
@@ -102,7 +103,8 @@
         "NEXT_PUBLIC_BACKEND_URL",
         "NEXT_PUBLIC_APP_URL",
         "JWT_ACCESS_TOKEN_SECRET",
-        "ALLOWED_IMAGE_DOMAINS"
+        "ALLOWED_IMAGE_DOMAINS",
+        "REVALIDATE_SECRET"
       ]
     },
     "database#build": {

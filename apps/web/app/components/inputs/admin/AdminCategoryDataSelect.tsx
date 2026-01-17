@@ -1,25 +1,14 @@
-"use client";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
+'use client';
 import {
   Loader,
   MultiSelect,
   MultiSelectProps,
   Select,
   SelectProps,
-} from "@mantine/core";
-import { useQuery } from "@repo/shared";
-import { CategoryIdAndName } from "@repo/types";
-import { useState } from "react";
-
-const fetchCategories = async () => {
-  const response = await fetchWrapper.get<CategoryIdAndName[]>(
-    "/admin/products/categories/get-all-categories-only-id-and-name"
-  );
-  if (!response.success) {
-    throw new Error("Kategoriler alınamadı");
-  }
-  return response.data;
-};
+} from '@mantine/core';
+import { CategoryIdAndName } from '@repo/types';
+import { useState } from 'react';
+import { useAllCategoriesSimple } from '@hooks/admin/useAdminCategories';
 
 export interface SelectOption {
   value: string;
@@ -45,13 +34,9 @@ const AdminCategoryDataSelect = ({
     ? Array.isArray(value) && value.length > 0
     : !!value;
 
-  const { data, isLoading, isError, isFetched } = useQuery({
-    queryKey: ["data-select-categories"],
-    queryFn: fetchCategories,
-    enabled: isDropdownOpened || hasValue,
-    staleTime: 1000 * 60 * 5,
-    retry: 1,
-  });
+  const { data, isLoading, isError, isFetched } = useAllCategoriesSimple(
+    isDropdownOpened || hasValue,
+  );
 
   const handleOpen = () => {
     if (!isDropdownOpened) {
@@ -61,11 +46,11 @@ const AdminCategoryDataSelect = ({
 
   const isEmpty = isFetched && Array.isArray(data) && data.length === 0;
 
-  let dynamicPlaceholder = "Kategori seçiniz";
-  if (isError) dynamicPlaceholder = "⚠️ Veri alınamadı";
-  else if (isLoading && hasValue) dynamicPlaceholder = "Seçim yükleniyor...";
-  else if (isLoading) dynamicPlaceholder = "Yükleniyor...";
-  else if (isEmpty) dynamicPlaceholder = "Tanımlı kategori bulunmuyor";
+  let dynamicPlaceholder = 'Kategori seçiniz';
+  if (isError) dynamicPlaceholder = '⚠️ Veri alınamadı';
+  else if (isLoading && hasValue) dynamicPlaceholder = 'Seçim yükleniyor...';
+  else if (isLoading) dynamicPlaceholder = 'Yükleniyor...';
+  else if (isEmpty) dynamicPlaceholder = 'Tanımlı kategori bulunmuyor';
 
   const isComponentDisabled = isError || (isEmpty && !isLoading);
   const isReady = !isLoading && !isError && data && data.length > 0;
@@ -80,14 +65,14 @@ const AdminCategoryDataSelect = ({
   const logicProps = {
     data: selectData,
     onDropdownOpen: handleOpen,
-    nothingFoundMessage: isLoading ? "Yükleniyor..." : "Kategori bulunamadı",
+    nothingFoundMessage: isLoading ? 'Yükleniyor...' : 'Kategori bulunamadı',
     rightSection: isLoading ? <Loader size={18} /> : null,
     disabled: isComponentDisabled,
     searchable: true,
   };
 
   const defaultStyles = {
-    label: "Kategori Seçiniz",
+    label: 'Kategori Seçiniz',
     placeholder: dynamicPlaceholder,
   };
 
@@ -100,7 +85,7 @@ const AdminCategoryDataSelect = ({
         value={safeValue as string[]}
         onChange={(val) => {
           const selectedOptions = selectData.filter((opt) =>
-            val.includes(opt.value)
+            val.includes(opt.value),
           );
           onChange(val, selectedOptions);
         }}

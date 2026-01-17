@@ -1,8 +1,8 @@
-"use client";
-import AdminBrandDataSelect from "@/components/inputs/admin/AdminBrandDataSelect";
-import AdminCategoryDataSelect from "@/components/inputs/admin/AdminCategoryDataSelect";
-import AdminTagDataSelect from "@/components/inputs/admin/AdminTagDataSelect";
-import IconDropzone from "@/components/inputs/IconDropzone";
+'use client';
+import AdminBrandDataSelect from '@/components/inputs/admin/AdminBrandDataSelect';
+import AdminCategoryDataSelect from '@/components/inputs/admin/AdminCategoryDataSelect';
+import AdminTagDataSelect from '@/components/inputs/admin/AdminTagDataSelect';
+import IconDropzone from '@/components/inputs/IconDropzone';
 import {
   closestCenter,
   DndContext,
@@ -11,13 +11,13 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-} from "@dnd-kit/core";
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+} from '@dnd-kit/core';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import {
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+} from '@dnd-kit/sortable';
 import {
   ActionIcon,
   Badge,
@@ -30,7 +30,7 @@ import {
   Text,
   TextInput,
   ThemeIcon,
-} from "@mantine/core";
+} from '@mantine/core';
 import {
   Control,
   Controller,
@@ -38,13 +38,13 @@ import {
   useFieldArray,
   UseFormReturn,
   useWatch,
-} from "@repo/shared";
+} from '@repo/shared';
 import {
   AnnouncementInputType,
   HeaderLinkInputType,
   HeaderLinkType,
   ThemeInputType,
-} from "@repo/types";
+} from '@repo/types';
 import {
   IconArrowLeft,
   IconLink,
@@ -52,9 +52,9 @@ import {
   IconPlus,
   IconSpeakerphone,
   IconX,
-} from "@tabler/icons-react";
-import { useState } from "react";
-import { SortableListRow } from "../../common/SortableListRow";
+} from '@tabler/icons-react';
+import { useState } from 'react';
+import { SortableListRow } from '../../common/SortableListRow';
 
 interface LinksEditorProps {
   control: Control<ThemeInputType>;
@@ -76,7 +76,9 @@ const LinksEditor = ({ control, onBack }: LinksEditorProps) => {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -91,25 +93,25 @@ const LinksEditor = ({ control, onBack }: LinksEditorProps) => {
   };
 
   const selectedBrandIds = (links ?? [])
-    .filter((l) => l.type === "brand" && l.brandId)
+    .filter((l) => l.type === 'brand' && l.brandId)
     .map((l) => l.brandId!);
 
   const selectedCategoryIds = (links ?? [])
-    .filter((l) => l.type === "category" && l.categoryId)
+    .filter((l) => l.type === 'category' && l.categoryId)
     .map((l) => l.categoryId!);
 
   const selectedTagIds = (links ?? [])
-    .filter((l) => l.type === "tag" && l.tagId)
+    .filter((l) => l.type === 'tag' && l.tagId)
     .map((l) => l.tagId!);
 
   const createChangeHandler = (
     type: HeaderLinkType,
-    idKey: "brandId" | "categoryId" | "tagId",
-    selectedIds: string[]
+    idKey: 'brandId' | 'categoryId' | 'tagId',
+    selectedIds: string[],
   ) => {
     return (
       value: string | string[] | null,
-      options?: { value: string; label: string }[]
+      options?: { value: string; label: string }[],
     ) => {
       if (!Array.isArray(value)) return;
 
@@ -118,7 +120,7 @@ const LinksEditor = ({ control, onBack }: LinksEditorProps) => {
         const index = fields.findIndex(
           (f) =>
             (f as HeaderLinkInputType).type === type &&
-            (f as HeaderLinkInputType)[idKey] === id
+            (f as HeaderLinkInputType)[idKey] === id,
         );
         if (index !== -1) remove(index);
       });
@@ -129,12 +131,12 @@ const LinksEditor = ({ control, onBack }: LinksEditorProps) => {
         const newLink: HeaderLinkInputType = {
           linkId: createId(),
           type,
-          brandId: idKey === "brandId" ? id : null,
-          categoryId: idKey === "categoryId" ? id : null,
-          tagId: idKey === "tagId" ? id : null,
+          brandId: idKey === 'brandId' ? id : null,
+          categoryId: idKey === 'categoryId' ? id : null,
+          tagId: idKey === 'tagId' ? id : null,
           customText: null,
           customUrl: null,
-          name: option?.label ?? "",
+          name: option?.label ?? '',
           order: fields.length,
         };
         append(newLink);
@@ -143,10 +145,10 @@ const LinksEditor = ({ control, onBack }: LinksEditorProps) => {
   };
 
   const linkConfig: Record<HeaderLinkType, { color: string; label: string }> = {
-    brand: { color: "blue", label: "Marka" },
-    category: { color: "green", label: "Kategori" },
-    tag: { color: "orange", label: "Etiket" },
-    custom: { color: "violet", label: "Özel" },
+    brand: { color: 'blue', label: 'Marka' },
+    category: { color: 'green', label: 'Kategori' },
+    tag: { color: 'orange', label: 'Etiket' },
+    custom: { color: 'violet', label: 'Özel' },
   };
 
   return (
@@ -166,23 +168,23 @@ const LinksEditor = ({ control, onBack }: LinksEditorProps) => {
         <AdminBrandDataSelect
           multiple
           value={selectedBrandIds}
-          onChange={createChangeHandler("brand", "brandId", selectedBrandIds)}
+          onChange={createChangeHandler('brand', 'brandId', selectedBrandIds)}
         />
 
         <AdminCategoryDataSelect
           multiple
           value={selectedCategoryIds}
           onChange={createChangeHandler(
-            "category",
-            "categoryId",
-            selectedCategoryIds
+            'category',
+            'categoryId',
+            selectedCategoryIds,
           )}
         />
 
         <AdminTagDataSelect
           multiple
           value={selectedTagIds}
-          onChange={createChangeHandler("tag", "tagId", selectedTagIds)}
+          onChange={createChangeHandler('tag', 'tagId', selectedTagIds)}
         />
       </Stack>
 
@@ -202,7 +204,7 @@ const LinksEditor = ({ control, onBack }: LinksEditorProps) => {
               items={fields.map((f) => f.id)}
               strategy={verticalListSortingStrategy}
             >
-              <Stack gap={"4px"}>
+              <Stack gap={'4px'}>
                 {fields.map((field, index) => {
                   const linkData = (links?.[index] ??
                     field) as HeaderLinkInputType;
@@ -217,7 +219,7 @@ const LinksEditor = ({ control, onBack }: LinksEditorProps) => {
                     >
                       <Group justify="space-between" wrap="nowrap" gap="xs">
                         <Text size="sm" fw={500} lineClamp={1}>
-                          {linkData.name || linkData.customText || "İsimsiz"}
+                          {linkData.name || linkData.customText || 'İsimsiz'}
                         </Text>
                         <Badge
                           size="xs"
@@ -280,7 +282,7 @@ const SettingsTab = ({ control, onEditLinks }: SettingsTabProps) => {
           render={({ field: { value, onChange, ...field } }) => (
             <ColorInput
               {...field}
-              value={value ?? ""}
+              value={value ?? ''}
               onChangeEnd={onChange}
               label="Arka Plan Rengi"
               placeholder="Renk seçiniz"
@@ -295,7 +297,7 @@ const SettingsTab = ({ control, onEditLinks }: SettingsTabProps) => {
           render={({ field: { value, onChange, ...field } }) => (
             <ColorInput
               {...field}
-              value={value ?? ""}
+              value={value ?? ''}
               onChangeEnd={onChange}
               label="Yazı Rengi"
               placeholder="Renk seçiniz"
@@ -344,7 +346,9 @@ const AnnouncementsTab = ({ control }: AnnouncementsTabProps) => {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -362,10 +366,10 @@ const AnnouncementsTab = ({ control }: AnnouncementsTabProps) => {
     if (fields.length >= 10) return;
 
     const newAnnouncement: AnnouncementInputType = {
-      text: "",
-      url: "",
-      textColor: "#ffffff",
-      backgroundColor: "#000000",
+      text: '',
+      url: '',
+      textColor: '#ffffff',
+      backgroundColor: '#000000',
     };
     append(newAnnouncement);
   };
@@ -403,7 +407,7 @@ const AnnouncementsTab = ({ control }: AnnouncementsTabProps) => {
                   <div
                     key={field.id}
                     onClick={() => setSelectedId(field.id)}
-                    style={{ cursor: "pointer" }}
+                    style={{ cursor: 'pointer' }}
                   >
                     <SortableListRow
                       id={field.id}
@@ -411,7 +415,7 @@ const AnnouncementsTab = ({ control }: AnnouncementsTabProps) => {
                       onDelete={() => handleRemove(index, field.id)}
                     >
                       <Group justify="space-between" w="100%">
-                        <Text size="sm" fw={500} lineClamp={1} c={"dimmed"}>
+                        <Text size="sm" fw={500} lineClamp={1} c={'dimmed'}>
                           {announcementData.text || `Duyuru ${index + 1}`}
                         </Text>
                       </Group>
@@ -509,7 +513,7 @@ const AnnouncementsTab = ({ control }: AnnouncementsTabProps) => {
                   <ColorInput
                     {...field}
                     size="xs"
-                    value={value ?? "#000000"}
+                    value={value ?? '#000000'}
                     onChangeEnd={onChange}
                     label="Arka Plan"
                     format="hex"
@@ -524,7 +528,7 @@ const AnnouncementsTab = ({ control }: AnnouncementsTabProps) => {
                   <ColorInput
                     {...field}
                     size="xs"
-                    value={value ?? "#ffffff"}
+                    value={value ?? '#ffffff'}
                     onChangeEnd={onChange}
                     label="Yazı Rengi"
                     format="hex"
@@ -543,13 +547,13 @@ interface HeaderComponentProps {
   forms: UseFormReturn<ThemeInputType>;
 }
 
-type View = "main" | "links";
+type View = 'main' | 'links';
 
 const HeaderComponent = ({ forms: { control } }: HeaderComponentProps) => {
-  const [view, setView] = useState<View>("main");
+  const [view, setView] = useState<View>('main');
 
-  if (view === "links") {
-    return <LinksEditor control={control} onBack={() => setView("main")} />;
+  if (view === 'links') {
+    return <LinksEditor control={control} onBack={() => setView('main')} />;
   }
 
   return (
@@ -567,7 +571,7 @@ const HeaderComponent = ({ forms: { control } }: HeaderComponentProps) => {
       </Tabs.List>
 
       <Tabs.Panel value="settings">
-        <SettingsTab control={control} onEditLinks={() => setView("links")} />
+        <SettingsTab control={control} onEditLinks={() => setView('links')} />
       </Tabs.Panel>
 
       <Tabs.Panel value="announcements">

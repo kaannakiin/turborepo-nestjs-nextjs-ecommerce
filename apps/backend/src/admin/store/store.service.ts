@@ -1,20 +1,14 @@
 import { RedisService } from '@liaoliaots/nestjs-redis';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
-import {
-  Currency,
-  Locale,
-  Prisma,
-  RoutingStrategy,
-  StoreType,
-} from '@repo/database';
+import { Currency, Locale, Prisma, StoreType } from '@repo/database';
 import { StoreZodOutputType } from '@repo/types';
 import { Redis } from 'ioredis';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StoreDto } from './store-dto';
 
 const STORE_CONFIG_CACHE_KEY = 'store_config:full';
-const STORE_CONFIG_TTL = 60 * 60 * 24 * 7; // 7 gün
+const STORE_CONFIG_TTL = 60 * 60 * 24 * 7;
 
 @Injectable()
 export class StoreService implements OnModuleInit {
@@ -34,7 +28,43 @@ export class StoreService implements OnModuleInit {
   @OnEvent('store.updated')
   async handleStoreUpdated() {
     await this.invalidateStoreConfigCache();
+    await this.notifyFrontendCacheInvalidation();
     this.logger.log('Store config cache invalidated');
+  }
+
+  private async notifyFrontendCacheInvalidation(): Promise<void> {
+    const frontendUrl = process.env.WEB_UI_REDIRECT;
+    const revalidateSecret = process.env.REVALIDATE_SECRET;
+
+    if (!frontendUrl || !revalidateSecret) {
+      this.logger.warn(
+        'FRONTEND_URL or REVALIDATE_SECRET not set, skipping frontend cache invalidation',
+      );
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${frontendUrl.endsWith('/') ? frontendUrl.slice(0, -1) : frontendUrl}/api/revalidate/store`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${revalidateSecret}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      if (response.ok) {
+        this.logger.log('Frontend store config cache invalidated');
+      } else {
+        this.logger.warn(
+          `Frontend cache invalidation failed: ${response.status}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error('Failed to notify frontend cache invalidation:', error);
+    }
   }
 
   private async invalidateStoreConfigCache(): Promise<void> {
@@ -44,7 +74,7 @@ export class StoreService implements OnModuleInit {
   }
 
   async upsertBothStores(dto: StoreDto) {
-    return await this.prisma.$transaction(async (tx) => {
+    const results = await this.prisma.$transaction(async (tx) => {
       let organization = await tx.organization.findFirst();
 
       if (!organization) {
@@ -58,45 +88,55 @@ export class StoreService implements OnModuleInit {
         });
       }
 
-      const results = {
+      const txResults: { b2c: any; b2b: any } = {
         b2c: null,
         b2b: null,
       };
 
       if (dto.isB2CActive) {
-        results.b2c = await this.upsertStoreByType(tx, organization.id, 'B2C', {
-          name: dto.name,
-          customDomain: dto.b2cCustomDomain,
-          routing: dto.b2cRouting,
-          defaultLocale: dto.b2cDefaultLocale,
-          localeCurrencies: dto.b2cLocaleCurrencies,
-        });
+        txResults.b2c = await this.upsertStoreByType(
+          tx,
+          organization.id,
+          'B2C',
+          {
+            name: dto.name,
+            customDomain: dto.b2cCustomDomain,
+            defaultLocale: dto.b2cDefaultLocale,
+            localeCurrencies: dto.b2cLocaleCurrencies,
+          },
+        );
       } else {
         await this.deactivateStore(tx, organization.id, 'B2C');
       }
 
       if (dto.isB2BActive) {
-        results.b2b = await this.upsertStoreByType(tx, organization.id, 'B2B', {
-          name: dto.name,
-          customDomain: dto.b2bCustomDomain,
-          subdomain: dto.b2bSubdomain,
-          routing: dto.b2bRouting,
-          defaultLocale: dto.b2bDefaultLocale,
-          localeCurrencies: dto.b2bLocaleCurrencies,
-        });
+        txResults.b2b = await this.upsertStoreByType(
+          tx,
+          organization.id,
+          'B2B',
+          {
+            name: dto.name,
+            customDomain: dto.b2bCustomDomain,
+            subdomain: dto.b2bSubdomain,
+            defaultLocale: dto.b2bDefaultLocale,
+            localeCurrencies: dto.b2bLocaleCurrencies,
+          },
+        );
       } else {
         await this.deactivateStore(tx, organization.id, 'B2B');
       }
 
-      if (results.b2c) {
-        this.eventEmitter.emit('store.updated', { storeId: results.b2c.id });
-      }
-      if (results.b2b) {
-        this.eventEmitter.emit('store.updated', { storeId: results.b2b.id });
-      }
-
-      return results;
+      return txResults;
     });
+
+    if (results.b2c) {
+      this.eventEmitter.emit('store.updated', { storeId: results.b2c.id });
+    }
+    if (results.b2b) {
+      this.eventEmitter.emit('store.updated', { storeId: results.b2b.id });
+    }
+
+    return results;
   }
 
   private async upsertStoreByType(
@@ -107,7 +147,6 @@ export class StoreService implements OnModuleInit {
       name: string;
       customDomain?: string | null;
       subdomain?: string | null;
-      routing?: string;
       defaultLocale: string;
       localeCurrencies: Array<{ locale: string; currency: string }>;
     },
@@ -153,12 +192,10 @@ export class StoreService implements OnModuleInit {
       create: {
         storeId: store.id,
         customDomain: data.customDomain || null,
-        routing: (data.routing as RoutingStrategy) ?? 'PATH_PREFIX',
         defaultLocale: data.defaultLocale as Locale,
       },
       update: {
         customDomain: data.customDomain || null,
-        routing: (data.routing as RoutingStrategy) ?? 'PATH_PREFIX',
         defaultLocale: data.defaultLocale as Locale,
       },
     });
@@ -213,7 +250,6 @@ export class StoreService implements OnModuleInit {
   }
 
   async getStores(): Promise<StoreZodOutputType | null> {
-    // Önce cache'e bak
     if (this.redis) {
       const cached = await this.redis.get(STORE_CONFIG_CACHE_KEY);
       if (cached) {
@@ -246,8 +282,6 @@ export class StoreService implements OnModuleInit {
 
       isB2CActive: b2cStore?.isActive ?? false,
       b2cCustomDomain: b2cStore?.settings?.customDomain || null,
-
-      b2cRouting: (b2cStore?.settings?.routing as any) || 'PATH_PREFIX',
       b2cDefaultLocale: (b2cStore?.settings?.defaultLocale as any) || 'TR',
       b2cLocaleCurrencies:
         b2cStore?.localeConfigs.map((lc) => ({
@@ -258,7 +292,6 @@ export class StoreService implements OnModuleInit {
       isB2BActive: b2bStore?.isActive ?? false,
       b2bSubdomain: b2bStore?.subdomain || null,
       b2bCustomDomain: b2bStore?.settings?.customDomain || null,
-      b2bRouting: (b2bStore?.settings?.routing as any) || 'PATH_PREFIX',
       b2bDefaultLocale: (b2bStore?.settings?.defaultLocale as any) || 'TR',
       b2bLocaleCurrencies:
         b2bStore?.localeConfigs.map((lc) => ({
@@ -267,7 +300,6 @@ export class StoreService implements OnModuleInit {
         })) || [],
     };
 
-    // Cache'e yaz
     if (this.redis) {
       await this.redis.set(
         STORE_CONFIG_CACHE_KEY,

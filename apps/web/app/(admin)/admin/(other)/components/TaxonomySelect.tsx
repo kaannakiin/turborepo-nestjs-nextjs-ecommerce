@@ -1,8 +1,6 @@
-import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
 import {
   ActionIcon,
   Box,
-  Button,
   Group,
   Input,
   Loader,
@@ -12,18 +10,19 @@ import {
   Stack,
   Text,
   TextInput,
-} from "@mantine/core";
-import { useDisclosure, useDebouncedCallback } from "@mantine/hooks";
-import { ControllerRenderProps, useQuery } from "@repo/shared";
-import { NewTaxonomyCategory } from "@repo/types";
-import { IconChevronDown, IconChevronRight } from "@tabler/icons-react";
-import { useState } from "react";
+} from '@mantine/core';
+import { useDisclosure, useDebouncedCallback } from '@mantine/hooks';
+import { ControllerRenderProps } from '@repo/shared';
+import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
+import { useState } from 'react';
+import {
+  SimplifiedTaxonomyCategory,
+  useGoogleTaxonomyAncestors,
+  useGoogleTaxonomyCategories,
+  useGoogleTaxonomyDetails,
+  useGoogleTaxonomySearch,
+} from '@hooks/admin/useGoogleTaxonomy';
 
-interface SimplifiedTaxonomyCategory {
-  id: string;
-  name: string;
-  hasChildren: boolean;
-}
 interface OnSelectProp {
   onSelect: (category: SimplifiedTaxonomyCategory) => void;
 }
@@ -39,83 +38,6 @@ interface CategoryItemProps extends OnSelectProp {
   selectedId: string | null;
 }
 
-const fetchCategoriesByParent = async (
-  parentId: string | null
-): Promise<SimplifiedTaxonomyCategory[]> => {
-  const url = parentId
-    ? `/admin/products/google-categories/get-categories-by-parent-id?parentId=${parentId}`
-    : `/admin/products/google-categories/get-categories-by-depth?depth=0`;
-  const response = await fetchWrapper.get<NewTaxonomyCategory>(url);
-  if (!response.success) {
-    const errorMessage = response as ApiError;
-    throw new Error(
-      errorMessage.error || "Failed to fetch Google Taxonomy categories"
-    );
-  }
-  if (!response.data.success || !response.data.categories) {
-    throw new Error("Failed to fetch Google Taxonomy categories");
-  }
-  const simplifiedData = response.data.categories.map((category) => ({
-    id: category.id,
-    name: category.originalName,
-    hasChildren: category._count.children > 0,
-    parentId: null,
-  }));
-  return simplifiedData;
-};
-
-const fetchCategoryBySearch = async (
-  searchTerm: string
-): Promise<SimplifiedTaxonomyCategory[]> => {
-  const response = await fetchWrapper.get<NewTaxonomyCategory>(
-    `/admin/products/google-categories/search-categories?search=${encodeURIComponent(searchTerm)}`
-  );
-
-  if (!response.success) {
-    const errorMessage = response as ApiError;
-    throw new Error(
-      errorMessage.error || "Failed to search Google Taxonomy categories"
-    );
-  }
-  if (!response.data.success || !response.data.categories) {
-    throw new Error("Failed to search Google Taxonomy categories");
-  }
-
-  const simplifiedData = response.data.categories.map((category) => ({
-    id: category.id,
-    name: category.originalName,
-    hasChildren: category._count.children > 0,
-    parentId: null,
-  }));
-
-  return simplifiedData;
-};
-
-const fetchAncestorIds = async (id: string): Promise<string[]> => {
-  if (!id) return [];
-  const response = await fetchWrapper.get<{ success: boolean; ids: string[] }>(
-    `/admin/products/google-categories/get-ancestor-ids-by-id?id=${id}`
-  );
-  if (!response.success || !response.data.ids) {
-    throw new Error("Failed to fetch ancestor IDs");
-  }
-  return response.data.ids;
-};
-
-const fetchCategoryDetails = async (
-  id: string
-): Promise<SimplifiedTaxonomyCategory> => {
-  if (!id) throw new Error("ID required");
-  const response = await fetchWrapper.get<{
-    success: boolean;
-    category: SimplifiedTaxonomyCategory;
-  }>(`/admin/products/google-categories/get-category-details-by-id?id=${id}`);
-  if (!response.success || !response.data.category) {
-    throw new Error("Failed to fetch category details");
-  }
-  return response.data.category;
-};
-
 function CategoryItem({
   category,
   onSelect,
@@ -125,7 +47,7 @@ function CategoryItem({
   const isPreExpanded = preExpandedIds.includes(category.id);
   const isSelected = selectedId === category.id;
   const [isOpen, { toggle }] = useDisclosure(
-    isPreExpanded && category.hasChildren
+    isPreExpanded && category.hasChildren,
   );
   const categoryName = category.name;
 
@@ -144,24 +66,24 @@ function CategoryItem({
         radius="md"
         withBorder
         style={(theme) => ({
-          cursor: "pointer",
-          transition: "all 0.2s ease",
+          cursor: 'pointer',
+          transition: 'all 0.2s ease',
 
-          backgroundColor: isSelected ? theme.colors.admin[0] : "transparent",
+          backgroundColor: isSelected ? theme.colors.admin[0] : 'transparent',
           borderColor: isSelected
             ? theme.colors.admin[5]
-            : "var(--mantine-color-gray-3)",
+            : 'var(--mantine-color-gray-3)',
         })}
         onMouseEnter={(e) => {
           if (isSelected) return;
-          e.currentTarget.style.borderColor = "var(--mantine-primary-color-5)";
+          e.currentTarget.style.borderColor = 'var(--mantine-primary-color-5)';
           e.currentTarget.style.backgroundColor =
-            "var(--mantine-primary-color-0)";
+            'var(--mantine-primary-color-0)';
         }}
         onMouseLeave={(e) => {
           if (isSelected) return;
-          e.currentTarget.style.borderColor = "var(--mantine-color-gray-3)";
-          e.currentTarget.style.backgroundColor = "transparent";
+          e.currentTarget.style.borderColor = 'var(--mantine-color-gray-3)';
+          e.currentTarget.style.backgroundColor = 'transparent';
         }}
         onClick={handleClick}
       >
@@ -171,7 +93,7 @@ function CategoryItem({
               variant="subtle"
               color="admin"
               size="sm"
-              style={{ transition: "transform 0.2s ease" }}
+              style={{ transition: 'transform 0.2s ease' }}
             >
               {isOpen ? (
                 <IconChevronDown size={16} />
@@ -185,7 +107,7 @@ function CategoryItem({
           <Text
             size="sm"
             fw={isSelected ? 700 : 500}
-            c={isSelected ? "admin.7" : undefined}
+            c={isSelected ? 'admin.7' : undefined}
           >
             {categoryName}
           </Text>
@@ -197,8 +119,8 @@ function CategoryItem({
           pl="xl"
           pt="xs"
           style={{
-            borderLeft: "2px solid var(--mantine-primary-color-2)",
-            marginLeft: "14px",
+            borderLeft: '2px solid var(--mantine-primary-color-2)',
+            marginLeft: '14px',
           }}
         >
           {/* YENİ: Prop'lar aşağıya aktarıldı */}
@@ -220,10 +142,8 @@ function CategoryList({
   preExpandedIds,
   selectedId,
 }: CategoryListProps) {
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["google-taxonomy", parentId ?? "root"],
-    queryFn: () => fetchCategoriesByParent(parentId),
-  });
+  const { data, isLoading, isError } = useGoogleTaxonomyCategories(parentId);
+
   if (isLoading) {
     return (
       <Paper p="md" radius="md" withBorder bg="admin.0">
@@ -280,37 +200,22 @@ interface TaxonomySelectProps {
 }
 const TaxonomySelect = ({ field }: TaxonomySelectProps) => {
   const [opened, { open, close }] = useDisclosure();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
   const debounced = useDebouncedCallback(setDebouncedSearchTerm, 500);
-  const { data: selectedCategoryDetails, isLoading: isLoadingDetails } =
-    useQuery({
-      queryKey: ["google-taxonomy-details", field.value],
-      queryFn: () => fetchCategoryDetails(field.value),
-      enabled: !!field.value,
-      staleTime: Infinity,
-    });
 
-  /**
-   * YENİ: Modal açıldığında ata yolunu getirmek için query
-   */
-  const { data: ancestorIds, isLoading: isLoadingAncestors } = useQuery({
-    queryKey: ["google-taxonomy-ancestors", field.value],
-    queryFn: () => fetchAncestorIds(field.value),
-    enabled: opened && !!field.value,
-    staleTime: 1000 * 60 * 5,
-  });
+  const { data: selectedCategoryDetails, isLoading: isLoadingDetails } =
+    useGoogleTaxonomyDetails(field.value);
+
+  const { data: ancestorIds, isLoading: isLoadingAncestors } =
+    useGoogleTaxonomyAncestors(field.value, opened);
 
   const {
     data: searchData,
     isLoading: isSearchLoading,
     isError: isSearchError,
-  } = useQuery({
-    queryKey: ["google-taxonomy-search", debouncedSearchTerm],
-    queryFn: () => fetchCategoryBySearch(debouncedSearchTerm),
-    enabled: debouncedSearchTerm.length > 0,
-  });
+  } = useGoogleTaxonomySearch(debouncedSearchTerm);
 
   const handleSelect = (category: SimplifiedTaxonomyCategory) => {
     field.onChange(category.id);
@@ -390,16 +295,16 @@ const TaxonomySelect = ({ field }: TaxonomySelectProps) => {
           onClick={open}
           styles={{
             input: {
-              cursor: "pointer",
-              textAlign: "left",
+              cursor: 'pointer',
+              textAlign: 'left',
             },
           }}
           rightSection={
             isLoadingDetails ? <Loader size="xs" /> : <IconChevronDown />
           }
         >
-          <Text size="sm" c={selectedCategoryDetails?.name ? "dark" : "dimmed"}>
-            {selectedCategoryDetails?.name || "Kategori seçiniz"}
+          <Text size="sm" c={selectedCategoryDetails?.name ? 'dark' : 'dimmed'}>
+            {selectedCategoryDetails?.name || 'Kategori seçiniz'}
           </Text>
         </Input>
       </Input.Wrapper>

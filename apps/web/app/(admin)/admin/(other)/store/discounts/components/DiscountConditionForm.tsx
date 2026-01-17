@@ -1,5 +1,5 @@
-"use client";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
+'use client';
+
 import {
   ActionIcon,
   Button,
@@ -9,53 +9,38 @@ import {
   Select,
   Stack,
   Text,
-} from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
-import { DiscountConditionType, LogicalOperator } from "@repo/database/client";
-import { Control, Controller, useFieldArray, useQuery } from "@repo/shared";
-import { DiscountItem, MainDiscount } from "@repo/types";
-import { IconEdit, IconTrash } from "@tabler/icons-react";
-import { useMemo, useState } from "react";
-import DiscountModal from "./DiscountModal";
+} from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { DiscountConditionType, LogicalOperator } from '@repo/database/client';
+import { Control, Controller, useFieldArray } from '@repo/shared';
+import { DiscountItem, MainDiscount } from '@repo/types';
+import { IconEdit, IconTrash } from '@tabler/icons-react';
+import { useMemo, useState } from 'react';
+import DiscountModal from './DiscountModal';
+import { useDiscountConditionData } from '@hooks/admin/useAdminDiscounts';
 
 const getSelectDataLabel = (
   value: DiscountConditionType,
-  type: "select" | "button"
+  type: 'select' | 'button',
 ) => {
-  if (type === "button") {
+  if (type === 'button') {
     switch (value) {
-      case "PRODUCT":
-        return "Ürün Ekle";
-      case "BRAND":
-        return "Marka Ekle";
-      case "CATEGORY":
-        return "Kategori Ekle";
+      case 'PRODUCT':
+        return 'Ürün Ekle';
+      case 'BRAND':
+        return 'Marka Ekle';
+      case 'CATEGORY':
+        return 'Kategori Ekle';
     }
   }
   switch (value) {
-    case "PRODUCT":
-      return "Ürünler";
-    case "BRAND":
-      return "Markalar";
-    case "CATEGORY":
-      return "Kategoriler";
+    case 'PRODUCT':
+      return 'Ürünler';
+    case 'BRAND':
+      return 'Markalar';
+    case 'CATEGORY':
+      return 'Kategoriler';
   }
-};
-
-const fetchDiscountData = async (
-  type: DiscountConditionType
-): Promise<DiscountItem[]> => {
-  const endpoints: Record<"CATEGORY" | "BRAND" | "PRODUCT", string> = {
-    CATEGORY: "/admin/products/categories/get-all-category-and-its-subs",
-    BRAND: "/admin/products/brands/get-all-brands-and-its-subs",
-    PRODUCT: "/admin/products/get-all-products-and-its-subs",
-  };
-
-  const response = await fetchWrapper.get<DiscountItem[]>(endpoints[type]);
-  if (!response.success) {
-    throw new Error("Veri alınırken bir hata oluştu");
-  }
-  return response.data as DiscountItem[];
 };
 
 interface DiscountConditionFormProps {
@@ -64,52 +49,47 @@ interface DiscountConditionFormProps {
 
 const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
   const [selectData, setSelectData] =
-    useState<DiscountConditionType>("PRODUCT");
+    useState<DiscountConditionType>('PRODUCT');
   const [opened, { open, close }] = useDisclosure(false);
   const [activeType, setActiveType] = useState<DiscountConditionType | null>(
-    null
+    null,
   );
 
   const { fields, append, update, remove } = useFieldArray({
     control,
-    name: "conditions.conditions",
+    name: 'conditions.conditions',
   });
 
   const useDiscountData = (type: DiscountConditionType) => {
-    return useQuery({
-      queryKey: ["discount-data", type],
-      queryFn: () => fetchDiscountData(type),
-      enabled: !!fields.find((f) => f.type === type) || activeType === type,
-      staleTime: Infinity,
-    });
+    return useDiscountConditionData(type);
   };
 
   const { data: productData, isLoading: isProductLoading } =
-    useDiscountData("PRODUCT");
+    useDiscountData('PRODUCT');
   const { data: brandData, isLoading: isBrandLoading } =
-    useDiscountData("BRAND");
+    useDiscountData('BRAND');
   const { data: categoryData, isLoading: isCategoryLoading } =
-    useDiscountData("CATEGORY");
+    useDiscountData('CATEGORY');
 
   const productLookups = useMemo(() => {
     if (!productData) return { productIds: new Set(), variantIds: new Set() };
     const productIds = new Set(productData.map((p) => p.id));
     const variantIds = new Set(
-      productData.flatMap((p) => (p.sub || []).map((v) => v.id))
+      productData.flatMap((p) => (p.sub || []).map((v) => v.id)),
     );
     return { productIds, variantIds };
   }, [productData]);
 
   const getDataForType = (
-    type: DiscountConditionType | null
+    type: DiscountConditionType | null,
   ): DiscountItem[] | undefined => {
     if (!type) return undefined;
     switch (type) {
-      case "PRODUCT":
+      case 'PRODUCT':
         return productData;
-      case "BRAND":
+      case 'BRAND':
         return brandData;
-      case "CATEGORY":
+      case 'CATEGORY':
         return categoryData;
       default:
         return undefined;
@@ -119,11 +99,11 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
   const getIsLoadingForType = (type: DiscountConditionType | null): boolean => {
     if (!type) return false;
     switch (type) {
-      case "PRODUCT":
+      case 'PRODUCT':
         return isProductLoading;
-      case "BRAND":
+      case 'BRAND':
         return isBrandLoading;
-      case "CATEGORY":
+      case 'CATEGORY':
         return isCategoryLoading;
       default:
         return false;
@@ -143,7 +123,7 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
   const findBreadcrumbPath = (
     items: DiscountItem[],
     targetId: string,
-    currentPath: string[] = []
+    currentPath: string[] = [],
   ): string[] | null => {
     for (const item of items) {
       const newPath = [...currentPath, item.name];
@@ -162,7 +142,7 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
 
   const findItemById = (
     items: DiscountItem[],
-    targetId: string
+    targetId: string,
   ): DiscountItem | null => {
     for (const item of items) {
       if (item.id === targetId) {
@@ -178,7 +158,7 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
 
   const getOptimizedSelections = (
     selectedIds: string[],
-    allData: DiscountItem[]
+    allData: DiscountItem[],
   ): string[] => {
     if (!selectedIds || selectedIds.length === 0) return [];
     const optimized = new Set<string>();
@@ -220,7 +200,7 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
 
     const existingIndex = findConditionIndexByType(activeType);
 
-    if (activeType === "CATEGORY" || activeType === "BRAND") {
+    if (activeType === 'CATEGORY' || activeType === 'BRAND') {
       if (existingIndex !== -1) {
         if (selectedIds.length === 0) {
           remove(existingIndex);
@@ -233,7 +213,7 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
         }
       } else if (selectedIds.length > 0) {
         append({
-          operator: "AND",
+          operator: 'AND',
           type: activeType,
           ids: selectedIds,
           subIds: null,
@@ -242,12 +222,12 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
       return;
     }
 
-    if (activeType === "PRODUCT") {
+    if (activeType === 'PRODUCT') {
       const mainIds = selectedIds.filter((id) =>
-        productLookups.productIds.has(id)
+        productLookups.productIds.has(id),
       );
       const subIds = selectedIds.filter((id) =>
-        productLookups.variantIds.has(id)
+        productLookups.variantIds.has(id),
       );
 
       const totalSelected = mainIds.length + subIds.length;
@@ -264,8 +244,8 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
         }
       } else if (totalSelected > 0) {
         append({
-          operator: "AND",
-          type: "PRODUCT",
+          operator: 'AND',
+          type: 'PRODUCT',
           ids: mainIds.length > 0 ? mainIds : null,
           subIds: subIds.length > 0 ? subIds : null,
         });
@@ -275,12 +255,12 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
 
   const renderBreadcrumbs = (
     field: (typeof fields)[number],
-    type: DiscountConditionType
+    type: DiscountConditionType,
   ) => {
     const dataForType = getDataForType(type);
 
     let allIds: string[] = [];
-    if (type === "PRODUCT") {
+    if (type === 'PRODUCT') {
       allIds = [...(field.ids || []), ...(field.subIds || [])];
     } else {
       allIds = field.ids || [];
@@ -325,7 +305,7 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
           }
 
           return (
-            <Group key={id} gap={4} bg="gray.1" p={"sm"} className="rounded-md">
+            <Group key={id} gap={4} bg="gray.1" p={'sm'} className="rounded-md">
               {path.map((name, idx) => (
                 <Group key={idx} gap={4}>
                   <Text size="sm">{name}</Text>
@@ -349,7 +329,7 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
     const condition = fields.find((field) => field.type === activeType);
     if (!condition) return [];
 
-    if (activeType === "PRODUCT") {
+    if (activeType === 'PRODUCT') {
       return [...(condition.ids || []), ...(condition.subIds || [])];
     }
     return condition.ids || [];
@@ -361,19 +341,19 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
     label: string;
   }> = [
     {
-      value: "PRODUCT" as DiscountConditionType,
-      label: getSelectDataLabel("PRODUCT", "select"),
+      value: 'PRODUCT' as DiscountConditionType,
+      label: getSelectDataLabel('PRODUCT', 'select'),
     },
     {
-      value: "CATEGORY" as DiscountConditionType,
-      label: getSelectDataLabel("CATEGORY", "select"),
+      value: 'CATEGORY' as DiscountConditionType,
+      label: getSelectDataLabel('CATEGORY', 'select'),
     },
     {
-      value: "BRAND" as DiscountConditionType,
-      label: getSelectDataLabel("BRAND", "select"),
+      value: 'BRAND' as DiscountConditionType,
+      label: getSelectDataLabel('BRAND', 'select'),
     },
   ].filter(
-    (item) => !existingTypes.includes(item.value as DiscountConditionType)
+    (item) => !existingTypes.includes(item.value as DiscountConditionType),
   );
 
   return (
@@ -393,7 +373,7 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
                 style={{ flex: 1 }}
               />
               <Button onClick={handleOpenModal}>
-                {getSelectDataLabel(selectData, "button")}
+                {getSelectDataLabel(selectData, 'button')}
               </Button>
             </Group>
           </>
@@ -417,11 +397,11 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
                           data={[
                             {
                               value: LogicalOperator.AND,
-                              label: "VE (AND)",
+                              label: 'VE (AND)',
                             },
                             {
                               value: LogicalOperator.OR,
-                              label: "VEYA (OR)",
+                              label: 'VEYA (OR)',
                             },
                           ]}
                           allowDeselect={false}
@@ -433,9 +413,9 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
                 <Paper p="md" radius="md">
                   <Group justify="space-between" mb="xs">
                     <Text fw={500} size="sm">
-                      {getSelectDataLabel(field.type, "select")}
+                      {getSelectDataLabel(field.type, 'select')}
                     </Text>
-                    <Group gap={"xs"}>
+                    <Group gap={'xs'}>
                       <ActionIcon
                         variant="subtle"
                         onClick={() => {
@@ -478,12 +458,12 @@ const DiscountConditionForm = ({ control }: DiscountConditionFormProps) => {
         isLoading={getIsLoadingForType(activeType)}
         selectedItems={getSelectedIdsForModal()}
         onSave={handleSelectionChange}
-        subAsVariantsMode={activeType === "PRODUCT"}
+        subAsVariantsMode={activeType === 'PRODUCT'}
         modalProps={{
-          title: `${getSelectDataLabel(activeType || selectData, "select")} Seçin`,
+          title: `${getSelectDataLabel(activeType || selectData, 'select')} Seçin`,
         }}
         dataTitle={
-          activeType ? getSelectDataLabel(activeType, "select") : undefined
+          activeType ? getSelectDataLabel(activeType, 'select') : undefined
         }
       />
     </>

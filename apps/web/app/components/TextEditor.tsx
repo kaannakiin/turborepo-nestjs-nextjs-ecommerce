@@ -1,7 +1,8 @@
-"use client";
-import { createGroq } from "@ai-sdk/groq";
-import { BlockNoteEditor, filterSuggestionItems } from "@blocknote/core";
-import { BlockNoteView } from "@blocknote/mantine";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+'use client';
+import { createGroq } from '@ai-sdk/groq';
+import { BlockNoteEditor, filterSuggestionItems } from '@blocknote/core';
+import { BlockNoteView } from '@blocknote/mantine';
 import {
   FormattingToolbar,
   FormattingToolbarController,
@@ -9,25 +10,25 @@ import {
   getFormattingToolbarItems,
   SuggestionMenuController,
   useCreateBlockNote,
-} from "@blocknote/react";
+} from '@blocknote/react';
 import {
   AIMenuController,
   AIToolbarButton,
   ClientSideTransport,
   createAIExtension,
   getAISlashMenuItems,
-} from "@blocknote/xl-ai";
-import { createAIProxyFetch } from "@lib/wrappers/aiFetchWrapper";
-import { InputError, InputLabel, Stack } from "@mantine/core";
-import { useEffect, useRef } from "react";
-import { tr } from "../../lib/tr-dictionary";
+} from '@blocknote/xl-ai';
+import { createAIProxyFetch } from '@lib/wrappers/aiFetchWrapper';
+import { InputError, InputLabel, Stack } from '@mantine/core';
+import { useEffect, useRef } from 'react';
+import { tr } from '../../lib/tr-dictionary';
 
 const aiProxyUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL}/ai/chat`;
 
 const model = createGroq({
   fetch: createAIProxyFetch(aiProxyUrl),
-  apiKey: "fake-api-key",
-})("qwen/qwen3-32b");
+  apiKey: 'fake-api-key',
+})('qwen/qwen3-32b');
 interface GlobalTextEditorProps {
   label?: string;
   value?: string;
@@ -51,7 +52,6 @@ function FormattingToolbarWithAI() {
 }
 
 function SuggestionMenuWithAI(props: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   editor: BlockNoteEditor<any, any, any>;
 }) {
   return (
@@ -63,15 +63,14 @@ function SuggestionMenuWithAI(props: {
             ...getDefaultReactSlashMenuItems(props.editor),
             ...getAISlashMenuItems(props.editor),
           ],
-          query
+          query,
         )
       }
     />
   );
 }
-// ...
 
-const GlobalTextEditor = ({
+const TextEditor = ({
   label,
   value,
   onChange,
@@ -97,8 +96,8 @@ const GlobalTextEditor = ({
     },
     initialContent: [
       {
-        type: "paragraph",
-        content: "",
+        type: 'paragraph',
+        content: '',
       },
     ],
     extensions: [
@@ -132,16 +131,16 @@ const GlobalTextEditor = ({
   };
 
   return (
-    <Stack gap={"xs"}>
+    <Stack gap={'xs'}>
       {renderLabel && (
-        <InputLabel fz={"sm"} fw={500}>
-          {label || "Açıklama"}
+        <InputLabel fz={'sm'} fw={500}>
+          {label || 'Açıklama'}
         </InputLabel>
       )}
       {error && <InputError>{error}</InputError>}
       <BlockNoteView
         editor={editor}
-        theme={"light"}
+        theme={'light'}
         formattingToolbar={false}
         slashMenu={false}
         onChange={onBlockNoteChange}
@@ -154,4 +153,4 @@ const GlobalTextEditor = ({
   );
 };
 
-export default GlobalTextEditor;
+export default TextEditor;

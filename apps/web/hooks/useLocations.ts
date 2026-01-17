@@ -1,28 +1,29 @@
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
-import { useQuery, UseQueryOptions } from "@repo/shared";
+import { DataKeys } from '@lib/data-keys';
+import fetchWrapper from '@lib/wrappers/fetchWrapper';
+import { useQuery, UseQueryOptions } from '@repo/shared';
 import {
   GetAllCountryReturnType,
   GetAllCityReturnType,
   GetAllStateReturnType,
-} from "@repo/types";
-import { CountryType } from "@repo/database/client";
+} from '@repo/types';
+import { CountryType } from '@repo/database/client';
 
 const LOCATION_STALE_TIME = 1000 * 60 * 60;
 
 export const useCountries = (
   options?: Omit<
     UseQueryOptions<GetAllCountryReturnType[], Error>,
-    "queryKey" | "queryFn"
-  >
+    'queryKey' | 'queryFn'
+  >,
 ) => {
   return useQuery({
-    queryKey: ["locations", "countries"],
+    queryKey: DataKeys.locations.countries,
     queryFn: async () => {
       const res = await fetchWrapper.get<GetAllCountryReturnType[]>(
-        `/locations/get-all-countries`
+        `/locations/get-all-countries`,
       );
       if (!res.success) {
-        throw new Error("Failed to fetch countries");
+        throw new Error('Failed to fetch countries');
       }
       return res.data;
     },
@@ -43,19 +44,19 @@ export const useStates = ({
   enabled = true,
 }: UseStatesOptions) => {
   return useQuery({
-    queryKey: ["locations", "states", countryId],
+    queryKey: DataKeys.locations.states(countryId),
     queryFn: async () => {
       const res = await fetchWrapper.get<GetAllStateReturnType[]>(
-        `/locations/get-states-by-country/${countryId}`
+        `/locations/get-states-by-country/${countryId}`,
       );
       if (!res.success) {
-        throw new Error("Failed to fetch states");
+        throw new Error('Failed to fetch states');
       }
       return res.data;
     },
     staleTime: LOCATION_STALE_TIME,
     enabled:
-      !!countryId && enabled && (addressType ? addressType === "STATE" : true),
+      !!countryId && enabled && (addressType ? addressType === 'STATE' : true),
   });
 };
 
@@ -71,19 +72,19 @@ export const useCities = ({
   enabled = true,
 }: UseCitiesOptions) => {
   return useQuery({
-    queryKey: ["locations", "cities", countryId],
+    queryKey: DataKeys.locations.cities(countryId),
     queryFn: async () => {
       const res = await fetchWrapper.get<GetAllCityReturnType[]>(
-        `/locations/get-cities-by-country/${countryId}`
+        `/locations/get-cities-by-country/${countryId}`,
       );
       if (!res.success) {
-        throw new Error("Failed to fetch cities");
+        throw new Error('Failed to fetch cities');
       }
       return res.data;
     },
     staleTime: LOCATION_STALE_TIME,
     enabled:
-      !!countryId && enabled && (addressType ? addressType === "CITY" : true),
+      !!countryId && enabled && (addressType ? addressType === 'CITY' : true),
   });
 };
 
@@ -99,14 +100,14 @@ export const useDistricts = ({
   enabled = true,
 }: UseDistrictsOptions) => {
   return useQuery({
-    queryKey: ["locations", "districts", countryId, cityId],
+    queryKey: DataKeys.locations.districts(countryId, cityId),
     queryFn: async () => {
       const res = await fetchWrapper.get<{
         success: boolean;
         data: { id: string; name: string }[];
       }>(`/locations/get-districts-turkey-city/${countryId}/${cityId}`);
       if (!res.success) {
-        throw new Error("Failed to fetch districts");
+        throw new Error('Failed to fetch districts');
       }
       if (!res.data.success || !res.data.data) {
         return [];

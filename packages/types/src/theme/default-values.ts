@@ -1,4 +1,4 @@
-import { createId } from "@repo/shared";
+import { createId } from "@paralleldrive/cuid2";
 import {
   MarqueeComponentInputType,
   PageInputType,
@@ -24,14 +24,14 @@ const getPlaceholderUrl = (
   width: number,
   height: number,
   text: string,
-  bgColor = COLORS.primary
+  bgColor = COLORS.primary,
 ) => {
   const encodedText = encodeURIComponent(text);
   return `${PLACEHOLDER_BASE}/${width}x${height}/${bgColor}/${COLORS.light}.webp?text=${encodedText}`;
 };
 
 export const createSlide = (
-  sliderId: string = createId()
+  sliderId: string = createId(),
 ): SliderComponentInputType["sliders"][number] => ({
   order: 0,
   sliderId,
@@ -58,7 +58,7 @@ export const createSlide = (
 });
 
 export const createSliderComponent = (
-  order: number
+  order: number,
 ): SliderComponentInputType => ({
   componentId: createId(),
   type: "SLIDER",
@@ -79,7 +79,7 @@ export const createSliderComponent = (
 });
 
 export const createMarqueeComponent = (
-  order: number
+  order: number,
 ): MarqueeComponentInputType => ({
   componentId: createId(),
   type: "MARQUEE",
@@ -120,7 +120,7 @@ export const createMarqueeComponent = (
 });
 
 export const createProductCarouselComponent = (
-  order: number
+  order: number,
 ): ProductCarouselComponentInputType => ({
   componentId: createId(),
   type: "PRODUCT_CAROUSEL",

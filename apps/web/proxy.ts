@@ -1,19 +1,33 @@
+import { adminRoutes, authRoutes, userRoutes } from '@lib/constants';
+import { getStoreConfig } from '@lib/store-config';
+import { Locale } from '@repo/database/client';
 import {
   ACCESS_TOKEN_COOKIE_NAME,
-  adminRoutes,
-  authRoutes,
-  CURRENCY_COOKIE_NAME,
   LOCALE_COOKIE_NAME,
   REFRESH_TOKEN_COOKIE_NAME,
   STORE_TYPE_COOKIE_NAME,
-  userRoutes,
-} from '@lib/constants';
-import { getStoreConfig } from '@lib/store-config';
-import { Locale } from '@repo/database/client';
-import { StoreZodOutputType, TokenPayload } from '@repo/types';
+  StoreZodOutputType,
+  TokenPayload,
+} from '@repo/types';
 import { jwtVerify } from 'jose';
 import { NextRequest, NextResponse } from 'next/server';
 import parse, { Cookie, splitCookiesString } from 'set-cookie-parser';
+const countryToLocale: Record<string, Locale> = {
+  TR: 'TR',
+  CY: 'TR',
+
+  DE: 'DE',
+  AT: 'DE',
+  CH: 'DE',
+  LI: 'DE',
+
+  US: 'EN',
+  GB: 'EN',
+  AU: 'EN',
+  CA: 'EN',
+  IE: 'EN',
+  NZ: 'EN',
+};
 
 type SameSite = true | false | 'lax' | 'strict' | 'none' | undefined;
 
@@ -88,54 +102,13 @@ async function verifyAccessToken(token: string) {
 
 interface LocaleContext {
   locale: Locale;
-  currency: string;
   storeType: 'B2C' | 'B2B';
   shouldRedirect: boolean;
   redirectUrl?: string;
-  // PATH_PREFIX için rewrite path (URL'de /tr/products görünür, /products'a rewrite edilir)
+  shouldRewrite: boolean;
   rewritePath?: string;
 }
 
-/**
- * Host'tan subdomain çıkarır
- * Örn: "tr.wellnessclubbyoyku.com" -> "TR"
- * Örn: "wellnessclubbyoyku.com" -> null
- * Örn: "b2b.wellnessclubbyoyku.com" -> "B2B"
- */
-function extractSubdomain(
-  hostname: string,
-  customDomain: string | null,
-): string | null {
-  if (!customDomain) return null;
-
-  if (hostname.includes('localhost')) {
-    const parts = hostname.split('.');
-    if (parts.length > 1 && parts[0] !== 'localhost') {
-      return parts[0].toUpperCase();
-    }
-    return null;
-  }
-
-  const baseDomain = customDomain.toLowerCase();
-  const currentHost = hostname.toLowerCase();
-
-  if (currentHost === baseDomain) {
-    return null;
-  }
-
-  if (currentHost.endsWith(`.${baseDomain}`)) {
-    const subdomain = currentHost.replace(`.${baseDomain}`, '');
-    return subdomain.toUpperCase();
-  }
-
-  return null;
-}
-
-/**
- * Path'ten locale prefix'i çıkarır
- * Örn: "/tr/products" -> { locale: "TR", cleanPath: "/products" }
- * Örn: "/products" -> { locale: null, cleanPath: "/products" }
- */
 function extractLocaleFromPath(pathname: string): {
   locale: Locale | null;
   cleanPath: string;
@@ -154,28 +127,6 @@ function extractLocaleFromPath(pathname: string): {
   return { locale: null, cleanPath: pathname };
 }
 
-/**
- * Store config'den locale için currency bulur
- */
-function getCurrencyForLocale(
-  locale: Locale,
-  localeCurrencies: Array<{ locale: string; currency: string }>,
-  defaultLocale: string,
-): string {
-  const match = localeCurrencies.find((lc) => lc.locale === locale);
-  if (match) return match.currency;
-
-  const defaultMatch = localeCurrencies.find(
-    (lc) => lc.locale === defaultLocale,
-  );
-  if (defaultMatch) return defaultMatch.currency;
-
-  return localeCurrencies[0]?.currency || 'TRY';
-}
-
-/**
- * Store type'ı belirler (B2C vs B2B)
- */
 function determineStoreType(
   hostname: string,
   config: StoreZodOutputType,
@@ -207,38 +158,75 @@ function determineStoreType(
   return 'B2C';
 }
 
-/**
- * Locale context'i belirler - routing stratejisine göre
- */
+function getGeoLocale(
+  req: NextRequest,
+  availableLocales: string[],
+): Locale | null {
+  const country = req.headers.get('cf-ipcountry');
+
+  if (!country || country === 'XX') return null;
+
+  const locale = countryToLocale[country];
+  if (locale && availableLocales.includes(locale)) {
+    return locale as Locale;
+  }
+
+  return null;
+}
+
+function getBrowserLocale(
+  req: NextRequest,
+  availableLocales: string[],
+): Locale | null {
+  const acceptLanguage = req.headers.get('accept-language');
+  if (!acceptLanguage) return null;
+
+  const languages = acceptLanguage
+    .split(',')
+    .map((lang) => {
+      const [code, qValue] = lang.trim().split(';');
+      const quality = qValue ? parseFloat(qValue.split('=')[1]) : 1.0;
+
+      const locale = code.split('-')[0].toUpperCase();
+      return { locale, quality };
+    })
+    .sort((a, b) => b.quality - a.quality);
+  for (const { locale } of languages) {
+    if (availableLocales.includes(locale)) {
+      return locale as Locale;
+    }
+  }
+
+  return null;
+}
+
 function resolveLocaleContext(
   req: NextRequest,
   config: StoreZodOutputType | null,
 ): LocaleContext {
   const { pathname, hostname } = req.nextUrl;
-  const cookieLocale = req.cookies.get(LOCALE_COOKIE_NAME)?.value as
-    | Locale
-    | undefined;
+  const cookieLocale = req.cookies
+    .get(LOCALE_COOKIE_NAME)
+    ?.value?.toUpperCase() as Locale | undefined;
 
   if (!config) {
     return {
       locale: cookieLocale || 'TR',
-      currency: 'TRY',
       storeType: 'B2C',
       shouldRedirect: false,
+      shouldRewrite: false,
     };
   }
 
   const storeType = determineStoreType(hostname, config);
   const isB2B = storeType === 'B2B';
 
-  const routing = isB2B ? config.b2bRouting : config.b2cRouting;
   const defaultLocale = (
     isB2B ? config.b2bDefaultLocale : config.b2cDefaultLocale
   ) as Locale;
   const localeCurrencies = isB2B
     ? config.b2bLocaleCurrencies
     : config.b2cLocaleCurrencies;
-  const customDomain = isB2B ? config.b2bCustomDomain : config.b2cCustomDomain;
   const availableLocales = localeCurrencies.map((lc) =>
     lc.locale.toUpperCase(),
   );
@@ -246,113 +234,67 @@ function resolveLocaleContext(
   let resolvedLocale: Locale = defaultLocale;
   let shouldRedirect = false;
   let redirectUrl: string | undefined;
+  let shouldRewrite = false;
   let rewritePath: string | undefined;
 
-  switch (routing) {
-    case 'SUBDOMAIN': {
-      const subdomain = extractSubdomain(hostname, customDomain);
+  const shouldSkipLocaleHandling =
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/auth') ||
+    pathname.includes('.');
 
-      if (
-        subdomain &&
-        availableLocales.includes(subdomain) &&
-        Object.keys(Locale).includes(subdomain as Locale)
-      ) {
-        resolvedLocale = subdomain as Locale;
-      } else if (subdomain && !availableLocales.includes(subdomain)) {
-        resolvedLocale = defaultLocale;
-      } else {
-        resolvedLocale =
-          cookieLocale && availableLocales.includes(cookieLocale)
-            ? cookieLocale
-            : defaultLocale;
-      }
-      break;
-    }
-
-    case 'PATH_PREFIX': {
-      const { locale: pathLocale, cleanPath } = extractLocaleFromPath(pathname);
-
-      if (pathLocale && availableLocales.includes(pathLocale)) {
-        // Geçerli locale prefix var - rewrite yap
-        resolvedLocale = pathLocale;
-        // Admin, auth, api, static dosyalar için rewrite yapma
-        if (
-          !pathname.startsWith('/_next') &&
-          !pathname.startsWith('/api') &&
-          !pathname.startsWith('/admin') &&
-          !pathname.startsWith('/auth') &&
-          !pathname.includes('.')
-        ) {
-          rewritePath = cleanPath;
-        }
-      } else if (pathLocale && !availableLocales.includes(pathLocale)) {
-        // Geçersiz locale prefix - default locale'e redirect
-        shouldRedirect = true;
-        redirectUrl = `/${defaultLocale.toLowerCase()}${cleanPath}`;
-        resolvedLocale = defaultLocale;
-      } else {
-        // Locale prefix yok
-        const targetLocale =
-          cookieLocale && availableLocales.includes(cookieLocale)
-            ? cookieLocale
-            : defaultLocale;
-
-        // Admin, auth, api, static dosyalar için redirect yapma
-        if (
-          !pathname.startsWith('/_next') &&
-          !pathname.startsWith('/api') &&
-          !pathname.startsWith('/admin') &&
-          !pathname.startsWith('/auth') &&
-          !pathname.includes('.')
-        ) {
-          shouldRedirect = true;
-          redirectUrl = `/${targetLocale.toLowerCase()}${pathname}`;
-        }
-        resolvedLocale = targetLocale;
-      }
-      break;
-    }
-
-    case 'COOKIE_ONLY':
-    default: {
-      resolvedLocale =
-        cookieLocale && availableLocales.includes(cookieLocale)
-          ? cookieLocale
-          : defaultLocale;
-      break;
-    }
+  if (shouldSkipLocaleHandling) {
+    const finalLocale =
+      cookieLocale ||
+      getGeoLocale(req, availableLocales) ||
+      getBrowserLocale(req, availableLocales) ||
+      defaultLocale;
+    return {
+      locale: finalLocale,
+      storeType,
+      shouldRedirect: false,
+      shouldRewrite: false,
+    };
   }
 
-  const currency = getCurrencyForLocale(
-    resolvedLocale,
-    localeCurrencies,
-    defaultLocale,
-  );
+  const { locale: pathLocale, cleanPath } = extractLocaleFromPath(pathname);
+
+  if (pathLocale && availableLocales.includes(pathLocale)) {
+    if (pathLocale === defaultLocale) {
+      shouldRedirect = true;
+      redirectUrl = cleanPath || '/';
+      resolvedLocale = defaultLocale;
+    } else {
+      resolvedLocale = pathLocale;
+      shouldRewrite = true;
+      rewritePath = cleanPath || '/';
+    }
+  } else if (pathLocale && !availableLocales.includes(pathLocale)) {
+    shouldRedirect = true;
+    redirectUrl = cleanPath || '/';
+    resolvedLocale =
+      cookieLocale || getBrowserLocale(req, availableLocales) || defaultLocale;
+  } else {
+    resolvedLocale =
+      cookieLocale || getBrowserLocale(req, availableLocales) || defaultLocale;
+  }
 
   return {
     locale: resolvedLocale,
-    currency,
     storeType,
     shouldRedirect,
     redirectUrl,
+    shouldRewrite,
     rewritePath,
   };
 }
 
-/**
- * Response'a locale cookie'lerini ekler
- */
 function setLocaleCookies(
   response: NextResponse,
   context: LocaleContext,
 ): NextResponse {
   response.cookies.set(LOCALE_COOKIE_NAME, context.locale, {
-    path: '/',
-    maxAge: 60 * 60 * 24 * 365,
-    sameSite: 'lax',
-  });
-
-  response.cookies.set(CURRENCY_COOKIE_NAME, context.currency, {
     path: '/',
     maxAge: 60 * 60 * 24 * 365,
     sameSite: 'lax',
@@ -371,10 +313,8 @@ export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   const storeConfig = await getStoreConfig();
-
   const localeContext = resolveLocaleContext(req, storeConfig);
 
-  // PATH_PREFIX redirect (locale prefix yoksa ekle)
   if (localeContext.shouldRedirect && localeContext.redirectUrl) {
     const redirectResponse = NextResponse.redirect(
       new URL(localeContext.redirectUrl, req.url),
@@ -382,18 +322,13 @@ export async function proxy(req: NextRequest) {
     return setLocaleCookies(redirectResponse, localeContext);
   }
 
-  // Effective path - rewrite varsa onu kullan, yoksa pathname
-  const effectivePath = localeContext.rewritePath || pathname;
+  if (localeContext.shouldRewrite && localeContext.rewritePath) {
+    const rewriteUrl = new URL(localeContext.rewritePath, req.url);
+    const response = NextResponse.rewrite(rewriteUrl);
+    return setLocaleCookies(response, localeContext);
+  }
 
-  // Protected/Auth route değilse
-  if (!isProtectedRoute(effectivePath) && !isAuthRoute(effectivePath)) {
-    // PATH_PREFIX rewrite gerekiyorsa uygula
-    if (localeContext.rewritePath) {
-      const url = req.nextUrl.clone();
-      url.pathname = localeContext.rewritePath;
-      const response = NextResponse.rewrite(url);
-      return setLocaleCookies(response, localeContext);
-    }
+  if (!isProtectedRoute(pathname) && !isAuthRoute(pathname)) {
     const response = NextResponse.next();
     return setLocaleCookies(response, localeContext);
   }
@@ -447,12 +382,11 @@ export async function proxy(req: NextRequest) {
   }
 
   if (!userPayload) {
-    if (isProtectedRoute(effectivePath)) {
-      if (isAdminRoute(effectivePath)) {
+    if (isProtectedRoute(pathname)) {
+      if (isAdminRoute(pathname)) {
         const response = createClearRedirect('/', req);
         return setLocaleCookies(response, localeContext);
       }
-      // Redirect URL'de orijinal pathname kullan (locale prefix dahil)
       const response = createClearRedirect(
         `/auth?redirectUri=${encodeURIComponent(pathname)}`,
         req,
@@ -460,36 +394,20 @@ export async function proxy(req: NextRequest) {
       return setLocaleCookies(response, localeContext);
     }
 
-    // Rewrite gerekiyorsa uygula
-    if (localeContext.rewritePath) {
-      const url = req.nextUrl.clone();
-      url.pathname = localeContext.rewritePath;
-      const response = NextResponse.rewrite(url);
-      return setLocaleCookies(response, localeContext);
-    }
     const response = NextResponse.next();
     return setLocaleCookies(response, localeContext);
   }
 
-  if (isAuthRoute(effectivePath)) {
+  if (isAuthRoute(pathname)) {
     const response = createRedirectWithCookies('/dashboard', req, newCookies);
     return setLocaleCookies(response, localeContext);
   }
 
-  if (isAdminRoute(effectivePath)) {
+  if (isAdminRoute(pathname)) {
     if (!isAdminOrOwner(userPayload.role)) {
       const response = createRedirectWithCookies('/', req, newCookies);
       return setLocaleCookies(response, localeContext);
     }
-  }
-
-  // Rewrite gerekiyorsa uygula
-  if (localeContext.rewritePath) {
-    const url = req.nextUrl.clone();
-    url.pathname = localeContext.rewritePath;
-    const response = NextResponse.rewrite(url);
-    setNewCookiesToResponse(response, newCookies);
-    return setLocaleCookies(response, localeContext);
   }
 
   const response = NextResponse.next();

@@ -1,50 +1,50 @@
-"use client";
+'use client';
 
 import {
   Group,
   Select,
-  SelectProps,
+  SelectProps as MantineSelectProps,
   TextInput,
   TextInputProps,
-} from "@mantine/core";
-import { useDebouncedCallback } from "@mantine/hooks";
-import { SEARCH_PARAM_KEY, SELECT_PARAM_KEY } from "@repo/types";
-import { IconSearch, IconX } from "@tabler/icons-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+} from '@mantine/core';
+import { useDebouncedCallback } from '@mantine/hooks';
+import { SEARCH_PARAM_KEY, SELECT_PARAM_KEY } from '@repo/types';
+import { IconSearch, IconX } from '@tabler/icons-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 
-type CustomSelectProps = SelectProps & {
+type SelectProps = MantineSelectProps & {
   selectkey?: string;
 };
 
-interface CustomSearchInputProps extends TextInputProps {
+interface SearchInputProps extends TextInputProps {
   searchKey?: string;
   isSortActive?: boolean;
-  selectProps?: CustomSelectProps;
+  selectProps?: SelectProps;
 }
 
-const CustomSearchInput = ({
+const SearchInput = ({
   searchKey = SEARCH_PARAM_KEY,
   isSortActive = false,
   selectProps,
   ...props
-}: CustomSearchInputProps) => {
+}: SearchInputProps) => {
   const searchParams = useSearchParams();
   const { replace } = useRouter();
 
   const [search, setSearch] = useState<string | undefined>(
-    (searchParams.get(searchKey) as string) || ""
+    (searchParams.get(searchKey) as string) || '',
   );
 
   const [selectValue, setSelectValue] = useState<string | null>(
-    searchParams.get(selectProps?.selectkey || SELECT_PARAM_KEY) || null
+    searchParams.get(selectProps?.selectkey || SELECT_PARAM_KEY) || null,
   );
 
   const updateUrl = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
 
     Object.entries(updates).forEach(([key, value]) => {
-      if (value === "" || value === null) {
+      if (value === '' || value === null) {
         params.delete(key);
       } else {
         params.set(key, value);
@@ -60,7 +60,7 @@ const CustomSearchInput = ({
 
   const handleSelectChange = (value: string | null) => {
     setSelectValue(value);
-    updateUrl({ [selectProps?.selectkey || "sort"]: value });
+    updateUrl({ [selectProps?.selectkey || 'sort']: value });
   };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,16 +86,16 @@ const CustomSearchInput = ({
             <IconX
               onClick={() => {
                 updateUrl({ [searchKey]: null });
-                setSearch("");
+                setSearch('');
               }}
             />
           ) : (
             props.rightSection || (
               <div
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
                 <IconSearch size={16} />
@@ -108,4 +108,4 @@ const CustomSearchInput = ({
   );
 };
 
-export default CustomSearchInput;
+export default SearchInput;

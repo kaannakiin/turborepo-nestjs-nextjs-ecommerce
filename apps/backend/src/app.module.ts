@@ -21,6 +21,7 @@ import { ShippingModule } from './shipping/shipping.module';
 import { UserModule } from './user/user.module';
 import { ClientContextGuard } from './common/guards/client-context.guard';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { CartModule } from './cart/cart.module';
 
 @Module({
   imports: [
@@ -80,6 +81,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     CategoriesModule,
     BrandsModule,
     ProductsModule,
+    CartModule,
     // ThrottlerModule.forRootAsync({
     //   imports: [ConfigModule],
     //   inject: [ConfigService],

@@ -1,11 +1,13 @@
 'use client';
 
 import TableAsset from '@/(admin)/components/TableAsset';
-import CustomPagination from '@/components/CustomPagination';
+import Pagination from '@/components/Pagination';
+import SearchInput from '../../../../../components/SearchInput';
 import {
+  useProductList,
   BulkActionPayload,
   useProductBulkAction,
-} from '@lib/ui/bulk-action-queries';
+} from '@hooks/admin/useProducts';
 import { getBulkActionConfig } from '@lib/ui/bulk-action.helper';
 import {
   getPriceRange,
@@ -13,8 +15,7 @@ import {
   getProductName,
   getProductStatus,
   getStockRange,
-} from '@lib/ui/product-helper';
-import fetchWrapper from '@lib/wrappers/fetchWrapper';
+} from '@lib/product-helper';
 import {
   ActionIcon,
   Alert,
@@ -37,12 +38,8 @@ import {
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { Locale } from '@repo/database/client';
-import { DateFormatter, useQuery } from '@repo/shared';
-import {
-  AdminProductTableProductData,
-  Pagination,
-  ProductBulkAction,
-} from '@repo/types';
+import { DateFormatter } from '@repo/shared';
+import { ProductBulkAction } from '@repo/types';
 import {
   IconAdjustments,
   IconCheck,
@@ -54,32 +51,7 @@ import { Route } from 'next';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import CustomSearchInput from '../../../../../components/CustomSearchInput';
 import ProductActionsGroup from './product-actions/ProductActionsGroup';
-
-type ProductsResponse = {
-  products: AdminProductTableProductData[];
-  pagination?: Pagination;
-};
-
-const fetchProducts = async (
-  search?: string,
-  page: number = 1,
-  limit = 20,
-): Promise<ProductsResponse> => {
-  const response = await fetchWrapper.get<ProductsResponse>(`/admin/products`, {
-    params: {
-      search: search?.trim(),
-      page,
-      limit,
-    },
-  });
-
-  if (!response.success) {
-    throw new Error('Ürünler yüklenirken hata oluştu');
-  }
-  return response.data;
-};
 
 const SkeletonRow = () => (
   <Table.Tr>
@@ -141,12 +113,10 @@ const ProductTable = () => {
     });
   };
 
-  const { data, isLoading, isFetching, error } = useQuery({
-    queryKey: ['admin-products', search, page],
-    queryFn: () => fetchProducts(search || undefined, page),
-    staleTime: 1000 * 60 * 5,
-    refetchOnWindowFocus: false,
-  });
+  const { data, isLoading, isFetching, error } = useProductList(
+    search || undefined,
+    page,
+  );
 
   const onAction = (action: ProductBulkAction) => {
     const config = getBulkActionConfig(action);
@@ -181,7 +151,7 @@ const ProductTable = () => {
             <Button onClick={open} leftSection={<IconPlus size={16} />}>
               Ürün Ekle
             </Button>
-            <CustomSearchInput placeholder="Ürün ara..." />
+            <SearchInput placeholder="Ürün ara..." />
           </Group>
         </Group>
 
@@ -208,7 +178,7 @@ const ProductTable = () => {
               <Button onClick={open} leftSection={<IconPlus size={16} />}>
                 Ürün Ekle
               </Button>
-              <CustomSearchInput />
+              <SearchInput />
             </Group>
           </Group>
         </Stack>
@@ -228,7 +198,8 @@ const ProductTable = () => {
                 <Table.Th w={20}>
                   <Checkbox
                     checked={
-                      selectedProductIDs.length === data?.products.length
+                      selectedProductIDs.length === data?.products.length &&
+                      data?.products.length > 0
                     }
                     indeterminate={
                       selectedProductIDs.length > 0 &&
@@ -346,7 +317,7 @@ const ProductTable = () => {
         </Table.ScrollContainer>
 
         {data?.pagination && data?.pagination.totalPages > 1 && (
-          <CustomPagination total={data.pagination.totalPages} />
+          <Pagination total={data.pagination.totalPages} />
         )}
       </Stack>
 

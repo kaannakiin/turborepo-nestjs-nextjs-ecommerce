@@ -1,9 +1,5 @@
 import { PipeTransform, Injectable, BadRequestException } from '@nestjs/common';
-import {
-  ProductPageSortOption,
-  getSortIndexFromQuery,
-  SORT_OPTIONS_ARRAY,
-} from '@repo/shared';
+import { ProductPageSortOption } from '@repo/types';
 
 @Injectable()
 export class ParseSortOptionPipe implements PipeTransform {
@@ -14,12 +10,16 @@ export class ParseSortOptionPipe implements PipeTransform {
 
     const index = parseInt(value, 10);
 
-    if (isNaN(index) || index < 0 || index >= SORT_OPTIONS_ARRAY.length) {
+    if (
+      isNaN(index) ||
+      index < 0 ||
+      index >= Object.values(ProductPageSortOption).length
+    ) {
       throw new BadRequestException(
-        `Invalid sort index: ${value}. Must be between 0 and ${SORT_OPTIONS_ARRAY.length - 1}`,
+        `Invalid sort index: ${value}. Must be between 0 and ${Object.values(ProductPageSortOption).length - 1}`,
       );
     }
 
-    return getSortIndexFromQuery(index);
+    return Object.values(ProductPageSortOption)[index];
   }
 }

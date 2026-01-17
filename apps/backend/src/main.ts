@@ -8,6 +8,7 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { CsrfService } from './auth/csrf.service';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
+import { ACCESS_TOKEN_COOKIE_NAME } from '@repo/types';
 async function bootstrap() {
   try {
     const app = await NestFactory.create(AppModule, {
@@ -49,9 +50,7 @@ async function bootstrap() {
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: [
         'Content-Type',
-        'X-Currency',
         'X-Locale',
-        'X-Store-Type',
         'Authorization',
         'X-Requested-With',
         'X-CSRF-Token',
@@ -61,6 +60,7 @@ async function bootstrap() {
         'Cache-Control',
         'Pragma',
         'Expires',
+        'X-Store-Type',
       ],
       exposedHeaders: ['Cache-Control', 'Pragma', 'Expires'],
       credentials: true,
@@ -71,10 +71,10 @@ async function bootstrap() {
         .setTitle('API Dokümantasyonu')
         .setDescription('B2C Projesi API')
         .setVersion('1.0')
-        .addSecurity('token', {
+        .addSecurity(ACCESS_TOKEN_COOKIE_NAME, {
           type: 'apiKey',
           in: 'cookie',
-          name: 'token',
+          name: ACCESS_TOKEN_COOKIE_NAME,
         })
 
         .addSecurity('csrf_header', {
@@ -125,7 +125,6 @@ async function bootstrap() {
           paymentCallbackUrl.pathname,
           '/payment',
           '/auth',
-          '/api',
           '/api-json',
         ];
 

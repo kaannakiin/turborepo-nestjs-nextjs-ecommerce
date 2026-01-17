@@ -1,8 +1,8 @@
 'use client';
 
-import CustomPagination from '@/components/CustomPagination';
-import CustomSearchInput from '@/components/CustomSearchInput';
-import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
+import Pagination from '@/components/Pagination';
+import SearchInput from '@/components/SearchInput';
+import LoadingOverlay from '@/components/LoadingOverlay';
 import { useGetCustomerList } from '@hooks/admin/useAdminCustomer';
 import { getSortAdminUserTableLabels, getUserRoleLabels } from '@lib/helpers';
 import {
@@ -79,7 +79,7 @@ const UserTable = () => {
   }
 
   if (isLoading || isPending || (isFetching && !data)) {
-    return <GlobalLoadingOverlay />;
+    return <LoadingOverlay />;
   }
 
   return (
@@ -150,7 +150,7 @@ const UserTable = () => {
               </Menu.Dropdown>
             </Menu>
           )}
-          <CustomSearchInput
+          <SearchInput
             searchKey={SEARCH_PARAM_KEY}
             placeholder="Müşteri ara"
             radius="md"
@@ -268,10 +268,7 @@ const UserTable = () => {
         </div>
       )}
       {data?.pagination?.totalPages > 1 && (
-        <CustomPagination
-          total={data?.pagination?.totalPages || 1}
-          color="admin"
-        />
+        <Pagination total={data?.pagination?.totalPages || 1} color="admin" />
       )}
     </Stack>
   );

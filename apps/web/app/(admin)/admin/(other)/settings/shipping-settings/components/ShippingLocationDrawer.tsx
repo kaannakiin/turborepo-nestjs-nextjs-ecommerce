@@ -1,7 +1,5 @@
-"use client";
-import GlobalLoader from "@/components/GlobalLoader";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
-import { getSelectionTextShipping } from "@lib/helpers";
+'use client';
+import { getSelectionTextShipping } from '@lib/helpers';
 import {
   ActionIcon,
   Button,
@@ -14,17 +12,14 @@ import {
   Text,
   TextInput,
   Title,
-} from "@mantine/core";
-import { useDebouncedState, useDisclosure } from "@mantine/hooks";
-import { SubmitHandler, useForm, useQuery, zodResolver } from "@repo/shared";
-import {
-  GetAllCityReturnType,
-  GetAllStateReturnType,
-  LocationSchema,
-  LocationType,
-} from "@repo/types";
-import { IconTrash } from "@tabler/icons-react";
-import { useState } from "react";
+} from '@mantine/core';
+import { useDebouncedState, useDisclosure } from '@mantine/hooks';
+import { SubmitHandler, useForm, zodResolver } from '@repo/shared';
+import { LocationSchema, LocationType } from '@repo/types';
+import { IconTrash } from '@tabler/icons-react';
+import { useState } from 'react';
+import { useStates, useCities } from '@hooks/useLocations';
+import Loader from '@/components/Loader';
 
 interface ShippingLocationDrawerProps {
   defaultValues: LocationType;
@@ -43,7 +38,7 @@ const ShippingLocationDrawer = ({
 }: ShippingLocationDrawerProps) => {
   const [modalOpened, { open: openModal, close: closeModal }] =
     useDisclosure(false);
-  const [searchQuery, setSearchQuery] = useDebouncedState("", 300);
+  const [searchQuery, setSearchQuery] = useDebouncedState('', 300);
   const [selectedStateIds, setSelectedStateIds] = useState<string[]>([]);
   const [selectedCityIds, setSelectedCityIds] = useState<string[]>([]);
 
@@ -55,51 +50,35 @@ const ShippingLocationDrawer = ({
   } = useForm<LocationType>({
     resolver: zodResolver(LocationSchema),
     defaultValues: defaultValues || {
-      countryId: "",
-      countryType: "NONE",
+      countryId: '',
+      countryType: 'NONE',
       stateIds: [],
       cityIds: [],
     },
   });
 
-  const stateIds = watch("stateIds") || [];
-  const cityIds = watch("cityIds") || [];
-  const countryType = watch("countryType");
+  const stateIds = watch('stateIds') || [];
+  const cityIds = watch('cityIds') || [];
+  const countryType = watch('countryType');
 
-  const { data: states, isLoading: statesIsLoading } = useQuery({
-    queryKey: ["get-states-by-country", defaultValues.countryId],
-    queryFn: async () => {
-      const res = await fetchWrapper.get<GetAllStateReturnType[]>(
-        `/locations/get-states-by-country/${defaultValues.countryId}`
-      );
-      if (!res.success) {
-        throw new Error("Failed to fetch states");
-      }
-      return res.data;
-    },
-    enabled: !!defaultValues.countryId && defaultValues.countryType === "STATE",
+  const { data: states, isLoading: statesIsLoading } = useStates({
+    countryId: defaultValues.countryId,
+    addressType: 'STATE',
+    enabled: !!defaultValues.countryId && defaultValues.countryType === 'STATE',
   });
 
-  const { data: cities, isLoading: citiesIsLoading } = useQuery({
-    queryKey: ["get-cities-by-country", defaultValues.countryId],
-    queryFn: async () => {
-      const res = await fetchWrapper.get<GetAllCityReturnType[]>(
-        `/locations/get-cities-by-country/${defaultValues.countryId}`
-      );
-      if (!res.success) {
-        throw new Error("Failed to fetch cities");
-      }
-      return res.data;
-    },
-    enabled: !!defaultValues.countryId && defaultValues.countryType === "CITY",
+  const { data: cities, isLoading: citiesIsLoading } = useCities({
+    countryId: defaultValues.countryId,
+    addressType: 'CITY',
+    enabled: !!defaultValues.countryId && defaultValues.countryType === 'CITY',
   });
 
   const filteredStates = states?.filter((state) =>
-    state.name.toLowerCase().includes(searchQuery.toLowerCase())
+    state.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const filteredCities = cities?.filter((city) =>
-    city.name.toLowerCase().includes(searchQuery.toLowerCase())
+    city.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleStateToggle = (stateId: string) => {
@@ -119,10 +98,10 @@ const ShippingLocationDrawer = ({
   };
 
   const handleModalConfirm = () => {
-    if (countryType === "STATE") {
-      setValue("stateIds", selectedStateIds);
-    } else if (countryType === "CITY") {
-      setValue("cityIds", selectedCityIds);
+    if (countryType === 'STATE') {
+      setValue('stateIds', selectedStateIds);
+    } else if (countryType === 'CITY') {
+      setValue('cityIds', selectedCityIds);
     }
     closeModal();
   };
@@ -130,17 +109,17 @@ const ShippingLocationDrawer = ({
   const handleModalCancel = () => {
     setSelectedStateIds(stateIds);
     setSelectedCityIds(cityIds);
-    setSearchQuery("");
+    setSearchQuery('');
     closeModal();
   };
 
   const handleSave = handleSubmit(onSubmit);
 
   if (!defaultValues) return null;
-  if (statesIsLoading || citiesIsLoading) return <GlobalLoader />;
+  if (statesIsLoading || citiesIsLoading) return <Loader />;
 
   const data = watch();
-  const isStateMode = countryType === "STATE";
+  const isStateMode = countryType === 'STATE';
   const currentData = isStateMode ? filteredStates : filteredCities;
   const selectedItems = isStateMode ? selectedStateIds : selectedCityIds;
   return (
@@ -149,13 +128,13 @@ const ShippingLocationDrawer = ({
         onClose={onClose}
         opened={opened}
         position="bottom"
-        size={"xl"}
+        size={'xl'}
         withCloseButton={false}
         classNames={{
-          title: "w-full flex justify-end",
+          title: 'w-full flex justify-end',
         }}
         title={
-          <Group gap={"sm"}>
+          <Group gap={'sm'}>
             <Button variant="outline" onClick={onClose}>
               İptal
             </Button>
@@ -163,23 +142,23 @@ const ShippingLocationDrawer = ({
           </Group>
         }
       >
-        <Card p={"xs"} withBorder>
+        <Card p={'xs'} withBorder>
           <Card.Section className="border-b border-b-gray-400">
-            <Group justify="space-between" p={"md"}>
+            <Group justify="space-between" p={'md'}>
               <Title order={4}>Teslimat Bölgesi</Title>
             </Group>
           </Card.Section>
-          <Group py={"md"} className="w-full" justify="space-between">
+          <Group py={'md'} className="w-full" justify="space-between">
             <Stack gap="xs">
-              <Text fz={"md"} fw={700}>
+              <Text fz={'md'} fw={700}>
                 {countryName}
               </Text>
-              <Text fz={"sm"} c="dimmed">
+              <Text fz={'sm'} c="dimmed">
                 {getSelectionTextShipping(data)}
               </Text>
             </Stack>
-            {countryType !== "NONE" && (
-              <Group gap={"xs"}>
+            {countryType !== 'NONE' && (
+              <Group gap={'xs'}>
                 <Button
                   variant="default"
                   onClick={() => {
@@ -188,7 +167,7 @@ const ShippingLocationDrawer = ({
                     openModal();
                   }}
                 >
-                  {countryType === "CITY" ? "Şehirleri" : "Eyaletleri"} Sınırla
+                  {countryType === 'CITY' ? 'Şehirleri' : 'Eyaletleri'} Sınırla
                 </Button>
               </Group>
             )}
@@ -208,7 +187,7 @@ const ShippingLocationDrawer = ({
         <Modal.Content>
           <Modal.Header>
             <Modal.Title>
-              {isStateMode ? "Eyalet Seçin" : "Şehir Seçin"}
+              {isStateMode ? 'Eyalet Seçin' : 'Şehir Seçin'}
             </Modal.Title>
           </Modal.Header>
           <Modal.Body>
@@ -216,7 +195,7 @@ const ShippingLocationDrawer = ({
               <Group className="w-full">
                 <TextInput
                   className="flex-1"
-                  placeholder={`${isStateMode ? "Eyalet" : "Şehir"} ara...`}
+                  placeholder={`${isStateMode ? 'Eyalet' : 'Şehir'} ara...`}
                   defaultValue={searchQuery}
                   onChange={(event) =>
                     setSearchQuery(event.currentTarget.value)
@@ -226,7 +205,7 @@ const ShippingLocationDrawer = ({
                 {selectedItems && selectedItems.length > 0 && (
                   <ActionIcon
                     variant="transparent"
-                    c={"red"}
+                    c={'red'}
                     onClick={() => {
                       if (isStateMode) {
                         setSelectedStateIds([]);
@@ -240,7 +219,7 @@ const ShippingLocationDrawer = ({
                 )}
               </Group>
 
-              <Stack gap="xs" style={{ maxHeight: "300px", overflowY: "auto" }}>
+              <Stack gap="xs" style={{ maxHeight: '300px', overflowY: 'auto' }}>
                 {currentData?.map((item) => (
                   <Group
                     key={item.id}

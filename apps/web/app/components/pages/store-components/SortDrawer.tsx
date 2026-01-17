@@ -1,12 +1,9 @@
-"use client";
+'use client';
 
-import { Drawer, Stack, Text, UnstyledButton, Group } from "@mantine/core";
-import {
-  getSortProductPageLabel,
-  ProductPageSortOption,
-  SORT_OPTIONS_ARRAY,
-} from "@repo/shared";
-import { IconCheck } from "@tabler/icons-react";
+import { getSortProductPageLabel } from '@lib/helpers';
+import { Drawer, Stack, Text, UnstyledButton } from '@mantine/core';
+import { ProductPageSortOption } from '@repo/types';
+import { IconCheck } from '@tabler/icons-react';
 
 interface SortDrawerProps {
   opened: boolean;
@@ -41,7 +38,7 @@ const SortDrawer = ({
       }
     >
       <div className="flex flex-col gap-1 pb-4">
-        {SORT_OPTIONS_ARRAY.map((option) => {
+        {Object.values(ProductPageSortOption).map((option) => {
           const isSelected = currentSort === option;
 
           return (
@@ -53,15 +50,18 @@ const SortDrawer = ({
               <span
                 className={`text-base transition-all ${
                   isSelected
-                    ? "font-semibold underline text-blue-600"
-                    : "font-normal text-gray-900"
+                    ? 'font-semibold text-[var(--mantine-primary-color-7)]'
+                    : 'font-normal text-gray-900'
                 }`}
               >
                 {getSortProductPageLabel(option)}
               </span>
 
               {isSelected && (
-                <IconCheck size={20} className="text-blue-600 flex-shrink-0" />
+                <IconCheck
+                  size={20}
+                  className="text-[var(--mantine-primary-color-7)] flex-shrink-0"
+                />
               )}
             </UnstyledButton>
           );

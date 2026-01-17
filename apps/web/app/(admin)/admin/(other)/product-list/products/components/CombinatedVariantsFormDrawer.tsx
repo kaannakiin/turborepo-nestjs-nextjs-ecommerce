@@ -1,7 +1,7 @@
 'use client';
 
-import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
-import GlobalSeoCard from '@/components/GlobalSeoCard';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import SeoCard from '@/components/SeoCard';
 import {
   Button,
   Drawer,
@@ -30,10 +30,10 @@ import ProductPriceNumberInput from './ProductPriceNumberInput';
 import { useDeleteProductAsset } from '@hooks/admin/useProducts';
 
 const GlobalTextEditor = dynamic(
-  () => import('../.././../../../../components/GlobalTextEditor'),
+  () => import('../../../../../../components/TextEditor'),
   {
     ssr: false,
-    loading: () => <GlobalLoadingOverlay />,
+    loading: () => <LoadingOverlay />,
   },
 );
 
@@ -332,7 +332,7 @@ const CombinatedVariantsFormDrawer = ({
           />
         </div>
 
-        <GlobalSeoCard
+        <SeoCard
           control={control}
           metaTitleFieldName={`combinatedVariants.${selectedIndex}.translations.0.metaTitle`}
           metaDescriptionFieldName={`combinatedVariants.${selectedIndex}.translations.0.metaDescription`}

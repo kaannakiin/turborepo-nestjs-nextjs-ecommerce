@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import {
   ActionIcon,
   Alert,
@@ -11,10 +11,14 @@ import {
   SimpleGridProps,
   Stack,
   Text,
-} from "@mantine/core";
-import { Dropzone, DropzoneProps, FileRejection } from "@mantine/dropzone";
-import { AssetType } from "@repo/database/client";
-import { MIME_TYPES } from "@repo/types";
+} from '@mantine/core';
+import {
+  Dropzone as MantineDropzone,
+  DropzoneProps as MantineDropzoneProps,
+  FileRejection,
+} from '@mantine/dropzone';
+import { AssetType } from '@repo/database/client';
+import { MIME_TYPES } from '@repo/types';
 import {
   IconAlertCircle,
   IconFile,
@@ -25,28 +29,30 @@ import {
   IconUpload,
   IconVideo,
   IconX,
-} from "@tabler/icons-react";
-import Image from "next/image";
-import { useEffect, useState } from "react";
-import CustomImage from "./CustomImage";
-import GlobalLoadingOverlay from "./GlobalLoadingOverlay";
+} from '@tabler/icons-react';
+import NextImage from 'next/image';
+import { useEffect, useState } from 'react';
+import Image from './Image';
+import LoadingOverlay from './LoadingOverlay';
 
 interface PreviewFile extends File {
   preview?: string;
 }
 
-interface GlobalDropzoneProps
-  extends Pick<DropzoneProps, "onDrop" | "maxSize" | "maxFiles" | "multiple"> {
+interface DropzoneProps extends Pick<
+  MantineDropzoneProps,
+  'onDrop' | 'maxSize' | 'maxFiles' | 'multiple'
+> {
   existingImages?: { url: string; type: AssetType }[];
   existingImagesDelete?: (url: string) => Promise<void>;
   accept?: AssetType[] | AssetType;
-  cols?: SimpleGridProps["cols"];
+  cols?: SimpleGridProps['cols'];
   error?: string;
   value: File[] | File | null | undefined;
   onChange?: (value: File[] | File | null) => void;
 }
 
-const GlobalDropzone = ({
+const Dropzone = ({
   onDrop,
   accept = AssetType.IMAGE,
   maxFiles,
@@ -57,9 +63,9 @@ const GlobalDropzone = ({
   cols = { xs: 1, sm: 2, md: 3, lg: 4, xl: 5 },
   value,
   onChange,
-}: GlobalDropzoneProps) => {
+}: DropzoneProps) => {
   const createPreview = (file: File): PreviewFile => {
-    if (file.type.startsWith("image/")) {
+    if (file.type.startsWith('image/')) {
       return Object.assign(file, {
         preview: URL.createObjectURL(file),
       });
@@ -104,10 +110,9 @@ const GlobalDropzone = ({
       acc[mime] = [];
       return acc;
     },
-    {} as Record<string, string[]>
+    {} as Record<string, string[]>,
   );
 
-  // Auto clear rejection errors after 3 seconds
   useEffect(() => {
     if (rejectionErrors.length > 0) {
       const timer = setTimeout(() => {
@@ -122,11 +127,9 @@ const GlobalDropzone = ({
     if (!onChange) return;
 
     if (!multiple) {
-      // Single file mode
       const singleFile = newFiles[0] || null;
       onChange(singleFile);
     } else {
-      // Multiple files mode
       onChange(newFiles);
     }
   };
@@ -138,7 +141,6 @@ const GlobalDropzone = ({
     let newFiles: PreviewFile[];
 
     if (!multiple) {
-      // Single file mode - replace existing file
       const firstFile = filesWithPreview[0];
       if (firstFile) {
         newFiles = [firstFile];
@@ -146,7 +148,6 @@ const GlobalDropzone = ({
         newFiles = [];
       }
     } else {
-      // Multiple files mode - add to existing
       newFiles = [...files, ...filesWithPreview];
     }
 
@@ -156,28 +157,27 @@ const GlobalDropzone = ({
   };
 
   const getFileIcon = (file: File) => {
-    if (file.type.startsWith("image/")) return <IconPhoto size={40} />;
-    if (file.type.startsWith("video/")) return <IconVideo size={40} />;
-    if (file.type.startsWith("audio/")) return <IconMusic size={40} />;
-    if (file.type === "application/pdf") return <IconFileText size={40} />;
+    if (file.type.startsWith('image/')) return <IconPhoto size={40} />;
+    if (file.type.startsWith('video/')) return <IconVideo size={40} />;
+    if (file.type.startsWith('audio/')) return <IconMusic size={40} />;
+    if (file.type === 'application/pdf') return <IconFileText size={40} />;
     return <IconFile size={40} />;
   };
 
   const handleReject = (fileRejections: FileRejection[]) => {
     const errors = fileRejections.flatMap((rejection) =>
       rejection.errors.map((error) => {
-        // Türkçe hata mesajları
         switch (error.code) {
-          case "file-too-large":
+          case 'file-too-large':
             return `${rejection.file.name}: Dosya boyutu çok büyük (Max: ${maxSize ? Math.round(maxSize / (1024 * 1024)) : 5}MB)`;
-          case "file-invalid-type":
+          case 'file-invalid-type':
             return `${rejection.file.name}: Desteklenmeyen dosya türü`;
-          case "too-many-files":
-            return `Çok fazla dosya seçildi (Max: ${maxFiles || "sınırsız"})`;
+          case 'too-many-files':
+            return `Çok fazla dosya seçildi (Max: ${maxFiles || 'sınırsız'})`;
           default:
             return `${rejection.file.name}: ${error.message}`;
         }
-      })
+      }),
     );
 
     setRejectionErrors(errors);
@@ -211,54 +211,54 @@ const GlobalDropzone = ({
     const typeMessages = acceptedTypes.map((type) => {
       switch (type) {
         case AssetType.IMAGE:
-          return "Resim";
+          return 'Resim';
         case AssetType.VIDEO:
-          return "Video";
+          return 'Video';
         case AssetType.AUDIO:
-          return "Ses";
+          return 'Ses';
         case AssetType.DOCUMENT:
-          return "Döküman";
+          return 'Döküman';
         default:
-          return "Dosya";
+          return 'Dosya';
       }
     });
 
     return typeMessages.length === 1
       ? `${typeMessages[0]} dosyalarını`
-      : `${typeMessages.join(", ")} dosyalarını`;
+      : `${typeMessages.join(', ')} dosyalarını`;
   };
 
   const renderFilePreview = (file: File, preview?: string) => {
-    if (file.type.startsWith("image/") && preview) {
+    if (file.type.startsWith('image/') && preview) {
       return (
-        <Image
+        <NextImage
           src={preview}
           alt={file.name}
           fill
-          style={{ objectFit: "contain" }}
+          style={{ objectFit: 'contain' }}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
       );
     }
 
-    if (file.type.startsWith("video/")) {
+    if (file.type.startsWith('video/')) {
       return (
         <video
           width="100%"
           height="120"
           controls
-          style={{ borderRadius: "var(--mantine-radius-sm)" }}
+          style={{ borderRadius: 'var(--mantine-radius-sm)' }}
         >
           <source src={URL.createObjectURL(file)} type={file.type} />
         </video>
       );
     }
 
-    if (file.type.startsWith("audio/")) {
+    if (file.type.startsWith('audio/')) {
       return (
         <Stack align="center" gap="xs">
           {getFileIcon(file)}
-          <audio controls style={{ width: "100%" }}>
+          <audio controls style={{ width: '100%' }}>
             <source src={URL.createObjectURL(file)} type={file.type} />
           </audio>
         </Stack>
@@ -269,7 +269,7 @@ const GlobalDropzone = ({
       <Stack align="center" gap="xs" py="lg">
         {getFileIcon(file)}
         <Text size="sm" ta="center" c="dimmed">
-          {file.type === "application/pdf" ? "PDF" : "Döküman"}
+          {file.type === 'application/pdf' ? 'PDF' : 'Döküman'}
         </Text>
       </Stack>
     );
@@ -277,26 +277,26 @@ const GlobalDropzone = ({
 
   const renderExistingImage = (
     image: { url: string; type: AssetType },
-    index: number
+    index: number,
   ) => {
     const uniqueKey = `existing-${index}-${image.url}`;
 
     return (
-      <div key={uniqueKey} style={{ position: "relative" }}>
-        {deletingExistingImage === image.url && <GlobalLoadingOverlay />}
+      <div key={uniqueKey} style={{ position: 'relative' }}>
+        {deletingExistingImage === image.url && <LoadingOverlay />}
         <Stack
           align="center"
           gap="xs"
           p="sm"
           style={{
-            border: "1px solid var(--mantine-color-gray-3)",
-            borderRadius: "var(--mantine-radius-md)",
-            backgroundColor: "var(--mantine-color-gray-0)",
+            border: '1px solid var(--mantine-color-gray-3)',
+            borderRadius: 'var(--mantine-radius-md)',
+            backgroundColor: 'var(--mantine-color-gray-0)',
           }}
         >
           <AspectRatio ratio={1} pos="relative" className="w-full" maw={400}>
             {image.type === AssetType.IMAGE ? (
-              <CustomImage src={image.url} alt="Existing image" />
+              <Image src={image.url} alt="Existing image" />
             ) : (
               <Stack align="center" gap="xs" py="lg">
                 <IconFile size={40} />
@@ -321,7 +321,7 @@ const GlobalDropzone = ({
                   color="red"
                   size="sm"
                   style={{
-                    position: "absolute",
+                    position: 'absolute',
                     top: 8,
                     right: 8,
                   }}
@@ -374,7 +374,7 @@ const GlobalDropzone = ({
               withCloseButton
               onClose={() => {
                 setRejectionErrors((prev) =>
-                  prev.filter((_, i) => i !== index)
+                  prev.filter((_, i) => i !== index),
                 );
               }}
             >
@@ -385,7 +385,7 @@ const GlobalDropzone = ({
       )}
 
       {!multiple && existingImages && existingImages.length > 0 ? null : (
-        <Dropzone
+        <MantineDropzone
           multiple={multiple}
           onReject={handleReject}
           onDrop={handleDrop}
@@ -397,25 +397,25 @@ const GlobalDropzone = ({
             justify="center"
             gap="xl"
             mih={220}
-            style={{ pointerEvents: "none" }}
+            style={{ pointerEvents: 'none' }}
           >
-            <Dropzone.Accept>
+            <MantineDropzone.Accept>
               <IconUpload
                 size={52}
                 color="var(--mantine-color-blue-6)"
                 stroke={1.5}
               />
-            </Dropzone.Accept>
+            </MantineDropzone.Accept>
 
-            <Dropzone.Reject>
+            <MantineDropzone.Reject>
               <IconX
                 size={52}
                 color="var(--mantine-color-red-6)"
                 stroke={1.5}
               />
-            </Dropzone.Reject>
+            </MantineDropzone.Reject>
 
-            <Dropzone.Idle>
+            <MantineDropzone.Idle>
               {acceptedTypes.includes(AssetType.IMAGE) ? (
                 <IconPhoto
                   size={52}
@@ -441,7 +441,7 @@ const GlobalDropzone = ({
                   stroke={1.5}
                 />
               )}
-            </Dropzone.Idle>
+            </MantineDropzone.Idle>
 
             <div>
               <Text size="xl" inline>
@@ -449,32 +449,32 @@ const GlobalDropzone = ({
                 tıklayın
               </Text>
               <Text size="sm" c="dimmed" inline mt={7}>
-                İstediğiniz kadar dosya ekleyebilirsiniz, her dosya{" "}
-                {maxSize ? `${Math.round(maxSize / (1024 * 1024))}MB` : "5MB"}
+                İstediğiniz kadar dosya ekleyebilirsiniz, her dosya{' '}
+                {maxSize ? `${Math.round(maxSize / (1024 * 1024))}MB` : '5MB'}
                 &apos;dan küçük olmalıdır
               </Text>
             </div>
           </Group>
-        </Dropzone>
+        </MantineDropzone>
       )}
 
       {(existingImages.length > 0 || files.length > 0) && (
         <SimpleGrid cols={cols} spacing="md">
           {existingImages.map((image, index) =>
-            renderExistingImage(image, index)
+            renderExistingImage(image, index),
           )}
 
           {/* New Files */}
           {files.map((file, index) => (
-            <div key={`new-${index}`} style={{ position: "relative" }}>
+            <div key={`new-${index}`} style={{ position: 'relative' }}>
               <Stack
                 align="center"
                 gap="xs"
                 p="sm"
                 style={{
-                  border: "1px solid var(--mantine-color-gray-3)",
-                  borderRadius: "var(--mantine-radius-md)",
-                  backgroundColor: "var(--mantine-color-gray-0)",
+                  border: '1px solid var(--mantine-color-gray-3)',
+                  borderRadius: 'var(--mantine-radius-md)',
+                  backgroundColor: 'var(--mantine-color-gray-0)',
                 }}
               >
                 <Box pos="relative" h="240px" p={0} w="100%">
@@ -494,7 +494,7 @@ const GlobalDropzone = ({
                       color="red"
                       size="sm"
                       style={{
-                        position: "absolute",
+                        position: 'absolute',
                         top: 8,
                         right: 8,
                       }}
@@ -539,4 +539,4 @@ const GlobalDropzone = ({
   );
 };
 
-export default GlobalDropzone;
+export default Dropzone;

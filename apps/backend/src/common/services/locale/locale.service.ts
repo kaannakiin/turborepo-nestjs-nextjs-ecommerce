@@ -1,4 +1,3 @@
-// modules/common/locale.service.ts
 import { Injectable, Scope, Inject } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { type Request } from 'express';
@@ -9,6 +8,6 @@ export class LocaleService {
   constructor(@Inject(REQUEST) private readonly request: Request) {}
 
   getLocale(): Locale {
-    return this.request.locale || Locale.TR;
+    return this.request.localization || Locale.TR;
   }
 }

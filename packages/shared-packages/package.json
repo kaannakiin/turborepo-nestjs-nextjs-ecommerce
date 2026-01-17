@@ -21,7 +21,8 @@
     "@repo/database": "workspace:*",
     "@tanstack/react-query": "^5.85.6",
     "date-fns": "^4.1.0",
-    "react-hook-form": "^7.62.0"
+    "react-hook-form": "^7.62.0",
+    "@repo/types": "workspace:*"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",

@@ -1,12 +1,8 @@
 import { StoreZodOutputType } from '@repo/types';
+import { unstable_cache } from 'next/cache';
 import fetchWrapper, { ApiError } from './wrappers/fetchWrapper';
 
-const CACHE_TTL = 5 * 60 * 1000;
-let storeConfigCache: {
-  data: StoreZodOutputType | null;
-  timestamp: number;
-  fetchPromise?: Promise<StoreZodOutputType | null>;
-} | null = null;
+export const STORE_CONFIG_CACHE_TAG = 'store-config';
 
 async function fetchStoreConfig(): Promise<StoreZodOutputType | null> {
   try {
@@ -23,42 +19,13 @@ async function fetchStoreConfig(): Promise<StoreZodOutputType | null> {
   }
 }
 
-export async function getStoreConfig(): Promise<StoreZodOutputType | null> {
-  const now = Date.now();
-
-  if (storeConfigCache && now - storeConfigCache.timestamp < CACHE_TTL) {
-    return storeConfigCache.data;
-  }
-
-  if (storeConfigCache?.fetchPromise) {
-    return storeConfigCache.fetchPromise;
-  }
-
-  const fetchPromise = fetchStoreConfig();
-
-  storeConfigCache = {
-    data: storeConfigCache?.data ?? null,
-    timestamp: storeConfigCache?.timestamp ?? 0,
-    fetchPromise,
-  };
-
-  try {
-    const data = await fetchPromise;
-
-    storeConfigCache = {
-      data,
-      timestamp: now,
-    };
-
-    return data;
-  } catch (error) {
-    if (storeConfigCache) {
-      storeConfigCache.fetchPromise = undefined;
-    }
-    throw error;
-  }
-}
-
-export function invalidateStoreConfigCache(): void {
-  storeConfigCache = null;
-}
+export const getStoreConfig = unstable_cache(
+  async (): Promise<StoreZodOutputType | null> => {
+    return fetchStoreConfig();
+  },
+  ['store-config'],
+  {
+    tags: [STORE_CONFIG_CACHE_TAG],
+    revalidate: false, // Manuel invalidation - sadece tag ile
+  },
+);

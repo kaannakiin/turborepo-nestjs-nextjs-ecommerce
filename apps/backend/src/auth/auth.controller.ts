@@ -18,7 +18,6 @@ import {
   ApiExcludeEndpoint,
   ApiExtraModels,
   ApiOperation,
-  ApiResponse,
   ApiTags,
   getSchemaPath,
 } from '@nestjs/swagger';

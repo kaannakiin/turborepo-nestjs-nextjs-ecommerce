@@ -1,7 +1,7 @@
 'use client';
 
 import PriceFormatter from '@/(user)/components/PriceFormatter';
-import CustomImage from '@/components/CustomImage';
+import Image from '@/components/Image';
 import {
   buildSwatchUrlParams,
   buildVariantUrlParams,
@@ -10,7 +10,7 @@ import {
   getDisplayImage,
   getPrimaryVariantGroup,
   shouldShowSwatches,
-} from '@lib/ui/product-helper';
+} from '@lib/product-helper';
 import {
   AspectRatio,
   Box,
@@ -94,7 +94,7 @@ const StoreProductCard = ({ product, variant }: StoreProductCardProps) => {
             </Box>
           )}
 
-          <CustomImage
+          <Image
             src={displayImage || '/placeholder-product.png'}
             alt={productName}
             className="w-full h-full transition-opacity duration-200"
@@ -172,7 +172,7 @@ const StoreProductCard = ({ product, variant }: StoreProductCardProps) => {
                           style={{ backgroundColor: opt.hexValue! }}
                         />
                       ) : hasOptionImage ? (
-                        <CustomImage
+                        <Image
                           src={opt.optionAssetUrl!}
                           alt={opt.name}
                           className="w-full h-full object-cover"

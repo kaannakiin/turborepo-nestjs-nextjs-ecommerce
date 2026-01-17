@@ -13,7 +13,6 @@ import {
   PaymentStatus,
   PaymentType,
   ProductType,
-  RoutingStrategy,
   UserRole,
 } from '@repo/database/client';
 import {
@@ -25,6 +24,7 @@ import {
   MantineFontWeight,
   MantineSize,
   ProductPageDataType,
+  ProductPageSortOption,
   ShippingRuleType,
   SortAdminUserTable,
   TextAlign,
@@ -947,44 +947,42 @@ export const getLocaleLabel = (locale: Locale): string => {
   return localeConfigs[locale]?.label || 'Bilinmeyen';
 };
 
-const routingConfigs: Record<
-  RoutingStrategy,
-  { label: string; example: string; description: string }
-> = {
-  COOKIE_ONLY: {
-    label: 'Sadece Çerez',
-    example: 'example.com',
-    description:
-      "Kullanıcının dil tercihini çerezlerde saklar ve URL'de dil kodu kullanmaz",
-  },
-  PATH_PREFIX: {
-    label: 'Path Prefix',
-    example: 'store.example.com/tr',
-    description:
-      'URL yolunda dil kodu kullanır (örn: example.com/tr, example.com/en)',
-  },
-  SUBDOMAIN: {
-    label: 'Alt Alan Adı',
-    example: 'tr.store.example.com',
-    description:
-      'Subdomain ile dil ayrımı yapar (örn: tr.store.example.com, en.store.example.com)',
-  },
-};
-
-export const getRoutingStrategyLabel = (strategy: RoutingStrategy): string => {
-  return routingConfigs[strategy]?.label || 'Bilinmeyen';
-};
-
-export const getRoutingStrategyDescription = (
-  strategy: RoutingStrategy,
-): string => {
-  return routingConfigs[strategy]?.description || 'Bilinmeyen';
-};
-
 export const extractBaseDomain = (domain: string) => {
   const parts = domain.toLowerCase().split('.');
   if (parts.length >= 2) {
     return parts.slice(-2).join('.');
   }
   return domain.toLowerCase();
+};
+
+const productSortOptionConfig: Record<
+  ProductPageSortOption,
+  { label: string }
+> = {
+  'a-z': {
+    label: 'A-Z',
+  },
+  'best-selling': {
+    label: 'En Çok Satılan',
+  },
+  newest: {
+    label: 'En Yeni',
+  },
+  'price-desc': {
+    label: 'Fiyat: Yüksekten Düşüğe',
+  },
+  'price-asc': {
+    label: 'Fiyat: Düşükten Yüksüğe',
+  },
+  'z-a': {
+    label: 'Z-A',
+  },
+  oldest: {
+    label: 'En Eski',
+  },
+};
+export const getSortProductPageLabel = (
+  option: ProductPageSortOption,
+): string => {
+  return productSortOptionConfig[option]?.label || 'Bilinmeyen';
 };

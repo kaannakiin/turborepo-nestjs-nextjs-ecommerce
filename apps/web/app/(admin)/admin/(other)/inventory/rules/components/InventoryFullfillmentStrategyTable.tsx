@@ -1,7 +1,7 @@
 'use client';
 
-import CustomPagination from '@/components/CustomPagination';
-import CustomSearchInput from '@/components/CustomSearchInput';
+import Pagination from '@/components/Pagination';
+import SearchInput from '@/components/SearchInput';
 import TableSkeleton from '@/components/TableSkeleton';
 import { useInvetoryRule } from '@hooks/admin/useInventory';
 import {
@@ -138,7 +138,7 @@ const InventoryFullfillmentStrategyTable = () => {
           >
             Yeni Strateji Oluştur
           </Button>
-          <CustomSearchInput />
+          <SearchInput />
         </Group>
       </Group>
 
@@ -187,7 +187,7 @@ const InventoryFullfillmentStrategyTable = () => {
       </Table.ScrollContainer>
 
       {!isLoading && data?.pagination && data.pagination.totalPages > 1 && (
-        <CustomPagination total={data.pagination.totalPages} />
+        <Pagination total={data.pagination.totalPages} />
       )}
     </Stack>
   );

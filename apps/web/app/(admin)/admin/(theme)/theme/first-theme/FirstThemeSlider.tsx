@@ -1,15 +1,15 @@
-"use client";
+'use client';
 import CustomCarousel, {
   SlideItem,
-} from "@/components/carousels/CustomCarousel";
-import CustomImage from "@/components/CustomImage";
-import { useTheme } from "@/context/theme-context/ThemeContext";
-import { getAspectRatioValue } from "@lib/helpers";
-import { convertAssetToRenderImage } from "@lib/theme-helpers";
-import { AspectRatio } from "@mantine/core";
-import { AssetType } from "@repo/database/client";
-import { SliderComponentOutputType } from "@repo/types";
-import { useEffect, useMemo, useState } from "react";
+} from '@/components/carousels/CustomCarousel';
+import Image from '@/components/Image';
+import { useTheme } from '@/context/theme-context/ThemeContext';
+import { getAspectRatioValue } from '@lib/helpers';
+import { convertAssetToRenderImage } from '@lib/theme-helpers';
+import { AspectRatio } from '@mantine/core';
+import { AssetType } from '@repo/database/client';
+import { SliderComponentOutputType } from '@repo/types';
+import { useEffect, useMemo, useState } from 'react';
 
 interface FirstThemeSliderProps {
   data: SliderComponentOutputType;
@@ -31,7 +31,7 @@ const FirstThemeSlider = ({ data }: FirstThemeSliderProps) => {
   }, [media, data]);
 
   const activeAspectRatio = useMemo(() => {
-    if (media === "mobile" && options.mobileAspectRatio) {
+    if (media === 'mobile' && options.mobileAspectRatio) {
       return getAspectRatioValue(options.mobileAspectRatio);
     }
     return getAspectRatioValue(options.aspectRatio);
@@ -43,8 +43,8 @@ const FirstThemeSlider = ({ data }: FirstThemeSliderProps) => {
     return assets.map((asset, index) => ({
       id: index,
       content: (
-        <AspectRatio ratio={activeAspectRatio || 16 / 9} pos={"relative"}>
-          {asset.type === "VIDEO" ? (
+        <AspectRatio ratio={activeAspectRatio || 16 / 9} pos={'relative'}>
+          {asset.type === 'VIDEO' ? (
             <video
               src={asset.url}
               className="w-full h-full object-cover"
@@ -54,7 +54,7 @@ const FirstThemeSlider = ({ data }: FirstThemeSliderProps) => {
               playsInline
             />
           ) : (
-            <CustomImage src={asset.url} alt={asset.alt || "Banner Image"} />
+            <Image src={asset.url} alt={asset.alt || 'Banner Image'} />
           )}
         </AspectRatio>
       ),
@@ -89,7 +89,7 @@ const FirstThemeSlider = ({ data }: FirstThemeSliderProps) => {
           translate: [0, 0, -400],
         },
         next: {
-          translate: ["100%", 0, 0],
+          translate: ['100%', 0, 0],
         },
       }}
     />

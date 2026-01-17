@@ -6,7 +6,7 @@ import {
   ProductType,
 } from "@repo/database/client";
 import { Pagination, UiProductType } from "../common";
-import { ProductPageSortOption } from "@repo/shared";
+import { ProductPageSortOption } from "../common";
 export type AdminCategoryTableData = Prisma.CategoryGetPayload<{
   include: {
     translations: {
@@ -465,7 +465,7 @@ export interface TagProductsResponse extends BaseProductsResponse {
 }
 
 export const isCategoryResponse = (
-  response: ProductsPageResponse
+  response: ProductsPageResponse,
 ): response is ProductsPageResponse & {
   metadata: { type: "category"; node: TreeNode };
 } => {
@@ -473,7 +473,7 @@ export const isCategoryResponse = (
 };
 
 export const isBrandResponse = (
-  response: ProductsPageResponse
+  response: ProductsPageResponse,
 ): response is ProductsPageResponse & {
   metadata: { type: "brand"; node: BrandNode };
 } => {
@@ -481,7 +481,7 @@ export const isBrandResponse = (
 };
 
 export const isTagResponse = (
-  response: ProductsPageResponse
+  response: ProductsPageResponse,
 ): response is ProductsPageResponse & {
   metadata: { type: "tag"; node: TagNode };
 } => {

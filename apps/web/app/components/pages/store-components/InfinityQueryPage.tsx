@@ -1,23 +1,17 @@
-"use client";
+'use client';
 
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
-import { Box, SimpleGrid, Skeleton, Stack, Text } from "@mantine/core";
-import { useIntersection } from "@mantine/hooks";
-import {
-  getParamKey,
-  getSortIndexFromQuery,
-  ProductPageSortOption,
-  useInfiniteQuery,
-  useQuery,
-} from "@repo/shared";
-import { CategoryProductsResponse, FiltersResponse } from "@repo/types";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import QueryFilters from "./QueryFilters";
-import StoreBreadcrumb from "./StoreBreadcrumb";
-import StoreProductCard from "./StoreProductCard";
-import StoreEmptyProducts from "./StoreEmptyProducts";
-import { Route } from "next";
+import { useStoreFilters, useStoreInfinityQuery } from '@hooks/useGenericStore';
+import { Box, SimpleGrid, Skeleton, Stack, Text } from '@mantine/core';
+import { useIntersection } from '@mantine/hooks';
+import { getParamKey } from '@repo/shared';
+import { FiltersResponse, ProductPageSortOption } from '@repo/types';
+import { Route } from 'next';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import QueryFilters from './QueryFilters';
+import StoreBreadcrumb from './StoreBreadcrumb';
+import StoreEmptyProducts from './StoreEmptyProducts';
+import StoreProductCard from './StoreProductCard';
 
 interface InfinityQueryPageProps {
   slug: string;
@@ -52,7 +46,7 @@ const InfinityQueryPage = ({
 
   const { ref: bottomRef, entry } = useIntersection({
     threshold: 0,
-    rootMargin: "100px",
+    rootMargin: '100px',
   });
 
   const {
@@ -60,45 +54,20 @@ const InfinityQueryPage = ({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteQuery({
+  } = useStoreInfinityQuery({
     queryKey: productsQueryKey,
-    initialPageParam: 1,
-    queryFn: async ({ pageParam }) => {
-      const queryString = currentParams
-        ? `${currentParams}&${getParamKey("page")}=${pageParam}`
-        : `${getParamKey("page")}=${pageParam}`;
-
-      const url = `/${endPoint}/${slug}?${queryString}`;
-      const response = await fetchWrapper.get<CategoryProductsResponse>(url);
-
-      if (!response.success) throw new Error("Veri alınamadı");
-      return response.data;
-    },
-    getNextPageParam: (lastPage) => {
-      if (lastPage.pagination.currentPage < lastPage.pagination.totalPages) {
-        return lastPage.pagination.currentPage + 1;
-      }
-      return undefined;
-    },
+    endPoint,
+    slug,
+    currentParams,
     staleTime,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
   });
 
-  const { data: filtersData } = useQuery({
+  const { data: filtersData } = useStoreFilters({
     queryKey: filtersQueryKey,
-    queryFn: async () => {
-      const queryString = currentParams || "";
-      const url = `/${endPoint}/${slug}/filters${queryString ? `?${queryString}` : ""}`;
-
-      const response = await fetchWrapper.get<FiltersResponse>(url);
-
-      if (!response.success) throw new Error("Filtreler alınamadı");
-      return response.data;
-    },
+    endPoint,
+    slug,
+    currentParams,
     staleTime,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {
@@ -109,7 +78,7 @@ const InfinityQueryPage = ({
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
-    params.delete(getParamKey("page"));
+    params.delete(getParamKey('page'));
 
     const newParams = params.toString();
     if (newParams !== currentParams) {
@@ -121,9 +90,9 @@ const InfinityQueryPage = ({
   const filters = filtersData;
   const treeNode = productsData?.pages[0]?.treeNode;
   const pagination = productsData?.pages[0]?.pagination;
-  const currentSortIndex = searchParams.get(getParamKey("sort"));
+  const currentSortIndex = searchParams.get(getParamKey('sort'));
   const currentSort = currentSortIndex
-    ? getSortIndexFromQuery(parseInt(currentSortIndex))
+    ? Object.values(ProductPageSortOption)[parseInt(currentSortIndex)]
     : ProductPageSortOption.NEWEST;
 
   const displayItems = productsData?.pages.flatMap((page) =>
@@ -148,7 +117,7 @@ const InfinityQueryPage = ({
           },
         ];
       }
-    })
+    }),
   );
   const handleClearFilters = () => {
     router.push(`/${endPoint}/${slug}` as Route, { scroll: false });
@@ -160,11 +129,11 @@ const InfinityQueryPage = ({
   const hasFilters = currentParams.length > 0;
 
   const pageType =
-    endPoint === "categories"
-      ? "categories"
-      : endPoint === "brands"
-        ? "brands"
-        : "tags";
+    endPoint === 'categories'
+      ? 'categories'
+      : endPoint === 'brands'
+        ? 'brands'
+        : 'tags';
 
   return (
     <Stack className="w-full  max-w-[1500px] lg:mx-auto px-4" gap="lg">

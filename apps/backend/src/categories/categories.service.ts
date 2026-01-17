@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Locale } from '@repo/database';
-import { filterReservedKeys, ProductPageSortOption } from '@repo/shared';
+import { filterReservedKeys } from '@repo/shared';
 import {
   CategoryPageFilters,
   CategoryProductsResponse,
@@ -8,6 +8,7 @@ import {
   RawCategoryRow,
   ParsedFilters,
   FiltersResponse,
+  ProductPageSortOption,
 } from '@repo/types';
 import { CurrencyLocaleService } from 'src/common/services/currency-locale.service';
 import { LocaleService } from 'src/common/services/locale/locale.service';

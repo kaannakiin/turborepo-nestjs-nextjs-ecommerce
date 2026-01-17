@@ -1,6 +1,6 @@
-"use client";
-import GlobalLoader from "@/components/GlobalLoader";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
+'use client';
+import Loader from '@/components/Loader';
+import { useAdminSearchableProductsModal } from '@hooks/admin/useProducts';
 import {
   Accordion,
   Avatar,
@@ -14,12 +14,12 @@ import {
   Text,
   TextInput,
   UnstyledButton,
-} from "@mantine/core";
-import { useDebouncedState } from "@mantine/hooks";
-import { useQuery, UseQueryOptions } from "@repo/shared";
-import { ProductModalData, SearchableProductModalData } from "@repo/types";
-import { IconSearch } from "@tabler/icons-react";
-import { useEffect, useMemo, useState } from "react";
+} from '@mantine/core';
+import { useDebouncedState } from '@mantine/hooks';
+import { UseQueryOptions } from '@repo/shared';
+import { ProductModalData } from '@repo/types';
+import { IconSearch } from '@tabler/icons-react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface SearchableProductModalProps {
   opened: boolean;
@@ -28,10 +28,10 @@ interface SearchableProductModalProps {
   onConfirm: (
     productIds: string[],
     variantIds: string[],
-    products: ProductModalData[]
+    products: ProductModalData[],
   ) => void;
   onCancel: () => void;
-  queryKey?: UseQueryOptions["queryKey"];
+  queryKey?: UseQueryOptions['queryKey'];
   multiple?: boolean;
   excludeProductIds?: string[];
   excludeVariantIds?: string[];
@@ -48,31 +48,14 @@ const SearchableProductModal = ({
   excludeProductIds = [],
   excludeVariantIds = [],
 }: SearchableProductModalProps) => {
-  const [search, setSearch] = useDebouncedState<string>("", 500);
+  const [search, setSearch] = useDebouncedState<string>('', 500);
   const [tempProductIds, setTempProductIds] = useState<string[]>([]);
   const [tempVariantIds, setTempVariantIds] = useState<string[]>([]);
 
-  const { data, isLoading } = useQuery({
-    queryKey: queryKey || [
-      "searchable-products-modal-data",
-      {
-        search,
-      },
-    ],
-    queryFn: async () => {
-      const res = await fetchWrapper.post<SearchableProductModalData>(
-        `/admin/products/get-admin-searchable-product-modal-data`,
-        {
-          ...(search ? { search } : {}),
-          page: 1,
-        }
-      );
-      if (!res.success) {
-        throw new Error("Failed to fetch products");
-      }
-      return res.data;
-    },
-    enabled: opened,
+  const { data, isLoading } = useAdminSearchableProductsModal({
+    search,
+    opened,
+    queryKey: queryKey as string[],
   });
 
   useEffect(() => {
@@ -92,7 +75,7 @@ const SearchableProductModal = ({
       }
 
       const selectedSubCount = product.sub.filter((sub) =>
-        tempVariantIds.includes(sub.id)
+        tempVariantIds.includes(sub.id),
       ).length;
 
       if (selectedSubCount === 0) {
@@ -107,18 +90,18 @@ const SearchableProductModal = ({
 
   const handleProductSelect = (
     productId: string,
-    product: ProductModalData
+    product: ProductModalData,
   ) => {
     if (multiple) {
       if (product.sub && product.sub.length > 0) {
         const allSubIds = product.sub.map((s) => s.id);
         const allSelected = allSubIds.every((id) =>
-          tempVariantIds.includes(id)
+          tempVariantIds.includes(id),
         );
 
         if (allSelected) {
           setTempVariantIds((prev) =>
-            prev.filter((id) => !allSubIds.includes(id))
+            prev.filter((id) => !allSubIds.includes(id)),
           );
         } else {
           setTempVariantIds((prev) => {
@@ -168,7 +151,7 @@ const SearchableProductModal = ({
 
   const renderProductItem = (
     product: ProductModalData,
-    parentProduct?: ProductModalData
+    parentProduct?: ProductModalData,
   ) => {
     const isVariant = !!parentProduct;
     const isChecked = isVariant
@@ -190,19 +173,19 @@ const SearchableProductModal = ({
           }
         }}
         style={{
-          width: "100%",
-          padding: "8px 12px",
-          borderRadius: "8px",
-          transition: "background-color 0.2s, opacity 0.2s",
+          width: '100%',
+          padding: '8px 12px',
+          borderRadius: '8px',
+          transition: 'background-color 0.2s, opacity 0.2s',
           opacity: isDisabled ? 0.5 : 1,
-          cursor: isDisabled ? "not-allowed" : "pointer",
+          cursor: isDisabled ? 'not-allowed' : 'pointer',
         }}
         styles={{
           root: {
-            "&:hover": {
+            '&:hover': {
               backgroundColor: isDisabled
-                ? "transparent"
-                : "var(--mantine-color-gray-0)",
+                ? 'transparent'
+                : 'var(--mantine-color-gray-0)',
             },
           },
         }}
@@ -238,7 +221,7 @@ const SearchableProductModal = ({
 
     if (product.sub && product.sub.length > 0) {
       const allSubsDisabled = product.sub.every((sub) =>
-        excludeVariantIds.includes(sub.id)
+        excludeVariantIds.includes(sub.id),
       );
       const isParentDisabled = excludeProductIds.includes(product.id);
       const isDisabled = allSubsDisabled || isParentDisabled;
@@ -246,7 +229,7 @@ const SearchableProductModal = ({
       return (
         <Accordion.Item key={product.id} value={product.id}>
           <Accordion.Control
-            px={"sm"}
+            px={'sm'}
             disabled={isDisabled}
             style={{ opacity: isDisabled ? 0.5 : 1 }}
           >
@@ -278,7 +261,7 @@ const SearchableProductModal = ({
               {product.image && (
                 <Avatar src={product.image} size="sm" radius="sm" />
               )}
-              <Text size="sm" fw={500} c={isDisabled ? "dimmed" : "inherit"}>
+              <Text size="sm" fw={500} c={isDisabled ? 'dimmed' : 'inherit'}>
                 {product.name}
               </Text>
             </Group>
@@ -286,7 +269,7 @@ const SearchableProductModal = ({
           <Accordion.Panel>
             <Stack gap="xs" pl="md">
               {product.sub.map((subProduct) =>
-                renderProductItem(subProduct, product)
+                renderProductItem(subProduct, product),
               )}
             </Stack>
           </Accordion.Panel>
@@ -298,7 +281,7 @@ const SearchableProductModal = ({
   };
 
   return (
-    <Modal.Root opened={opened} onClose={handleCancel} centered size={"lg"}>
+    <Modal.Root opened={opened} onClose={handleCancel} centered size={'lg'}>
       <Modal.Overlay />
       <Modal.Content>
         <Modal.Header>
@@ -307,7 +290,7 @@ const SearchableProductModal = ({
         </Modal.Header>
         <Modal.Body>
           <Stack gap="md">
-            <Group gap={"md"}>
+            <Group gap={'md'}>
               <TextInput
                 defaultValue={search}
                 onChange={(event) => setSearch(event.currentTarget.value)}
@@ -319,7 +302,7 @@ const SearchableProductModal = ({
             </Group>
 
             {isLoading ? (
-              <GlobalLoader />
+              <Loader />
             ) : (
               <>
                 {data && data.data && data.data.length > 0 ? (

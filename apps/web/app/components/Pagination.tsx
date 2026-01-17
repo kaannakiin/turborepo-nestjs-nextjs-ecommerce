@@ -1,28 +1,29 @@
-"use client";
+'use client';
 
-import { Flex, Pagination, PaginationProps } from "@mantine/core";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import {
+  Flex,
+  Pagination as MantinePagination,
+  PaginationProps as MantinePaginationProps,
+} from '@mantine/core';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 
-interface CustomPaginationProps extends PaginationProps {
+interface PaginationProps extends MantinePaginationProps {
   paginationKey?: string;
 }
 
-const CustomPagination = ({
-  paginationKey = "page",
-  ...props
-}: CustomPaginationProps) => {
+const Pagination = ({ paginationKey = 'page', ...props }: PaginationProps) => {
   const searchParams = useSearchParams();
   const { replace } = useRouter();
   const [page, setPage] = useState<number>(
     searchParams.get(paginationKey)
       ? parseInt(searchParams.get(paginationKey)!)
-      : 1
+      : 1,
   );
 
   return (
     <Flex justify="center" align="center">
-      <Pagination
+      <MantinePagination
         onChange={(value) => {
           setPage(value);
           const params = new URLSearchParams(searchParams.toString());
@@ -36,4 +37,4 @@ const CustomPagination = ({
   );
 };
 
-export default CustomPagination;
+export default Pagination;

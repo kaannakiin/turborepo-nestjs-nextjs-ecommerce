@@ -1,14 +1,10 @@
 /* eslint-disable react/no-unescaped-entities */
-import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
+import LoadingOverlay from '@/components/LoadingOverlay';
 import {
   useStoreGetQuery,
   useStoreUpsertMutation,
 } from '@hooks/admin/useStore';
-import {
-  getLocaleLabel,
-  getRoutingStrategyDescription,
-  getRoutingStrategyLabel,
-} from '@lib/helpers';
+import { getLocaleLabel } from '@lib/helpers';
 import {
   ActionIcon,
   Alert,
@@ -18,7 +14,6 @@ import {
   Divider,
   Group,
   Paper,
-  Radio,
   Select,
   Stack,
   Switch,
@@ -26,7 +21,7 @@ import {
   Text,
   TextInput,
 } from '@mantine/core';
-import { Currency, Locale, RoutingStrategy } from '@repo/database/client';
+import { Currency, Locale } from '@repo/database/client';
 import {
   Control,
   Controller,
@@ -50,7 +45,6 @@ import {
   IconTrash,
   IconWorldWww,
 } from '@tabler/icons-react';
-import classes from './radioCard.module.css';
 import { useEffect } from 'react';
 
 interface LocaleCurrencyTableProps {
@@ -200,14 +194,13 @@ const LocaleCurrencyTable = ({
 const StoreSettingsForm = () => {
   const { mutateAsync, isPending } = useStoreUpsertMutation();
   const { data, isLoading } = useStoreGetQuery();
-  const { control, handleSubmit, formState, setValue, reset } =
-    useForm<StoreZodInputType>({
+  const { control, handleSubmit, setValue, reset } = useForm<StoreZodInputType>(
+    {
       resolver: zodResolver(StoreZodSchema),
       defaultValues: {
         name: '',
         isB2CActive: true,
         b2cCustomDomain: '',
-        b2cRouting: 'PATH_PREFIX',
         b2cDefaultLocale: 'TR',
         b2cLocaleCurrencies: [
           {
@@ -218,11 +211,11 @@ const StoreSettingsForm = () => {
         isB2BActive: false,
         b2bSubdomain: '',
         b2bCustomDomain: '',
-        b2bRouting: 'PATH_PREFIX',
         b2bDefaultLocale: 'TR',
         b2bLocaleCurrencies: [],
       },
-    });
+    },
+  );
 
   const isB2bActive = useWatch({
     control,
@@ -249,16 +242,6 @@ const StoreSettingsForm = () => {
     name: 'b2cCustomDomain',
   });
 
-  const b2cRouting = useWatch({
-    control,
-    name: 'b2cRouting',
-  });
-
-  const b2bRouting = useWatch({
-    control,
-    name: 'b2bRouting',
-  });
-
   const b2cFields = useFieldArray({
     control,
     name: 'b2cLocaleCurrencies',
@@ -271,70 +254,26 @@ const StoreSettingsForm = () => {
     keyName: 'fieldId',
   });
 
-  const isB2bSubdomainRoutingDisabled =
-    isB2bActive && b2bSubdomain && !b2bCustomDomain;
-
-  const showB2bRoutingWarning =
-    isB2bActive &&
-    b2bSubdomain &&
-    !b2bCustomDomain &&
-    b2bRouting === 'SUBDOMAIN';
-
   const showDomainConflictWarning = () => {
     if (!isB2CActive || !isB2bActive || !b2cCustomDomain || !b2bCustomDomain) {
       return null;
     }
 
-    const extractBaseDomain = (domain: string) => {
-      const parts = domain.toLowerCase().split('.');
-      if (parts.length >= 2) {
-        return parts.slice(-2).join('.');
-      }
-      return domain.toLowerCase();
-    };
-
-    const b2cBase = extractBaseDomain(b2cCustomDomain);
-    const b2bBase = extractBaseDomain(b2bCustomDomain);
-
-    if (b2cBase !== b2bBase) return null;
-
-    const b2cSubdomainPart = b2cCustomDomain
-      .toLowerCase()
-      .replace(`.${b2cBase}`, '');
-    const b2bSubdomainPart = b2bCustomDomain
-      .toLowerCase()
-      .replace(`.${b2bBase}`, '');
-
-    if (b2cRouting === 'SUBDOMAIN') {
+    if (b2cCustomDomain.toLowerCase() === b2bCustomDomain.toLowerCase()) {
       return (
         <Alert
           icon={<IconAlertCircle size={18} />}
-          title="Dikkat: Alan Adı Çakışması"
-          color="orange"
-          variant="light"
+          title="Hata: Alan Adı Çakışması"
+          color="red"
         >
-          B2C için subdomain routing kullanıyorsunuz. B2B subdomain'i (
-          {b2bSubdomainPart}) B2C dil kodlarıyla çakışmamalıdır.
-        </Alert>
-      );
-    }
-
-    if (b2bRouting === 'SUBDOMAIN') {
-      return (
-        <Alert
-          icon={<IconAlertCircle size={18} />}
-          title="Dikkat: Alan Adı Çakışması"
-          color="orange"
-          variant="light"
-        >
-          B2B için subdomain routing kullanıyorsunuz. B2C subdomain'i (
-          {b2cSubdomainPart}) B2B dil kodlarıyla çakışmamalıdır.
+          B2C ve B2B aynı özel alan adını kullanamaz.
         </Alert>
       );
     }
 
     return null;
   };
+
   useEffect(() => {
     if (data) {
       reset(data);
@@ -347,7 +286,7 @@ const StoreSettingsForm = () => {
 
   return (
     <>
-      {isLoading || isPending ? <GlobalLoadingOverlay /> : null}
+      {isLoading || isPending ? <LoadingOverlay /> : null}
 
       <Stack gap="md">
         <Controller
@@ -401,42 +340,6 @@ const StoreSettingsForm = () => {
                   )}
                 />
 
-                <Controller
-                  control={control}
-                  name="b2cRouting"
-                  render={({ field, fieldState }) => (
-                    <Radio.Group
-                      {...field}
-                      label="Dil Yönlendirme Stratejisi"
-                      description="Çok dilli içerik için URL yapısını belirler"
-                      error={fieldState.error?.message}
-                    >
-                      <Stack gap="xs" mt="xs">
-                        {Object.values(RoutingStrategy).map((strategy) => (
-                          <Radio.Card
-                            className={classes.root}
-                            key={strategy}
-                            value={strategy}
-                            radius="md"
-                          >
-                            <Group wrap="nowrap" align="flex-start">
-                              <Radio.Indicator />
-                              <div>
-                                <Text className={classes.label}>
-                                  {getRoutingStrategyLabel(strategy)}
-                                </Text>
-                                <Text className={classes.description}>
-                                  {getRoutingStrategyDescription(strategy)}
-                                </Text>
-                              </div>
-                            </Group>
-                          </Radio.Card>
-                        ))}
-                      </Stack>
-                    </Radio.Group>
-                  )}
-                />
-
                 <Divider
                   label="Desteklenen Diller ve Para Birimleri"
                   labelPosition="left"
@@ -483,20 +386,7 @@ const StoreSettingsForm = () => {
                     variant="light"
                   >
                     Platform subdomain kullanıyorsunuz ({b2bSubdomain}.
-                    {b2cCustomDomain || 'domain.com'}). Bu durumda dil ayrımı
-                    için sadece "Path Prefix" stratejisi kullanılabilir.
-                  </Alert>
-                )}
-
-                {showB2bRoutingWarning && (
-                  <Alert
-                    icon={<IconAlertCircle size={18} />}
-                    title="Hata: Geçersiz Routing Stratejisi"
-                    color="red"
-                  >
-                    Platform subdomain kullanırken dil ayrımı için 'Subdomain'
-                    stratejisi kullanılamaz. Lütfen 'Path Prefix' seçiniz veya
-                    özel bir alan adı (Custom Domain) tanımlayınız.
+                    {b2cCustomDomain || 'domain.com'}).
                   </Alert>
                 )}
 
@@ -534,53 +424,6 @@ const StoreSettingsForm = () => {
                       size="sm"
                       description="Subdomain yerine özel bir alan adı kullanmak isterseniz"
                     />
-                  )}
-                />
-
-                <Controller
-                  control={control}
-                  name="b2bRouting"
-                  render={({ field, fieldState }) => (
-                    <Radio.Group
-                      {...field}
-                      label="Dil Yönlendirme Stratejisi"
-                      description="Çok dilli içerik için URL yapısını belirler"
-                      error={fieldState.error?.message}
-                    >
-                      <Stack gap="xs" mt="xs">
-                        {Object.values(RoutingStrategy).map((strategy) => (
-                          <Radio.Card
-                            key={strategy}
-                            value={strategy}
-                            className={classes.root}
-                            radius="md"
-                            disabled={
-                              strategy === 'SUBDOMAIN' &&
-                              isB2bSubdomainRoutingDisabled
-                            }
-                          >
-                            <Group wrap="nowrap" align="flex-start">
-                              <Radio.Indicator />
-                              <div>
-                                <Text className={classes.label}>
-                                  {getRoutingStrategyLabel(strategy)}
-                                </Text>
-                                <Text className={classes.description}>
-                                  {getRoutingStrategyDescription(strategy)}
-                                </Text>
-                                {strategy === 'SUBDOMAIN' &&
-                                  isB2bSubdomainRoutingDisabled && (
-                                    <Text size="xs" c="red" mt={4}>
-                                      Platform subdomain kullanırken bu seçenek
-                                      kullanılamaz
-                                    </Text>
-                                  )}
-                              </div>
-                            </Group>
-                          </Radio.Card>
-                        ))}
-                      </Stack>
-                    </Radio.Group>
                   )}
                 />
 
