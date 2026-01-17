@@ -1,5 +1,5 @@
 import { QueryClient } from '@repo/shared';
-import { CargoZoneType } from '@repo/types';
+import { ACCESS_TOKEN_COOKIE_NAME, CargoZoneType } from '@repo/types';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { Params } from 'types/types';
