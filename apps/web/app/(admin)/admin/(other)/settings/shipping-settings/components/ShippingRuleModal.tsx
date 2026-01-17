@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import PriceFormatter from "@/(user)/components/PriceFormatter";
-import { getConditionText, getCurrencyLabel } from "@lib/helpers";
+import PriceFormatter from '@/(user)/components/PriceFormatter';
+import { getConditionText, getCurrencyLabel } from '@lib/helpers';
 import {
   Button,
   Card,
@@ -14,89 +14,92 @@ import {
   Stack,
   Text,
   TextInput,
-} from "@mantine/core";
-import { Currency } from "@repo/database/client";
+} from '@mantine/core';
+import { Currency, RuleType } from '@repo/database/client';
 import {
   Controller,
   createId,
   SubmitHandler,
   useForm,
+  useWatch,
   zodResolver,
-} from "@repo/shared";
-import { ShippingRuleSchema, ShippingRuleType } from "@repo/types";
-import { IconPackage } from "@tabler/icons-react";
-import { useEffect } from "react";
-import ProductPriceNumberInput from "../../../product-list/products/components/ProductPriceNumberInput";
-interface ShippingRuleDrawerProps {
+} from '@repo/shared';
+import { ShippingRuleSchema, ShippingRuleType } from '@repo/types';
+import { IconPackage } from '@tabler/icons-react';
+import { useEffect } from 'react';
+import PriceNumberInput from '../../../../../../components/inputs/PriceNumberInput';
+
+const getSubLabel = (conditionType: RuleType, name?: string) => {
+  if (!name?.trim()) return 'Aşağıdaki alanları doldurun';
+
+  return conditionType === 'SalesPrice'
+    ? 'Satış fiyatına göre kargo kuralı'
+    : 'Ürün ağırlığına göre kargo kuralı';
+};
+
+interface ShippingRuleModalProps {
   openedRuleModal: boolean;
   closeRuleModal: () => void;
   defaultValues?: ShippingRuleType;
   onSubmit: SubmitHandler<ShippingRuleType>;
 }
 
-const ShippingRuleDrawer = ({
+const ShippingRuleModal = ({
   openedRuleModal,
   closeRuleModal,
   defaultValues,
   onSubmit,
-}: ShippingRuleDrawerProps) => {
+}: ShippingRuleModalProps) => {
   const { control, handleSubmit, watch, setValue, reset } =
     useForm<ShippingRuleType>({
       resolver: zodResolver(ShippingRuleSchema),
       defaultValues: defaultValues || {
         uniqueId: createId(),
         condition: {
-          type: "SalesPrice",
+          type: 'SalesPrice',
           minSalesPrice: null,
           maxSalesPrice: null,
         },
-        currency: "TRY",
-        name: "",
+        currency: 'TRY',
+        name: '',
         shippingPrice: null,
       },
     });
   useEffect(() => {
     if (openedRuleModal) {
       if (defaultValues) {
-        // Edit mode - mevcut değerlerle reset et
         reset(defaultValues);
       } else {
-        // Add mode - boş değerlerle reset et
         reset({
           uniqueId: createId(),
           condition: {
-            type: "SalesPrice",
+            type: 'SalesPrice',
             minSalesPrice: null,
             maxSalesPrice: null,
           },
-          currency: "TRY",
-          name: "",
+          currency: 'TRY',
+          name: '',
           shippingPrice: null,
         });
       }
     }
   }, [openedRuleModal, defaultValues, reset]);
 
-  const data = watch();
-  const price = watch("shippingPrice");
-
-  const getSubLabel = () => {
-    if (!data.name?.trim()) return "Aşağıdaki alanları doldurun";
-
-    return data.condition.type === "SalesPrice"
-      ? "Satış fiyatına göre kargo kuralı"
-      : "Ürün ağırlığına göre kargo kuralı";
-  };
+  const conditionType = useWatch({ control, name: 'condition.type' });
+  const price = useWatch({ control, name: 'shippingPrice' });
+  const name = useWatch({ control, name: 'name' });
+  const currency = useWatch({ control, name: 'currency' });
+  const data = useWatch({ control });
 
   return (
     <Modal.Root
       classNames={{
-        title: "text-lg font-medium",
-        header: "border-b border-b-gray-500",
-        body: "py-4 max-h-[50vh]",
+        title: 'text-lg font-medium',
+        header: 'border-b border-b-gray-500',
+        body: 'py-4',
       }}
       centered
-      size="md"
+      size="lg"
       opened={openedRuleModal}
       onClose={closeRuleModal}
     >
@@ -106,37 +109,38 @@ const ShippingRuleDrawer = ({
           <Modal.Title>Kural Ekle</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Stack gap={"md"}>
-            <Card bg={"gray.5"} p="md">
+          <Stack gap={'md'}>
+            <Card bg={'gray.5'} p="md">
               <Group justify="space-between">
-                <Text fz={"xs"} c="white">
-                  Kural{" "}
-                  {data.condition.type === "ProductWeight"
-                    ? "(Ağırlık)"
-                    : "(Satış Fiyatı)"}
+                <Text fz={'xs'} c="white">
+                  Kural{' '}
+                  {conditionType === 'ProductWeight'
+                    ? '(Ağırlık)'
+                    : '(Satış Fiyatı)'}
                 </Text>
-                <Text fz={"xs"} c={"white"}>
-                  {getConditionText(data)}
+                <Text fz={'xs'} c={'white'}>
+                  {getConditionText(data as ShippingRuleType)}
                 </Text>
               </Group>
-              <Divider my={"xs"} />
+              <Divider my={'xs'} />
               <Group justify="space-between">
                 <Group gap="xs">
                   <IconPackage size={16} color="white" />
-                  <Text fz={"xs"} c="white">
-                    {data.name?.trim() ? data.name : getSubLabel()}
+                  <Text fz={'xs'} c="white">
+                    {name?.trim() ? name : getSubLabel(conditionType)}
                   </Text>
                 </Group>
                 {price > 0 ? (
-                  <Group gap={"1px"} wrap="nowrap" align="center">
-                    <PriceFormatter fz={"xs"} c={"white"} price={price} />
-                    <Text fz={"xs"} c={"white"}>
-                      {" "}
-                      - Kargo Ücreti
-                    </Text>
+                  <Group gap={'1px'} wrap="nowrap" align="center">
+                    <PriceFormatter
+                      fz={'xs'}
+                      c={'white'}
+                      price={price}
+                      currency={currency}
+                    />
                   </Group>
                 ) : (
-                  <Text fz={"xs"} c={"white"}>
+                  <Text fz={'xs'} c={'white'}>
                     Ücretsiz Kargo
                   </Text>
                 )}
@@ -180,11 +184,11 @@ const ShippingRuleDrawer = ({
                 control={control}
                 name="shippingPrice"
                 render={({ field }) => (
-                  <ProductPriceNumberInput
+                  <PriceNumberInput
                     {...field}
                     onChange={(value) => {
                       if (
-                        value === "" ||
+                        value === '' ||
                         value === null ||
                         value === undefined
                       ) {
@@ -199,7 +203,7 @@ const ShippingRuleDrawer = ({
                 )}
               />
             </SimpleGrid>
-            <Divider mt={"xs"} size={"md"} />
+            <Divider mt={'xs'} size={'md'} />
 
             <Controller
               control={control}
@@ -208,23 +212,29 @@ const ShippingRuleDrawer = ({
                 <Radio.Group
                   {...field}
                   onChange={(value) => {
-                    field.onChange(value as "SalesPrice" | "ProductWeight");
-                    if (value === "SalesPrice") {
-                      setValue("condition", {
-                        type: "SalesPrice",
+                    if (value === conditionType) {
+                      console.log('same value');
+                      return;
+                    }
+
+                    field.onChange(value);
+
+                    if (value === 'SalesPrice') {
+                      setValue('condition', {
+                        type: 'SalesPrice',
                         minSalesPrice: null,
                         maxSalesPrice: null,
                       });
                     } else {
-                      setValue("condition", {
-                        type: "ProductWeight",
+                      setValue('condition', {
+                        type: 'ProductWeight',
                         minProductWeight: null,
                         maxProductWeight: null,
                       });
                     }
                   }}
                   label={
-                    <Text fz={"md"} fw={700} mb={"xs"}>
+                    <Text fz={'md'} fw={700} mb={'xs'}>
                       Kurallar
                     </Text>
                   }
@@ -232,18 +242,18 @@ const ShippingRuleDrawer = ({
                   <Group>
                     <Radio
                       size="xs"
-                      value={"SalesPrice"}
+                      value={'SalesPrice'}
                       label={
-                        <Text fz={"xs"} c="black">
+                        <Text fz={'xs'} c="black">
                           Satış Fiyatı
                         </Text>
                       }
                     />
                     <Radio
-                      value={"ProductWeight"}
+                      value={'ProductWeight'}
                       size="xs"
                       label={
-                        <Text fz={"xs"} c="black">
+                        <Text fz={'xs'} c="black">
                           Ağırlık
                         </Text>
                       }
@@ -253,19 +263,19 @@ const ShippingRuleDrawer = ({
               )}
             />
             <SimpleGrid cols={2}>
-              {data.condition.type === "ProductWeight" ? (
+              {conditionType === 'ProductWeight' ? (
                 <>
                   <Controller
                     control={control}
                     name="condition.minProductWeight"
                     render={({ field, fieldState }) => (
-                      <ProductPriceNumberInput
+                      <PriceNumberInput
                         label="Minimum Ağırlık (g)"
                         size="xs"
-                        {...field}
+                        value={field.value ?? ''}
                         onChange={(value) => {
                           if (
-                            value === "" ||
+                            value === '' ||
                             value === null ||
                             value === undefined
                           ) {
@@ -282,11 +292,12 @@ const ShippingRuleDrawer = ({
                     control={control}
                     name="condition.maxProductWeight"
                     render={({ field, fieldState }) => (
-                      <ProductPriceNumberInput
+                      <PriceNumberInput
                         label="Maksimum Ağırlık (g)"
+                        value={field.value ?? ''}
                         onChange={(value) => {
                           if (
-                            value === "" ||
+                            value === '' ||
                             value === null ||
                             value === undefined
                           ) {
@@ -296,7 +307,6 @@ const ShippingRuleDrawer = ({
                           }
                         }}
                         size="xs"
-                        {...field}
                         error={fieldState.error?.message}
                       />
                     )}
@@ -308,13 +318,13 @@ const ShippingRuleDrawer = ({
                     control={control}
                     name="condition.minSalesPrice"
                     render={({ field, fieldState }) => (
-                      <ProductPriceNumberInput
+                      <PriceNumberInput
                         label="Minimum Satış Fiyatı"
                         size="xs"
-                        {...field}
+                        value={field.value ?? ''}
                         onChange={(value) => {
                           if (
-                            value === "" ||
+                            value === '' ||
                             value === null ||
                             value === undefined
                           ) {
@@ -331,13 +341,13 @@ const ShippingRuleDrawer = ({
                     control={control}
                     name="condition.maxSalesPrice"
                     render={({ field, fieldState }) => (
-                      <ProductPriceNumberInput
+                      <PriceNumberInput
                         label="Maksimum Satış Fiyatı"
                         size="xs"
-                        {...field}
+                        value={field.value ?? ''}
                         onChange={(value) => {
                           if (
-                            value === "" ||
+                            value === '' ||
                             value === null ||
                             value === undefined
                           ) {
@@ -368,4 +378,4 @@ const ShippingRuleDrawer = ({
   );
 };
 
-export default ShippingRuleDrawer;
+export default ShippingRuleModal;

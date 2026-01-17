@@ -110,8 +110,10 @@ export const DataKeys = {
     method: (provider: string) => ['adminPaymentMethod', provider] as const,
   },
   shipping: {
-    zones: ['get-all-cargo-zones'] as const,
+    zones: (page = 1, limit = 10, search?: string) =>
+      ['get-all-cargo-zones', page, limit, search] as const,
     createOrUpdate: 'create-or-update-cargo-zone',
+    zone: (id: string) => ['get-cargo-zone', id] as const,
   },
   campaigns: {
     list: (search?: string, type?: string, page?: number) =>

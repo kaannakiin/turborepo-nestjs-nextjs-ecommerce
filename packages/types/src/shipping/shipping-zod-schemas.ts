@@ -44,6 +44,86 @@ export const LocationSchema = z
     }
   });
 
+export const SalesPriceConditionSchema = z
+  .object({
+    type: z.literal(RuleType.SalesPrice),
+    minSalesPrice: z
+      .number({
+        error: "Geçersiz minimum satış fiyatı",
+      })
+      .int({ error: "Geçersiz minimum satış fiyatı" })
+      .min(0, {
+        error: "Minimum satış fiyatı 0 veya daha büyük olmalıdır",
+      })
+      .optional()
+      .nullable(),
+    maxSalesPrice: z
+      .number({
+        error: "Geçersiz maksimum satış fiyatı",
+      })
+      .int({
+        error: "Geçersiz maksimum satış fiyatı",
+      })
+      .min(0, {
+        error: "Maksimum satış fiyatı 0 veya daha büyük olmalıdır",
+      })
+      .optional()
+      .nullable(),
+  })
+  .refine(
+    (data) => {
+      if (data.minSalesPrice != null && data.maxSalesPrice != null) {
+        return data.minSalesPrice <= data.maxSalesPrice;
+      }
+      return true;
+    },
+    {
+      message: "Minimum fiyat maksimumdan büyük olamaz",
+      path: ["minSalesPrice"],
+    },
+  );
+
+export const ProductWeightConditionSchema = z
+  .object({
+    type: z.literal(RuleType.ProductWeight),
+    minProductWeight: z
+      .number({
+        error: "Geçersiz minimum ürün ağırlığı",
+      })
+      .int({
+        error: "Geçersiz minimum ürün ağırlığı",
+      })
+      .min(0, {
+        error: "Minimum ürün ağırlığı 0 veya daha büyük olmalıdır",
+      })
+      .optional()
+      .nullable(),
+    maxProductWeight: z
+      .number({
+        error: "Geçersiz maksimum ürün ağırlığı",
+      })
+      .int({
+        error: "Geçersiz maksimum ürün ağırlığı",
+      })
+      .min(0, {
+        error: "Maksimum ürün ağırlığı 0 veya daha büyük olmalıdır",
+      })
+      .optional()
+      .nullable(),
+  })
+  .refine(
+    (data) => {
+      if (data.minProductWeight != null && data.maxProductWeight != null) {
+        return data.minProductWeight <= data.maxProductWeight;
+      }
+      return true;
+    },
+    {
+      message: "Minimum ağırlık maksimumdan büyük olamaz",
+      path: ["minProductWeight"],
+    },
+  );
+
 export const ShippingRuleSchema = z.object({
   uniqueId: z.cuid2({
     error: "Geçersiz kural kimliği",
@@ -73,94 +153,21 @@ export const ShippingRuleSchema = z.object({
     .nullable()
     .optional(),
   condition: z.discriminatedUnion("type", [
-    z
-      .object({
-        type: z.literal(RuleType.SalesPrice),
-        minSalesPrice: z
-          .number({
-            error: "Geçersiz minimum satış fiyatı",
-          })
-          .int({ error: "Geçersiz minimum satış fiyatı" })
-          .min(0, {
-            error: "Minimum satış fiyatı 0 veya daha büyük olmalıdır",
-          })
-          .optional()
-          .nullable(),
-        maxSalesPrice: z
-          .number({
-            error: "Geçersiz maksimum satış fiyatı",
-          })
-          .int({
-            error: "Geçersiz maksimum satış fiyatı",
-          })
-          .min(0, {
-            error: "Maksimum satış fiyatı 0 veya daha büyük olmalıdır",
-          })
-          .optional()
-          .nullable(),
-      })
-      .refine(
-        (data) => {
-          if (data.minSalesPrice != null && data.maxSalesPrice != null) {
-            return data.minSalesPrice <= data.maxSalesPrice;
-          }
-          return true;
-        },
-        {
-          message: "Minimum fiyat maksimumdan büyük olamaz",
-          path: ["minSalesPrice"],
-        }
-      ),
-
-    z
-      .object({
-        type: z.literal(RuleType.ProductWeight),
-        minProductWeight: z
-          .number({
-            error: "Geçersiz minimum ürün ağırlığı",
-          })
-          .int({
-            error: "Geçersiz minimum ürün ağırlığı",
-          })
-          .min(0, {
-            error: "Minimum ürün ağırlığı 0 veya daha büyük olmalıdır",
-          })
-          .optional()
-          .nullable(),
-        maxProductWeight: z
-          .number({
-            error: "Geçersiz maksimum ürün ağırlığı",
-          })
-          .int({
-            error: "Geçersiz maksimum ürün ağırlığı",
-          })
-          .min(0, {
-            error: "Maksimum ürün ağırlığı 0 veya daha büyük olmalıdır",
-          })
-          .optional()
-          .nullable(),
-      })
-      .refine(
-        (data) => {
-          if (data.minProductWeight != null && data.maxProductWeight != null) {
-            return data.minProductWeight <= data.maxProductWeight;
-          }
-          return true;
-        },
-        {
-          message: "Minimum ağırlık maksimumdan büyük olamaz",
-          path: ["minProductWeight"],
-        }
-      ),
+    SalesPriceConditionSchema,
+    ProductWeightConditionSchema,
   ]),
 });
 
 export const CargoZoneConfigSchema = z.object({
-  uniqueId: z.cuid2({}),
+  uniqueId: z.cuid2({}).nullish(),
   locations: z.array(LocationSchema).min(1, "En az bir lokasyon gereklidir"),
   rules: z.array(ShippingRuleSchema).min(1, "En az bir kural gereklidir"),
 });
 
+export type SalesPriceCondition = z.infer<typeof SalesPriceConditionSchema>;
+export type ProductWeightCondition = z.infer<
+  typeof ProductWeightConditionSchema
+>;
 export type CargoZoneType = z.infer<typeof CargoZoneConfigSchema>;
 export type LocationType = z.infer<typeof LocationSchema>;
 export type ShippingRuleType = z.infer<typeof ShippingRuleSchema>;

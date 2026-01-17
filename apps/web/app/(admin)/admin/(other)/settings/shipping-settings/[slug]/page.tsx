@@ -1,45 +1,41 @@
-import { QueryClient } from '@repo/shared';
-import { ACCESS_TOKEN_COOKIE_NAME, CargoZoneType } from '@repo/types';
-import { cookies } from 'next/headers';
-import { notFound } from 'next/navigation';
-import { Params } from 'types/types';
+'use client';
+
+import LoadingOverlay from '@/components/LoadingOverlay';
+import { useGetCargoZone } from '@hooks/admin/useShipping';
+import { Button, Center, Stack, Text } from '@mantine/core';
+import { useParams, useRouter } from 'next/navigation';
 import ShippingForm from '../components/ShippingForm';
 
-const ShippingFormPage = async ({ params }: { params: Params }) => {
-  const { slug } = await params;
-  const cookieStore = await cookies();
-  const token = cookieStore.get(ACCESS_TOKEN_COOKIE_NAME)?.value || null;
-  if (!token) {
-    return notFound();
-  }
+const ShippingFormPage = () => {
+  const params = useParams();
+  const { push } = useRouter();
+  const slug = params.slug as string;
+  const { data, isLoading, isError } = useGetCargoZone(slug);
+
   if (slug === 'new') {
     return <ShippingForm />;
-  } else {
-    const client = new QueryClient();
-    const shipping = await client.fetchQuery({
-      queryKey: ['shipping', slug],
-      queryFn: async () => {
-        const url = `${process.env.BACKEND_URL}/shipping/get-cargo-zone/${slug}`;
-        const res = await fetch(url, {
-          method: 'GET',
-          headers: {
-            Cookie: `token=${token}`,
-          },
-        });
-        if (!res.ok) {
-          return notFound();
-        }
-        const data = (await res.json()) as
-          | CargoZoneType
-          | { success: false; message: string };
-        if ('success' in data && data.success === false) {
-          return notFound();
-        }
-        return data;
-      },
-    });
-    return <ShippingForm defaultValues={shipping as CargoZoneType} />;
   }
+
+  if (isLoading) {
+    return <LoadingOverlay />;
+  }
+
+  if (isError || !data) {
+    return (
+      <Center h={400}>
+        <Stack gap="md" align="center">
+          <Text size="lg" c="dimmed">
+            Kargo bölgesi bulunamadı
+          </Text>
+          <Button onClick={() => push('/admin/settings/shipping-settings')}>
+            Geri Dön
+          </Button>
+        </Stack>
+      </Center>
+    );
+  }
+
+  return <ShippingForm defaultValues={data} />;
 };
 
 export default ShippingFormPage;

@@ -45,7 +45,7 @@ import { getQueryClient } from '@lib/serverQueryClient';
 import { ProductType } from '@repo/database/client';
 import { IconPencilPlus } from '@tabler/icons-react';
 import ProductDropzone from '../../components/ProductDropzone';
-import ProductPriceNumberInput from './ProductPriceNumberInput';
+import PriceNumberInput from '../../../../../../components/inputs/PriceNumberInput';
 
 const GlobalTextEditor = dynamic(
   () => import('../../../../../../components/TextEditor'),
@@ -492,7 +492,7 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
             control={control}
             name="stock"
             render={({ field, fieldState }) => (
-              <ProductPriceNumberInput
+              <PriceNumberInput
                 {...field}
                 error={fieldState.error?.message}
                 label="Stok"
@@ -526,7 +526,7 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
           control={control}
           name="prices.0.price"
           render={({ field, fieldState }) => (
-            <ProductPriceNumberInput
+            <PriceNumberInput
               {...field}
               error={fieldState.error?.message}
               label="Satış Fiyatı"
@@ -539,7 +539,7 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
           control={control}
           name="prices.0.discountPrice"
           render={({ field, fieldState }) => (
-            <ProductPriceNumberInput
+            <PriceNumberInput
               {...field}
               error={fieldState.error?.message}
               label="İndirimli Fiyat"
@@ -551,7 +551,7 @@ const BasicProductForm = ({ defaultValues }: BasicProductFormProps) => {
           control={control}
           name="prices.0.buyedPrice"
           render={({ field, fieldState }) => (
-            <ProductPriceNumberInput
+            <PriceNumberInput
               {...field}
               error={fieldState.error?.message}
               label="Alış Fiyat"

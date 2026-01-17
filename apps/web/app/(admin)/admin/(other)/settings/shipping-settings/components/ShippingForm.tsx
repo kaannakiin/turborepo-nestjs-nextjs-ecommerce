@@ -2,30 +2,29 @@
 
 import ActionPopover from '@/(admin)/components/ActionPopover';
 import PriceFormatter from '@/(user)/components/PriceFormatter';
-import Loader from '@/components/Loader';
 import LoadingOverlay from '@/components/LoadingOverlay';
+import CountryModal from '@/components/modals/CountryModal';
+import { useCreateOrUpdateCargoZone } from '@hooks/admin/useShipping';
+import { useCountries } from '@hooks/useLocations';
 import { getConditionText, getSelectionTextShipping } from '@lib/helpers';
 import {
   ActionIcon,
   Alert,
   Button,
   Card,
-  Checkbox,
   Group,
-  Modal,
   ScrollArea,
   Stack,
   Text,
-  TextInput,
   Title,
 } from '@mantine/core';
-import { useDebouncedState, useDisclosure } from '@mantine/hooks';
+import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import {
-  createId,
   SubmitHandler,
   useFieldArray,
   useForm,
+  useWatch,
   zodResolver,
 } from '@repo/shared';
 import {
@@ -37,9 +36,7 @@ import { IconEdit, IconInfoCircle, IconTrash } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import ShippingLocationDrawer from './ShippingLocationDrawer';
-import ShippingRuleDrawer from './ShippingRuleDrawer';
-import { useCountries } from '@hooks/useLocations';
-import { useCreateOrUpdateCargoZone } from '@hooks/admin/useShipping';
+import ShippingRuleModal from './ShippingRuleModal';
 
 interface ShippingFormProps {
   defaultValues?: CargoZoneType;
@@ -49,44 +46,38 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
   const [opened, { open, close }] = useDisclosure();
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] =
     useDisclosure();
-  const [editingLocation, setEditingLocation] = useState<LocationType | null>(
-    null,
-  );
+  const [editingLocationIndex, setEditingLocationIndex] = useState<
+    number | null
+  >(null);
   const [openedRuleModal, { open: openRuleModal, close: closeRuleModal }] =
     useDisclosure();
   const [editingRule, setEditingRule] = useState<number | null>(null);
-  const handleEditLocation = (location: LocationType) => {
-    setEditingLocation(location);
+  const handleEditLocation = (index: number) => {
+    setEditingLocationIndex(index);
     openDrawer();
   };
 
   const handleCloseDrawer = () => {
-    setEditingLocation(null);
     closeDrawer();
+    // Wait for animation to complete before clearing index
+    setTimeout(() => setEditingLocationIndex(null), 300);
   };
 
-  const handleUpdateLocation = (
-    updatedLocation: LocationType,
-    index: number,
-  ) => {
-    updateLocation(index, updatedLocation);
+  const handleUpdateLocation = (updatedLocation: LocationType) => {
+    if (editingLocationIndex !== null) {
+      updateLocation(editingLocationIndex, updatedLocation);
+    }
     handleCloseDrawer();
   };
-
-  const [countryFilters, setCountryFilters] = useDebouncedState<string>(
-    '',
-    500,
-  );
 
   const {
     control,
     handleSubmit,
     formState: { isSubmitting, errors },
-    watch,
   } = useForm<CargoZoneType>({
     resolver: zodResolver(CargoZoneConfigSchema),
     defaultValues: defaultValues || {
-      uniqueId: createId(),
+      uniqueId: null,
       locations: [],
       rules: [],
     },
@@ -115,17 +106,11 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
   const { data: countries, isLoading: countriesIsLoading } = useCountries({
     refetchOnMount: false,
   });
-  const locations = watch('locations');
-  const filteredCountries =
-    countryFilters.trim() !== '' ||
-    countryFilters !== null ||
-    countryFilters !== undefined
-      ? countries?.filter((country) =>
-          country.translations[0].name
-            .toLowerCase()
-            .includes(countryFilters.trim().toLowerCase()),
-        )
-      : countries;
+
+  const locations = useWatch({
+    control,
+    name: 'locations',
+  });
 
   const { push } = useRouter();
 
@@ -135,15 +120,23 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
     data: CargoZoneType,
   ) => {
     try {
-      const result = await createOrUpdateZone(data);
-      if (result.success) {
-        notifications.show({
-          title: 'Başarılı',
-          message: result.message,
-          color: 'green',
-        });
-        push('/admin/settings/shipping-settings');
-      }
+      await createOrUpdateZone(data, {
+        onSuccess: () => {
+          notifications.show({
+            title: 'Başarılı',
+            message: 'Bölge kaydedildi',
+            color: 'green',
+          });
+          push('/admin/settings/shipping-settings');
+        },
+        onError: (data, variables) => {
+          notifications.show({
+            title: 'Hata',
+            message: data?.message || 'Bölge kaydedilirken bir hata oluştu',
+            color: 'red',
+          });
+        },
+      });
     } catch (error) {
       notifications.show({
         title: 'Hata',
@@ -214,7 +207,7 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
                         {location.countryType !== 'NONE' && (
                           <ActionIcon
                             onClick={() => {
-                              handleEditLocation(location);
+                              handleEditLocation(index);
                             }}
                             variant="transparent"
                             size={'xs'}
@@ -324,89 +317,33 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
           </div>
         </Card>
       </div>
-      <Modal.Root
+      <CountryModal
         opened={opened}
-        classNames={{
-          title: 'text-lg font-medium',
-          header: 'border-b border-b-gray-500',
-          body: 'py-4 max-h-[50vh]',
+        onClose={close}
+        selectedIds={locations.map((l) => l.countryId)}
+        onSubmit={(selectedCountries) => {
+          const indexesToRemove: number[] = [];
+          locations.forEach((loc, index) => {
+            if (!selectedCountries.some((c) => c.id === loc.countryId)) {
+              indexesToRemove.push(index);
+            }
+          });
+          indexesToRemove
+            .sort((a, b) => b - a)
+            .forEach((index) => removeLocation(index));
+          selectedCountries.forEach((country) => {
+            if (!locations.find((loc) => loc.countryId === country.id)) {
+              appendLocation({
+                countryId: country.id,
+                countryType: country.type,
+                stateIds: country.type === 'STATE' ? [] : null,
+                cityIds: country.type === 'CITY' ? [] : null,
+              });
+            }
+          });
         }}
-        centered
-        size="md"
-        onClose={() => {
-          close();
-          setCountryFilters('');
-        }}
-      >
-        <Modal.Overlay
-          transitionProps={{ transition: 'scale', duration: 300 }}
-        />
-        <Modal.Content>
-          <Modal.Header className="flex flex-col gap-3">
-            <Group justify="space-between" className="w-full">
-              <Modal.Title>Bölge Ekle</Modal.Title>
-              <Modal.CloseButton />
-            </Group>
-            <TextInput
-              placeholder="Bölge adı"
-              className="w-full"
-              variant="filled"
-              defaultValue={countryFilters}
-              onChange={(event) => setCountryFilters(event.currentTarget.value)}
-            />
-          </Modal.Header>
-          <Modal.Body>
-            <Stack gap={'lg'}>
-              {countriesIsLoading ? (
-                <Loader />
-              ) : (
-                filteredCountries &&
-                filteredCountries.length > 0 &&
-                filteredCountries.map((country) => (
-                  <Group
-                    className="cursor-pointer hover:bg-gray-200 p-2 rounded"
-                    key={country.id}
-                    align="center"
-                    gap={'lg'}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (
-                        locationFields.find(
-                          (loc) => loc.countryId === country.id,
-                        )
-                      ) {
-                        const index = locations.findIndex(
-                          (loc) => loc.countryId === country.id,
-                        );
-                        removeLocation(index);
-                      } else {
-                        appendLocation({
-                          countryId: country.id,
-                          countryType: country.type,
-                          stateIds: country.type === 'STATE' ? [] : null,
-                          cityIds: country.type === 'CITY' ? [] : null,
-                        });
-                      }
-                    }}
-                  >
-                    <Checkbox
-                      readOnly
-                      checked={locationFields.some(
-                        (loc) => loc.countryId === country.id,
-                      )}
-                    />
-                    <Text>
-                      {country.emoji} {country.translations[0].name}
-                    </Text>
-                  </Group>
-                ))
-              )}
-            </Stack>
-          </Modal.Body>
-        </Modal.Content>
-      </Modal.Root>
-      <ShippingRuleDrawer
+      />
+      <ShippingRuleModal
         closeRuleModal={() => {
           setEditingRule(null);
           closeRuleModal();
@@ -427,23 +364,20 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
           closeRuleModal();
         }}
       />
-      {editingLocation && (
-        <ShippingLocationDrawer
-          opened={drawerOpened}
-          onClose={handleCloseDrawer}
-          defaultValues={editingLocation}
-          countryName={
-            countries?.find((c) => c.id === editingLocation.countryId)
-              ?.translations[0].name
-          }
-          onSubmit={(updateLocation) => {
-            const index = locations.findIndex(
-              (loc) => loc.countryId === editingLocation.countryId,
-            );
-            handleUpdateLocation(updateLocation, index);
-          }}
-        />
-      )}
+      {editingLocationIndex !== null &&
+        locationFields[editingLocationIndex] && (
+          <ShippingLocationDrawer
+            opened={drawerOpened}
+            onClose={handleCloseDrawer}
+            defaultValues={locationFields[editingLocationIndex]}
+            countryName={
+              countries?.find(
+                (c) => c.id === locationFields[editingLocationIndex].countryId,
+              )?.translations[0].name || ''
+            }
+            onSubmit={handleUpdateLocation}
+          />
+        )}
     </>
   );
 };

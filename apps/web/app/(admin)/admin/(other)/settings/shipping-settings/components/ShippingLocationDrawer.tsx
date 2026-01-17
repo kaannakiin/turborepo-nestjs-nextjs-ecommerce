@@ -1,25 +1,12 @@
 'use client';
 import { getSelectionTextShipping } from '@lib/helpers';
-import {
-  ActionIcon,
-  Button,
-  Card,
-  Checkbox,
-  Drawer,
-  Group,
-  Modal,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core';
-import { useDebouncedState, useDisclosure } from '@mantine/hooks';
-import { SubmitHandler, useForm, zodResolver } from '@repo/shared';
+import { Button, Card, Drawer, Group, Stack, Text, Title } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { SubmitHandler, useForm, useWatch, zodResolver } from '@repo/shared';
 import { LocationSchema, LocationType } from '@repo/types';
-import { IconTrash } from '@tabler/icons-react';
-import { useState } from 'react';
 import { useStates, useCities } from '@hooks/useLocations';
 import Loader from '@/components/Loader';
+import BasicItemModal from '@/components/modals/LocationItemModal';
 
 interface ShippingLocationDrawerProps {
   defaultValues: LocationType;
@@ -38,13 +25,10 @@ const ShippingLocationDrawer = ({
 }: ShippingLocationDrawerProps) => {
   const [modalOpened, { open: openModal, close: closeModal }] =
     useDisclosure(false);
-  const [searchQuery, setSearchQuery] = useDebouncedState('', 300);
-  const [selectedStateIds, setSelectedStateIds] = useState<string[]>([]);
-  const [selectedCityIds, setSelectedCityIds] = useState<string[]>([]);
 
   const {
+    control,
     handleSubmit,
-    watch,
     setValue,
     formState: { errors },
   } = useForm<LocationType>({
@@ -57,9 +41,24 @@ const ShippingLocationDrawer = ({
     },
   });
 
-  const stateIds = watch('stateIds') || [];
-  const cityIds = watch('cityIds') || [];
-  const countryType = watch('countryType');
+  const stateIds =
+    useWatch({
+      control,
+      name: 'stateIds',
+    }) || [];
+
+  const cityIds =
+    useWatch({
+      control,
+      name: 'cityIds',
+    }) || [];
+
+  const countryType = useWatch({
+    control,
+    name: 'countryType',
+  });
+
+  const formData = useWatch({ control });
 
   const { data: states, isLoading: statesIsLoading } = useStates({
     countryId: defaultValues.countryId,
@@ -73,55 +72,15 @@ const ShippingLocationDrawer = ({
     enabled: !!defaultValues.countryId && defaultValues.countryType === 'CITY',
   });
 
-  const filteredStates = states?.filter((state) =>
-    state.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
-
-  const filteredCities = cities?.filter((city) =>
-    city.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
-
-  const handleStateToggle = (stateId: string) => {
-    const newStateIds = selectedStateIds.includes(stateId)
-      ? selectedStateIds.filter((id) => id !== stateId)
-      : [...selectedStateIds, stateId];
-
-    setSelectedStateIds(newStateIds);
-  };
-
-  const handleCityToggle = (cityId: string) => {
-    const newCityIds = selectedCityIds.includes(cityId)
-      ? selectedCityIds.filter((id) => id !== cityId)
-      : [...selectedCityIds, cityId];
-
-    setSelectedCityIds(newCityIds);
-  };
-
-  const handleModalConfirm = () => {
-    if (countryType === 'STATE') {
-      setValue('stateIds', selectedStateIds);
-    } else if (countryType === 'CITY') {
-      setValue('cityIds', selectedCityIds);
-    }
-    closeModal();
-  };
-
-  const handleModalCancel = () => {
-    setSelectedStateIds(stateIds);
-    setSelectedCityIds(cityIds);
-    setSearchQuery('');
-    closeModal();
-  };
-
   const handleSave = handleSubmit(onSubmit);
 
   if (!defaultValues) return null;
   if (statesIsLoading || citiesIsLoading) return <Loader />;
 
-  const data = watch();
   const isStateMode = countryType === 'STATE';
-  const currentData = isStateMode ? filteredStates : filteredCities;
-  const selectedItems = isStateMode ? selectedStateIds : selectedCityIds;
+  const currentItems = isStateMode ? states : cities;
+  const currentSelectedIds = isStateMode ? stateIds : cityIds;
+
   return (
     <>
       <Drawer
@@ -154,19 +113,12 @@ const ShippingLocationDrawer = ({
                 {countryName}
               </Text>
               <Text fz={'sm'} c="dimmed">
-                {getSelectionTextShipping(data)}
+                {getSelectionTextShipping(formData as LocationType)}
               </Text>
             </Stack>
             {countryType !== 'NONE' && (
               <Group gap={'xs'}>
-                <Button
-                  variant="default"
-                  onClick={() => {
-                    setSelectedStateIds(stateIds);
-                    setSelectedCityIds(cityIds);
-                    openModal();
-                  }}
-                >
+                <Button variant="default" onClick={openModal}>
                   {countryType === 'CITY' ? 'Şehirleri' : 'Eyaletleri'} Sınırla
                 </Button>
               </Group>
@@ -175,86 +127,24 @@ const ShippingLocationDrawer = ({
         </Card>
       </Drawer>
 
-      <Modal.Root
+      <BasicItemModal
         opened={modalOpened}
-        onClose={handleModalCancel}
-        closeOnClickOutside={false}
-        closeOnEscape={false}
-        centered
-        size="md"
-      >
-        <Modal.Overlay />
-        <Modal.Content>
-          <Modal.Header>
-            <Modal.Title>
-              {isStateMode ? 'Eyalet Seçin' : 'Şehir Seçin'}
-            </Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Stack gap="md">
-              <Group className="w-full">
-                <TextInput
-                  className="flex-1"
-                  placeholder={`${isStateMode ? 'Eyalet' : 'Şehir'} ara...`}
-                  defaultValue={searchQuery}
-                  onChange={(event) =>
-                    setSearchQuery(event.currentTarget.value)
-                  }
-                  variant="filled"
-                />
-                {selectedItems && selectedItems.length > 0 && (
-                  <ActionIcon
-                    variant="transparent"
-                    c={'red'}
-                    onClick={() => {
-                      if (isStateMode) {
-                        setSelectedStateIds([]);
-                      } else {
-                        setSelectedCityIds([]);
-                      }
-                    }}
-                  >
-                    <IconTrash />
-                  </ActionIcon>
-                )}
-              </Group>
-
-              <Stack gap="xs" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                {currentData?.map((item) => (
-                  <Group
-                    key={item.id}
-                    className="cursor-pointer hover:bg-gray-100 p-2 rounded"
-                    align="center"
-                    gap="md"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (isStateMode) {
-                        handleStateToggle(item.id);
-                      } else {
-                        handleCityToggle(item.id);
-                      }
-                    }}
-                  >
-                    <Checkbox
-                      readOnly
-                      checked={selectedItems.includes(item.id)}
-                    />
-                    <Text>{item.name}</Text>
-                  </Group>
-                ))}
-              </Stack>
-
-              <Group justify="end" gap="sm">
-                <Button variant="outline" onClick={handleModalCancel}>
-                  İptal
-                </Button>
-                <Button onClick={handleModalConfirm}>Onayla</Button>
-              </Group>
-            </Stack>
-          </Modal.Body>
-        </Modal.Content>
-      </Modal.Root>
+        onClose={closeModal}
+        title={isStateMode ? 'Eyalet Seçin' : 'Şehir Seçin'}
+        searchPlaceholder={`${isStateMode ? 'Eyalet' : 'Şehir'} ara...`}
+        items={currentItems}
+        isLoading={isStateMode ? statesIsLoading : citiesIsLoading}
+        selectedIds={currentSelectedIds}
+        onSubmit={(selectedItems) => {
+          const selectedIds = selectedItems.map((item) => item.id);
+          if (isStateMode) {
+            setValue('stateIds', selectedIds);
+          } else {
+            setValue('cityIds', selectedIds);
+          }
+          closeModal();
+        }}
+      />
     </>
   );
 };

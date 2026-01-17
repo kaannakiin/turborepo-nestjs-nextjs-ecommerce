@@ -26,7 +26,7 @@ import {
 import { VariantProductZodType } from '@repo/types';
 import dynamic from 'next/dynamic';
 import ProductDropzone from '../../components/ProductDropzone';
-import ProductPriceNumberInput from './ProductPriceNumberInput';
+import PriceNumberInput from '../../../../../../components/inputs/PriceNumberInput';
 import { useDeleteProductAsset } from '@hooks/admin/useProducts';
 
 const GlobalTextEditor = dynamic(
@@ -273,7 +273,7 @@ const CombinatedVariantsFormDrawer = ({
               control={control}
               name={`combinatedVariants.${selectedIndex}.prices.0.price`}
               render={({ field, fieldState }) => (
-                <ProductPriceNumberInput
+                <PriceNumberInput
                   label="Satış Fiyatı"
                   error={fieldState.error?.message}
                   {...field}
@@ -285,7 +285,7 @@ const CombinatedVariantsFormDrawer = ({
               control={control}
               name={`combinatedVariants.${selectedIndex}.prices.0.discountPrice`}
               render={({ field, fieldState }) => (
-                <ProductPriceNumberInput
+                <PriceNumberInput
                   label="İndirimli Fiyat"
                   error={fieldState.error?.message}
                   {...field}
@@ -298,7 +298,7 @@ const CombinatedVariantsFormDrawer = ({
               control={control}
               name={`combinatedVariants.${selectedIndex}.prices.0.buyedPrice`}
               render={({ field, fieldState }) => (
-                <ProductPriceNumberInput
+                <PriceNumberInput
                   label="Alış Fiyatı"
                   error={fieldState.error?.message}
                   {...field}

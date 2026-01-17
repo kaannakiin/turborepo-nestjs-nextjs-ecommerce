@@ -12,6 +12,7 @@ import { ProductsModule } from './products/products.module';
 import { Themev2Module } from './themev2/themev2.module';
 import { UsersModule } from './users/users.module';
 import { StoreModule } from './store/store.module';
+import { ShippingModule } from './shipping/shipping.module';
 
 @Module({
   controllers: [AdminController],
@@ -28,6 +29,7 @@ import { StoreModule } from './store/store.module';
     ProductsModule,
     InventoryModule,
     StoreModule,
+    ShippingModule,
   ],
 })
 export class AdminModule {}

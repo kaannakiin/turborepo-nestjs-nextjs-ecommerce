@@ -1,10 +1,20 @@
 'use client';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import { usePaymentMethod } from '@hooks/admin/usePayments';
-import { Card, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import {
+  Card,
+  SimpleGrid,
+  Group,
+  Button,
+  Stack,
+  Text,
+  Title,
+} from '@mantine/core'; // Added Group/Button
 import { useDisclosure } from '@mantine/hooks';
 import { PaymentProvider } from '@repo/database/client';
 import { IyzicoPaymentMethodType, PayTRPaymentMethodType } from '@repo/types';
+import { IconArrowLeft } from '@tabler/icons-react';
+import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useState } from 'react';
@@ -41,7 +51,7 @@ const paymentMethods: Array<PaymentMethodInfo> = [
 ];
 
 const PaymentMethods = ({
-  renderTitle,
+  renderTitle = true,
   renderPayments,
 }: {
   renderTitle?: boolean;
@@ -68,10 +78,24 @@ const PaymentMethods = ({
     setSelectedMethod(null);
   };
 
+  const { back } = useRouter();
+
   return (
     <>
       <Stack gap={'lg'}>
-        {renderTitle && <Title order={3}>Mevcut Ödeme Yöntemleri</Title>}
+        {renderTitle && (
+          <Group>
+            <Button
+              variant="subtle"
+              size="sm"
+              onClick={back}
+              leftSection={<IconArrowLeft size={16} />}
+            >
+              Geri
+            </Button>
+            <Title order={3}>Mevcut Ödeme Yöntemleri</Title>
+          </Group>
+        )}
         <SimpleGrid cols={{ base: 2, md: 3, lg: 4 }} spacing="md">
           {paymentMethods
             .filter(

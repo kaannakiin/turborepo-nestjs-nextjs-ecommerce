@@ -63,7 +63,7 @@ import {
 import { returnCombinateVariant } from '../helpers/product.helper';
 import CombinatedVariantsDropzoneDrawer from './CombinatedVariantsDropzoneDrawer';
 import CombinatedVariantsFormDrawer from './CombinatedVariantsFormDrawer';
-import ProductPriceNumberInput from './ProductPriceNumberInput';
+import PriceNumberInput from '../../../../../../components/inputs/PriceNumberInput';
 import VariantGroupDrawer from './VariantGroupDrawer';
 import OptionAvatar from './OptionAvatar';
 
@@ -643,7 +643,7 @@ const ExistingVariantCard = ({
                       <Activity
                         mode={selectedRows.size > 0 ? 'visible' : 'hidden'}
                       >
-                        <ProductPriceNumberInput
+                        <PriceNumberInput
                           size="xs"
                           variant="filled"
                           value={bulkUpdateValues.price}
@@ -659,7 +659,7 @@ const ExistingVariantCard = ({
                       <Activity
                         mode={selectedRows.size > 0 ? 'visible' : 'hidden'}
                       >
-                        <ProductPriceNumberInput
+                        <PriceNumberInput
                           size="xs"
                           variant="filled"
                           value={bulkUpdateValues.discountPrice || undefined}
@@ -678,7 +678,7 @@ const ExistingVariantCard = ({
                       <Activity
                         mode={selectedRows.size > 0 ? 'visible' : 'hidden'}
                       >
-                        <ProductPriceNumberInput
+                        <PriceNumberInput
                           size="xs"
                           variant="filled"
                           value={bulkUpdateValues.buyedPrice || undefined}
@@ -732,7 +732,7 @@ const ExistingVariantCard = ({
                       <Activity
                         mode={selectedRows.size > 0 ? 'visible' : 'hidden'}
                       >
-                        <ProductPriceNumberInput
+                        <PriceNumberInput
                           size="xs"
                           variant="filled"
                           value={bulkUpdateValues.stock}
@@ -801,7 +801,7 @@ const ExistingVariantCard = ({
                           control={control}
                           name={`combinatedVariants.${index}.prices.0.price`}
                           render={({ field, fieldState }) => (
-                            <ProductPriceNumberInput
+                            <PriceNumberInput
                               {...field}
                               error={fieldState.error?.message}
                               size="sm"
@@ -814,7 +814,7 @@ const ExistingVariantCard = ({
                           control={control}
                           name={`combinatedVariants.${index}.prices.0.discountPrice`}
                           render={({ field, fieldState }) => (
-                            <ProductPriceNumberInput
+                            <PriceNumberInput
                               error={fieldState.error?.message}
                               {...field}
                               value={field.value || undefined}
@@ -828,7 +828,7 @@ const ExistingVariantCard = ({
                           control={control}
                           name={`combinatedVariants.${index}.prices.0.buyedPrice`}
                           render={({ field, fieldState }) => (
-                            <ProductPriceNumberInput
+                            <PriceNumberInput
                               error={fieldState.error?.message}
                               {...field}
                               value={field.value || undefined}
@@ -870,7 +870,7 @@ const ExistingVariantCard = ({
                           control={control}
                           name={`combinatedVariants.${index}.stock`}
                           render={({ field, fieldState }) => (
-                            <ProductPriceNumberInput
+                            <PriceNumberInput
                               error={fieldState.error?.message}
                               {...field}
                               value={field.value || undefined}

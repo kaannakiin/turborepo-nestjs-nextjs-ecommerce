@@ -10,11 +10,12 @@ import {
   MultiSelect,
   SegmentedControl,
   Select,
+  Switch,
 } from '@mantine/core';
 import { DatesProvider } from '@mantine/dates';
 import { Notifications } from '@mantine/notifications';
 import { QueryClientProvider } from '@repo/shared';
-import { IconChevronDown } from '@tabler/icons-react';
+import { IconChevronDown, IconCheck, IconX } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/tr';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
@@ -81,6 +82,25 @@ const LayoutProviderWrapper = ({ children }: { children: ReactNode }) => {
       }),
       SegmentedControl: SegmentedControl.extend({
         classNames: segmentedClasses,
+      }),
+      Switch: Switch.extend({
+        defaultProps: {
+          size: 'md',
+          onLabel: <IconCheck size={12} stroke={3} />,
+          offLabel: <IconX size={12} stroke={3} />,
+          withThumbIndicator: false,
+        },
+        styles: {
+          track: {
+            cursor: 'pointer',
+            border: '2px solid transparent',
+            transition: 'all 200ms ease',
+          },
+          thumb: {
+            border: 'none',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+          },
+        },
       }),
     },
   });
