@@ -28,7 +28,7 @@ interface FirstThemeProductCartProps {
 
 const FirstThemeProductCart = ({
   data,
-  aspectRatio = '3/4',
+  aspectRatio = '1/1',
   showAddToCartButton = true,
   showDiscountBadge = true,
   badgeBackgroundColor,
