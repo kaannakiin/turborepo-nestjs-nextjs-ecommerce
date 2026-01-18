@@ -1,9 +1,9 @@
-"use client";
-import CustomImage from "@/components/CustomImage";
-import { Marquee } from "@gfazioli/mantine-marquee";
-import { Anchor, Box, Text } from "@mantine/core";
-import { MarqueeComponentInputType } from "@repo/types";
-import { useEffect, useState } from "react";
+'use client';
+import Image from '@/components/Image';
+import { Marquee } from '@gfazioli/mantine-marquee';
+import { Anchor, Box, Text } from '@mantine/core';
+import { MarqueeComponentInputType } from '@repo/types';
+import { useEffect, useState } from 'react';
 
 interface FirstThemeMarqueeProps {
   data: MarqueeComponentInputType;
@@ -11,7 +11,7 @@ interface FirstThemeMarqueeProps {
 
 interface ProcessedItem {
   itemId: string;
-  type: "text" | "image";
+  type: 'text' | 'image';
   content: string;
   link?: string | null;
 }
@@ -27,7 +27,7 @@ const FirstThemeMarquee = ({ data }: FirstThemeMarqueeProps) => {
           const url = URL.createObjectURL(item.image);
           return {
             itemId: item.itemId,
-            type: "image",
+            type: 'image',
             content: url,
             link: item.link,
           };
@@ -36,16 +36,16 @@ const FirstThemeMarquee = ({ data }: FirstThemeMarqueeProps) => {
         if (item.existingImage) {
           return {
             itemId: item.itemId,
-            type: "image",
+            type: 'image',
             content: item.existingImage.url,
             link: item.link,
           };
         }
 
-        if (item.text && item.text.trim() !== "") {
+        if (item.text && item.text.trim() !== '') {
           return {
             itemId: item.itemId,
-            type: "text",
+            type: 'text',
             content: item.text,
             link: item.link,
           };
@@ -69,7 +69,7 @@ const FirstThemeMarquee = ({ data }: FirstThemeMarqueeProps) => {
 
     return () => {
       baseProcessed.forEach((item) => {
-        if (item.type === "image" && item.content.startsWith("blob:")) {
+        if (item.type === 'image' && item.content.startsWith('blob:')) {
           URL.revokeObjectURL(item.content);
         }
       });
@@ -84,33 +84,33 @@ const FirstThemeMarquee = ({ data }: FirstThemeMarqueeProps) => {
     const uniqueKey = `${item.itemId}-${index}`;
 
     const content =
-      item.type === "text" ? (
+      item.type === 'text' ? (
         <Text
-          size={options.fontSize || "md"}
-          fw={options.fontWeight || "normal"}
+          size={options.fontSize || 'md'}
+          fw={options.fontWeight || 'normal'}
           c={options.textColor || undefined}
-          style={{ whiteSpace: "nowrap" }}
+          style={{ whiteSpace: 'nowrap' }}
         >
           {item.content}
         </Text>
       ) : (
         <Box
           w={
-            options.fontSize === "xs"
-              ? "80px"
-              : options.fontSize === "sm"
-                ? "100px"
-                : options.fontSize === "md"
-                  ? "120px"
-                  : "140px"
+            options.fontSize === 'xs'
+              ? '80px'
+              : options.fontSize === 'sm'
+                ? '100px'
+                : options.fontSize === 'md'
+                  ? '120px'
+                  : '140px'
           }
           style={{ flexShrink: 0 }}
         >
-          <CustomImage src={item.content} alt="Marquee item" />
+          <Image src={item.content} alt="Marquee item" />
         </Box>
       );
 
-    const wrapperStyle = { display: "flex", alignItems: "center" };
+    const wrapperStyle = { display: 'flex', alignItems: 'center' };
 
     if (item.link) {
       return (
@@ -119,7 +119,7 @@ const FirstThemeMarquee = ({ data }: FirstThemeMarqueeProps) => {
           href={item.link}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ textDecoration: "none", ...wrapperStyle }}
+          style={{ textDecoration: 'none', ...wrapperStyle }}
         >
           {content}
         </Anchor>
@@ -139,7 +139,7 @@ const FirstThemeMarquee = ({ data }: FirstThemeMarqueeProps) => {
       duration={options.speed}
       pauseOnHover={options.pauseOnHover}
       reverse={options.isReverse}
-      py={options.paddingY || "md"}
+      py={options.paddingY || 'md'}
       gap="xl"
     >
       {processedItems.map((item, index) => renderItem(item, index))}

@@ -1,203 +1,138 @@
-import { $Enums, Prisma } from "@repo/database/client";
+import { $Enums, Currency, Locale, Prisma } from "@repo/database/client";
+import {
+  commonProductAssetsQuery,
+  commonProductVariantWhereClause,
+  variantOptionsQuery,
+} from "../common";
 
-export type CartItemV3 = {
-  productId: string;
-  productSlug: string;
-  productName: string;
-  price: number;
-  quantity: number;
-  discountedPrice?: number;
-  whereAdded: $Enums.WhereAdded;
-  productAsset?: { url: string; type: $Enums.AssetType };
-  productBrand?: {
-    brandId: string;
-    name: string;
-    brandSlug: string;
-    brandAsset?: { url: string; type: $Enums.AssetType };
-  };
-  categories?: Array<{
-    categoryId: string;
-    name: string;
-    categorySlug: string;
-    categoryAsset?: { url: string; type: $Enums.AssetType };
-  }>;
-  variantId?: string;
-  variantOptions?: Array<{
-    variantGroupName: string;
-    variantGroupSlug: string;
-    variantOptionName: string;
-    variantOptionSlug: string;
-    variantOptionHexValue?: string;
-    variantOptionAsset?: { url: string; type: $Enums.AssetType };
-  }>;
-};
-
-export type CartV3 = {
-  cartId: string;
-  items: Array<CartItemV3>;
-  totalItems: number;
-  totalPrice: number;
-  totalDiscount: number;
-  currency: $Enums.Currency;
-  locale: $Enums.Locale;
-  createdAt: Date;
-  updatedAt: Date;
-  lastActivityAt: Date;
-  orderNote?: string;
-  userId?: string;
-};
-
-export type CartActionResponse = {
-  success: boolean;
-  message?: string;
-  newCart?: CartV3;
-};
-
-export const productAssetSelect = {
-  orderBy: {
-    order: "asc",
-  },
+export const activeCartItemFilter = {
   where: {
-    asset: { type: "IMAGE" },
+    isVisible: true,
+    deletedAt: null,
   },
-  take: 1,
-  select: {
-    asset: { select: { url: true, type: true } },
-  },
-} as const satisfies Prisma.ProductInclude["assets"];
+  orderBy: { createdAt: "desc" as const },
+} as const satisfies Prisma.Cart$itemsArgs;
 
-export const productPriceSelect = {
-  select: {
-    price: true,
-    currency: true,
-    discountedPrice: true,
-  },
-} as const satisfies Prisma.ProductVariantCombinationInclude["prices"];
-
-export const productVariantOptionsSelect = {
-  orderBy: [
-    {
-      productVariantOption: {
-        productVariantGroup: {
-          order: "asc",
-        },
+export const cartItemArgs = (
+  currency?: Currency,
+  locale?: Locale,
+): Prisma.Cart$itemsArgs => {
+  return {
+    where: {
+      isVisible: true,
+      deletedAt: null,
+      visibleCause: null,
+      variant: {
+        ...commonProductVariantWhereClause(
+          currency as Currency,
+          locale as Locale,
+        ),
       },
     },
-    {
-      productVariantOption: {
-        order: "asc",
-      },
-    },
-  ],
-  select: {
-    productVariantOption: {
-      select: {
-        productVariantGroup: {
-          select: {
-            renderVisibleType: true,
+    include: {
+      variant: {
+        include: {
+          assets: commonProductAssetsQuery,
+          prices: {
+            where: {
+              currency: currency || "TRY",
+            },
           },
-        },
-        variantOption: {
-          select: {
-            id: true,
-            translations: {
-              select: { locale: true, name: true, slug: true },
-            },
-            asset: {
-              select: { url: true, type: true },
-            },
-            hexValue: true,
-            variantGroup: {
-              select: {
-                id: true,
-                translations: {
-                  select: { locale: true, name: true, slug: true },
+          options: {
+            orderBy: [
+              {
+                productVariantOption: {
+                  productVariantGroup: {
+                    order: "asc",
+                  },
                 },
-                type: true,
+              },
+              {
+                productVariantOption: {
+                  order: "asc",
+                },
+              },
+            ],
+            where: {
+              combination: {
+                ...commonProductVariantWhereClause(
+                  currency as Currency,
+                  locale as Locale,
+                ),
+              },
+            },
+            select: { ...variantOptionsQuery },
+          },
+          product: {
+            include: {
+              assets: commonProductAssetsQuery,
+              translations: {
+                where: {
+                  locale: locale || "TR",
+                },
               },
             },
           },
         },
       },
     },
-  },
-} as const satisfies Prisma.ProductVariantCombinationInclude["options"];
-
-export const addressSelectForCart = {
-  include: {
-    city: {
-      select: {
-        id: true,
-        name: true,
-      },
-    },
-    district: {
-      select: {
-        name: true,
-        id: true,
-      },
-    },
-    country: {
-      select: {
-        id: true,
-        name: true,
-        translations: true,
-        emoji: true,
-      },
-    },
-    state: {
-      select: {
-        id: true,
-        name: true,
-      },
-    },
-  },
-} as const satisfies Prisma.CartInclude["shippingAddress"];
-
-export const cargoRuleSelectForCart = {
-  select: {
-    id: true,
-    currency: true,
-    name: true,
-    price: true,
-    ruleType: true,
-  },
-} as const satisfies Prisma.CartInclude["cargoRule"];
-
-export const cartItemIncludeForCart = {
-  where: {
-    quantity: { gt: 0 },
-    isVisible: true,
-    deletedAt: null,
-    visibleCause: null,
-  },
-  orderBy: {
-    createdAt: "asc",
-  },
-  include: {
-    variant: {
-      include: {
-        assets: productAssetSelect,
-        prices: productPriceSelect,
-        translations: true,
-        options: productVariantOptionsSelect,
-      },
-    },
-  },
-} as const satisfies Prisma.CartInclude["items"];
-
-export type CartWithRelations = Prisma.CartGetPayload<{
-  include: {
-    items: typeof cartItemIncludeForCart;
   };
+};
+
+const cartItemInclude = {
+  variant: {
+    include: {
+      assets: commonProductAssetsQuery,
+      prices: true,
+      options: {
+        select: { ...variantOptionsQuery },
+      },
+      product: {
+        include: {
+          assets: commonProductAssetsQuery,
+          translations: true,
+        },
+      },
+    },
+  },
+} as const;
+
+export type CartItemWithVariant = Prisma.CartItemGetPayload<{
+  include: typeof cartItemInclude;
 }>;
 
-export type CartWithRelationForCheckoutPage = Prisma.CartGetPayload<{
-  include: {
-    items: typeof cartItemIncludeForCart;
-    billingAddress: typeof addressSelectForCart;
-    shippingAddress: typeof addressSelectForCart;
-    cargoRule: typeof cargoRuleSelectForCart;
-    user: true;
-  };
-}>;
+export type CartType = {
+  cartId: string;
+  userId: string | null;
+  totalItems: number;
+  totalProducts: number;
+  totalAmount: number;
+  totalDiscount: number;
+  currency: Currency;
+  locale: Locale;
+  items: CartItemWithVariant[];
+};
+
+export type InvalidItemDetail = {
+  cartItemId: string;
+  variantId: string;
+  productName: string;
+  cause: $Enums.inVisibleCause;
+};
+
+export type CartValidationResult = {
+  itemsToHide: Array<{ id: string; cause: $Enums.inVisibleCause }>;
+  validCount: number;
+};
+
+export type RestoreResult = {
+  restoredCount: number;
+  restoredItemIds: string[];
+};
+
+export type CartContextUpdateResponse = {
+  cart: CartType;
+  invalidItems: InvalidItemDetail[];
+  restoredItems: string[];
+  contextChanged: boolean;
+};

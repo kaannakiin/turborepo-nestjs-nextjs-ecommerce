@@ -4,7 +4,14 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@repo/database';
 import { createId } from '@repo/shared';
-import { getCountryCodes, RegisterSchemaType, TokenPayload } from '@repo/types';
+import {
+  ACCESS_TOKEN_COOKIE_NAME,
+  CART_COOKIE_NAME,
+  getCountryCodes,
+  REFRESH_TOKEN_COOKIE_NAME,
+  RegisterSchemaType,
+  TokenPayload,
+} from '@repo/types';
 import { hash, verify } from 'argon2';
 import { Request, Response } from 'express';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -181,7 +188,7 @@ export class AuthService {
         deviceType: deviceType,
       },
     });
-    const currentRefreshToken = req.cookies?.refresh_token;
+    const currentRefreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
 
     if (currentRefreshToken) {
       try {
@@ -203,7 +210,7 @@ export class AuthService {
         console.warn('Could not revoke old token during login:', error.message);
       }
     }
-    response.cookie('token', accessToken, {
+    response.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, {
       httpOnly: true,
       secure: this.configService.get('NODE_ENV') === 'production',
       sameSite: 'lax',
@@ -213,7 +220,7 @@ export class AuthService {
       }),
     });
 
-    response.cookie('refresh_token', refreshToken, {
+    response.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
       httpOnly: true,
       secure: this.configService.get('NODE_ENV') === 'production',
       sameSite: 'lax',
@@ -233,7 +240,7 @@ export class AuthService {
   }
 
   async verifyRefreshToken(request: Request, payload: TokenPayload) {
-    const refreshToken = request.cookies?.refresh_token;
+    const refreshToken = request.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
 
     if (!refreshToken) {
       throw new BadRequestException('Refresh token not found');
@@ -338,8 +345,9 @@ export class AuthService {
       path: '/',
       ...(isProduction && domain ? { domain } : {}),
     };
-    res.clearCookie('token', cookieOptions);
-    res.clearCookie('refresh_token', cookieOptions);
+    res.clearCookie(ACCESS_TOKEN_COOKIE_NAME, cookieOptions);
+    res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, cookieOptions);
+    res.clearCookie(CART_COOKIE_NAME, cookieOptions);
 
     const csrfCookieOptions = {
       httpOnly: true,

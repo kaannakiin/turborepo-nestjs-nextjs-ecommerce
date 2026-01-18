@@ -1,10 +1,14 @@
-"use client";
+'use client';
 
-import GlobalDropzone from "@/components/GlobalDropzone";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import GlobalSeoCard from "@/components/GlobalSeoCard";
-import AdminBrandDataSelect from "@/components/inputs/admin/AdminBrandDataSelect";
-import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
+import Dropzone from '@/components/Dropzone';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import SeoCard from '@/components/SeoCard';
+import AdminBrandDataSelect from '@/components/inputs/admin/AdminBrandDataSelect';
+import {
+  useCreateOrUpdateBrand,
+  useUploadBrandImage,
+  useDeleteBrandImage,
+} from '@hooks/admin/useAdminBrands';
 import {
   Button,
   Group,
@@ -13,8 +17,8 @@ import {
   Stack,
   TextInput,
   Title,
-} from "@mantine/core";
-import { notifications } from "@mantine/notifications";
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import {
   Controller,
   createId,
@@ -22,9 +26,9 @@ import {
   SubmitHandler,
   useForm,
   zodResolver,
-} from "@repo/shared";
-import { BrandSchema, BrandZodType } from "@repo/types";
-import { useRouter } from "next/navigation";
+} from '@repo/shared';
+import { BrandSchema, BrandZodType } from '@repo/types';
+import { useRouter } from 'next/navigation';
 
 interface BrandFormProps {
   defaultValues?: BrandZodType;
@@ -46,84 +50,59 @@ const BrandForm = ({ defaultValues }: BrandFormProps) => {
       parentId: null,
       translations: [
         {
-          locale: "TR",
-          name: "",
-          slug: "",
+          locale: 'TR',
+          name: '',
+          slug: '',
           metaDescription: null,
           metaTitle: null,
         },
       ],
     },
   });
-  const { push } = useRouter();
+  const router = useRouter();
+  const createOrUpdateBrand = useCreateOrUpdateBrand();
+  const uploadBrandImage = useUploadBrandImage();
+  const deleteBrandImage = useDeleteBrandImage();
 
   const onSubmit: SubmitHandler<BrandZodType> = async (data) => {
     const { image, ...rest } = data;
 
     try {
-      // Brand oluştur
-      const brandRes = await fetchWrapper.post<{
-        success: boolean;
-        brandId: string;
-      }>("/admin/products/brands/create-or-update-brand", rest);
-      if (!brandRes.success) {
-        const response = brandRes as ApiError;
-        notifications.show({
-          title: "Hata",
-          message:
-            response.error ||
-            "Marka kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.",
-          autoClose: 3000,
-        });
-        return;
-      }
+      const brandResult = await createOrUpdateBrand.mutateAsync(rest);
 
       if (image) {
-        const formData = new FormData();
-        formData.append("file", image);
-
-        const imageRes = await fetchWrapper.postFormData(
-          `/admin/products/brands/upload-brand-image/${brandRes.data.brandId}`,
-          formData
-        );
-        if (!imageRes.success) {
-          const error = imageRes as ApiError;
-          notifications.show({
-            title: "Hata",
-            message:
-              error.error ||
-              "Resim yüklenirken bir hata oluştu. Lütfen tekrar deneyin.",
-            autoClose: 3000,
-            color: "red",
-          });
-          return;
-        }
+        await uploadBrandImage.mutateAsync({
+          file: image,
+          brandId: brandResult.brandId,
+        });
       }
 
-      push("/admin/product-list/brands");
       notifications.show({
-        title: "Başarılı",
-        message: "Marka başarıyla kaydedildi",
+        title: 'Başarılı',
+        message: 'Marka başarıyla kaydedildi',
         autoClose: 3000,
-        color: "green",
+        color: 'green',
       });
+
+      router.push('/admin/product-list/brands');
+      router.refresh(); // Server component'leri yenile
     } catch (error) {
       notifications.show({
-        title: "Hata",
-        message: error instanceof Error ? error.message : "Bir hata oluştu",
+        title: 'Hata',
+        message: error instanceof Error ? error.message : 'Bir hata oluştu',
         autoClose: 3000,
-        color: "red",
+        color: 'red',
       });
     }
   };
-  const existingImage = watch("existingImage") || null;
+  const existingImage = watch('existingImage') || null;
   return (
-    <Stack gap={"lg"}>
-      {isSubmitting && <GlobalLoadingOverlay />}
+    <Stack gap={'lg'}>
+      {isSubmitting && <LoadingOverlay />}
       <Group justify="space-between" align="center">
         <Title order={3}>
           Marka
-          {defaultValues ? " Düzenle" : " Oluştur"}
+          {defaultValues ? ' Düzenle' : ' Oluştur'}
         </Title>
         <Button variant="outline" onClick={handleSubmit(onSubmit)}>
           Kaydet
@@ -139,7 +118,7 @@ const BrandForm = ({ defaultValues }: BrandFormProps) => {
               error={fieldState.error?.message}
               onChange={(e) => {
                 field.onChange(e);
-                setValue("translations.0.slug", slugify(e.currentTarget.value));
+                setValue('translations.0.slug', slugify(e.currentTarget.value));
               }}
               label="Marka Adı"
             />
@@ -163,38 +142,38 @@ const BrandForm = ({ defaultValues }: BrandFormProps) => {
         control={control}
         name="image"
         render={({ field, fieldState }) => (
-          <Stack gap={"xs"}>
+          <Stack gap={'xs'}>
             <InputLabel>Marka Görseli</InputLabel>
-            <GlobalDropzone
+            <Dropzone
               onDrop={(files) => field.onChange(files ? files[0] : null)}
               value={field.value}
-              accept={"IMAGE"}
+              accept={'IMAGE'}
               existingImages={
-                existingImage ? [{ type: "IMAGE", url: existingImage }] : []
+                existingImage ? [{ type: 'IMAGE', url: existingImage }] : []
               }
               existingImagesDelete={async (fileUrl) => {
-                const result = await fetchWrapper.delete<void>(
-                  `/admin/products/brands/delete-brand-image/${encodeURIComponent(fileUrl)}`
-                );
+                try {
+                  await deleteBrandImage.mutateAsync(fileUrl);
 
-                if (!result.success) {
                   notifications.show({
-                    title: "Hata",
-                    message:
-                      "Resim silinirken bir hata oluştu. Lütfen tekrar deneyin.",
+                    title: 'Başarılı',
+                    message: 'Resim başarıyla silindi',
                     autoClose: 3000,
-                    color: "red",
+                    color: 'green',
                   });
-                  return;
-                }
 
-                notifications.show({
-                  title: "Başarılı",
-                  message: "Resim başarıyla silindi",
-                  autoClose: 3000,
-                  color: "green",
-                });
-                setValue("existingImage", null);
+                  setValue('existingImage', null);
+                } catch (error) {
+                  notifications.show({
+                    title: 'Hata',
+                    message:
+                      error instanceof Error
+                        ? error.message
+                        : 'Resim silinirken bir hata oluştu',
+                    autoClose: 3000,
+                    color: 'red',
+                  });
+                }
               }}
               cols={1}
               error={fieldState.error?.message}
@@ -206,7 +185,7 @@ const BrandForm = ({ defaultValues }: BrandFormProps) => {
           </Stack>
         )}
       />
-      <GlobalSeoCard
+      <SeoCard
         control={control}
         metaDescriptionFieldName="translations.0.metaDescription"
         metaTitleFieldName="translations.0.metaTitle"

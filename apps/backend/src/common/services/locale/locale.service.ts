@@ -1,17 +1,13 @@
 import { Injectable, Scope, Inject } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
-import type { Request } from 'express';
-import { $Enums } from '@repo/database';
+import { type Request } from 'express';
+import { Locale } from '@repo/database';
 
 @Injectable({ scope: Scope.REQUEST })
 export class LocaleService {
-  private locale: $Enums.Locale;
+  constructor(@Inject(REQUEST) private readonly request: Request) {}
 
-  constructor(@Inject(REQUEST) private request: Request) {
-    this.locale = (this.request.cookies?.['locale'] as $Enums.Locale) || 'TR';
-  }
-
-  getLocale(): $Enums.Locale {
-    return this.locale;
+  getLocale(): Locale {
+    return this.request.localization || Locale.TR;
   }
 }

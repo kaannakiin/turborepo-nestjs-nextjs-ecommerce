@@ -1,5 +1,5 @@
-"use client";
-import CustomImage from "@/components/CustomImage";
+'use client';
+import Image from '@/components/Image';
 import {
   AspectRatio,
   Badge,
@@ -10,12 +10,12 @@ import {
   Stack,
   Text,
   useMantineTheme,
-} from "@mantine/core";
-import { useHover } from "@mantine/hooks";
-import { ProductCart, AspectRatio as AspectType } from "@repo/types";
-import { Route } from "next";
-import Link from "next/link";
-import { useMemo } from "react";
+} from '@mantine/core';
+import { useHover } from '@mantine/hooks';
+import { ProductCart, AspectRatio as AspectType } from '@repo/types';
+import { Route } from 'next';
+import Link from 'next/link';
+import { useMemo } from 'react';
 
 interface FirstThemeProductCartProps {
   data: ProductCart;
@@ -28,7 +28,7 @@ interface FirstThemeProductCartProps {
 
 const FirstThemeProductCart = ({
   data,
-  aspectRatio = "3/4",
+  aspectRatio = '3/4',
   showAddToCartButton = true,
   showDiscountBadge = true,
   badgeBackgroundColor,
@@ -47,7 +47,7 @@ const FirstThemeProductCart = ({
   const currentImage = isHoverable && hovered ? secondaryImage : primaryImage;
 
   const ratioValue = useMemo(() => {
-    const parts = aspectRatio.split("/");
+    const parts = aspectRatio.split('/');
     if (parts.length === 2) {
       const num = parseFloat(parts[0]);
       const den = parseFloat(parts[1]);
@@ -68,14 +68,14 @@ const FirstThemeProductCart = ({
     <Card ref={ref} padding="0" radius="0">
       <Link
         href={data.url as Route}
-        style={{ textDecoration: "none", color: "inherit" }}
+        style={{ textDecoration: 'none', color: 'inherit' }}
       >
         <Box pos="relative">
           <AspectRatio ratio={ratioValue}>
-            <CustomImage
+            <Image
               src={currentImage}
               alt={data.name}
-              className={`transition-all duration-300 ${isHoverable && hovered ? "scale-105" : ""}`}
+              className={`transition-all duration-300 ${isHoverable && hovered ? 'scale-105' : ''}`}
             />
           </AspectRatio>
 
@@ -88,7 +88,7 @@ const FirstThemeProductCart = ({
               styles={{
                 root: {
                   backgroundColor: badgeBackgroundColor || theme.colors.red[6],
-                  color: badgeTextColor || "white",
+                  color: badgeTextColor || 'white',
                 },
               }}
             >
@@ -107,7 +107,7 @@ const FirstThemeProductCart = ({
               className="opacity-0 transition-opacity duration-300 group-hover:opacity-100"
               onClick={(e) => {
                 e.preventDefault();
-                console.log("Adding to cart:", data.id);
+                console.log('Adding to cart:', data.id);
               }}
             >
               Sepete Ekle
@@ -123,23 +123,23 @@ const FirstThemeProductCart = ({
             {data.discountPrice ? (
               <>
                 <Text fw={700} c="red" size="md">
-                  {new Intl.NumberFormat("tr-TR", {
-                    style: "currency",
-                    currency: "TRY",
+                  {new Intl.NumberFormat('tr-TR', {
+                    style: 'currency',
+                    currency: 'TRY',
                   }).format(data.discountPrice)}
                 </Text>
                 <Text size="sm" c="dimmed" td="line-through">
-                  {new Intl.NumberFormat("tr-TR", {
-                    style: "currency",
-                    currency: "TRY",
+                  {new Intl.NumberFormat('tr-TR', {
+                    style: 'currency',
+                    currency: 'TRY',
                   }).format(data.price)}
                 </Text>
               </>
             ) : (
               <Text fw={700} size="md">
-                {new Intl.NumberFormat("tr-TR", {
-                  style: "currency",
-                  currency: "TRY",
+                {new Intl.NumberFormat('tr-TR', {
+                  style: 'currency',
+                  currency: 'TRY',
                 }).format(data.price)}
               </Text>
             )}

@@ -1,41 +1,19 @@
-"use client";
-import CustomImage from "@/components/CustomImage";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
-import { AllowedDiscountedItemsBy, DiscountType } from "@repo/database/client";
-import { useQuery } from "@repo/shared";
-import { UppSellOfferZodType, UpSellProductReturnType } from "@repo/types";
-import { useEffect, useState } from "react";
+'use client';
+import Image from '@/components/Image';
+import { AllowedDiscountedItemsBy, DiscountType } from '@repo/database/client';
+import { UppSellOfferZodType, UpSellProductReturnType } from '@repo/types';
+import { useEffect, useState } from 'react';
+import { useAdminUpsellPreview } from '@hooks/admin/useProducts';
 
 interface OverviewUppSellCardProps {
   offerReq: UppSellOfferZodType;
 }
 
 const OverviewUppSellCard = ({ offerReq }: OverviewUppSellCardProps) => {
-  const { data, isLoading } = useQuery({
-    queryKey: [
-      "product-variant-admin-overview-upsell-card-data",
-      { id: offerReq.variantId || offerReq.productId },
-    ],
-    queryFn: async () => {
-      const res = await fetchWrapper.get<UpSellProductReturnType>(
-        "/admin/products/get-product-variant-admin-overview-upsell-card-data",
-        {
-          params: {
-            id: offerReq.variantId || offerReq.productId,
-            iv: !!offerReq.variantId,
-          },
-        }
-      );
-      if (!res.success) {
-        throw new Error("Ürün verisi alınamadı.");
-      }
-      if (!res.data.success) {
-        throw new Error(res.data.message);
-      }
-      return res.data.product;
-    },
-    enabled: !!(offerReq.productId || offerReq.variantId),
-  });
+  const { data, isLoading } = useAdminUpsellPreview(
+    offerReq.productId,
+    offerReq.variantId,
+  );
 
   if (!offerReq.productId && !offerReq.variantId) {
     return (
@@ -71,7 +49,7 @@ const OverviewUppSellCard = ({ offerReq }: OverviewUppSellCardProps) => {
 };
 
 interface UpSellPreviewProps {
-  product: NonNullable<UpSellProductReturnType["product"]>;
+  product: NonNullable<UpSellProductReturnType['product']>;
   offer: UppSellOfferZodType;
 }
 
@@ -95,7 +73,7 @@ const UpSellPreview = ({ product, offer }: UpSellPreviewProps) => {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const calculateDiscountedPrice = () => {
@@ -136,7 +114,7 @@ const UpSellPreview = ({ product, offer }: UpSellPreviewProps) => {
       {/* Product CustomImage */}
       {product.asset && (
         <div className="relative aspect-square w-full rounded-lg overflow-hidden bg-gray-100">
-          <CustomImage src={product.asset.url} alt={product.productName} />
+          <Image src={product.asset.url} alt={product.productName} />
         </div>
       )}
 
@@ -170,7 +148,7 @@ const UpSellPreview = ({ product, offer }: UpSellPreviewProps) => {
                 )}
                 {option.variantOptionAsset && (
                   <div className="relative w-4 h-4">
-                    <CustomImage
+                    <Image
                       src={option.variantOptionAsset.url}
                       alt={option.variantOptionName}
                     />

@@ -1,8 +1,21 @@
-"use client";
+'use client';
 
-import TableAsset from "@/(admin)/components/TableAsset";
-import CustomPagination from "@/components/CustomPagination";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
+import TableAsset from '@/(admin)/components/TableAsset';
+import Pagination from '@/components/Pagination';
+import SearchInput from '../../../../../components/SearchInput';
+import {
+  useProductList,
+  BulkActionPayload,
+  useProductBulkAction,
+} from '@hooks/admin/useProducts';
+import { getBulkActionConfig } from '@lib/ui/bulk-action.helper';
+import {
+  getPriceRange,
+  getProductAsset,
+  getProductName,
+  getProductStatus,
+  getStockRange,
+} from '@lib/product-helper';
 import {
   ActionIcon,
   Alert,
@@ -22,64 +35,23 @@ import {
   Text,
   ThemeIcon,
   Title,
-} from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
-import { Locale } from "@repo/database/client";
-import { DateFormatter, useQuery } from "@repo/shared";
-import {
-  AdminProductTableProductData,
-  Pagination,
-  ProductBulkAction,
-} from "@repo/types";
+} from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { Locale } from '@repo/database/client';
+import { DateFormatter } from '@repo/shared';
+import { ProductBulkAction } from '@repo/types';
 import {
   IconAdjustments,
   IconCheck,
   IconEdit,
   IconPackage,
   IconPlus,
-} from "@tabler/icons-react";
-import { Route } from "next";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import CustomSearchInput from "../../../../../components/CustomSearchInput";
-import ProductActionsGroup from "./product-actions/ProductActionsGroup";
-import {
-  BulkActionPayload,
-  useProductBulkAction,
-} from "@lib/ui/bulk-action-queries";
-import { getBulkActionConfig } from "@lib/ui/bulk-action.helper";
-import {
-  getPriceRange,
-  getProductAsset,
-  getProductName,
-  getProductStatus,
-  getStockRange,
-} from "@lib/ui/product-helper";
-
-type ProductsResponse = {
-  products: AdminProductTableProductData[];
-  pagination?: Pagination;
-};
-
-const fetchProducts = async (
-  search?: string,
-  page: number = 1,
-  limit = 20
-): Promise<ProductsResponse> => {
-  const response = await fetchWrapper.get<ProductsResponse>(`/admin/products`, {
-    params: {
-      search: search?.trim(),
-      page,
-      limit,
-    },
-  });
-
-  if (!response.success) {
-    throw new Error("Ürünler yüklenirken hata oluştu");
-  }
-  return response.data;
-};
+} from '@tabler/icons-react';
+import { Route } from 'next';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import ProductActionsGroup from './product-actions/ProductActionsGroup';
 
 const SkeletonRow = () => (
   <Table.Tr>
@@ -107,13 +79,13 @@ const SkeletonRow = () => (
 const ProductTable = () => {
   const [selectedProductIDs, setSelectedProductIDs] = useState<string[]>([]);
   const [currentAction, setCurrentAction] = useState<ProductBulkAction | null>(
-    null
+    null,
   );
   const [opened, { open, close }] = useDisclosure(false);
   const searchParams = useSearchParams();
   const { push } = useRouter();
-  const search = searchParams.get("search") || "";
-  const page = parseInt(searchParams.get("page") || "1");
+  const search = searchParams.get('search') || '';
+  const page = parseInt(searchParams.get('page') || '1');
 
   useEffect(() => {
     setSelectedProductIDs([]);
@@ -141,12 +113,10 @@ const ProductTable = () => {
     });
   };
 
-  const { data, isLoading, isFetching, error } = useQuery({
-    queryKey: ["admin-products", search, page],
-    queryFn: () => fetchProducts(search || undefined, page),
-    staleTime: 1000 * 60 * 5,
-    refetchOnWindowFocus: false,
-  });
+  const { data, isLoading, isFetching, error } = useProductList(
+    search || undefined,
+    page,
+  );
 
   const onAction = (action: ProductBulkAction) => {
     const config = getBulkActionConfig(action);
@@ -181,7 +151,7 @@ const ProductTable = () => {
             <Button onClick={open} leftSection={<IconPlus size={16} />}>
               Ürün Ekle
             </Button>
-            <CustomSearchInput placeholder="Ürün ara..." />
+            <SearchInput placeholder="Ürün ara..." />
           </Group>
         </Group>
 
@@ -194,8 +164,8 @@ const ProductTable = () => {
 
   return (
     <>
-      <Stack gap={"md"}>
-        <Stack gap={"xs"}>
+      <Stack gap={'md'}>
+        <Stack gap={'xs'}>
           <Group justify="space-between" align="center">
             <Title order={4}>Ürün Listesi</Title>
             <Group gap="md">
@@ -208,7 +178,7 @@ const ProductTable = () => {
               <Button onClick={open} leftSection={<IconPlus size={16} />}>
                 Ürün Ekle
               </Button>
-              <CustomSearchInput />
+              <SearchInput />
             </Group>
           </Group>
         </Stack>
@@ -220,7 +190,7 @@ const ProductTable = () => {
             highlightOnHoverColor="primary.0"
             style={{
               opacity: isFetching ? 0.6 : 1,
-              transition: "opacity 0.2s",
+              transition: 'opacity 0.2s',
             }}
           >
             <Table.Thead>
@@ -228,7 +198,8 @@ const ProductTable = () => {
                 <Table.Th w={20}>
                   <Checkbox
                     checked={
-                      selectedProductIDs.length === data?.products.length
+                      selectedProductIDs.length === data?.products.length &&
+                      data?.products.length > 0
                     }
                     indeterminate={
                       selectedProductIDs.length > 0 &&
@@ -239,7 +210,7 @@ const ProductTable = () => {
                         setSelectedProductIDs([]);
                       } else {
                         setSelectedProductIDs(
-                          data?.products.map((p) => p.id) || []
+                          data?.products.map((p) => p.id) || [],
                         );
                       }
                     }}
@@ -259,8 +230,8 @@ const ProductTable = () => {
                     <SkeletonRow key={index} />
                   ))
                 : data?.products.map((product) => {
-                    const locale: Locale = "TR";
-                    const currency = "TRY";
+                    const locale: Locale = 'TR';
+                    const currency = 'TRY';
 
                     const name = getProductName(product, locale);
                     const asset = getProductAsset(product);
@@ -271,7 +242,7 @@ const ProductTable = () => {
                     return (
                       <Table.Tr
                         key={product.id}
-                        style={{ cursor: "pointer" }}
+                        style={{ cursor: 'pointer' }}
                         onClick={(e) => {
                           e.stopPropagation();
                           onSelect(product.id);
@@ -287,16 +258,16 @@ const ProductTable = () => {
                           />
                         </Table.Td>
                         <Table.Td onClick={(e) => e.stopPropagation()}>
-                          <Group gap={"md"} align="center">
+                          <Group gap={'md'} align="center">
                             <AspectRatio ratio={1} maw={40}>
                               <TableAsset
-                                type={asset?.type || "IMAGE"}
-                                url={asset?.url || "https://placehold.co/40x40"}
+                                type={asset?.type || 'IMAGE'}
+                                url={asset?.url || 'https://placehold.co/40x40'}
                               />
                             </AspectRatio>
-                            {status === "active" ? (
+                            {status === 'active' ? (
                               <Badge color="green">Aktif</Badge>
-                            ) : status === "partial" ? (
+                            ) : status === 'partial' ? (
                               <Badge color="yellow">Kısmen Aktif</Badge>
                             ) : (
                               <Badge color="red">Pasif</Badge>
@@ -306,7 +277,7 @@ const ProductTable = () => {
                         <Table.Td>
                           {name}
                           {product?.variants?.length > 1 && (
-                            <Text fz={"xs"} c={"dimmed"}>
+                            <Text fz={'xs'} c={'dimmed'}>
                               {`${product.variants.length} Varyant`}
                             </Text>
                           )}
@@ -337,8 +308,8 @@ const ProductTable = () => {
                 <IconPackage size={48} color="gray" />
                 <Text size="lg" c="dimmed">
                   {search
-                    ? "Arama kriterlerine uygun ürün bulunamadı"
-                    : "Henüz ürün bulunmuyor"}
+                    ? 'Arama kriterlerine uygun ürün bulunamadı'
+                    : 'Henüz ürün bulunmuyor'}
                 </Text>
               </Stack>
             </Center>
@@ -346,7 +317,7 @@ const ProductTable = () => {
         </Table.ScrollContainer>
 
         {data?.pagination && data?.pagination.totalPages > 1 && (
-          <CustomPagination total={data.pagination.totalPages} />
+          <Pagination total={data.pagination.totalPages} />
         )}
       </Stack>
 
@@ -375,12 +346,12 @@ const ProductTable = () => {
               radius="md"
               withBorder
               component={Link}
-              href={"/admin/product-list/products/new" as Route}
+              href={'/admin/product-list/products/new' as Route}
               onClick={close}
               style={{
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                textDecoration: "none",
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                textDecoration: 'none',
               }}
               className="hover-card"
             >
@@ -427,12 +398,12 @@ const ProductTable = () => {
               radius="md"
               withBorder
               component={Link}
-              href={"/admin/product-list/products/new?variant=true" as Route}
+              href={'/admin/product-list/products/new?variant=true' as Route}
               onClick={close}
               style={{
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                textDecoration: "none",
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                textDecoration: 'none',
               }}
               className="hover-card"
             >

@@ -15,10 +15,9 @@ import {
 import {
   ApiBody,
   ApiCookieAuth,
-  ApiExcludeEndpoint, // <--- GİZLEMEK İÇİN BUNU KULLANACAĞIZ
+  ApiExcludeEndpoint,
   ApiExtraModels,
   ApiOperation,
-  ApiResponse,
   ApiTags,
   getSchemaPath,
 } from '@nestjs/swagger';
@@ -49,8 +48,6 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly csrfService: CsrfService,
   ) {}
-
-  // --- GÖRÜNECEK ENDPOINTLER ---
 
   @Post('register')
   @ApiOperation({ summary: 'Kayıt Ol' })
@@ -133,15 +130,13 @@ export class AuthController {
     return this.authService.logOut(res, req);
   }
 
-  // --- GİZLENEN ENDPOINTLER (@ApiExcludeEndpoint) ---
-
   @Get('google')
-  @ApiExcludeEndpoint() // <--- GİZLENDİ
+  @ApiExcludeEndpoint()
   @UseGuards(GoogleAuthGuard)
   async googleAuth() {}
 
   @Get('google/callback')
-  @ApiExcludeEndpoint() // <--- GİZLENDİ
+  @ApiExcludeEndpoint()
   @UseGuards(GoogleAuthGuard)
   async googleCallback(
     @CurrentUser() user: User,
@@ -153,12 +148,12 @@ export class AuthController {
   }
 
   @Get('facebook')
-  @ApiExcludeEndpoint() // <--- GİZLENDİ
+  @ApiExcludeEndpoint()
   @UseGuards(FacebookAuthGuard)
   async facebookAuth() {}
 
   @Get('facebook/callback')
-  @ApiExcludeEndpoint() // <--- GİZLENDİ
+  @ApiExcludeEndpoint()
   @UseGuards(FacebookAuthGuard)
   async facebookCallback(
     @CurrentUser() user: User,
@@ -170,7 +165,7 @@ export class AuthController {
   }
 
   @Get('csrf')
-  @ApiExcludeEndpoint() // <--- GİZLENDİ (Genelde frontend otomatik halleder, dökümana gerek yok)
+  @ApiExcludeEndpoint()
   @HttpCode(200)
   @SkipThrottle()
   getCsrfToken(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
@@ -183,7 +178,7 @@ export class AuthController {
   }
 
   @Get('sessions')
-  @ApiExcludeEndpoint() // <--- GİZLENDİ (Gelişmiş özellik, temel auth dökümanında kafa karıştırabilir)
+  @ApiExcludeEndpoint()
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async getSessions(@CurrentUser() user: User) {
@@ -191,7 +186,7 @@ export class AuthController {
   }
 
   @Delete('sessions/:sessionId')
-  @ApiExcludeEndpoint() // <--- GİZLENDİ
+  @ApiExcludeEndpoint()
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async revokeSession(

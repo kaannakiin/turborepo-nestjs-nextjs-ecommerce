@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import FormCard from "@/components/cards/FormCard";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import AdminInventoryLocationTypeSelect from "@/components/inputs/admin/AdminInventoryLocationTypeSelect";
-import CityInput from "@/components/inputs/CityInput";
-import CountryInput from "@/components/inputs/CountryInput";
-import CustomPhoneInput from "@/components/inputs/CustomPhoneInput";
-import DistrictInput from "@/components/inputs/DistrictInput";
-import StateInput from "@/components/inputs/StateInput";
-import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
+import FormCard from '@/components/cards/FormCard';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import AdminInventoryLocationTypeSelect from '@/components/inputs/admin/AdminInventoryLocationTypeSelect';
+import CityInput from '@/components/inputs/CityInput';
+import CountryInput from '@/components/inputs/CountryInput';
+import CustomPhoneInput from '@/components/inputs/CustomPhoneInput';
+import DistrictInput from '@/components/inputs/DistrictInput';
+import StateInput from '@/components/inputs/StateInput';
+import fetchWrapper, { ApiError } from '@lib/wrappers/fetchWrapper';
 import {
   Alert,
   Box,
@@ -22,24 +22,26 @@ import {
   TextInput,
   ThemeIcon,
   Title,
-} from "@mantine/core";
-import { notifications } from "@mantine/notifications";
-import { CountryType } from "@repo/database/client";
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import { CountryType } from '@repo/database/client';
 import {
   Controller,
   createId,
   SubmitHandler,
   useForm,
-  useMutation,
-  useQuery,
   useWatch,
   zodResolver,
-} from "@repo/shared";
+} from '@repo/shared';
+import {
+  useInventoryLocationDetail,
+  useUpsertInventoryLocation,
+} from '@hooks/admin/useInventory';
 import {
   InventoryLocationZodSchema,
   InventoryLocationZodSchemaType,
   TURKEY_DB_ID,
-} from "@repo/types";
+} from '@repo/types';
 import {
   IconAlertCircle,
   IconArrowLeft,
@@ -48,83 +50,49 @@ import {
   IconMapPin,
   IconUser,
   IconX,
-} from "@tabler/icons-react";
-import { Route } from "next";
-import { useParams, useRouter } from "next/navigation";
-import { useEffect } from "react";
-import InventoryServiceInput from "../../components/InventoryServiceInput";
+} from '@tabler/icons-react';
+import { Route } from 'next';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import InventoryServiceInput from '../../components/InventoryServiceInput';
 
 const InventoryFormPage = () => {
   const params = useParams();
   const router = useRouter();
   const slug = params.slug as string;
-  const isEditMode = slug && slug !== "new";
+  const isEditMode = slug && slug !== 'new';
 
   const {
     data: existingData,
     isLoading: isLoadingData,
     isError: isLoadError,
     error: loadError,
-  } = useQuery({
-    queryKey: ["inventory-location-detail", slug],
-    queryFn: async () => {
-      const response = await fetchWrapper.get<InventoryLocationZodSchemaType>(
-        `/admin/inventory/location/${slug}`
-      );
-      if (!response.success) {
-        const error = response as ApiError;
-        throw new Error(error.error);
-      }
-      return response.data;
-    },
-    enabled: !!isEditMode,
-    retry: false,
-  });
+  } = useInventoryLocationDetail(slug, isEditMode);
 
-  const { mutate, isPending } = useMutation({
-    mutationKey: ["upsert-inventory-location"],
-    mutationFn: async (data: InventoryLocationZodSchemaType) => {
-      const response = await fetchWrapper.post(
-        "/admin/inventory/location",
-        data
-      );
-      if (!response.success) {
-        const error = response as ApiError;
-        throw new Error(error.error);
-      }
-      return response.data;
-    },
-    onSuccess: (_data, _variables, _result, context) => {
-      notifications.show({
-        title: "Başarılı",
-        message: isEditMode
-          ? "Lokasyon başarıyla güncellendi"
-          : "Lokasyon başarıyla oluşturuldu",
-        color: "green",
-        icon: <IconCheck size={16} />,
-      });
-
-      context?.client?.invalidateQueries({
-        queryKey: ["admin-inventory-location-list"],
-      });
-
-      if (isEditMode) {
-        context?.client?.invalidateQueries({
-          queryKey: ["inventory-location-detail", slug],
+  const { mutate, isPending } = useUpsertInventoryLocation(isEditMode, slug);
+  const handleMutate = (data: InventoryLocationZodSchemaType) => {
+    mutate(data, {
+      onSuccess: () => {
+        notifications.show({
+          title: 'Başarılı',
+          message: isEditMode
+            ? 'Lokasyon başarıyla güncellendi'
+            : 'Lokasyon başarıyla oluşturuldu',
+          color: 'green',
+          icon: <IconCheck size={16} />,
         });
-      }
-
-      router.push("/admin/inventory/location" as Route);
-    },
-    onError: (error: Error) => {
-      notifications.show({
-        title: "Hata",
-        message: error.message || "Lokasyon kaydedilirken bir hata oluştu",
-        color: "red",
-        icon: <IconX size={16} />,
-      });
-    },
-  });
+        router.push('/admin/inventory/location' as Route);
+      },
+      onError: (error) => {
+        notifications.show({
+          title: 'Hata',
+          message: error.message || 'Lokasyon kaydedilirken bir hata oluştu',
+          color: 'red',
+          icon: <IconX size={16} />,
+        });
+      },
+    });
+  };
 
   const {
     control,
@@ -140,7 +108,7 @@ const InventoryFormPage = () => {
       countryType: CountryType.CITY,
       isActive: true,
       uniqueId: createId(),
-      type: "WAREHOUSE",
+      type: 'WAREHOUSE',
       serviceZones: [],
     },
   });
@@ -156,40 +124,40 @@ const InventoryFormPage = () => {
 
   const countryID = useWatch({
     control,
-    name: "countryId",
+    name: 'countryId',
     defaultValue: TURKEY_DB_ID,
   });
 
   const countryType = useWatch({
     control,
-    name: "countryType",
+    name: 'countryType',
     defaultValue: CountryType.CITY,
   });
 
   const cityId = useWatch({
     control,
-    name: "cityId",
+    name: 'cityId',
   });
 
-  const resetLocationFields = (from: "country" | "state" | "city") => {
-    if (from === "country") {
-      setValue("stateId", null);
-      setValue("cityId", null);
-      setValue("districtId", null);
-    } else if (from === "state") {
-      setValue("cityId", null);
-      setValue("districtId", null);
-    } else if (from === "city") {
-      setValue("districtId", null);
+  const resetLocationFields = (from: 'country' | 'state' | 'city') => {
+    if (from === 'country') {
+      setValue('stateId', null);
+      setValue('cityId', null);
+      setValue('districtId', null);
+    } else if (from === 'state') {
+      setValue('cityId', null);
+      setValue('districtId', null);
+    } else if (from === 'city') {
+      setValue('districtId', null);
     }
   };
 
   const onSubmit: SubmitHandler<InventoryLocationZodSchemaType> = (data) => {
-    mutate(data);
+    handleMutate(data);
   };
 
   if (isEditMode && isLoadingData) {
-    return <GlobalLoadingOverlay />;
+    return <LoadingOverlay />;
   }
 
   if (isEditMode && isLoadError) {
@@ -204,7 +172,7 @@ const InventoryFormPage = () => {
           <Stack gap="md">
             <Text size="sm">
               {(loadError as Error)?.message ||
-                "İstenen lokasyon bulunamadı veya erişim izniniz yok."}
+                'İstenen lokasyon bulunamadı veya erişim izniniz yok.'}
             </Text>
             <Group>
               <Button
@@ -212,7 +180,7 @@ const InventoryFormPage = () => {
                 color="red"
                 leftSection={<IconArrowLeft size={16} />}
                 onClick={() =>
-                  router.push("/admin/inventory/location" as Route)
+                  router.push('/admin/inventory/location' as Route)
                 }
               >
                 Listeye Dön
@@ -228,8 +196,8 @@ const InventoryFormPage = () => {
   }
 
   return (
-    <Box maw={900} mx="auto" py="xl" pos={"relative"}>
-      {isPending && <GlobalLoadingOverlay />}
+    <Box maw={900} mx="auto" py="xl" pos={'relative'}>
+      {isPending && <LoadingOverlay />}
       <Stack gap="lg">
         <Group justify="space-between" align="center">
           <Group gap="md">
@@ -243,7 +211,7 @@ const InventoryFormPage = () => {
             </Button>
             <div>
               <Title order={2}>
-                {isEditMode ? "Lokasyonu Düzenle" : "Yeni Lokasyon Ekle"}
+                {isEditMode ? 'Lokasyonu Düzenle' : 'Yeni Lokasyon Ekle'}
               </Title>
               {isEditMode && existingData && (
                 <Text size="sm" c="dimmed">
@@ -301,7 +269,7 @@ const InventoryFormPage = () => {
 
         <FormCard
           icon={
-            <ThemeIcon variant="transparent" size={"md"}>
+            <ThemeIcon variant="transparent" size={'md'}>
               <IconMapPin />
             </ThemeIcon>
           }
@@ -316,16 +284,16 @@ const InventoryFormPage = () => {
                   <CountryInput
                     value={field.value}
                     selectProps={{
-                      label: "Ülke",
-                      placeholder: "Ülke seçin",
+                      label: 'Ülke',
+                      placeholder: 'Ülke seçin',
                       error: fieldState.error?.message,
                       required: true,
                     }}
                     onChange={(selectData) => {
-                      resetLocationFields("country");
+                      resetLocationFields('country');
                       field.onChange(selectData?.value ?? null);
                       if (selectData) {
-                        setValue("countryType", selectData.country.type);
+                        setValue('countryType', selectData.country.type);
                       }
                     }}
                     locale="TR"
@@ -334,7 +302,7 @@ const InventoryFormPage = () => {
               />
             </Grid.Col>
 
-            {countryType === "STATE" && (
+            {countryType === 'STATE' && (
               <Grid.Col span={{ base: 12, sm: 6 }}>
                 <Controller
                   control={control}
@@ -343,11 +311,11 @@ const InventoryFormPage = () => {
                     <StateInput
                       addressType={countryType}
                       countryId={countryID}
-                      onSelect={() => resetLocationFields("state")}
+                      onSelect={() => resetLocationFields('state')}
                       selectProps={{
                         ...field,
-                        label: "Eyalet / Bölge",
-                        placeholder: "Eyalet seçin",
+                        label: 'Eyalet / Bölge',
+                        placeholder: 'Eyalet seçin',
                         error: fieldState.error?.message,
                         required: true,
                       }}
@@ -357,7 +325,7 @@ const InventoryFormPage = () => {
               </Grid.Col>
             )}
 
-            {countryType === "CITY" && (
+            {countryType === 'CITY' && (
               <Grid.Col span={{ base: 12, sm: 6 }}>
                 <Controller
                   control={control}
@@ -366,11 +334,11 @@ const InventoryFormPage = () => {
                     <CityInput
                       countryId={countryID}
                       addressType={countryType}
-                      onSelect={() => resetLocationFields("city")}
+                      onSelect={() => resetLocationFields('city')}
                       selectProps={{
                         ...field,
-                        label: "Şehir",
-                        placeholder: "Şehir seçin",
+                        label: 'Şehir',
+                        placeholder: 'Şehir seçin',
                         error: fieldState.error?.message,
                         required: true,
                       }}
@@ -380,7 +348,7 @@ const InventoryFormPage = () => {
               </Grid.Col>
             )}
 
-            {countryType === "CITY" &&
+            {countryType === 'CITY' &&
               countryID === TURKEY_DB_ID &&
               !!cityId && (
                 <Grid.Col span={{ base: 12, sm: 6 }}>
@@ -394,8 +362,8 @@ const InventoryFormPage = () => {
                         addressType={countryType}
                         selectProps={{
                           ...field,
-                          label: "İlçe",
-                          placeholder: "İlçe seçin",
+                          label: 'İlçe',
+                          placeholder: 'İlçe seçin',
                           error: fieldState.error?.message,
                         }}
                       />
@@ -411,7 +379,7 @@ const InventoryFormPage = () => {
                 render={({ field, fieldState }) => (
                   <TextInput
                     {...field}
-                    value={field.value ?? ""}
+                    value={field.value ?? ''}
                     label="Posta Kodu"
                     placeholder="Örn: 34000"
                     error={fieldState.error?.message}
@@ -427,7 +395,7 @@ const InventoryFormPage = () => {
                 render={({ field, fieldState }) => (
                   <Textarea
                     {...field}
-                    value={field.value ?? ""}
+                    value={field.value ?? ''}
                     label="Adres Satırı 1"
                     placeholder="Sokak, cadde, mahalle bilgisi"
                     error={fieldState.error?.message}
@@ -444,7 +412,7 @@ const InventoryFormPage = () => {
                 render={({ field, fieldState }) => (
                   <Textarea
                     {...field}
-                    value={field.value ?? ""}
+                    value={field.value ?? ''}
                     label="Adres Satırı 2"
                     placeholder="Bina no, kat, daire (opsiyonel)"
                     error={fieldState.error?.message}
@@ -462,7 +430,7 @@ const InventoryFormPage = () => {
         />
         <FormCard
           icon={
-            <ThemeIcon variant="transparent" size={"md"}>
+            <ThemeIcon variant="transparent" size={'md'}>
               <IconUser />
             </ThemeIcon>
           }
@@ -476,7 +444,7 @@ const InventoryFormPage = () => {
                 render={({ field, fieldState }) => (
                   <TextInput
                     {...field}
-                    value={field.value ?? ""}
+                    value={field.value ?? ''}
                     label="İletişim Kişisi"
                     placeholder="Ad Soyad"
                     leftSection={<IconUser size={16} />}
@@ -509,7 +477,7 @@ const InventoryFormPage = () => {
                 render={({ field, fieldState }) => (
                   <TextInput
                     {...field}
-                    value={field.value ?? ""}
+                    value={field.value ?? ''}
                     label="E-posta"
                     placeholder="ornek@sirket.com"
                     leftSection={<IconMail size={16} />}
@@ -521,7 +489,7 @@ const InventoryFormPage = () => {
           </Grid>
         </FormCard>
 
-        <Stack gap={"xs"}>
+        <Stack gap={'xs'}>
           {errors &&
             Object.keys(errors).length > 0 &&
             Object.entries(errors).map(([key, value]) => (
@@ -544,7 +512,7 @@ const InventoryFormPage = () => {
               İptal
             </Button>
             <Button type="button" onClick={handleSubmit(onSubmit)}>
-              {isEditMode ? "Güncelle" : "Kaydet"}
+              {isEditMode ? 'Güncelle' : 'Kaydet'}
             </Button>
           </Group>
         </Stack>

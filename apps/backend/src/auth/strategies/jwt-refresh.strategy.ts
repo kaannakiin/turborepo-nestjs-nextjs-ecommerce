@@ -5,7 +5,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AuthService } from '../auth.service';
-import { TokenPayload } from '@repo/types';
+import { REFRESH_TOKEN_COOKIE_NAME, TokenPayload } from '@repo/types';
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(
@@ -18,7 +18,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (request: Request) => request.cookies?.refresh_token,
+        (request: Request) => request.cookies?.[REFRESH_TOKEN_COOKIE_NAME],
       ]),
       secretOrKey: configService.getOrThrow('JWT_REFRESH_TOKEN_SECRET'),
       passReqToCallback: true,

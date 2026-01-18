@@ -38,13 +38,11 @@ export type MantineFontWeight =
   (typeof MantineFontWeight)[keyof typeof MantineFontWeight];
 
 export const FontFamily = {
-  // Sistem fontları
   system:
     "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   mantineDefault:
     "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
 
-  // Sans-serif fontlar
   inter: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   roboto: "'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   openSans:
@@ -60,24 +58,20 @@ export const FontFamily = {
   raleway:
     "'Raleway', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
 
-  // Serif fontlar
   timesNewRoman: "'Times New Roman', Times, serif",
   georgia: "Georgia, 'Times New Roman', Times, serif",
   playfairDisplay: "'Playfair Display', Georgia, 'Times New Roman', serif",
   merriweather: "'Merriweather', Georgia, 'Times New Roman', serif",
   crimsonText: "'Crimson Text', Georgia, 'Times New Roman', serif",
 
-  // Monospace fontlar
   jetBrainsMono: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
   firaCode: "'Fira Code', 'JetBrains Mono', Consolas, monospace",
   sourceCodePro: "'Source Code Pro', Consolas, 'Courier New', monospace",
   courierNew: "'Courier New', Courier, monospace",
 
-  // Cursive fontlar
   dancingScript: "'Dancing Script', cursive",
   greatVibes: "'Great Vibes', cursive",
 
-  // Genel kategoriler (fallback)
   sansSerif: "sans-serif",
   serif: "serif",
   monospace: "monospace",
@@ -112,15 +106,8 @@ export const AspectRatio = {
   AUTO: "auto",
   SQUARE: "1/1",
   FOUR_BY_THREE: "4/3",
-  THREE_BY_FOUR: "3/4", // Portre (Instagram Story vb.)
+
   SIXTEEN_BY_NINE: "16/9",
-  NINE_BY_SIXTEEN: "9/16", // Dikey Video (TikTok, Reels)
-  TWENTY_ONE_BY_NINE: "21/9", // Ultra-wide
-  TWO_BY_ONE: "2/1", // Panorama
-  THREE_BY_TWO: "3/2", // Klasik Fotoğraf
-  TWO_BY_THREE: "2/3", // Portre Fotoğraf
-  FIVE_BY_FOUR: "5/4", // Klasik Monitor
-  FOUR_BY_FIVE: "4/5", // Instagram Portre
 } as const;
 
 export type AspectRatio = (typeof AspectRatio)[keyof typeof AspectRatio];
@@ -142,7 +129,7 @@ export const FontType = {
   DM_Sans: "DM Sans",
   Space_Grotesk: "Space Grotesk",
   Geist: "Geist",
-  // Serif
+
   Playfair_Display: "Playfair Display",
   Merriweather: "Merriweather",
   Lora: "Lora",
@@ -150,19 +137,19 @@ export const FontType = {
   Libre_Baskerville: "Libre Baskerville",
   Source_Serif_4: "Source Serif 4",
   Cormorant: "Cormorant",
-  // Monospace
+
   Roboto_Mono: "Roboto Mono",
   Fira_Code: "Fira Code",
   JetBrains_Mono: "JetBrains Mono",
   Source_Code_Pro: "Source Code Pro",
   IBM_Plex_Mono: "IBM Plex Mono",
   Geist_Mono: "Geist Mono",
-  // Display
+
   Oswald: "Oswald",
   Bebas_Neue: "Bebas Neue",
   Anton: "Anton",
   Archivo_Black: "Archivo Black",
-  // Turkish Support
+
   Ubuntu: "Ubuntu",
   Rubik: "Rubik",
   Quicksand: "Quicksand",
@@ -170,7 +157,7 @@ export const FontType = {
 } as const;
 
 export type FontType = (typeof FontType)[keyof typeof FontType];
-// Zod enum için
+
 export const fontKeys = Object.keys(FontType) as [string, ...string[]];
 
 export const ProductBulkAction = {
@@ -259,9 +246,6 @@ export const ShippingMethod = {
 export type ShippingMethod =
   (typeof ShippingMethod)[keyof typeof ShippingMethod];
 
-// packages/types/src/fulfillment/enums.ts
-
-// 2. Aksiyon tipi - rules JSON içinde kullanılacak
 export const FullfillmentActionType = {
   USE_LOCATION: "USE_LOCATION",
   EXCLUDE_LOCATION: "EXCLUDE_LOCATION",
@@ -276,28 +260,27 @@ export const FullfillmentActionType = {
 export type FullfillmentActionType =
   (typeof FullfillmentActionType)[keyof typeof FullfillmentActionType];
 
-// 3. Koşul field'ları - rules JSON içinde kullanılacak
 export const FullfillmentConditionField = {
   CUSTOMER_GROUP: "CUSTOMER_GROUP",
-  // Order
+
   ORDER_TOTAL: "ORDER_TOTAL",
   ORDER_ITEM_COUNT: "ORDER_ITEM_COUNT",
   ORDER_WEIGHT: "ORDER_WEIGHT",
   ORDER_CURRENCY: "ORDER_CURRENCY",
-  // Product
+
   PRODUCT_TAG: "PRODUCT_TAG",
   PRODUCT_CATEGORY: "PRODUCT_CATEGORY",
   PRODUCT_BRAND: "PRODUCT_BRAND",
-  // Shipping
+
   SHIPPING_METHOD: "SHIPPING_METHOD",
   DESTINATION_COUNTRY: "DESTINATION_COUNTRY",
   DESTINATION_STATE: "DESTINATION_STATE",
   DESTINATION_CITY: "DESTINATION_CITY",
-  // Inventory
+
   STOCK_LEVEL: "STOCK_LEVEL",
   LOCATION_TYPE: "LOCATION_TYPE",
   SUPPLIER_LEAD_TIME: "SUPPLIER_LEAD_TIME",
-  // Time
+
   DAY_OF_WEEK: "DAY_OF_WEEK",
   TIME_OF_DAY: "TIME_OF_DAY",
   IS_HOLIDAY: "IS_HOLIDAY",
@@ -305,39 +288,37 @@ export const FullfillmentConditionField = {
 export type FullfillmentConditionField =
   (typeof FullfillmentConditionField)[keyof typeof FullfillmentConditionField];
 
-// 4. Condition operatörleri - tüm rule sistemlerinde ortak
 export const ConditionOperator = {
-  // Comparison
   EQ: "EQ",
   NEQ: "NEQ",
   GT: "GT",
   GTE: "GTE",
   LT: "LT",
   LTE: "LTE",
-  // Array
+
   IN: "IN",
   NOT_IN: "NOT_IN",
-  // Range
+
   BETWEEN: "BETWEEN",
-  // String
+
   CONTAINS: "CONTAINS",
   NOT_CONTAINS: "NOT_CONTAINS",
   STARTS_WITH: "STARTS_WITH",
   ENDS_WITH: "ENDS_WITH",
   IS_EMPTY: "IS_EMPTY",
   IS_NOT_EMPTY: "IS_NOT_EMPTY",
-  // Relation
+
   HAS_ANY: "HAS_ANY",
   HAS_ALL: "HAS_ALL",
   HAS_NONE: "HAS_NONE",
   EXISTS: "EXISTS",
   NOT_EXISTS: "NOT_EXISTS",
-  // Null/Boolean
+
   IS_NULL: "IS_NULL",
   IS_NOT_NULL: "IS_NOT_NULL",
   IS_TRUE: "IS_TRUE",
   IS_FALSE: "IS_FALSE",
-  // Date
+
   BEFORE: "BEFORE",
   AFTER: "AFTER",
   ON_DATE: "ON_DATE",
@@ -349,7 +330,6 @@ export const ConditionOperator = {
 export type ConditionOperator =
   (typeof ConditionOperator)[keyof typeof ConditionOperator];
 
-// 5. Logical operator - condition grupları için
 export const LogicalOperator = {
   AND: "AND",
   OR: "OR",
@@ -416,35 +396,29 @@ export const RANGE_OPS = [ConditionOperator.BETWEEN] as const;
 export type RangeOps = (typeof RANGE_OPS)[number];
 
 export const CustomerGroupSmartFields = {
-  // Numeric
   ORDER_COUNT: "ORDER_COUNT",
   TOTAL_SPENT: "TOTAL_SPENT",
   AVERAGE_ORDER_VALUE: "AVERAGE_ORDER_VALUE",
 
-  // Date
   LAST_ORDER_DATE: "LAST_ORDER_DATE",
   FIRST_ORDER_DATE: "FIRST_ORDER_DATE",
   CREATED_AT: "CREATED_AT",
   EMAIL_VERIFIED_AT: "EMAIL_VERIFIED_AT",
   PHONE_VERIFIED_AT: "PHONE_VERIFIED_AT",
 
-  // Boolean
   IS_EMAIL_VERIFIED: "IS_EMAIL_VERIFIED",
   IS_PHONE_VERIFIED: "IS_PHONE_VERIFIED",
   HAS_ORDERS: "HAS_ORDERS",
   HAS_ADDRESS: "HAS_ADDRESS",
 
-  // Enum
   ACCOUNT_STATUS: "ACCOUNT_STATUS",
   REGISTRATION_SOURCE: "REGISTRATION_SOURCE",
   SUBSCRIPTION_STATUS: "SUBSCRIPTION_STATUS",
 
-  // Relation
   CUSTOMER_TAGS: "CUSTOMER_TAGS",
   CUSTOMER_GROUPS: "CUSTOMER_GROUPS",
   PRICE_LIST: "PRICE_LIST",
 
-  // Location (Address üzerinden)
   COUNTRY: "COUNTRY",
   STATE: "STATE",
   CITY: "CITY",
@@ -479,3 +453,44 @@ export const EdgeType = {
   NO: "no",
 } as const;
 export type EdgeType = (typeof EdgeType)[keyof typeof EdgeType];
+
+export const ProductPageSortOption = {
+  NEWEST: "newest",
+  OLDEST: "oldest",
+  PRICE_DESC: "price-desc",
+  PRICE_ASC: "price-asc",
+  BEST_SELLING: "best-selling",
+  A_Z: "a-z",
+  Z_A: "z-a",
+} as const;
+
+export type ProductPageSortOption =
+  (typeof ProductPageSortOption)[keyof typeof ProductPageSortOption];
+
+export const SORT_OPTIONS_ARRAY: ProductPageSortOption[] = [
+  ProductPageSortOption.NEWEST,
+  ProductPageSortOption.OLDEST,
+  ProductPageSortOption.PRICE_DESC,
+  ProductPageSortOption.PRICE_ASC,
+  ProductPageSortOption.BEST_SELLING,
+  ProductPageSortOption.A_Z,
+  ProductPageSortOption.Z_A,
+];
+
+export const PaymentRuleConditionField = {
+  CART_TOTAL: "CART_TOTAL",
+  CART_ITEM_COUNT: "CART_ITEM_COUNT",
+
+  IS_FIRST_ORDER: "IS_FIRST_ORDER",
+
+  SHIPPING_COUNTRY: "SHIPPING_COUNTRY",
+  SHIPPING_STATE: "SHIPPING_STATE",
+  SHIPPING_CITY: "SHIPPING_CITY",
+  SHIPPING_DISTRICT: "SHIPPING_DISTRICT",
+  CUSTOMER_TYPE: "CUSTOMER_TYPE",
+  CUSTOMER_GROUP: "CUSTOMER_GROUP",
+  CUSTOMER_GROUP_SMART: "CUSTOMER_GROUP_SMART",
+} as const;
+
+export type PaymentRuleConditionField =
+  (typeof PaymentRuleConditionField)[keyof typeof PaymentRuleConditionField];

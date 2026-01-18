@@ -1,21 +1,22 @@
-import { Global, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Currency, Locale, Prisma } from '@repo/database';
-import { isAnyReservedKey, ProductPageSortOption } from '@repo/shared';
+import { isAnyReservedKey } from '@repo/shared';
 import {
-  ProductViewInput,
-  ProductViewResult,
-  ParsedFilters,
   FiltersResponse,
   PageFilterBrandQuery,
   PageFilterBrandType,
-  PageFilterTagQuery,
-  PageFilterTagType,
   PageFilterCategoryQuery,
   PageFilterCategoryType,
+  PageFilterTagQuery,
+  PageFilterTagType,
   PageFilterVariantGroupQuery,
   PageFilterVariantGroupType,
+  ParsedFilters,
+  ProductViewInput,
+  ProductViewResult,
   TreeNode,
   uiProductInclude,
+  ProductPageSortOption,
 } from '@repo/types';
 import { PrismaService } from 'src/prisma/prisma.service';
 

@@ -1,7 +1,7 @@
 'use client';
 
-import CustomPagination from '@/components/CustomPagination';
-import CustomSearchInput from '@/components/CustomSearchInput';
+import Pagination from '@/components/Pagination';
+import SearchInput from '@/components/SearchInput';
 import { useGetCustomerSegments } from '@hooks/admin/useAdminCustomer';
 import {
   ActionIcon,
@@ -209,7 +209,7 @@ const CustomerSegmentsTable = () => {
           </Text>
         </div>
         <Group gap={'md'}>
-          <CustomSearchInput placeholder="Segment Ara..." />
+          <SearchInput placeholder="Segment Ara..." />
           <Button
             leftSection={<IconUsers size={18} />}
             variant="filled"
@@ -240,7 +240,7 @@ const CustomerSegmentsTable = () => {
 
         {data?.pagination && data.pagination.totalPages > 1 && (
           <Group justify="flex-end">
-            <CustomPagination total={data?.pagination.totalPages} />
+            <Pagination total={data?.pagination.totalPages} />
           </Group>
         )}
       </Stack>

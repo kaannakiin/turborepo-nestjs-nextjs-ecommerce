@@ -1,4 +1,4 @@
-import GlobalLoader from '@/components/GlobalLoader';
+import Loader from '@/components/Loader';
 import { useGetGoogleTaxonomyCategories } from '@hooks/admin/useProducts';
 import {
   Accordion,
@@ -241,7 +241,7 @@ const GoogleTaxonomySelectV2 = ({
         }}
       >
         {isLoading || isPending ? (
-          <GlobalLoader />
+          <Loader />
         ) : (
           <>
             <TextInput

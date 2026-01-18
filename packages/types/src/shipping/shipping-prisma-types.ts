@@ -1,18 +1,19 @@
 import { Currency, Prisma } from "@repo/database/client";
+export const AdminCargoZoneQuery = {
+  locations: {
+    include: {
+      country: {
+        include: {
+          translations: true,
+        },
+      },
+    },
+  },
+  rules: true,
+} as const satisfies Prisma.CargoZoneInclude;
 
 export type CargoZones = Prisma.CargoZoneGetPayload<{
-  include: {
-    locations: {
-      include: {
-        country: {
-          include: {
-            translations: true;
-          };
-        };
-      };
-    };
-    rules: true;
-  };
+  include: typeof AdminCargoZoneQuery;
 }>;
 
 export type CartItemWithPrices = Prisma.CartItemGetPayload<{

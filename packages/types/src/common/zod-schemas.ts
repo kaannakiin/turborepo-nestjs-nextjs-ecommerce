@@ -1,4 +1,4 @@
-import { AssetType } from "@repo/database/client";
+import { AssetType, Currency, Locale } from "@repo/database/client";
 import { parseDocument } from "htmlparser2";
 import { z } from "zod";
 /**
@@ -141,3 +141,6 @@ export const colorHex = z
   });
 
 export const tcKimlikNoRegex = /^[1-9]{1}[0-9]{9}[02468]{1}$/;
+
+export const localeSchema = z.enum(Locale);
+export const currencySchema = z.enum(Currency);

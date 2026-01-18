@@ -1,13 +1,33 @@
+# [phases.setup]
+# nixPkgs = ["bun", "openssl"]
+# nixLibs = ["gcc-unwrapped"]
+# aptPkgs = ["curl", "wget"]
+
+# [phases.install]
+# cmds = ["bun install --frozen"]
+
+# [phases.build]
+# cmds = ["bun run --filter=@repo/database db:generate", "bunx turbo run build"]
+
+# [start]
+# cmd = "bun run --filter=@repo/database db:deploy && bunx turbo run start"
 [phases.setup]
-nixPkgs = ["bun", "openssl"]
+# Node.js'i buraya ekliyoruz. Build işlemini Node yapacak.
+nixPkgs = ["bun", "openssl", "nodejs"]
 nixLibs = ["gcc-unwrapped"]
 aptPkgs = ["curl", "wget"]
 
 [phases.install]
-cmds = ["bun install --frozen"]
+# Paket yüklemede Bun kullanmaya devam edebilirsin, çok hızlıdır.
+cmds = ["bun install --frozen-lockfile"]
 
 [phases.build]
-cmds = ["bun run --filter=@repo/database db:generate", "bunx turbo run build"]
+# KRİTİK DEĞİŞİKLİK:
+# 'bun run' ve 'bunx' yerine 'npx' kullanarak işlemi Node.js'e yaptırıyoruz.
+# Prisma generate işlemini de npx ile yapmak daha güvenli (binary uyumluluğu için).
+cmds = ["npx turbo run db:generate", "npx turbo run build"]
 
 [start]
-cmd = "bun run --filter=@repo/database db:deploy && bunx turbo run start"
+# KRİTİK DEĞİŞİKLİK:
+# Start işlemini de Node.js ile yapmalıyız.
+cmd = "npx turbo run db:deploy && npx turbo run start"

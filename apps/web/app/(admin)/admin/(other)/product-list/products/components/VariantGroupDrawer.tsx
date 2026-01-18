@@ -1,5 +1,5 @@
 'use client';
-import GlobalDropzone from '@/components/GlobalDropzone';
+import Dropzone from '@/components/Dropzone';
 import {
   ActionIcon,
   Avatar,
@@ -45,7 +45,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 import classes from './RadioCard.module.css';
 
-import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
+import LoadingOverlay from '@/components/LoadingOverlay';
 import {
   closestCenter,
   DndContext,
@@ -558,7 +558,7 @@ const VariantGroupDrawer = ({
   }, [variantName, fields, existingGroupOptions]);
   return (
     <>
-      {isSubmitting && <GlobalLoadingOverlay />}
+      {isSubmitting && <LoadingOverlay />}
 
       <Drawer.Root
         opened={opened}
@@ -1073,7 +1073,7 @@ const VariantGroupDrawer = ({
                 control={control}
                 name={`options.${selectedVariantIndex}.file`}
                 render={({ field, fieldState }) => (
-                  <GlobalDropzone
+                  <Dropzone
                     accept={'IMAGE'}
                     onDrop={(files) => {
                       field.onChange(files[0]);

@@ -1,5 +1,5 @@
 'use client';
-import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
+import LoadingOverlay from '@/components/LoadingOverlay';
 import { useInventoryRuleDetail } from '@hooks/admin/useInventory';
 import { useParams } from 'next/navigation';
 import { Activity } from 'react';
@@ -18,7 +18,7 @@ const InventoryRuleFormPage = () => {
   if (isFetching || isLoading) {
     return (
       <Activity mode="visible">
-        <GlobalLoadingOverlay />
+        <LoadingOverlay />
       </Activity>
     );
   }

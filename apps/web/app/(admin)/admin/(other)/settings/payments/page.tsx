@@ -1,33 +1,17 @@
-"use client";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
-import { Alert, Button, Group, Stack, Text, Title } from "@mantine/core";
-import { PaymentProvider } from "@repo/database/client";
-import { useQuery } from "@repo/shared";
-import { PaymentMethodType } from "@repo/types";
-import { IconInfoCircle } from "@tabler/icons-react";
-import type { Route } from "next";
-import { useRouter } from "next/navigation";
-import FormCard from "../../../../../components/cards/FormCard";
-import PaymentMethods from "./payment-methods/page";
+'use client';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import { usePaymentMethods } from '@hooks/admin/usePayments';
+import { Alert, Button, Group, Stack, Text, Title } from '@mantine/core';
+import { PaymentProvider } from '@repo/database/client';
+import { IconInfoCircle } from '@tabler/icons-react';
+import type { Route } from 'next';
+import { useRouter } from 'next/navigation';
+import FormCard from '../../../../../components/cards/FormCard';
+import PaymentMethods from './payment-methods/page';
 
 const AdminPaymentsPage = () => {
   const { push } = useRouter();
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin-payment-methods"],
-    queryFn: async () => {
-      const response = await fetchWrapper.get<PaymentMethodType[]>(
-        `/admin/payments/payment-methods`
-      );
-      if (!response.success) {
-        const errorResponse = response as ApiError;
-        throw new Error(
-          errorResponse.error || "Failed to fetch payment methods"
-        );
-      }
-      return response.data;
-    },
-  });
+  const { data, isLoading } = usePaymentMethods();
 
   const hasPaymentMethods = !isLoading && data && data.length > 0;
 
@@ -39,8 +23,8 @@ const AdminPaymentsPage = () => {
 
   return (
     <>
-      {isLoading && <GlobalLoadingOverlay />}
-      <Stack gap={"xl"}>
+      {isLoading && <LoadingOverlay />}
+      <Stack gap={'xl'}>
         {!hasPaymentMethods && (
           <Alert
             variant="light"
@@ -58,17 +42,17 @@ const AdminPaymentsPage = () => {
         )}
         <FormCard
           title={
-            <Group p={"md"} justify="space-between" align="center">
+            <Group p={'md'} justify="space-between" align="center">
               <Title order={4}>
                 {!allProvidersAdded
-                  ? "Ödeme Yöntemleri"
-                  : "Eklenmiş Ödeme Yöntemleri"}
+                  ? 'Ödeme Yöntemleri'
+                  : 'Eklenmiş Ödeme Yöntemleri'}
               </Title>
               {hasPaymentMethods && !allProvidersAdded && (
-                <Group gap={"md"}>
+                <Group gap={'md'}>
                   <Button
                     onClick={() => {
-                      push("/admin/settings/payments/payment-methods" as Route);
+                      push('/admin/settings/payments/payment-methods' as Route);
                     }}
                   >
                     Ödeme Yöntemi Ekle
@@ -80,13 +64,13 @@ const AdminPaymentsPage = () => {
         >
           {!hasPaymentMethods ? (
             <div className="flex flex-col min-h-24 justify-center items-center gap-3">
-              <Text fz={"lg"} fw={700}>
+              <Text fz={'lg'} fw={700}>
                 Henüz bir ödeme yöntemi eklenmedi
               </Text>
               <Button
                 variant="filled"
                 onClick={() => {
-                  push("/admin/settings/payments/payment-methods" as Route);
+                  push('/admin/settings/payments/payment-methods' as Route);
                 }}
               >
                 Ödeme Yöntemi Ekle
@@ -101,12 +85,18 @@ const AdminPaymentsPage = () => {
         </FormCard>
         <FormCard title="Ödeme Ayarları">
           <div className="flex flex-col min-h-24 justify-center items-center gap-3">
-            <Text fz={"lg"} fw={700} className="text-center">
+            <Text fz={'lg'} fw={700} className="text-center">
               Ödeme ayarlarını yapılandırarak müşterilerinize farklı ödeme
               yöntemleri sunabilirsiniz.
             </Text>
-            <Button variant="filled" disabled={!hasPaymentMethods}>
-              Ödeme Ayarı Ekle
+            <Button
+              variant="filled"
+              disabled={!hasPaymentMethods}
+              onClick={() => {
+                push('/admin/settings/payments/payment-rules' as Route);
+              }}
+            >
+              Ödeme Kurallarını Yönet
             </Button>
             {!hasPaymentMethods && (
               <Text size="sm" c="dimmed" className="text-center">

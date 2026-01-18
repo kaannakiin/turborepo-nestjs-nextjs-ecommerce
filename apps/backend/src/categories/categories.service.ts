@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Locale } from '@repo/database';
-import { filterReservedKeys, ProductPageSortOption } from '@repo/shared';
+import { filterReservedKeys } from '@repo/shared';
 import {
   CategoryPageFilters,
   CategoryProductsResponse,
@@ -8,6 +8,7 @@ import {
   RawCategoryRow,
   ParsedFilters,
   FiltersResponse,
+  ProductPageSortOption,
 } from '@repo/types';
 import { CurrencyLocaleService } from 'src/common/services/currency-locale.service';
 import { LocaleService } from 'src/common/services/locale/locale.service';
@@ -28,7 +29,8 @@ export class CategoriesService {
     filters: CategoryPageFilters,
   ): Promise<CategoryProductsResponse> {
     const locale = this.localeService.getLocale();
-    const currency = this.currencyLocaleService.getCurrencyLocaleMap(locale);
+    const currency =
+      await this.currencyLocaleService.getCurrencyForLocale(locale);
 
     const { categoryTree, allCategoryIds } = await this.getCategoryMetadata(
       slug,
@@ -68,7 +70,8 @@ export class CategoriesService {
     filters: Omit<CategoryPageFilters, 'sort' | 'page' | 'limit'>,
   ): Promise<FiltersResponse> {
     const locale = this.localeService.getLocale();
-    const currency = this.currencyLocaleService.getCurrencyLocaleMap(locale);
+    const currency =
+      await this.currencyLocaleService.getCurrencyForLocale(locale);
 
     const { allCategoryIds } = await this.getCategoryMetadata(slug, locale);
 

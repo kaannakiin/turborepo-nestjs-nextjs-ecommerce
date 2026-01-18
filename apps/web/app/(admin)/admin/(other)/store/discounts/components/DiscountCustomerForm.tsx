@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import SelectableUserModal from "@/components/modals/user-modal/SelectableUserModal";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
+import SelectableUserModal from '@/components/modals/user-modal/SelectableUserModal';
+
 import {
   ActionIcon,
   Button,
@@ -13,12 +13,13 @@ import {
   Text,
   ThemeIcon,
   Tooltip,
-} from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
-import { Control, Controller, UseFormSetValue, useQuery } from "@repo/shared";
-import { AllUsersReturnType, MainDiscount } from "@repo/types";
-import { IconTrash, IconUser, IconUsers } from "@tabler/icons-react";
-import FormCard from "../../../../../../components/cards/FormCard";
+} from '@mantine/core';
+import { useAllUsers } from '@hooks/admin/useAdminUsers';
+import { useDisclosure } from '@mantine/hooks';
+import { Control, Controller, UseFormSetValue } from '@repo/shared';
+import { MainDiscount } from '@repo/types';
+import { IconTrash, IconUser, IconUsers } from '@tabler/icons-react';
+import FormCard from '../../../../../../components/cards/FormCard';
 
 interface DiscountCustomerFormProps {
   control: Control<MainDiscount>;
@@ -35,25 +36,13 @@ const DiscountCustomerForm = ({
 }: DiscountCustomerFormProps) => {
   const [opened, { open, close }] = useDisclosure();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["discount-form-customers"],
-    queryFn: async () => {
-      const res = await fetchWrapper.get<AllUsersReturnType[]>(
-        "/admin/users/all-users"
-      );
-      if (!res || !res.success) {
-        return [];
-      }
-      return res.data;
-    },
-    enabled: !allCustomers,
-  });
+  const { data, isLoading } = useAllUsers(!allCustomers);
 
   const handleRemoveCustomer = (customerId: string) => {
     const updatedCustomers = selectedCustomers.filter(
-      (id) => id !== customerId
+      (id) => id !== customerId,
     );
-    setValue("otherCustomers", updatedCustomers);
+    setValue('otherCustomers', updatedCustomers);
   };
 
   const handleEditCustomers = () => {
@@ -69,12 +58,12 @@ const DiscountCustomerForm = ({
           render={({ field: { onChange, value, ...field }, fieldState }) => (
             <Radio.Group
               {...field}
-              value={value ? "all" : "specific"}
+              value={value ? 'all' : 'specific'}
               onChange={(val) => {
-                const isAll = val === "all";
+                const isAll = val === 'all';
                 onChange(isAll);
                 if (isAll) {
-                  setValue("otherCustomers", null);
+                  setValue('otherCustomers', null);
                 }
               }}
               error={fieldState.error?.message}
@@ -82,44 +71,44 @@ const DiscountCustomerForm = ({
               <SimpleGrid cols={{ base: 1, md: 4 }}>
                 <Radio.Card
                   className={`border border-gray-400 rounded-xl ${
-                    value ? "bg-[var(--mantine-primary-color-1)]" : ""
+                    value ? 'bg-[var(--mantine-primary-color-1)]' : ''
                   }`}
                   p="md"
                   value="all"
                 >
                   <Group justify="space-between" align="center">
-                    <Group gap={"xs"}>
+                    <Group gap={'xs'}>
                       <ThemeIcon
                         className="text-center"
-                        variant={value ? "filled" : "light"}
-                        radius={"lg"}
-                        size={"lg"}
+                        variant={value ? 'filled' : 'light'}
+                        radius={'lg'}
+                        size={'lg'}
                       >
                         <IconUsers />
                       </ThemeIcon>
-                      <Text fz={"sm"}>Tüm Müşteriler</Text>
+                      <Text fz={'sm'}>Tüm Müşteriler</Text>
                     </Group>
                     <Radio.Indicator />
                   </Group>
                 </Radio.Card>
                 <Radio.Card
                   className={`border border-gray-400 rounded-xl ${
-                    !value ? "bg-[var(--mantine-primary-color-1)]" : ""
+                    !value ? 'bg-[var(--mantine-primary-color-1)]' : ''
                   }`}
                   p="md"
                   value="specific"
                 >
                   <Group justify="space-between" align="center">
-                    <Group gap={"xs"}>
+                    <Group gap={'xs'}>
                       <ThemeIcon
                         className="text-center"
-                        variant={!value ? "filled" : "light"}
-                        radius={"lg"}
-                        size={"lg"}
+                        variant={!value ? 'filled' : 'light'}
+                        radius={'lg'}
+                        size={'lg'}
                       >
                         <IconUser />
                       </ThemeIcon>
-                      <Text fz={"sm"}>Belirli Müşteriler</Text>
+                      <Text fz={'sm'}>Belirli Müşteriler</Text>
                     </Group>
                     <Radio.Indicator />
                   </Group>
@@ -128,9 +117,9 @@ const DiscountCustomerForm = ({
             </Radio.Group>
           )}
         />
-        <Stack gap={"xs"}>
+        <Stack gap={'xs'}>
           {!allCustomers && (
-            <Group gap={"xs"}>
+            <Group gap={'xs'}>
               <Button
                 onClick={() => {
                   if (!allCustomers && data && data.length > 0) open();
@@ -154,7 +143,7 @@ const DiscountCustomerForm = ({
                 <Stack gap="xs">
                   {selectedCustomers.map((customerId) => {
                     const customer = data.find(
-                      (user) => user.id === customerId
+                      (user) => user.id === customerId,
                     );
                     if (!customer) return null;
                     return (
@@ -165,7 +154,7 @@ const DiscountCustomerForm = ({
                         className="border border-gray-300 rounded-md hover:bg-gray-50"
                       >
                         <Text fz="sm">
-                          {customer.name} {customer.surname} /{" "}
+                          {customer.name} {customer.surname} /{' '}
                           {customer.email || customer.phone}
                         </Text>
                         <Tooltip label="Kaldır">
@@ -194,8 +183,8 @@ const DiscountCustomerForm = ({
           title="Kullanıcı Seçim Ekranı"
           onSubmit={(data) => {
             setValue(
-              "otherCustomers",
-              data.map((data) => data.id)
+              'otherCustomers',
+              data.map((data) => data.id),
             );
           }}
         />

@@ -1,20 +1,20 @@
-import InfinityQueryPage from "@/components/pages/store-components/InfinityQueryPage";
-import StoreNotFound from "@/components/pages/store-components/StoreNotFound";
-import { getQueryClient } from "@lib/serverQueryClient";
-import { generateBrandJsonLd } from "@lib/ui/json-ld-generator";
+import InfinityQueryPage from '@/components/pages/store-components/InfinityQueryPage';
+import StoreNotFound from '@/components/pages/store-components/StoreNotFound';
+import { getQueryClient } from '@lib/serverQueryClient';
+import { generateBrandJsonLd } from '@lib/json-ld-generator';
 import {
   getOgImageUrl,
   getServerSideAllSearchParams,
-} from "@lib/ui/product-helper";
-import { ApiError, createServerFetch } from "@lib/wrappers/fetchWrapper";
-import { Currency, Locale } from "@repo/database/client";
-import { dehydrate, HydrationBoundary } from "@repo/shared";
-import { BrandProductsResponse, FiltersResponse } from "@repo/types";
-import { Metadata } from "next";
-import { cookies } from "next/headers";
-import Script from "next/script";
-import { cache } from "react";
-import { Params, SearchParams } from "types/GlobalTypes";
+} from '@lib/product-helper';
+import { ApiError, createServerFetch } from '@lib/wrappers/fetchWrapper';
+import { Currency, Locale } from '@repo/database/client';
+import { dehydrate, HydrationBoundary } from '@repo/shared';
+import { BrandProductsResponse, FiltersResponse } from '@repo/types';
+import { Metadata } from 'next';
+import { cookies } from 'next/headers';
+import Script from 'next/script';
+import { cache } from 'react';
+import { Params, SearchParams } from 'types/types';
 
 interface Props {
   params: Params;
@@ -27,7 +27,7 @@ const getBrandData = cache(
     page: number,
     queryString: string,
     currency: Currency,
-    locale: Locale
+    locale: Locale,
   ) => {
     const cookieStore = await cookies();
     const api = createServerFetch().setCookies(cookieStore);
@@ -47,7 +47,7 @@ const getBrandData = cache(
 
     if (!productsRes.success) {
       return {
-        error: (productsRes as ApiError).error || "Marka bulunamadı",
+        error: (productsRes as ApiError).error || 'Marka bulunamadı',
         products: null,
         filters: null,
       };
@@ -55,7 +55,7 @@ const getBrandData = cache(
 
     if (!filtersRes.success) {
       return {
-        error: (filtersRes as ApiError).error || "Filtreler alınamadı",
+        error: (filtersRes as ApiError).error || 'Filtreler alınamadı',
         products: null,
         filters: null,
       };
@@ -71,7 +71,7 @@ const getBrandData = cache(
       currency,
       locale,
     };
-  }
+  },
 );
 
 async function parseArgs(params: Params, searchParams: SearchParams) {
@@ -79,13 +79,13 @@ async function parseArgs(params: Params, searchParams: SearchParams) {
   const pageParamsObj = await searchParams;
   const cookieStore = await cookies();
 
-  const currentPage = Number((pageParamsObj.page as string) || "1");
+  const currentPage = Number((pageParamsObj.page as string) || '1');
 
   const cacheKeyParams =
-    getServerSideAllSearchParams(pageParamsObj, ["page"]) || "";
+    getServerSideAllSearchParams(pageParamsObj, ['page']) || '';
 
-  const currency = (cookieStore.get("currency")?.value as Currency) || "TRY";
-  const locale = (cookieStore.get("locale")?.value as Locale) || "TR";
+  const currency = (cookieStore.get('currency')?.value as Currency) || 'TRY';
+  const locale = (cookieStore.get('locale')?.value as Locale) || 'TR';
 
   return { slug, currentPage, cacheKeyParams, currency, locale };
 }
@@ -103,13 +103,13 @@ export async function generateMetadata({
       currentPage,
       cacheKeyParams,
       currency,
-      locale
+      locale,
     );
 
     if (data.error || !data.products) {
       return {
-        title: "Marka Bulunamadı",
-        description: "Aradığınız marka bulunamadı.",
+        title: 'Marka Bulunamadı',
+        description: 'Aradığınız marka bulunamadı.',
         robots: {
           index: false,
           follow: false,
@@ -118,7 +118,7 @@ export async function generateMetadata({
     }
 
     const { brand, pagination } = data.products;
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     const brandUrl = `${baseUrl}/brands/${slug}`;
 
     const title = brand.metaTitle || brand.name;
@@ -135,8 +135,8 @@ export async function generateMetadata({
         canonical: brandUrl,
       },
       openGraph: {
-        type: "website",
-        locale: locale === "TR" ? "tr_TR" : "en_US",
+        type: 'website',
+        locale: locale === 'TR' ? 'tr_TR' : 'en_US',
         url: brandUrl,
         title,
         description,
@@ -147,13 +147,13 @@ export async function generateMetadata({
               width: 1200,
               height: 630,
               alt: brand.name,
-              type: "image/jpeg",
+              type: 'image/jpeg',
             },
           ],
         }),
       },
       twitter: {
-        card: ogImage ? "summary_large_image" : "summary",
+        card: ogImage ? 'summary_large_image' : 'summary',
         title,
         description,
         ...(ogImage && {
@@ -161,17 +161,17 @@ export async function generateMetadata({
         }),
       },
       other: {
-        "product:brand": brand.name,
-        "product:availability": "in stock",
+        'product:brand': brand.name,
+        'product:availability': 'in stock',
         ...(currentPage > 1 && {
-          "og:url": `${brandUrl}?page=${currentPage}`,
+          'og:url': `${brandUrl}?page=${currentPage}`,
         }),
       },
     };
   } catch (error) {
     return {
-      title: "Marka Bulunamadı",
-      description: "Aradığınız marka bulunamadı.",
+      title: 'Marka Bulunamadı',
+      description: 'Aradığınız marka bulunamadı.',
       robots: {
         index: false,
         follow: false,
@@ -183,7 +183,7 @@ export async function generateMetadata({
 const BrandPage = async ({ params, searchParams }: Props) => {
   const { slug, cacheKeyParams, currency, locale } = await parseArgs(
     params,
-    searchParams
+    searchParams,
   );
 
   const data = await getBrandData(slug, 1, cacheKeyParams, currency, locale);
@@ -195,7 +195,7 @@ const BrandPage = async ({ params, searchParams }: Props) => {
   const { products, filters } = data;
 
   const queryClient = getQueryClient();
-  const endPoint = "brands";
+  const endPoint = 'brands';
 
   const productsQueryKey = [
     `${endPoint}-products-infinite`,
@@ -212,9 +212,9 @@ const BrandPage = async ({ params, searchParams }: Props) => {
 
   const jsonLd = generateBrandJsonLd(
     products,
-    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
+    process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
     currency,
-    locale
+    locale,
   );
 
   return (

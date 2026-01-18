@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { safeTransformDiscountType } from "@/(admin)/admin/(other)/store/discounts/helperDiscount";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import { safeTransformDiscountType } from '@/(admin)/admin/(other)/store/discounts/helperDiscount';
+import LoadingOverlay from '@/components/LoadingOverlay';
 import {
   getCampaignStatusLabel,
   getCurrencyLabel,
   getDiscountTypeLabel,
-} from "@lib/helpers";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
+} from '@lib/helpers';
+import fetchWrapper from '@lib/wrappers/fetchWrapper';
 import {
   ActionIcon,
   Button,
@@ -28,15 +28,15 @@ import {
   TextInput,
   ThemeIcon,
   Title,
-} from "@mantine/core";
-import { DateTimePicker } from "@mantine/dates";
-import { notifications } from "@mantine/notifications";
+} from '@mantine/core';
+import { DateTimePicker } from '@mantine/dates';
+import { notifications } from '@mantine/notifications';
 import {
   AllowedDiscountedItemsBy,
   CampaignStatus,
   Currency,
   DiscountType,
-} from "@repo/database/client";
+} from '@repo/database/client';
 import {
   Controller,
   dateFns,
@@ -45,7 +45,7 @@ import {
   useFieldArray,
   useForm,
   zodResolver,
-} from "@repo/shared";
+} from '@repo/shared';
 import {
   DiscountUpsertResponse,
   GrowPriceSchema,
@@ -53,7 +53,7 @@ import {
   MainDiscount,
   MainDiscountSchema,
   MainDiscountSchemaDefaultValue,
-} from "@repo/types";
+} from '@repo/types';
 import {
   IconCalendar,
   IconCurrencyLira,
@@ -64,76 +64,76 @@ import {
   IconStack2,
   IconTrash,
   IconTruckDelivery,
-} from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import CouponForm from "./CouponForm";
-import DiscountConditionForm from "./DiscountConditionForm";
-import DiscountCustomerForm from "./DiscountCustomerForm";
-import FormCard from "../../../../../../components/cards/FormCard";
+} from '@tabler/icons-react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import CouponForm from './CouponForm';
+import DiscountConditionForm from './DiscountConditionForm';
+import DiscountCustomerForm from './DiscountCustomerForm';
+import FormCard from '../../../../../../components/cards/FormCard';
 
 interface DiscountFormProps {
   defaultValues?: MainDiscount;
 }
-type BaseType = "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_SHIPPING";
+type BaseType = 'PERCENTAGE' | 'FIXED_AMOUNT' | 'FREE_SHIPPING';
 
 const getIcon = (type: DiscountType) => {
   switch (type) {
-    case "PERCENTAGE":
-    case "PERCENTAGE_GROW_QUANTITY":
-    case "PERCENTAGE_GROW_PRICE":
+    case 'PERCENTAGE':
+    case 'PERCENTAGE_GROW_QUANTITY':
+    case 'PERCENTAGE_GROW_PRICE':
       return <IconPercentage />;
-    case "FIXED_AMOUNT":
-    case "FIXED_AMOUNT_GROW_QUANTITY":
-    case "FIXED_AMOUNT_GROW_PRICE":
+    case 'FIXED_AMOUNT':
+    case 'FIXED_AMOUNT_GROW_QUANTITY':
+    case 'FIXED_AMOUNT_GROW_PRICE':
       return <IconCurrencyLira />;
-    case "FREE_SHIPPING":
+    case 'FREE_SHIPPING':
       return <IconTruckDelivery />;
   }
 };
 
 const getInitialStates = (type: DiscountType) => {
-  if (type === "PERCENTAGE") {
+  if (type === 'PERCENTAGE') {
     return {
-      baseType: "PERCENTAGE" as const,
-      discountMode: "simple" as const,
-      tieredBy: "quantity" as const,
+      baseType: 'PERCENTAGE' as const,
+      discountMode: 'simple' as const,
+      tieredBy: 'quantity' as const,
     };
-  } else if (type === "PERCENTAGE_GROW_QUANTITY") {
+  } else if (type === 'PERCENTAGE_GROW_QUANTITY') {
     return {
-      baseType: "PERCENTAGE" as const,
-      discountMode: "tiered" as const,
-      tieredBy: "quantity" as const,
+      baseType: 'PERCENTAGE' as const,
+      discountMode: 'tiered' as const,
+      tieredBy: 'quantity' as const,
     };
-  } else if (type === "PERCENTAGE_GROW_PRICE") {
+  } else if (type === 'PERCENTAGE_GROW_PRICE') {
     return {
-      baseType: "PERCENTAGE" as const,
-      discountMode: "tiered" as const,
-      tieredBy: "price" as const,
+      baseType: 'PERCENTAGE' as const,
+      discountMode: 'tiered' as const,
+      tieredBy: 'price' as const,
     };
-  } else if (type === "FIXED_AMOUNT") {
+  } else if (type === 'FIXED_AMOUNT') {
     return {
-      baseType: "FIXED_AMOUNT" as const,
-      discountMode: "simple" as const,
-      tieredBy: "quantity" as const,
+      baseType: 'FIXED_AMOUNT' as const,
+      discountMode: 'simple' as const,
+      tieredBy: 'quantity' as const,
     };
-  } else if (type === "FIXED_AMOUNT_GROW_QUANTITY") {
+  } else if (type === 'FIXED_AMOUNT_GROW_QUANTITY') {
     return {
-      baseType: "FIXED_AMOUNT" as const,
-      discountMode: "tiered" as const,
-      tieredBy: "quantity" as const,
+      baseType: 'FIXED_AMOUNT' as const,
+      discountMode: 'tiered' as const,
+      tieredBy: 'quantity' as const,
     };
-  } else if (type === "FIXED_AMOUNT_GROW_PRICE") {
+  } else if (type === 'FIXED_AMOUNT_GROW_PRICE') {
     return {
-      baseType: "FIXED_AMOUNT" as const,
-      discountMode: "tiered" as const,
-      tieredBy: "price" as const,
+      baseType: 'FIXED_AMOUNT' as const,
+      discountMode: 'tiered' as const,
+      tieredBy: 'price' as const,
     };
-  } else if (type === "FREE_SHIPPING") {
+  } else if (type === 'FREE_SHIPPING') {
     return {
-      baseType: "FREE_SHIPPING" as const,
-      discountMode: "simple" as const,
-      tieredBy: "quantity" as const,
+      baseType: 'FREE_SHIPPING' as const,
+      discountMode: 'simple' as const,
+      tieredBy: 'quantity' as const,
     };
   }
 };
@@ -141,31 +141,31 @@ const getInitialStates = (type: DiscountType) => {
 const getDiscountType = (
   base: BaseType,
   mode: DiscountMode,
-  tiered: TieredBy
+  tiered: TieredBy,
 ): DiscountType => {
-  if (base === "PERCENTAGE") {
-    if (mode === "simple") {
-      return "PERCENTAGE";
+  if (base === 'PERCENTAGE') {
+    if (mode === 'simple') {
+      return 'PERCENTAGE';
     } else {
-      return tiered === "quantity"
-        ? "PERCENTAGE_GROW_QUANTITY"
-        : "PERCENTAGE_GROW_PRICE";
+      return tiered === 'quantity'
+        ? 'PERCENTAGE_GROW_QUANTITY'
+        : 'PERCENTAGE_GROW_PRICE';
     }
-  } else if (base === "FIXED_AMOUNT") {
-    if (mode === "simple") {
-      return "FIXED_AMOUNT";
+  } else if (base === 'FIXED_AMOUNT') {
+    if (mode === 'simple') {
+      return 'FIXED_AMOUNT';
     } else {
-      return tiered === "quantity"
-        ? "FIXED_AMOUNT_GROW_QUANTITY"
-        : "FIXED_AMOUNT_GROW_PRICE";
+      return tiered === 'quantity'
+        ? 'FIXED_AMOUNT_GROW_QUANTITY'
+        : 'FIXED_AMOUNT_GROW_PRICE';
     }
-  } else if (base === "FREE_SHIPPING") {
-    return "FREE_SHIPPING";
+  } else if (base === 'FREE_SHIPPING') {
+    return 'FREE_SHIPPING';
   }
 };
 
-type DiscountMode = "simple" | "tiered";
-type TieredBy = "quantity" | "price";
+type DiscountMode = 'simple' | 'tiered';
+type TieredBy = 'quantity' | 'price';
 
 const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
   const {
@@ -180,24 +180,24 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
     resolver: zodResolver(MainDiscountSchema),
     defaultValues: defaultValues || MainDiscountSchemaDefaultValue,
   });
-  const discountType = watch("type");
-  const isAllProducts = watch("conditions.isAllProducts");
-  const allowDiscountedItems = watch("allowDiscountedItems");
-  const isLimitPurchase = watch("isLimitPurchase");
-  const isLimitItemQuantity = watch("isLimitItemQuantity");
-  const isLimitTotalUsage = watch("isLimitTotalUsage");
-  const isLimitTotalUsagePerCustomer = watch("isLimitTotalUsagePerCustomer");
-  const addStartDate = watch("addStartDate");
-  const addEndDate = watch("addEndDate");
-  const allCustomers = watch("allCustomers");
-  const selectedCustomers = watch("otherCustomers");
+  const discountType = watch('type');
+  const isAllProducts = watch('conditions.isAllProducts');
+  const allowDiscountedItems = watch('allowDiscountedItems');
+  const isLimitPurchase = watch('isLimitPurchase');
+  const isLimitItemQuantity = watch('isLimitItemQuantity');
+  const isLimitTotalUsage = watch('isLimitTotalUsage');
+  const isLimitTotalUsagePerCustomer = watch('isLimitTotalUsagePerCustomer');
+  const addStartDate = watch('addStartDate');
+  const addEndDate = watch('addEndDate');
+  const allCustomers = watch('allCustomers');
+  const selectedCustomers = watch('otherCustomers');
 
   const initialStates = getInitialStates(discountType);
 
   const [baseType, setBaseType] = useState<BaseType>(initialStates.baseType);
 
   const [discountMode, setDiscountMode] = useState<DiscountMode>(
-    initialStates.discountMode
+    initialStates.discountMode,
   );
   const [tieredBy, setTieredBy] = useState<TieredBy>(initialStates.tieredBy);
 
@@ -205,7 +205,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
     const newBaseType = value as typeof baseType;
     setBaseType(newBaseType);
 
-    const newMode = "simple";
+    const newMode = 'simple';
     setDiscountMode(newMode);
 
     const newType = getDiscountType(newBaseType, newMode, tieredBy);
@@ -213,7 +213,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
     const currentFormValues = getValues();
     const transformedValues = safeTransformDiscountType(
       currentFormValues,
-      newType
+      newType,
     );
     reset(transformedValues as MainDiscount);
   };
@@ -227,7 +227,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
     const currentFormValues = getValues();
     const transformedValues = safeTransformDiscountType(
       currentFormValues,
-      newType
+      newType,
     );
 
     reset(transformedValues as MainDiscount);
@@ -241,93 +241,93 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
     const currentFormValues = getValues();
     const transformedValues = safeTransformDiscountType(
       currentFormValues,
-      newType
+      newType,
     );
 
     reset(transformedValues as MainDiscount);
   };
 
   const showDiscountModeSection =
-    baseType === "PERCENTAGE" || baseType === "FIXED_AMOUNT";
-  const showTieredOptions = discountMode === "tiered";
+    baseType === 'PERCENTAGE' || baseType === 'FIXED_AMOUNT';
+  const showTieredOptions = discountMode === 'tiered';
 
   const { fields, append, remove } = useFieldArray({
     control,
-    name: "tiers",
+    name: 'tiers',
   });
 
   const addDiscount = () => {
     if (
-      discountType === "PERCENTAGE_GROW_QUANTITY" ||
-      discountType === "FIXED_AMOUNT_GROW_QUANTITY"
+      discountType === 'PERCENTAGE_GROW_QUANTITY' ||
+      discountType === 'FIXED_AMOUNT_GROW_QUANTITY'
     ) {
       const lastTier = fields[fields.length - 1];
       const lastMaxQuantity =
-        (lastTier as GrowQuantitySchema["tiers"][number])?.maxQuantity || 0;
+        (lastTier as GrowQuantitySchema['tiers'][number])?.maxQuantity || 0;
 
       append({
         minQuantity: lastMaxQuantity + 1,
         maxQuantity: null,
         discountPercentage:
-          discountType === "PERCENTAGE_GROW_QUANTITY" ? 0 : undefined,
+          discountType === 'PERCENTAGE_GROW_QUANTITY' ? 0 : undefined,
         discountAmount:
-          discountType === "FIXED_AMOUNT_GROW_QUANTITY" ? 0 : undefined,
-      } as GrowQuantitySchema["tiers"][number]);
+          discountType === 'FIXED_AMOUNT_GROW_QUANTITY' ? 0 : undefined,
+      } as GrowQuantitySchema['tiers'][number]);
     } else {
       const lastTier = fields[fields.length - 1];
       const lastMaxAmount =
-        (lastTier as GrowPriceSchema["tiers"][number])?.maxAmount || 0;
+        (lastTier as GrowPriceSchema['tiers'][number])?.maxAmount || 0;
 
       append({
         minAmount: lastMaxAmount + 1,
         maxAmount: null,
         discountPercentage:
-          discountType === "PERCENTAGE_GROW_PRICE" ? 0 : undefined,
+          discountType === 'PERCENTAGE_GROW_PRICE' ? 0 : undefined,
         discountAmount:
-          discountType === "FIXED_AMOUNT_GROW_PRICE" ? 0 : undefined,
-      } as GrowPriceSchema["tiers"][number]);
+          discountType === 'FIXED_AMOUNT_GROW_PRICE' ? 0 : undefined,
+      } as GrowPriceSchema['tiers'][number]);
     }
   };
   const { push } = useRouter();
   const onSubmit: SubmitHandler<MainDiscount> = async (data) => {
     const res = await fetchWrapper.post<DiscountUpsertResponse>(
-      "/admin/discounts/upgrade-or-create",
-      data
+      '/admin/discounts/upgrade-or-create',
+      data,
     );
 
     if (!res.success) {
       notifications.show({
-        title: "Hata",
-        message: "Bilinmeyen bir hata oluştu. Lütfen tekrar deneyiniz.",
-        color: "red",
+        title: 'Hata',
+        message: 'Bilinmeyen bir hata oluştu. Lütfen tekrar deneyiniz.',
+        color: 'red',
       });
       return;
     }
 
     if (!res.data.success) {
       notifications.show({
-        title: "Hata",
+        title: 'Hata',
         message: res.data.message,
-        color: "red",
+        color: 'red',
       });
     }
 
-    push("/admin/store/discounts");
+    push('/admin/store/discounts');
 
     notifications.show({
-      title: "Başarılı",
+      title: 'Başarılı',
       message: res.data.message,
-      color: "green",
+      color: 'green',
     });
   };
 
   return (
     <>
-      {isSubmitting && <GlobalLoadingOverlay />}
-      <Stack gap={"md"} className="max-w-5xl lg:mx-auto">
+      {isSubmitting && <LoadingOverlay />}
+      <Stack gap={'md'} className="max-w-5xl lg:mx-auto">
         <Group justify="space-between">
           <Title order={4}>
-            İndirim {defaultValues ? "Düzenle" : "Oluştur"}{" "}
+            İndirim {defaultValues ? 'Düzenle' : 'Oluştur'}{' '}
           </Title>
           <Group align="center">
             <Controller
@@ -355,7 +355,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
               onClick={handleSubmit(onSubmit)}
               type="button"
             >
-              {defaultValues ? "Güncelle" : "Oluştur"}
+              {defaultValues ? 'Güncelle' : 'Oluştur'}
             </Button>
           </Group>
         </Group>
@@ -378,23 +378,23 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
         <FormCard title="İndirim Türü Seçimi">
           <Radio.Group value={baseType} onChange={handleBaseTypeChange}>
             <SimpleGrid cols={{ base: 2, md: 4 }}>
-              {(["PERCENTAGE", "FIXED_AMOUNT", "FREE_SHIPPING"] as const).map(
+              {(['PERCENTAGE', 'FIXED_AMOUNT', 'FREE_SHIPPING'] as const).map(
                 (type) => (
                   <Radio.Card
                     key={type}
                     value={type}
                     className={`border border-gray-400 rounded-xl ${
-                      baseType === type ? "bg-(--mantine-primary-color-1)" : ""
+                      baseType === type ? 'bg-(--mantine-primary-color-1)' : ''
                     }`}
                     p="md"
                   >
                     <Group justify="space-between" align="center">
-                      <Group gap={"xs"} align="center">
+                      <Group gap={'xs'} align="center">
                         <ThemeIcon
                           className="text-center"
-                          variant={baseType === type ? "filled" : "light"}
-                          radius={"lg"}
-                          size={"lg"}
+                          variant={baseType === type ? 'filled' : 'light'}
+                          radius={'lg'}
+                          size={'lg'}
                         >
                           {getIcon(type)}
                         </ThemeIcon>
@@ -403,7 +403,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                       <Radio.Indicator />
                     </Group>
                   </Radio.Card>
-                )
+                ),
               )}
             </SimpleGrid>
           </Radio.Group>
@@ -419,20 +419,20 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                 <Radio.Card
                   value="simple"
                   className={`border border-gray-400 rounded-xl ${
-                    discountMode === "simple"
-                      ? "bg-(--mantine-primary-color-1)"
-                      : ""
+                    discountMode === 'simple'
+                      ? 'bg-(--mantine-primary-color-1)'
+                      : ''
                   }`}
                   p="md"
                 >
                   <Group justify="space-between" align="center">
-                    <Group gap={"xs"} align="center">
+                    <Group gap={'xs'} align="center">
                       <ThemeIcon
-                        variant={discountMode === "simple" ? "filled" : "light"}
-                        size={"lg"}
-                        radius={"lg"}
+                        variant={discountMode === 'simple' ? 'filled' : 'light'}
+                        size={'lg'}
+                        radius={'lg'}
                       >
-                        {baseType === "PERCENTAGE" ? (
+                        {baseType === 'PERCENTAGE' ? (
                           <IconPercentage />
                         ) : (
                           <IconCurrencyLira />
@@ -447,18 +447,18 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                 <Radio.Card
                   value="tiered"
                   className={`border border-gray-400 rounded-xl ${
-                    discountMode === "tiered"
-                      ? "bg-(--mantine-primary-color-1)"
-                      : ""
+                    discountMode === 'tiered'
+                      ? 'bg-(--mantine-primary-color-1)'
+                      : ''
                   }`}
                   p="md"
                 >
                   <Group justify="space-between" align="center">
-                    <Group gap={"xs"} align="center">
+                    <Group gap={'xs'} align="center">
                       <ThemeIcon
-                        variant={discountMode === "tiered" ? "filled" : "light"}
-                        size={"lg"}
-                        radius={"lg"}
+                        variant={discountMode === 'tiered' ? 'filled' : 'light'}
+                        size={'lg'}
+                        radius={'lg'}
                       >
                         <IconStack2 />
                       </ThemeIcon>
@@ -471,8 +471,8 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
             </Radio.Group>
 
             {!showTieredOptions ? (
-              <Group gap={"sm"}>
-                {discountType === "FIXED_AMOUNT" ? (
+              <Group gap={'sm'}>
+                {discountType === 'FIXED_AMOUNT' ? (
                   <Controller
                     control={control}
                     name="discountAmount"
@@ -489,7 +489,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                       />
                     )}
                   />
-                ) : discountType === "PERCENTAGE" ? (
+                ) : discountType === 'PERCENTAGE' ? (
                   <Controller
                     control={control}
                     name="discountValue"
@@ -527,7 +527,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                             <Text key={index} c="red" fz="sm">
                               {tier.message}
                             </Text>
-                          ) : null
+                          ) : null,
                         )}
                       </Stack>
                     );
@@ -540,26 +540,26 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                   ) : null;
                 })()}
                 <Radio.Group value={tieredBy} onChange={handleTieredByChange}>
-                  <Group gap={"xl"}>
+                  <Group gap={'xl'}>
                     <Radio value="quantity" label="Sepetteki adete göre" />
                     <Radio value="price" label="Sepetteki tutara göre" />
                   </Group>
                 </Radio.Group>
 
-                <Table.ScrollContainer minWidth={"100%"}>
+                <Table.ScrollContainer minWidth={'100%'}>
                   <Table>
                     <Table.Thead>
                       <Table.Tr>
                         <Table.Th>
-                          Minimum {tieredBy === "quantity" ? "Adet" : "Tutar"}
+                          Minimum {tieredBy === 'quantity' ? 'Adet' : 'Tutar'}
                         </Table.Th>
                         <Table.Th>
                           Maksimum
-                          {tieredBy === "quantity" ? " Adet" : " Tutar"}
+                          {tieredBy === 'quantity' ? ' Adet' : ' Tutar'}
                         </Table.Th>
                         <Table.Th>
                           İndirim
-                          {baseType === "PERCENTAGE" ? " Yüzdesi" : " Tutarı"}
+                          {baseType === 'PERCENTAGE' ? ' Yüzdesi' : ' Tutarı'}
                         </Table.Th>
                         <Table.Th />
                       </Table.Tr>
@@ -572,8 +572,8 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                               <Controller
                                 control={control}
                                 name={
-                                  discountType === "FIXED_AMOUNT_GROW_PRICE" ||
-                                  discountType === "PERCENTAGE_GROW_PRICE"
+                                  discountType === 'FIXED_AMOUNT_GROW_PRICE' ||
+                                  discountType === 'PERCENTAGE_GROW_PRICE'
                                     ? `tiers.${index}.minAmount`
                                     : `tiers.${index}.minQuantity`
                                 }
@@ -592,17 +592,17 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                               <Controller
                                 control={control}
                                 name={
-                                  discountType === "FIXED_AMOUNT_GROW_PRICE" ||
-                                  discountType === "PERCENTAGE_GROW_PRICE"
+                                  discountType === 'FIXED_AMOUNT_GROW_PRICE' ||
+                                  discountType === 'PERCENTAGE_GROW_PRICE'
                                     ? `tiers.${index}.maxAmount`
                                     : `tiers.${index}.maxQuantity`
                                 }
                                 render={({ field, fieldState }) => (
                                   <NumberInput
                                     {...field}
-                                    value={field.value ?? ""}
+                                    value={field.value ?? ''}
                                     onChange={(val) =>
-                                      field.onChange(val === "" ? null : val)
+                                      field.onChange(val === '' ? null : val)
                                     }
                                     error={fieldState.error?.message}
                                     min={0}
@@ -617,8 +617,8 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                               <Controller
                                 control={control}
                                 name={
-                                  discountType === "FIXED_AMOUNT_GROW_PRICE" ||
-                                  discountType === "FIXED_AMOUNT_GROW_QUANTITY"
+                                  discountType === 'FIXED_AMOUNT_GROW_PRICE' ||
+                                  discountType === 'FIXED_AMOUNT_GROW_QUANTITY'
                                     ? `tiers.${index}.discountAmount`
                                     : `tiers.${index}.discountPercentage`
                                 }
@@ -629,20 +629,20 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                                     min={0}
                                     max={
                                       discountType ===
-                                        "PERCENTAGE_GROW_PRICE" ||
+                                        'PERCENTAGE_GROW_PRICE' ||
                                       discountType ===
-                                        "PERCENTAGE_GROW_QUANTITY"
+                                        'PERCENTAGE_GROW_QUANTITY'
                                         ? 100
                                         : undefined
                                     }
                                     hideControls
                                     prefix={
                                       discountType ===
-                                        "FIXED_AMOUNT_GROW_PRICE" ||
+                                        'FIXED_AMOUNT_GROW_PRICE' ||
                                       discountType ===
-                                        "FIXED_AMOUNT_GROW_QUANTITY"
-                                        ? "₺"
-                                        : "%"
+                                        'FIXED_AMOUNT_GROW_QUANTITY'
+                                        ? '₺'
+                                        : '%'
                                     }
                                   />
                                 )}
@@ -651,7 +651,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                             <Table.Td>
                               <ActionIcon
                                 variant="transparent"
-                                c={"red"}
+                                c={'red'}
                                 onClick={() => {
                                   remove(index);
                                 }}
@@ -668,7 +668,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                 <Group>
                   <Button
                     variant="light"
-                    radius={"md"}
+                    radius={'md'}
                     leftSection={<IconPlus />}
                     onClick={addDiscount}
                   >
@@ -687,31 +687,31 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
             render={({ field }) => (
               <Radio.Group
                 {...field}
-                value={field.value ? "all" : "specific"}
+                value={field.value ? 'all' : 'specific'}
                 onChange={(value) => {
-                  const newValue = value === "all";
+                  const newValue = value === 'all';
                   field.onChange(newValue);
 
                   if (newValue) {
-                    setValue("conditions.conditions", null);
+                    setValue('conditions.conditions', null);
                   }
                 }}
               >
                 <SimpleGrid cols={{ base: 1, md: 4 }}>
                   <Radio.Card
                     className={`border border-gray-400 rounded-xl ${
-                      field.value ? "bg-(--mantine-primary-color-1)" : ""
+                      field.value ? 'bg-(--mantine-primary-color-1)' : ''
                     }`}
                     p="md"
                     value="all"
                     checked={field.value}
                   >
                     <Group justify="space-between" align="center">
-                      <Group gap={"xs"}>
+                      <Group gap={'xs'}>
                         <ThemeIcon
-                          size={"lg"}
-                          radius={"lg"}
-                          variant={field.value ? "filled" : "light"}
+                          size={'lg'}
+                          radius={'lg'}
+                          variant={field.value ? 'filled' : 'light'}
                         >
                           <IconPackage />
                         </ThemeIcon>
@@ -722,18 +722,18 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                   </Radio.Card>
                   <Radio.Card
                     className={`border border-gray-400 rounded-xl ${
-                      !field.value ? "bg-(--mantine-primary-color-1)" : ""
+                      !field.value ? 'bg-(--mantine-primary-color-1)' : ''
                     }`}
                     p="md"
                     value="specific"
                     checked={!field.value}
                   >
                     <Group justify="space-between" align="center">
-                      <Group gap={"xs"}>
+                      <Group gap={'xs'}>
                         <ThemeIcon
-                          size={"lg"}
-                          radius={"lg"}
-                          variant={!field.value ? "filled" : "light"}
+                          size={'lg'}
+                          radius={'lg'}
+                          variant={!field.value ? 'filled' : 'light'}
                         >
                           <IconFilter />
                         </ThemeIcon>
@@ -762,11 +762,11 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                   onChange(checked);
                   if (checked) {
                     setValue(
-                      "allowedDiscountedItemsBy",
-                      AllowedDiscountedItemsBy.price
+                      'allowedDiscountedItemsBy',
+                      AllowedDiscountedItemsBy.price,
                     );
                   } else {
-                    setValue("allowedDiscountedItemsBy", null);
+                    setValue('allowedDiscountedItemsBy', null);
                   }
                 }}
                 error={fieldState.error?.message}
@@ -782,12 +782,12 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                 <Radio.Group
                   label="Uygulanacak Fiyat"
                   classNames={{
-                    label: "w-full  border-b border-b-gray-300 pb-1 ",
+                    label: 'w-full  border-b border-b-gray-300 pb-1 ',
                   }}
                   {...field}
                   error={fieldState.error?.message}
                 >
-                  <Group gap={"xl"} py={"xs"}>
+                  <Group gap={'xl'} py={'xs'}>
                     <Radio
                       value={AllowedDiscountedItemsBy.price}
                       label="Satış Fiyatı Üzerinden"
@@ -808,7 +808,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
 
         <FormCard
           title={
-            <Stack gap={4} p={"md"}>
+            <Stack gap={4} p={'md'}>
               <Title order={4}>Gereksinimler</Title>
               <InputDescription>
                 Kampanya, müşterilerin sepetinde aşağıdaki şartları sağlanırsa
@@ -817,7 +817,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
             </Stack>
           }
         >
-          <Group gap={"md"} align="flex-start">
+          <Group gap={'md'} align="flex-start">
             <Controller
               control={control}
               name="isLimitPurchase"
@@ -827,8 +827,8 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                   {...field}
                   onChange={(e) => {
                     if (!e.currentTarget.checked) {
-                      setValue("minPurchaseAmount", null);
-                      setValue("maxPurchaseAmount", null);
+                      setValue('minPurchaseAmount', null);
+                      setValue('maxPurchaseAmount', null);
                     }
                     field.onChange(e);
                   }}
@@ -837,7 +837,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                 />
               )}
             />
-            <Stack gap={"xs"} style={{ flex: 1 }}>
+            <Stack gap={'xs'} style={{ flex: 1 }}>
               <div className="flex flex-col ">
                 <Text fz="md" fw={500}>
                   Satın alma tutarını sınırla
@@ -849,7 +849,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
               </div>
 
               {isLimitPurchase && (
-                <Group gap={"md"}>
+                <Group gap={'md'}>
                   <Controller
                     control={control}
                     name="minPurchaseAmount"
@@ -889,7 +889,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
             </Stack>
           </Group>
 
-          <Group gap={"md"} align="flex-start">
+          <Group gap={'md'} align="flex-start">
             <Controller
               control={control}
               name="isLimitItemQuantity"
@@ -899,8 +899,8 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                   {...field}
                   onChange={(e) => {
                     if (!e.currentTarget.checked) {
-                      setValue("minItemQuantity", null);
-                      setValue("maxItemQuantity", null);
+                      setValue('minItemQuantity', null);
+                      setValue('maxItemQuantity', null);
                     }
                     field.onChange(e);
                   }}
@@ -909,7 +909,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                 />
               )}
             />
-            <Stack gap={"xs"} style={{ flex: 1 }}>
+            <Stack gap={'xs'} style={{ flex: 1 }}>
               <div className="flex flex-col ">
                 <Text fz="md" fw={500}>
                   Ürün adetini sınırla
@@ -920,7 +920,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                 </Text>
               </div>
               {isLimitItemQuantity && (
-                <Group gap={"md"}>
+                <Group gap={'md'}>
                   <Controller
                     control={control}
                     name="minItemQuantity"
@@ -960,7 +960,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
         </FormCard>
 
         <FormCard title="Ayarlar">
-          <Group gap={"md"} align="flex-start">
+          <Group gap={'md'} align="flex-start">
             <Controller
               control={control}
               name="mergeOtherCampaigns"
@@ -973,7 +973,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                 />
               )}
             />
-            <Stack gap={"xs"} style={{ flex: 1 }}>
+            <Stack gap={'xs'} style={{ flex: 1 }}>
               <div className="flex flex-col ">
                 <Text fz="md" fw={500}>
                   Diğer Kampanyalarla Birleştirilsin
@@ -985,7 +985,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
               </div>
             </Stack>
           </Group>
-          <Group gap={"md"} align="flex-start">
+          <Group gap={'md'} align="flex-start">
             <Controller
               control={control}
               name="isLimitTotalUsage"
@@ -995,7 +995,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                   {...field}
                   onChange={(e) => {
                     if (!e.currentTarget.checked) {
-                      setValue("totalUsageLimit", null);
+                      setValue('totalUsageLimit', null);
                     }
                     field.onChange(e);
                   }}
@@ -1004,7 +1004,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                 />
               )}
             />
-            <Stack gap={"xs"} style={{ flex: 1 }}>
+            <Stack gap={'xs'} style={{ flex: 1 }}>
               <div className="flex flex-col ">
                 <Text fz="md" fw={500}>
                   Toplam Kullanım Sayısını Sınırla
@@ -1014,7 +1014,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                 </Text>
               </div>
               {isLimitTotalUsage && (
-                <Group gap={"md"}>
+                <Group gap={'md'}>
                   <Controller
                     control={control}
                     name="totalUsageLimit"
@@ -1034,7 +1034,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
               )}
             </Stack>
           </Group>
-          <Group gap={"md"} align="flex-start">
+          <Group gap={'md'} align="flex-start">
             <Controller
               control={control}
               name="isLimitTotalUsagePerCustomer"
@@ -1044,7 +1044,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                   {...field}
                   onChange={(e) => {
                     if (!e.currentTarget.checked) {
-                      setValue("isLimitTotalUsagePerCustomer", null);
+                      setValue('isLimitTotalUsagePerCustomer', null);
                     }
                     field.onChange(e);
                   }}
@@ -1053,7 +1053,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                 />
               )}
             />
-            <Stack gap={"xs"} style={{ flex: 1 }}>
+            <Stack gap={'xs'} style={{ flex: 1 }}>
               <div className="flex flex-col ">
                 <Text fz="md" fw={500}>
                   Müşteri Başına Toplam Kullanım Sayısını Sınırla
@@ -1064,7 +1064,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                 </Text>
               </div>
               {isLimitTotalUsagePerCustomer && (
-                <Group gap={"md"}>
+                <Group gap={'md'}>
                   <Controller
                     control={control}
                     name="totalUsageLimitPerCustomer"
@@ -1094,7 +1094,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
         />
 
         <FormCard title="Aktif Tarihler">
-          <Group gap={"md"} align="flex-start">
+          <Group gap={'md'} align="flex-start">
             <Controller
               control={control}
               name="addStartDate"
@@ -1103,17 +1103,17 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                   {...field}
                   onChange={(e) => {
                     if (!e.currentTarget.checked) {
-                      setValue("startDate", null);
+                      setValue('startDate', null);
                     }
                     field.onChange(e);
                   }}
                   error={fieldState.error?.message}
-                  mt={"xs"}
+                  mt={'xs'}
                   checked={value}
                 />
               )}
             />
-            <Stack gap={"xs"} style={{ flex: 1 }}>
+            <Stack gap={'xs'} style={{ flex: 1 }}>
               <div className="flex flex-col ">
                 <Text fz="md" fw={500}>
                   Başlangıç Tarihi Ekle
@@ -1132,7 +1132,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                           if (date) {
                             const formattedDate = dateFns.format(
                               date,
-                              "yyyy-MM-dd HH:mm:ss"
+                              'yyyy-MM-dd HH:mm:ss',
                             );
                             field.onChange(formattedDate);
                           } else {
@@ -1152,7 +1152,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
               )}
             </Stack>
           </Group>
-          <Group gap={"md"} align="flex-start">
+          <Group gap={'md'} align="flex-start">
             <Controller
               control={control}
               name="addEndDate"
@@ -1163,14 +1163,14 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                   error={fieldState.error?.message}
                   onChange={(e) => {
                     if (!e.currentTarget.checked) {
-                      setValue("endDate", null);
+                      setValue('endDate', null);
                     }
                     field.onChange(e);
                   }}
                 />
               )}
             />
-            <Stack gap={"xs"} style={{ flex: 1 }}>
+            <Stack gap={'xs'} style={{ flex: 1 }}>
               <div className="flex flex-col ">
                 <Text fz="md" fw={500}>
                   Bitiş Tarihi Ekle
@@ -1182,10 +1182,10 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                     control={control}
                     name="endDate"
                     render={({ field, fieldState }) => {
-                      const startDate = watch("startDate");
+                      const startDate = watch('startDate');
                       const minEndDate = startDate
                         ? new Date(
-                            new Date(startDate).getTime() + 5 * 60 * 1000
+                            new Date(startDate).getTime() + 5 * 60 * 1000,
                           )
                         : new Date();
                       return (
@@ -1196,7 +1196,7 @@ const DiscountForm = ({ defaultValues }: DiscountFormProps) => {
                             if (date) {
                               const formattedDate = dateFns.format(
                                 date,
-                                "yyyy-MM-dd HH:mm:ss"
+                                'yyyy-MM-dd HH:mm:ss',
                               );
                               field.onChange(formattedDate);
                             } else {

@@ -1,5 +1,5 @@
-"use client";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
+'use client';
+import { useSignIn } from '@hooks/useAuth';
 import {
   Button,
   PasswordInput,
@@ -7,14 +7,14 @@ import {
   Text,
   TextInput,
   UnstyledButton,
-} from "@mantine/core";
-import { Controller, SubmitHandler, useForm, zodResolver } from "@repo/shared";
-import { LoginSchema, LoginSchemaType } from "@repo/types";
-import { IconMail, IconPhone } from "@tabler/icons-react";
-import { Route } from "next";
-import { useRouter, useSearchParams } from "next/navigation";
-import CustomPhoneInput from "../../components/inputs/CustomPhoneInput";
-import GlobalLoadingOverlay from "../../components/GlobalLoadingOverlay";
+} from '@mantine/core';
+import { Controller, SubmitHandler, useForm, zodResolver } from '@repo/shared';
+import { LoginSchema, LoginSchemaType } from '@repo/types';
+import { IconMail, IconPhone } from '@tabler/icons-react';
+import { Route } from 'next';
+import { useRouter, useSearchParams } from 'next/navigation';
+import CustomPhoneInput from '../../components/inputs/CustomPhoneInput';
+import LoadingOverlay from '../../components/LoadingOverlay';
 
 const LoginForm = () => {
   const {
@@ -22,35 +22,27 @@ const LoginForm = () => {
     handleSubmit,
     setError,
     clearErrors,
-    formState: { errors, isSubmitting },
+    formState: { errors },
     reset,
     watch,
   } = useForm<LoginSchemaType>({
     resolver: zodResolver(LoginSchema),
     defaultValues: {
-      type: "email",
-      email: "",
-      password: "",
+      type: 'email',
+      email: '',
+      password: '',
     },
   });
 
-  const type = watch("type") || "email";
+  const type = watch('type') || 'email';
   const { replace, push } = useRouter();
   const searchParams = useSearchParams();
 
+  const { mutateAsync: login, isPending } = useSignIn();
+
   const onSubmit: SubmitHandler<LoginSchemaType> = async (data) => {
     try {
-      const authReq = await fetchWrapper.post("/auth/login", {
-        username: data.type === "email" ? data.email : data.phone,
-        password: data.password,
-      });
-
-      if (!authReq.success) {
-        setError("root", {
-          message: "Giriş başarısız. Lütfen bilgilerinizi kontrol edin.",
-        });
-        return;
-      }
+      await login(data);
 
       await new Promise((resolve) => setTimeout(resolve, 100));
       //TODO: Bunu auth/login'de yapmak daha mantıklı olabilir
@@ -64,25 +56,28 @@ const LoginForm = () => {
 
       await new Promise((resolve) => setTimeout(resolve, 150));
 
-      const redirectUrl = (searchParams.get("redirectUri") as string) || "/";
+      const redirectUrl = (searchParams.get('redirectUri') as string) || '/';
       push(redirectUrl as Route);
     } catch (error) {
-      setError("root", {
-        message: "Bir hata oluştu. Lütfen tekrar deneyin.",
+      setError('root', {
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Bir hata oluştu. Lütfen tekrar deneyin.',
       });
     }
   };
 
   return (
     <Stack
-      component={"form"}
+      component={'form'}
       onSubmit={handleSubmit(onSubmit)}
-      gap={"md"}
-      py={"md"}
+      gap={'md'}
+      py={'md'}
       className="w-full"
     >
-      {isSubmitting && <GlobalLoadingOverlay />}
-      {type === "email" ? (
+      {isPending && <LoadingOverlay />}
+      {type === 'email' ? (
         <Controller
           control={control}
           name="email"
@@ -91,7 +86,7 @@ const LoginForm = () => {
               {...field}
               placeholder="E-posta Adresi"
               size="md"
-              radius={"md"}
+              radius={'md'}
               type="email"
               error={fieldState.error?.message}
             />
@@ -106,7 +101,7 @@ const LoginForm = () => {
               {...field}
               placeholder="Telefon Numarası"
               size="md"
-              radius={"md"}
+              radius={'md'}
             />
           )}
         />
@@ -120,49 +115,49 @@ const LoginForm = () => {
             {...field}
             error={fieldState.error?.message}
             size="md"
-            radius={"md"}
+            radius={'md'}
             placeholder="Şifre"
           />
         )}
       />
       {errors.root && (
-        <Text fz={"sm"} c={"red"}>
+        <Text fz={'sm'} c={'red'}>
           {errors.root.message}
         </Text>
       )}
-      <Stack gap={"xs"}>
+      <Stack gap={'xs'}>
         <UnstyledButton
           className="hover:text-[var(--mantine-color-primary-9)] text-[var(--mantine-color-primary-5)] transition-colors duration-150"
-          fz={"sm"}
+          fz={'sm'}
           onClick={() => {
             const params = new URLSearchParams(searchParams);
-            params.set("tab", "forgot-password");
+            params.set('tab', 'forgot-password');
             replace(`/auth?${params.toString()}`);
           }}
           fw={700}
         >
           Şifremi unuttum
         </UnstyledButton>
-        <Button type="submit" size="lg" radius={"md"}>
+        <Button type="submit" size="lg" radius={'md'}>
           Giriş Yap
-        </Button>{" "}
+        </Button>{' '}
         <Button
-          leftSection={type === "email" ? <IconPhone /> : <IconMail />}
+          leftSection={type === 'email' ? <IconPhone /> : <IconMail />}
           justify="center"
           variant="light"
           onClick={() => {
             clearErrors();
             reset({
-              type: type === "email" ? "phone" : "email",
-              email: "",
-              phone: "",
-              password: "",
+              type: type === 'email' ? 'phone' : 'email',
+              email: '',
+              phone: '',
+              password: '',
             });
           }}
         >
-          {type === "email"
-            ? "Telefon ile Giriş Yap"
-            : "E-posta Adresi ile Giriş Yap"}
+          {type === 'email'
+            ? 'Telefon ile Giriş Yap'
+            : 'E-posta Adresi ile Giriş Yap'}
         </Button>
       </Stack>
     </Stack>

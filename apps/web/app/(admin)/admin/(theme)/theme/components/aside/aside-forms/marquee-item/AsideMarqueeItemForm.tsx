@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import GlobalDropzone from "@/components/GlobalDropzone";
-import { ActionIcon, InputLabel, TextInput } from "@mantine/core";
-import { Control, Controller, useWatch } from "@repo/shared";
+import Dropzone from '@/components/Dropzone';
+import { ActionIcon, InputLabel, TextInput } from '@mantine/core';
+import { Control, Controller, useWatch } from '@repo/shared';
 import {
   MarqueeComponentInputType,
   PageInputType,
   ThemeInputType,
-} from "@repo/types";
-import { IconLink } from "@tabler/icons-react";
+} from '@repo/types';
+import { IconLink } from '@tabler/icons-react';
 
 interface MarqueeItemFormProps {
   index: number;
@@ -28,7 +28,7 @@ const AsideMarqueeItemForm = ({
   const data = useWatch({
     control,
     name: prefix,
-  }) as MarqueeComponentInputType["items"][number];
+  }) as MarqueeComponentInputType['items'][number];
   return (
     <>
       <Controller
@@ -53,7 +53,7 @@ const AsideMarqueeItemForm = ({
             rightSection={
               <ActionIcon
                 variant="transparent"
-                size={"md"}
+                size={'md'}
                 onClick={() => {
                   if (field.value) {
                     window.open(field.value);
@@ -73,7 +73,7 @@ const AsideMarqueeItemForm = ({
         render={({ field, fieldState }) => (
           <div className="flex flex-col gap-1">
             <InputLabel>Medya</InputLabel>
-            <GlobalDropzone
+            <Dropzone
               {...field}
               multiple={false}
               maxSize={5 * 1024 * 1024}
@@ -82,12 +82,12 @@ const AsideMarqueeItemForm = ({
                 if (!files.length) return;
                 field.onChange(files[0]);
               }}
-              accept={["IMAGE", "VIDEO"]}
+              accept={['IMAGE', 'VIDEO']}
               cols={1}
               error={fieldState.error?.message}
               existingImages={data?.existingImage ? [data.existingImage] : []}
               existingImagesDelete={async (url) => {
-                console.log("Delete desktop image:", url);
+                console.log('Delete desktop image:', url);
               }}
             />
           </div>

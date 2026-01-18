@@ -1,25 +1,25 @@
 'use client';
 
 import PriceFormatter from '@/(user)/components/PriceFormatter';
-import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
+import LoadingOverlay from '@/components/LoadingOverlay';
 import { useTheme } from '@/context/theme-context/ThemeContext';
-import fetchWrapper from '@lib/wrappers/fetchWrapper';
-import { Grid, Text } from '@mantine/core';
-import { useQuery } from '@repo/shared';
-import { ProductDetailType } from '@repo/types';
+import { Button, Grid, Text } from '@mantine/core';
+import { useProductDetail } from '@hooks/useStoreProducts';
 import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
 import { useVariantSelection } from '../../../../hooks/useVariantSelection';
 import VariantSelector from './VariantSelector';
+import { IconHeart } from '@tabler/icons-react';
+import AddCartButton from '@/components/AddCartButton';
 
 const DesktopAssetViewer = dynamic(() => import('./DesktopAssetViewer'), {
   ssr: false,
-  loading: () => <GlobalLoadingOverlay />,
+  loading: () => <LoadingOverlay />,
 });
 
 const MobileAssetViewer = dynamic(() => import('./MobileAssetViewer'), {
   ssr: false,
-  loading: () => <GlobalLoadingOverlay />,
+  loading: () => <LoadingOverlay />,
 });
 
 interface ProductPageClientProps {
@@ -30,16 +30,7 @@ const ProductPageClient = ({ slug }: ProductPageClientProps) => {
   const { actualMedia } = useTheme();
   const isMobile = actualMedia === 'mobile';
 
-  const { data: product } = useQuery({
-    queryKey: ['product', slug],
-    queryFn: async () => {
-      const response = await fetchWrapper.get<ProductDetailType>(
-        `/product/${slug}`,
-      );
-      if (!response.success) throw new Error('Ürün alınamadı');
-      return response.data;
-    },
-  });
+  const { data: product } = useProductDetail(slug);
 
   const {
     selectedVariant,
@@ -112,9 +103,7 @@ const ProductPageClient = ({ slug }: ProductPageClientProps) => {
                     td="line-through"
                   />
                   {discountPercentage && (
-                    <Text size="sm" c="red">
-                      %{discountPercentage} İndirim
-                    </Text>
+                    <Text c={'primay'}>%{discountPercentage} İndirim</Text>
                   )}
                 </>
               ) : (
@@ -130,23 +119,24 @@ const ProductPageClient = ({ slug }: ProductPageClientProps) => {
               isOptionSelectable={isOptionSelectable}
             />
 
-            <button
-              disabled={!isInStock}
-              className={`
-                w-full py-4 rounded-full font-medium mt-4 transition-colors
-                ${
-                  isInStock
-                    ? 'bg-black text-white hover:bg-gray-800'
-                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                }
-              `}
-            >
-              {isInStock ? 'Sepete Ekle' : 'Stokta Yok'}
-            </button>
+            <AddCartButton
+              itemId={selectedVariant?.id}
+              whereAdded="PRODUCT_PAGE"
+              quantity={1}
+              size="xl"
+              radius={'xl'}
+            />
 
-            <button className="w-full border border-gray-300 py-4 rounded-full font-medium hover:border-gray-400 transition-colors">
-              Favori ♡
-            </button>
+            <Button
+              fullWidth
+              size="xl"
+              radius={'xl'}
+              variant="outline"
+              justify="center"
+              rightSection={<IconHeart />}
+            >
+              Favori
+            </Button>
 
             {product.translations[0]?.description && (
               <p className="text-gray-600 mt-4 leading-relaxed">

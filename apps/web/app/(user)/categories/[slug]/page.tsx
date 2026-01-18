@@ -1,20 +1,20 @@
-import InfinityQueryPage from "@/components/pages/store-components/InfinityQueryPage";
-import StoreNotFound from "@/components/pages/store-components/StoreNotFound";
-import { getQueryClient } from "@lib/serverQueryClient";
-import { generateCategoryJsonLd } from "@lib/ui/json-ld-generator";
+import InfinityQueryPage from '@/components/pages/store-components/InfinityQueryPage';
+import StoreNotFound from '@/components/pages/store-components/StoreNotFound';
+import { getQueryClient } from '@lib/serverQueryClient';
+import { generateCategoryJsonLd } from '@lib/json-ld-generator';
 import {
   getOgImageUrl,
   getServerSideAllSearchParams,
-} from "@lib/ui/product-helper";
-import { ApiError, createServerFetch } from "@lib/wrappers/fetchWrapper";
-import { Currency, Locale } from "@repo/database/client";
-import { dehydrate, HydrationBoundary } from "@repo/shared";
-import { CategoryProductsResponse, FiltersResponse } from "@repo/types";
-import { Metadata } from "next";
-import { cookies } from "next/headers";
-import Script from "next/script";
-import { cache } from "react";
-import { Params, SearchParams } from "types/GlobalTypes";
+} from '@lib/product-helper';
+import { ApiError, createServerFetch } from '@lib/wrappers/fetchWrapper';
+import { Currency, Locale } from '@repo/database/client';
+import { dehydrate, HydrationBoundary } from '@repo/shared';
+import { CategoryProductsResponse, FiltersResponse } from '@repo/types';
+import { Metadata } from 'next';
+import { cookies } from 'next/headers';
+import Script from 'next/script';
+import { cache } from 'react';
+import { Params, SearchParams } from 'types/types';
 
 interface Props {
   params: Params;
@@ -27,7 +27,7 @@ const getCategoryData = cache(
     page: number,
     queryString: string,
     currency: Currency,
-    locale: Locale
+    locale: Locale,
   ) => {
     const cookieStore = await cookies();
     const api = createServerFetch().setCookies(cookieStore);
@@ -46,11 +46,13 @@ const getCategoryData = cache(
     ]);
 
     if (!productsRes.success) {
-      throw new Error((productsRes as ApiError).error || "Ürünler alınamadı");
+      return null;
+      // throw new Error((productsRes as ApiError).error || 'Ürünler alınamadı');
     }
 
     if (!filtersRes.success) {
-      throw new Error((filtersRes as ApiError).error || "Filtreler alınamadı");
+      return null;
+      // throw new Error((filtersRes as ApiError).error || 'Filtreler alınamadı');
     }
 
     return {
@@ -62,7 +64,7 @@ const getCategoryData = cache(
       currency,
       locale,
     };
-  }
+  },
 );
 
 async function parseArgs(params: Params, searchParams: SearchParams) {
@@ -70,13 +72,13 @@ async function parseArgs(params: Params, searchParams: SearchParams) {
   const pageParamsObj = await searchParams;
   const cookieStore = await cookies();
 
-  const currentPage = Number((pageParamsObj.page as string) || "1");
+  const currentPage = Number((pageParamsObj.page as string) || '1');
 
   const cacheKeyParams =
-    getServerSideAllSearchParams(pageParamsObj, ["page"]) || "";
+    getServerSideAllSearchParams(pageParamsObj, ['page']) || '';
 
-  const currency = (cookieStore.get("currency")?.value as Currency) || "TRY";
-  const locale = (cookieStore.get("locale")?.value as Locale) || "TR";
+  const currency = (cookieStore.get('currency')?.value as Currency) || 'TRY';
+  const locale = (cookieStore.get('locale')?.value as Locale) || 'TR';
 
   return { slug, currentPage, cacheKeyParams, currency, locale };
 }
@@ -94,11 +96,11 @@ export async function generateMetadata({
       currentPage,
       cacheKeyParams,
       currency,
-      locale
+      locale,
     );
 
     const { treeNode, pagination } = products;
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     const categoryUrl = `${baseUrl}/categories/${slug}`;
 
     const title = treeNode.metaTitle || treeNode.name;
@@ -116,8 +118,8 @@ export async function generateMetadata({
         canonical: categoryUrl,
       },
       openGraph: {
-        type: "website",
-        locale: locale === "TR" ? "tr_TR" : "en_US",
+        type: 'website',
+        locale: locale === 'TR' ? 'tr_TR' : 'en_US',
         url: categoryUrl,
         title,
         description,
@@ -128,14 +130,14 @@ export async function generateMetadata({
               width: 1200,
               height: 630,
               alt: treeNode.name,
-              type: "image/jpeg",
+              type: 'image/jpeg',
             },
           ],
         }),
       },
 
       twitter: {
-        card: ogImage ? "summary_large_image" : "summary",
+        card: ogImage ? 'summary_large_image' : 'summary',
         title,
         description,
         ...(ogImage && {
@@ -144,10 +146,10 @@ export async function generateMetadata({
       },
 
       other: {
-        "product:category": treeNode.name,
-        "product:availability": "in stock",
+        'product:category': treeNode.name,
+        'product:availability': 'in stock',
         ...(currentPage > 1 && {
-          "og:url": `${categoryUrl}?page=${currentPage}`,
+          'og:url': `${categoryUrl}?page=${currentPage}`,
         }),
       },
     };
@@ -155,8 +157,8 @@ export async function generateMetadata({
     return metadata;
   } catch (error) {
     return {
-      title: "Kategori Bulunamadı",
-      description: "Aradığınız kategori bulunamadı.",
+      title: 'Kategori Bulunamadı',
+      description: 'Aradığınız kategori bulunamadı.',
       robots: {
         index: false,
         follow: false,
@@ -168,18 +170,18 @@ export async function generateMetadata({
 const CategoryPage = async ({ params, searchParams }: Props) => {
   const { slug, cacheKeyParams, currency, locale } = await parseArgs(
     params,
-    searchParams
+    searchParams,
   );
 
   const data = await getCategoryData(slug, 1, cacheKeyParams, currency, locale);
 
-  if (!data.products || !data.filters) {
+  if (!data || !data.products || !data.filters) {
     return <StoreNotFound type="category" />;
   }
 
   const { products, filters } = data;
   const queryClient = getQueryClient();
-  const endPoint = "categories";
+  const endPoint = 'categories';
 
   const productsQueryKey = [
     `${endPoint}-products-infinite`,
@@ -196,9 +198,9 @@ const CategoryPage = async ({ params, searchParams }: Props) => {
 
   const jsonLd = generateCategoryJsonLd(
     products,
-    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
+    process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
     currency,
-    locale
+    locale,
   );
 
   return (

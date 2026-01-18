@@ -1,12 +1,17 @@
-"use client";
+'use client';
 
-import TableAsset from "@/(admin)/components/TableAsset";
-import CustomSearchInput from "@/components/CustomSearchInput";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import { getQueryClient } from "@lib/serverQueryClient";
-import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
+import TableAsset from '@/(admin)/components/TableAsset';
+import SearchInput from '@/components/SearchInput';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import {
+  useCategories,
+  useDeleteCategory,
+} from '@hooks/admin/useAdminCategories';
+import { DateFormatter } from '@repo/shared';
+import { AdminCategoryTableReturnType } from '@repo/types';
 import {
   ActionIcon,
+  AspectRatio,
   Badge,
   Button,
   Center,
@@ -17,88 +22,46 @@ import {
   Table,
   Text,
   Title,
-} from "@mantine/core";
-import { notifications } from "@mantine/notifications";
-import { DateFormatter, useQuery, useQueryClient } from "@repo/shared";
-import { AdminCategoryTableReturnType } from "@repo/types";
-import { IconEdit, IconTrash } from "@tabler/icons-react";
-import { Route } from "next";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import { IconEdit, IconTrash } from '@tabler/icons-react';
+import { Route } from 'next';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 
 const getTurkishTranslation = (
-  translations: AdminCategoryTableReturnType["categories"][number]["translations"]
+  translations: AdminCategoryTableReturnType['categories'][number]['translations'],
 ) => {
-  return translations.find((t) => t.locale === "TR") || translations[0];
+  return translations.find((t) => t.locale === 'TR') || translations[0];
 };
 
 const getParentCategoryName = (
-  parentCategory: AdminCategoryTableReturnType["categories"][number]["parentCategory"]
+  parentCategory: AdminCategoryTableReturnType['categories'][number]['parentCategory'],
 ) => {
-  if (!parentCategory) return "Ana Kategori";
+  if (!parentCategory) return 'Ana Kategori';
   const trTranslation =
-    parentCategory.translations.find((t) => t.locale === "TR") ||
+    parentCategory.translations.find((t) => t.locale === 'TR') ||
     parentCategory.translations[0];
-  return trTranslation?.name || "Bilinmeyen";
-};
-
-const fetchCategories = async (
-  search: string,
-  page: number,
-  limit: number
-): Promise<AdminCategoryTableReturnType> => {
-  const params = new URLSearchParams();
-  if (search) params.append("search", search);
-  params.append("page", page.toString());
-  params.append("limit", limit.toString());
-
-  const response = await fetchWrapper.get<AdminCategoryTableReturnType>(
-    `/admin/products/categories?${params}`
-  );
-
-  if (!response.success) {
-    throw new Error("Kategoriler yüklenirken bir hata oluştu");
-  }
-
-  return response.data;
-};
-
-const deleteCategory = async (id: string) => {
-  const response = await fetchWrapper.delete<{
-    success: boolean;
-    message: string;
-  }>(`/admin/products/categories/delete-category/${id}`);
-
-  if (!response.success) {
-    const error = response as ApiError;
-    throw new Error(error.error || "Kategori silinirken bir hata oluştu");
-  }
-
-  return response.data;
-};
-
-const useCategories = (search: string, page: number, limit: number) => {
-  return useQuery({
-    queryKey: ["categories", search, page, limit],
-    queryFn: () => fetchCategories(search, page, limit),
-  });
+  return trTranslation?.name || 'Bilinmeyen';
 };
 
 const AdminCategoryTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deletePopoverOpened, setDeletePopoverOpened] = useState<string | null>(
-    null
+    null,
   );
 
   const searchParams = useSearchParams();
 
   const { data, isLoading, error, refetch } = useCategories(
-    searchParams.get("search") || "",
+    searchParams.get('search') || '',
     currentPage,
-    20
+    20,
   );
+
+  const deleteCategoryMutation = useDeleteCategory();
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -107,27 +70,25 @@ const AdminCategoryTable = () => {
   const handleDeleteCategory = async (id: string) => {
     try {
       setIsDeleting(true);
-      const result = await deleteCategory(id);
+      await deleteCategoryMutation.mutateAsync(id);
 
       notifications.show({
-        title: "Başarılı",
-        message: "Kategori başarıyla silindi",
-        color: "green",
+        title: 'Başarılı',
+        message: 'Kategori başarıyla silindi',
+        color: 'green',
         autoClose: 3000,
       });
 
-      getQueryClient().invalidateQueries({ queryKey: ["categories"] });
-
       setDeletePopoverOpened(null);
     } catch (error) {
-      console.error("Delete error:", error);
+      console.error('Delete error:', error);
       notifications.show({
-        title: "Hata",
+        title: 'Hata',
         message:
           error instanceof Error
             ? error.message
-            : "Kategori silinirken bir hata oluştu",
-        color: "red",
+            : 'Kategori silinirken bir hata oluştu',
+        color: 'red',
         autoClose: 3000,
       });
     } finally {
@@ -136,22 +97,22 @@ const AdminCategoryTable = () => {
   };
 
   if (isLoading || isDeleting) {
-    return <GlobalLoadingOverlay />;
+    return <LoadingOverlay />;
   }
 
   if (error) {
     return (
-      <Stack gap={"lg"}>
+      <Stack gap={'lg'}>
         <Group justify="space-between" align="center">
           <Title order={4}>Kategoriler</Title>
           <Group gap="lg">
             <Button
               component={Link}
-              href={"/admin/product-list/categories/new" as Route}
+              href={'/admin/product-list/categories/new' as Route}
             >
               Yeni Kategori Ekle
             </Button>
-            <CustomSearchInput />
+            <SearchInput />
           </Group>
         </Group>
         <Center h={300}>
@@ -168,17 +129,17 @@ const AdminCategoryTable = () => {
   const pagination = data?.pagination;
 
   return (
-    <Stack gap={"lg"}>
+    <Stack gap={'lg'}>
       <Group justify="space-between" align="center">
         <Title order={4}>Kategoriler</Title>
         <Group gap="lg">
           <Button
             component={Link}
-            href={"/admin/product-list/categories/new" as Route}
+            href={'/admin/product-list/categories/new' as Route}
           >
             Yeni Kategori Ekle
           </Button>
-          <CustomSearchInput />
+          <SearchInput />
         </Group>
       </Group>
 
@@ -201,9 +162,9 @@ const AdminCategoryTable = () => {
                 <Table.Td colSpan={7}>
                   <Center h={100}>
                     <Text c="dimmed">
-                      {searchParams.get("search")
-                        ? "Arama kriterlerine uygun kategori bulunamadı"
-                        : "Henüz kategori eklenmemiş"}
+                      {searchParams.get('search')
+                        ? 'Arama kriterlerine uygun kategori bulunamadı'
+                        : 'Henüz kategori eklenmemiş'}
                     </Text>
                   </Center>
                 </Table.Td>
@@ -211,7 +172,7 @@ const AdminCategoryTable = () => {
             ) : (
               categories.map((category) => {
                 const trTranslation = getTurkishTranslation(
-                  category.translations
+                  category.translations,
                 );
 
                 return (
@@ -220,13 +181,15 @@ const AdminCategoryTable = () => {
                       style={{
                         width: 120,
                         maxHeight: 120,
-                        position: "relative",
+                        position: 'relative',
                       }}
                     >
-                      <TableAsset url={category.image?.url} type="IMAGE" />
+                      <AspectRatio ratio={1}>
+                        <TableAsset url={category.image?.url} type="IMAGE" />
+                      </AspectRatio>
                     </Table.Td>
                     <Table.Td>
-                      <Text fw={500}>{trTranslation?.name || "İsimsiz"}</Text>
+                      <Text fw={500}>{trTranslation?.name || 'İsimsiz'}</Text>
                     </Table.Td>
                     <Table.Td>
                       <Text size="sm" c="dimmed">
@@ -254,7 +217,7 @@ const AdminCategoryTable = () => {
                           variant="subtle"
                           color="blue"
                           component={Link}
-                          size={"sm"}
+                          size={'sm'}
                           href={
                             `/admin/product-list/categories/${category.id}` as Route
                           }
@@ -273,7 +236,7 @@ const AdminCategoryTable = () => {
                             <ActionIcon
                               variant="subtle"
                               color="red"
-                              size={"sm"}
+                              size={'sm'}
                               onClick={() =>
                                 setDeletePopoverOpened(category.id)
                               }

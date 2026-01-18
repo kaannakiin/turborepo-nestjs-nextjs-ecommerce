@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import { getQueryClient } from "@lib/serverQueryClient";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
+import LoadingOverlay from '@/components/LoadingOverlay';
+import { getQueryClient } from '@lib/serverQueryClient';
+import fetchWrapper, { ApiError } from '@lib/wrappers/fetchWrapper';
 import {
   Button,
   Drawer,
@@ -10,10 +10,11 @@ import {
   SimpleGrid,
   Switch,
   TextInput,
-} from "@mantine/core";
-import { Controller, SubmitHandler, useForm, zodResolver } from "@repo/shared";
-import { PayTRPaymentMethodSchema, PayTRPaymentMethodType } from "@repo/types";
-import { useEffect } from "react";
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import { Controller, SubmitHandler, useForm, zodResolver } from '@repo/shared';
+import { PayTRPaymentMethodSchema, PayTRPaymentMethodType } from '@repo/types';
+import { useEffect } from 'react';
 
 interface PayTRFormProps {
   defaultValues?: PayTRPaymentMethodType;
@@ -38,11 +39,11 @@ const PayTRForm = ({
   } = useForm<PayTRPaymentMethodType>({
     resolver: zodResolver(PayTRPaymentMethodSchema),
     defaultValues: defaultValues || {
-      type: "PAYTR",
+      type: 'PAYTR',
       isTestMode: true,
-      merchantId: "",
-      merchantKey: "",
-      merchantSalt: "",
+      merchantId: '',
+      merchantKey: '',
+      merchantSalt: '',
       isActive: true,
     },
   });
@@ -53,30 +54,49 @@ const PayTRForm = ({
   }, [defaultValues, reset]);
 
   const onSubmit: SubmitHandler<PayTRPaymentMethodType> = async (data) => {
-    const res = await fetchWrapper.post<{ success: boolean; message: string }>(
-      "/admin/payments/create-payment-method",
-      data
-    );
+    try {
+      const res = await fetchWrapper.post<{
+        success: boolean;
+        message: string;
+      }>('/admin/payments/create-payment-method', data);
 
-    if (res.success) {
-      close();
-      refetch?.();
-      getQueryClient().invalidateQueries({
-        queryKey: ["admin-payment-methods"],
+      if (res.success) {
+        notifications.show({
+          title: 'Başarılı',
+          message: 'PayTR ayarları başarıyla kaydedildi',
+          color: 'green',
+        });
+        close();
+        refetch?.();
+        getQueryClient().invalidateQueries({
+          queryKey: ['admin-payment-methods'],
+        });
+      } else {
+        notifications.show({
+          title: 'Hata',
+          message: (res as ApiError).error || 'Bir hata oluştu',
+          color: 'red',
+        });
+      }
+    } catch (error) {
+      notifications.show({
+        title: 'Hata',
+        message: 'Beklenmeyen bir hata oluştu',
+        color: 'red',
       });
     }
   };
 
   return (
     <>
-      {(isSubmitting || isLoading) && <GlobalLoadingOverlay />}
+      {(isSubmitting || isLoading) && <LoadingOverlay />}
       <Drawer.Root
         opened={opened}
         onClose={close}
         size="100%"
         classNames={{
-          title: "text-xl font-bold",
-          header: "border-b border-b-gray-400 bg-gray-100",
+          title: 'text-xl font-bold',
+          header: 'border-b border-b-gray-400 bg-gray-100',
         }}
         position="bottom"
       >
@@ -153,10 +173,10 @@ const PayTRForm = ({
                         {...field}
                         checked={value}
                         classNames={{
-                          label: "font-semibold",
+                          label: 'font-semibold',
                         }}
                         error={fieldState.error?.message}
-                        label={value ? "Test Modu Açık" : "Test Modu Kapalı"}
+                        label={'Test Modu'}
                         size="md"
                       />
                     )}
@@ -169,11 +189,11 @@ const PayTRForm = ({
                         {...field}
                         checked={value}
                         classNames={{
-                          label: "font-semibold",
+                          label: 'font-semibold',
                         }}
                         error={fieldState.error?.message}
                         label={
-                          value ? "Ödeme Yöntemi Aktif" : "Ödeme Yöntemi Pasif"
+                          value ? 'Ödeme Yöntemi Aktif' : 'Ödeme Yöntemi Pasif'
                         }
                         size="md"
                       />

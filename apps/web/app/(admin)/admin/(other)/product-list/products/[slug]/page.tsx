@@ -1,6 +1,6 @@
 'use client';
 
-import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
+import LoadingOverlay from '@/components/LoadingOverlay';
 import { Alert, Center, Text } from '@mantine/core';
 import { BaseProductZodType, VariantProductZodType } from '@repo/types';
 import { IconAlertCircle } from '@tabler/icons-react';
@@ -32,7 +32,7 @@ const AdminProductFormPage = () => {
   } = useGetProduct(params.slug as string, !isCreateMode && !!params.slug);
 
   if (isLoading) {
-    return <GlobalLoadingOverlay />;
+    return <LoadingOverlay />;
   }
 
   if (isError) {

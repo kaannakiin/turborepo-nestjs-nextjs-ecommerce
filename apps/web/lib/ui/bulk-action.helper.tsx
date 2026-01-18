@@ -1,4 +1,4 @@
-import { ProductBulkAction } from "@repo/types";
+import { ProductBulkAction } from '@repo/types';
 import {
   IconBarcode,
   IconBoxSeam,
@@ -11,8 +11,8 @@ import {
   IconTag,
   IconTrash,
   IconTruckDelivery,
-} from "@tabler/icons-react";
-import { ReactNode } from "react";
+} from '@tabler/icons-react';
+import { ReactNode } from 'react';
 
 interface BulkActionConfig {
   key: ProductBulkAction;
@@ -28,228 +28,228 @@ interface BulkActionConfig {
   needsModal?: boolean;
 }
 
-export const BULK_ACTION_CONFIG: Record<ProductBulkAction, BulkActionConfig> = {
+const BULK_ACTION_CONFIG: Record<ProductBulkAction, BulkActionConfig> = {
   activate: {
-    key: "activate",
-    label: "Aktif Yap",
+    key: 'activate',
+    label: 'Aktif Yap',
     icon: <IconEye size={16} />,
-    color: "green",
-    group: "Durum",
+    color: 'green',
+    group: 'Durum',
     messages: {
-      loading: "Ürünler aktif yapılıyor...",
-      success: "Ürünler aktif yapıldı",
-      error: "Ürünler aktif yapılırken hata oluştu",
+      loading: 'Ürünler aktif yapılıyor...',
+      success: 'Ürünler aktif yapıldı',
+      error: 'Ürünler aktif yapılırken hata oluştu',
     },
   },
   deactivate: {
-    key: "deactivate",
-    label: "Pasif Yap",
+    key: 'deactivate',
+    label: 'Pasif Yap',
     icon: <IconEyeOff size={16} />,
-    color: "orange",
-    group: "Durum",
+    color: 'orange',
+    group: 'Durum',
     messages: {
-      loading: "Ürünler pasif yapılıyor...",
-      success: "Ürünler pasif yapıldı",
-      error: "Ürünler pasif yapılırken hata oluştu",
+      loading: 'Ürünler pasif yapılıyor...',
+      success: 'Ürünler pasif yapıldı',
+      error: 'Ürünler pasif yapılırken hata oluştu',
     },
   },
   delete: {
-    key: "delete",
-    label: "Sil",
+    key: 'delete',
+    label: 'Sil',
     icon: <IconTrash size={16} />,
-    color: "red",
-    group: "Durum",
+    color: 'red',
+    group: 'Durum',
     needsModal: true,
     messages: {
-      loading: "Ürünler siliniyor...",
-      success: "Ürünler silindi",
-      error: "Ürünler silinirken hata oluştu",
+      loading: 'Ürünler siliniyor...',
+      success: 'Ürünler silindi',
+      error: 'Ürünler silinirken hata oluştu',
     },
   },
-  "assign-category": {
-    key: "assign-category",
-    label: "Kategoriye Ekle",
+  'assign-category': {
+    key: 'assign-category',
+    label: 'Kategoriye Ekle',
     icon: <IconCategory size={16} />,
-    group: "Organizasyon",
+    group: 'Organizasyon',
     needsModal: true,
     messages: {
-      loading: "Kategori atanıyor...",
-      success: "Kategori atandı",
-      error: "Kategori atanırken hata oluştu",
+      loading: 'Kategori atanıyor...',
+      success: 'Kategori atandı',
+      error: 'Kategori atanırken hata oluştu',
     },
   },
-  "remove-category": {
-    key: "remove-category",
-    label: "Kategoriden Çıkar",
+  'remove-category': {
+    key: 'remove-category',
+    label: 'Kategoriden Çıkar',
     icon: <IconCategory size={16} />,
-    group: "Organizasyon",
+    group: 'Organizasyon',
     needsModal: true,
     messages: {
-      loading: "Kategori kaldırılıyor...",
-      success: "Kategori kaldırıldı",
-      error: "Kategori kaldırılırken hata oluştu",
+      loading: 'Kategori kaldırılıyor...',
+      success: 'Kategori kaldırıldı',
+      error: 'Kategori kaldırılırken hata oluştu',
     },
   },
-  "assign-brand": {
-    key: "assign-brand",
-    label: "Marka Ata",
+  'assign-brand': {
+    key: 'assign-brand',
+    label: 'Marka Ata',
     icon: <IconPackage size={16} />,
-    group: "Organizasyon",
+    group: 'Organizasyon',
     needsModal: true,
     messages: {
-      loading: "Marka atanıyor...",
-      success: "Marka atandı",
-      error: "Marka atanırken hata oluştu",
+      loading: 'Marka atanıyor...',
+      success: 'Marka atandı',
+      error: 'Marka atanırken hata oluştu',
     },
   },
-  "assign-tags": {
-    key: "assign-tags",
-    label: "Etiket Ekle",
+  'assign-tags': {
+    key: 'assign-tags',
+    label: 'Etiket Ekle',
     icon: <IconTag size={16} />,
-    group: "Etiketler",
+    group: 'Etiketler',
     needsModal: true,
     messages: {
-      loading: "Etiketler ekleniyor...",
-      success: "Etiketler eklendi",
-      error: "Etiketler eklenirken hata oluştu",
+      loading: 'Etiketler ekleniyor...',
+      success: 'Etiketler eklendi',
+      error: 'Etiketler eklenirken hata oluştu',
     },
   },
-  "remove-tags": {
-    key: "remove-tags",
-    label: "Etiket Çıkar",
+  'remove-tags': {
+    key: 'remove-tags',
+    label: 'Etiket Çıkar',
     icon: <IconTag size={16} />,
-    group: "Etiketler",
+    group: 'Etiketler',
     needsModal: true,
     messages: {
-      loading: "Etiketler kaldırılıyor...",
-      success: "Etiketler kaldırıldı",
-      error: "Etiketler kaldırılırken hata oluştu",
+      loading: 'Etiketler kaldırılıyor...',
+      success: 'Etiketler kaldırıldı',
+      error: 'Etiketler kaldırılırken hata oluştu',
     },
   },
-  "update-price-percent": {
-    key: "update-price-percent",
-    label: "Fiyat Güncelle (%)",
+  'update-price-percent': {
+    key: 'update-price-percent',
+    label: 'Fiyat Güncelle (%)',
     icon: <IconCurrencyLira size={16} />,
-    group: "Fiyat & Stok",
+    group: 'Fiyat & Stok',
     needsModal: true,
     messages: {
-      loading: "Fiyatlar güncelleniyor...",
-      success: "Fiyatlar güncellendi",
-      error: "Fiyatlar güncellenirken hata oluştu",
+      loading: 'Fiyatlar güncelleniyor...',
+      success: 'Fiyatlar güncellendi',
+      error: 'Fiyatlar güncellenirken hata oluştu',
     },
   },
-  "update-price-fixed": {
-    key: "update-price-fixed",
-    label: "Fiyat Güncelle (₺)",
+  'update-price-fixed': {
+    key: 'update-price-fixed',
+    label: 'Fiyat Güncelle (₺)',
     icon: <IconCurrencyLira size={16} />,
-    group: "Fiyat & Stok",
+    group: 'Fiyat & Stok',
     needsModal: true,
     messages: {
-      loading: "Fiyatlar güncelleniyor...",
-      success: "Fiyatlar güncellendi",
-      error: "Fiyatlar güncellenirken hata oluştu",
+      loading: 'Fiyatlar güncelleniyor...',
+      success: 'Fiyatlar güncellendi',
+      error: 'Fiyatlar güncellenirken hata oluştu',
     },
   },
-  "update-stock": {
-    key: "update-stock",
-    label: "Stok Güncelle",
+  'update-stock': {
+    key: 'update-stock',
+    label: 'Stok Güncelle',
     icon: <IconPackage size={16} />,
-    group: "Fiyat & Stok",
+    group: 'Fiyat & Stok',
     needsModal: true,
     messages: {
-      loading: "Stoklar güncelleniyor...",
-      success: "Stoklar güncellendi",
-      error: "Stoklar güncellenirken hata oluştu",
+      loading: 'Stoklar güncelleniyor...',
+      success: 'Stoklar güncellendi',
+      error: 'Stoklar güncellenirken hata oluştu',
     },
   },
-  "inventory-track-on": {
-    key: "inventory-track-on",
-    label: "Stok Takibini Aç",
+  'inventory-track-on': {
+    key: 'inventory-track-on',
+    label: 'Stok Takibini Aç',
     icon: <IconBoxSeam size={16} />,
-    group: "Envanter Ayarları",
+    group: 'Envanter Ayarları',
     messages: {
-      loading: "Stok takibi açılıyor...",
-      success: "Stok takibi açıldı",
-      error: "Stok takibi açılırken hata oluştu",
+      loading: 'Stok takibi açılıyor...',
+      success: 'Stok takibi açıldı',
+      error: 'Stok takibi açılırken hata oluştu',
     },
   },
-  "inventory-track-off": {
-    key: "inventory-track-off",
-    label: "Stok Takibini Kapat",
+  'inventory-track-off': {
+    key: 'inventory-track-off',
+    label: 'Stok Takibini Kapat',
     icon: <IconBoxSeam size={16} />,
-    group: "Envanter Ayarları",
+    group: 'Envanter Ayarları',
     messages: {
-      loading: "Stok takibi kapatılıyor...",
-      success: "Stok takibi kapatıldı",
-      error: "Stok takibi kapatılırken hata oluştu",
+      loading: 'Stok takibi kapatılıyor...',
+      success: 'Stok takibi kapatıldı',
+      error: 'Stok takibi kapatılırken hata oluştu',
     },
   },
-  "inventory-allow-negative": {
-    key: "inventory-allow-negative",
-    label: "Negatif Stoğa İzin Ver",
+  'inventory-allow-negative': {
+    key: 'inventory-allow-negative',
+    label: 'Negatif Stoğa İzin Ver',
     icon: <IconBoxSeam size={16} />,
-    group: "Envanter Ayarları",
+    group: 'Envanter Ayarları',
     messages: {
-      loading: "Ayar güncelleniyor...",
-      success: "Negatif stok izni verildi",
-      error: "Ayar güncellenirken hata oluştu",
+      loading: 'Ayar güncelleniyor...',
+      success: 'Negatif stok izni verildi',
+      error: 'Ayar güncellenirken hata oluştu',
     },
   },
-  "assign-supplier": {
-    key: "assign-supplier",
-    label: "Tedarikçi Ata",
+  'assign-supplier': {
+    key: 'assign-supplier',
+    label: 'Tedarikçi Ata',
     icon: <IconTruckDelivery size={16} />,
-    group: "Envanter Ayarları",
+    group: 'Envanter Ayarları',
     needsModal: true,
     messages: {
-      loading: "Tedarikçi atanıyor...",
-      success: "Tedarikçi atandı",
-      error: "Tedarikçi atanırken hata oluştu",
+      loading: 'Tedarikçi atanıyor...',
+      success: 'Tedarikçi atandı',
+      error: 'Tedarikçi atanırken hata oluştu',
     },
   },
-  "print-barcode": {
-    key: "print-barcode",
-    label: "Barkod Etiketi Yazdır",
+  'print-barcode': {
+    key: 'print-barcode',
+    label: 'Barkod Etiketi Yazdır',
     icon: <IconBarcode size={16} />,
-    group: "Çıktı & İşlemler",
+    group: 'Çıktı & İşlemler',
     messages: {
-      loading: "Barkodlar hazırlanıyor...",
-      success: "Barkodlar hazırlandı",
-      error: "Barkodlar hazırlanırken hata oluştu",
+      loading: 'Barkodlar hazırlanıyor...',
+      success: 'Barkodlar hazırlandı',
+      error: 'Barkodlar hazırlanırken hata oluştu',
     },
   },
-  "export-excel": {
-    key: "export-excel",
-    label: "Seçilileri Excel İndir",
+  'export-excel': {
+    key: 'export-excel',
+    label: 'Seçilileri Excel İndir',
     icon: <IconDownload size={16} />,
-    group: "Çıktı & İşlemler",
+    group: 'Çıktı & İşlemler',
     messages: {
-      loading: "Excel hazırlanıyor...",
-      success: "Excel indirildi",
-      error: "Excel hazırlanırken hata oluştu",
+      loading: 'Excel hazırlanıyor...',
+      success: 'Excel indirildi',
+      error: 'Excel hazırlanırken hata oluştu',
     },
   },
-  "assign-taxonomy": {
-    key: "assign-taxonomy",
-    label: "Google Kategorisi Ata",
+  'assign-taxonomy': {
+    key: 'assign-taxonomy',
+    label: 'Google Kategorisi Ata',
     icon: <IconCategory size={16} />,
-    group: "Organizasyon",
+    group: 'Organizasyon',
     needsModal: true,
     messages: {
-      loading: "Google kategorisi atanıyor...",
-      success: "Google kategorisi atandı",
-      error: "Google kategorisi atanırken hata oluştu",
+      loading: 'Google kategorisi atanıyor...',
+      success: 'Google kategorisi atandı',
+      error: 'Google kategorisi atanırken hata oluştu',
     },
   },
-  "inventory-deny-negative": {
-    key: "inventory-deny-negative",
-    label: "Negatif Stoğu Kapat",
+  'inventory-deny-negative': {
+    key: 'inventory-deny-negative',
+    label: 'Negatif Stoğu Kapat',
     icon: <IconBoxSeam size={16} />,
-    group: "Envanter Ayarları",
+    group: 'Envanter Ayarları',
     messages: {
-      loading: "Ayar güncelleniyor...",
-      success: "Negatif stok kapatıldı",
-      error: "Ayar güncellenirken hata oluştu",
+      loading: 'Ayar güncelleniyor...',
+      success: 'Negatif stok kapatıldı',
+      error: 'Ayar güncellenirken hata oluştu',
     },
   },
 };
@@ -272,6 +272,6 @@ export const getGroupedActions = () => {
       acc[action.group].push(action);
       return acc;
     },
-    {} as Record<string, BulkActionConfig[]>
+    {} as Record<string, BulkActionConfig[]>,
   );
 };

@@ -20,7 +20,7 @@
     "**/*.tsx",
     "next-env.d.ts",
     ".next/types/**/*.ts",
-    "next.config.js",
+    "next.config.ts",
     "app/globals.d.ts",
     "app/(admin)/components/ActionPopoverrtsx"
   ],

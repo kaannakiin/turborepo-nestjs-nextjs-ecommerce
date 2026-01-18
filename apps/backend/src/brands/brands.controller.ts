@@ -1,11 +1,8 @@
 import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
-import {
-  ProductPageSortOption,
-  getParamKey,
-  filterReservedKeys,
-} from '@repo/shared';
+import { getParamKey, filterReservedKeys } from '@repo/shared';
 import { BrandsService } from './brands.service';
 import { ParseSortOptionPipe } from 'src/common/pipes/product-sort-option.pipe';
+import { ProductPageSortOption } from '@repo/types';
 
 @Controller('brands')
 export class BrandsController {

@@ -1,9 +1,14 @@
-"use client";
+'use client';
 
-import GlobalDropzone from "@/components/GlobalDropzone";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import GlobalSeoCard from "@/components/GlobalSeoCard";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
+import Dropzone from '@/components/Dropzone';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import SeoCard from '@/components/SeoCard';
+import {
+  useParentCategories,
+  useCreateOrUpdateCategory,
+  useUploadCategoryImage,
+  useDeleteCategoryImage,
+} from '@hooks/admin/useAdminCategories';
 
 import {
   Button,
@@ -14,53 +19,23 @@ import {
   Stack,
   TextInput,
   Title,
-} from "@mantine/core";
-import { notifications } from "@mantine/notifications";
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import {
   Controller,
   createId,
   slugify,
   SubmitHandler,
   useForm,
-  useQuery,
   zodResolver,
-} from "@repo/shared";
-import { CategorySchema, CategoryZodType } from "@repo/types";
-import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+} from '@repo/shared';
+import { CategorySchema, CategoryZodType } from '@repo/types';
+import { useRouter } from 'next/navigation';
+import { useMemo } from 'react';
 
 interface AdminCategoryFormProps {
   defaultValues?: CategoryZodType;
 }
-
-interface CategoryGroup {
-  group: string;
-  items: Array<{ value: string; label: string; disabled?: boolean }>;
-}
-
-const fetchParentCategories = async (categoryId?: string) => {
-  const params = categoryId ? { excludeId: categoryId } : {};
-
-  const result = await fetchWrapper.get<CategoryGroup[]>(
-    `/admin/products/categories/get-all-categories-for-select`,
-    { params }
-  );
-
-  if (!result.success) {
-    throw new Error("Üst kategoriler yüklenirken bir hata oluştu");
-  }
-
-  return result.data;
-};
-
-const useParentCategories = (currentCategoryId?: string) => {
-  return useQuery({
-    queryKey: ["parentCategories", currentCategoryId],
-    queryFn: () => fetchParentCategories(currentCategoryId),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
-};
 
 const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
   const {
@@ -77,9 +52,9 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
       parentId: null,
       translations: [
         {
-          name: "",
-          locale: "TR",
-          slug: "",
+          name: '',
+          locale: 'TR',
+          slug: '',
           description: null,
           metaDescription: null,
           metaTitle: null,
@@ -89,8 +64,11 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
     },
   });
 
-  const { push } = useRouter();
-  const existingImage = watch("existingImage") || null;
+  const { push, refresh } = useRouter();
+  const existingImage = watch('existingImage') || null;
+  const createOrUpdateCategory = useCreateOrUpdateCategory();
+  const uploadCategoryImage = useUploadCategoryImage();
+  const deleteCategoryImage = useDeleteCategoryImage();
 
   const { data: parentCategories = [], isLoading: parentCategoriesLoading } =
     useParentCategories(defaultValues?.uniqueId);
@@ -109,70 +87,48 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
   }, [parentCategories]);
 
   const onSubmit: SubmitHandler<CategoryZodType> = async (
-    data: CategoryZodType
+    data: CategoryZodType,
   ) => {
     const { image, ...rest } = data;
 
     try {
-      const categoryRes = await fetchWrapper.post<{ categoryId: string }>(
-        "/admin/products/categories/create-or-update-category",
-        rest
-      );
-
-      if (!categoryRes.success) {
-        notifications.show({
-          title: "Hata",
-          message: "Kategori kaydedilirken bir hata oluştu",
-          autoClose: 3000,
-          color: "red",
-        });
-        return;
-      }
+      await createOrUpdateCategory.mutateAsync(rest);
 
       if (image) {
-        const formData = new FormData();
-        formData.append("file", image);
-
-        const imageRes = await fetchWrapper.postFormData<void>(
-          `/admin/products/categories/upload-category-image/${data.uniqueId}`,
-          formData
-        );
-
-        if (!imageRes.success) {
-          notifications.show({
-            title: "Hata",
-            message: "Kategori resmi yüklenirken bir hata oluştu",
-            autoClose: 3000,
-            color: "red",
-          });
-          return;
-        }
+        await uploadCategoryImage.mutateAsync({
+          file: image,
+          uniqueId: data.uniqueId,
+        });
       }
 
-      push("/admin/product-list/categories");
       notifications.show({
-        title: "Başarılı",
-        message: "Kategori başarıyla kaydedildi",
+        title: 'Başarılı',
+        message: 'Kategori başarıyla kaydedildi',
         autoClose: 3000,
-        color: "green",
+        color: 'green',
       });
+
+      push('/admin/product-list/categories');
     } catch (error) {
       notifications.show({
-        title: "Hata",
-        message: "Beklenmeyen bir hata oluştu",
+        title: 'Hata',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Beklenmeyen bir hata oluştu',
         autoClose: 3000,
-        color: "red",
+        color: 'red',
       });
     }
   };
 
   return (
-    <Stack gap={"lg"}>
-      {isSubmitting && <GlobalLoadingOverlay />}
+    <Stack gap={'lg'}>
+      {isSubmitting && <LoadingOverlay />}
       <Group justify="space-between" align="center">
         <Title order={3}>
           Kategori
-          {defaultValues ? " Düzenle" : " Oluştur"}
+          {defaultValues ? ' Düzenle' : ' Oluştur'}
         </Title>
         <Button variant="outline" onClick={handleSubmit(onSubmit)}>
           Kaydet
@@ -194,7 +150,7 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
               label="Kategori Adı"
               onChange={(e) => {
                 field.onChange(e);
-                setValue("translations.0.slug", slugify(e.currentTarget.value));
+                setValue('translations.0.slug', slugify(e.currentTarget.value));
               }}
             />
           )}
@@ -223,38 +179,39 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
         control={control}
         name="image"
         render={({ field, fieldState }) => (
-          <Stack gap={"xs"}>
+          <Stack gap={'xs'}>
             <InputLabel>Kategori Görseli</InputLabel>
-            <GlobalDropzone
+            <Dropzone
               onDrop={(files) => field.onChange(files ? files[0] : null)}
               value={field.value}
-              accept={"IMAGE"}
+              accept={'IMAGE'}
               cols={1}
               existingImages={
-                existingImage ? [{ type: "IMAGE", url: existingImage }] : []
+                existingImage ? [{ type: 'IMAGE', url: existingImage }] : []
               }
               existingImagesDelete={async (fileUrl) => {
-                const response = await fetchWrapper.delete(
-                  `/admin/products/categories/delete-category-image/${encodeURIComponent(fileUrl)}`
-                );
+                try {
+                  await deleteCategoryImage.mutateAsync(fileUrl);
 
-                if (!response.success) {
                   notifications.show({
-                    title: "Hata",
-                    message: "Resim silinirken bir hata oluştu",
+                    title: 'Başarılı',
+                    message: 'Resim başarıyla silindi',
                     autoClose: 3000,
-                    color: "red",
+                    color: 'green',
                   });
-                  return;
-                }
 
-                notifications.show({
-                  title: "Başarılı",
-                  message: "Resim başarıyla silindi",
-                  autoClose: 3000,
-                  color: "green",
-                });
-                setValue("existingImage", null);
+                  setValue('existingImage', null);
+                } catch (error) {
+                  notifications.show({
+                    title: 'Hata',
+                    message:
+                      error instanceof Error
+                        ? error.message
+                        : 'Resim silinirken bir hata oluştu',
+                    autoClose: 3000,
+                    color: 'red',
+                  });
+                }
               }}
               error={fieldState.error?.message}
               multiple={false}
@@ -265,7 +222,7 @@ const AdminCategoryForm = ({ defaultValues }: AdminCategoryFormProps) => {
           </Stack>
         )}
       />
-      <GlobalSeoCard
+      <SeoCard
         control={control}
         metaDescriptionFieldName="translations.0.metaDescription"
         metaTitleFieldName="translations.0.metaTitle"

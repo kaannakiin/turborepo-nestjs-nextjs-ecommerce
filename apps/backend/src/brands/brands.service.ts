@@ -1,12 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Locale } from '@repo/database';
-import { filterReservedKeys, ProductPageSortOption } from '@repo/shared';
+import { filterReservedKeys } from '@repo/shared';
 import {
   BrandNode,
   BrandPageFilters,
   BrandProductsResponse,
   FiltersResponse,
   ParsedFilters,
+  ProductPageSortOption,
 } from '@repo/types';
 import { CurrencyLocaleService } from 'src/common/services/currency-locale.service';
 import { LocaleService } from 'src/common/services/locale/locale.service';
@@ -28,7 +29,8 @@ export class BrandsService {
     filters: BrandPageFilters,
   ): Promise<BrandProductsResponse> {
     const locale = this.localeService.getLocale();
-    const currency = this.currencyLocaleService.getCurrencyLocaleMap(locale);
+    const currency =
+      await this.currencyLocaleService.getCurrencyForLocale(locale);
 
     const { brandNode, allBrandIds } = await this.getBrandMetadata(
       slug,
@@ -68,7 +70,8 @@ export class BrandsService {
     filters: Omit<BrandPageFilters, 'sort' | 'page' | 'limit'>,
   ): Promise<FiltersResponse> {
     const locale = this.localeService.getLocale();
-    const currency = this.currencyLocaleService.getCurrencyLocaleMap(locale);
+    const currency =
+      await this.currencyLocaleService.getCurrencyForLocale(locale);
 
     const { allBrandIds } = await this.getBrandMetadata(slug, locale);
 

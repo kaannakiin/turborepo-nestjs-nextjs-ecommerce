@@ -1,6 +1,7 @@
-import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
-import { CustomerGroup, User } from "@repo/database/client";
-import { useMutation, useQuery } from "@repo/shared";
+import { DataKeys } from '@lib/data-keys';
+import fetchWrapper, { ApiError } from '@lib/wrappers/fetchWrapper';
+import { CustomerGroup, User } from '@repo/database/client';
+import { useMutation, useQuery } from '@repo/shared';
 import {
   createDefaultDecisionTree,
   CustomerGroupInputZodType,
@@ -8,7 +9,7 @@ import {
   DecisionTreeSchema,
   Pagination,
   SortAdminUserTable,
-} from "@repo/types";
+} from '@repo/types';
 
 type CustomerGroupUpsertResponse = {
   success: boolean;
@@ -21,22 +22,28 @@ type CustomerGroupResponse = {
 
 export const useCreateCustomerSegment = () => {
   return useMutation({
+    mutationKey: [DataKeys.admin.customerGroups.create],
     mutationFn: async (data: CustomerGroupOutputZodType) => {
       const response = await fetchWrapper.post<CustomerGroupUpsertResponse>(
-        "/admin/users/customer-group",
-        data
+        '/admin/users/customer-group',
+        data,
       );
 
       if (!response.success) {
         const error = response as ApiError;
-        throw new Error(error.error || "Segment kaydedilemedi");
+        throw new Error(error.error || 'Segment kaydedilemedi');
       }
 
       if (!response.data.success) {
-        throw new Error("Segment kaydedilemedi");
+        throw new Error('Segment kaydedilemedi');
       }
 
       return response.data;
+    },
+    onSuccess: (data, variables, _, context) => {
+      context.client.invalidateQueries({
+        queryKey: [DataKeys.admin.customerGroups.key],
+      });
     },
   });
 };
@@ -44,10 +51,10 @@ export const useCreateCustomerSegment = () => {
 export const useGetCustomerSegments = (
   page: number = 1,
   limit: number = 20,
-  search?: string
+  search?: string,
 ) => {
   return useQuery({
-    queryKey: ["customer-groups", page, limit, search],
+    queryKey: DataKeys.admin.customerGroups.list(page, limit, search),
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -55,7 +62,7 @@ export const useGetCustomerSegments = (
       });
 
       if (search) {
-        params.append("search", search);
+        params.append('search', search);
       }
 
       const response = await fetchWrapper.get<{
@@ -65,7 +72,7 @@ export const useGetCustomerSegments = (
 
       if (!response.success) {
         const error = response as ApiError;
-        throw new Error(error.error || "Segmentler alınamadı");
+        throw new Error(error.error || 'Segmentler alınamadı');
       }
 
       return response.data;
@@ -75,19 +82,19 @@ export const useGetCustomerSegments = (
 
 export const useGetCustomerSegment = (segmentId: string) => {
   return useQuery({
-    queryKey: ["customer-group", segmentId],
+    queryKey: DataKeys.admin.customerGroups.detail(segmentId),
 
     queryFn: async () => {
       const response = await fetchWrapper.get<CustomerGroupResponse | null>(
-        `/admin/users/customer-group/${segmentId}`
+        `/admin/users/customer-group/${segmentId}`,
       );
 
       if (!response.success) {
         const error = response as ApiError;
-        throw new Error(error.error || "Segment alınamadı");
+        throw new Error(error.error || 'Segment alınamadı');
       }
       if (!response.data) {
-        throw new Error("Segment bulunamadı");
+        throw new Error('Segment bulunamadı');
       }
 
       return response.data;
@@ -99,14 +106,14 @@ export const useGetCustomerSegment = (segmentId: string) => {
       const baseData = {
         uniqueId: group.id,
         name: group.name,
-        description: group.description || "",
+        description: group.description || '',
         isActive: true,
       };
 
-      if (group.type === "MANUAL") {
+      if (group.type === 'MANUAL') {
         return {
           ...baseData,
-          type: "MANUAL",
+          type: 'MANUAL',
           conditions: null,
           users: users.map((user) => user.id),
         } as CustomerGroupInputZodType;
@@ -116,14 +123,14 @@ export const useGetCustomerSegment = (segmentId: string) => {
 
       return {
         ...baseData,
-        type: "SMART",
+        type: 'SMART',
         conditions: parsedConditions.success
           ? parsedConditions.data
           : createDefaultDecisionTree(),
       } as CustomerGroupInputZodType;
     },
 
-    enabled: !!segmentId && segmentId !== "new",
+    enabled: !!segmentId && segmentId !== 'new',
   });
 };
 
@@ -131,10 +138,10 @@ export const useGetCustomerList = (
   page: number,
   limit: number,
   search?: string,
-  sortBy?: SortAdminUserTable
+  sortBy?: SortAdminUserTable,
 ) => {
   return useQuery({
-    queryKey: ["customers", page, limit, search, sortBy],
+    queryKey: DataKeys.admin.customers.list(page, limit, search, sortBy),
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -148,11 +155,11 @@ export const useGetCustomerList = (
       }>(`/admin/users?${params.toString()}`);
       if (!response.success) {
         const error = response as ApiError;
-        throw new Error(error.error || "Müşteriler alınamadı");
+        throw new Error(error.error || 'Müşteriler alınamadı');
       }
 
       if (!response.data) {
-        throw new Error("Müşteriler bulunamadı");
+        throw new Error('Müşteriler bulunamadı');
       }
 
       return response.data;
@@ -162,15 +169,15 @@ export const useGetCustomerList = (
 
 export const useCustomerGroups = () => {
   return useQuery({
-    queryKey: ["all-customer-groups"],
+    queryKey: DataKeys.admin.customerGroups.all,
     queryFn: async () => {
       const response = await fetchWrapper.get<CustomerGroup[]>(
-        `/admin/users/customer-groups`
+        `/admin/users/customer-groups`,
       );
 
       if (!response.success) {
         const error = response as ApiError;
-        throw new Error(error.error || "Müşteri grupları alınamadı");
+        throw new Error(error.error || 'Müşteri grupları alınamadı');
       }
 
       return response.data;

@@ -1,20 +1,15 @@
-"use client";
+'use client';
 
-import { Button, Group } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
-import {
-  ProductPageSortOption,
-  ReservedKeysType,
-  getIndexFromSortOption,
-  getParamKey,
-  getSortProductPageLabel,
-} from "@repo/shared";
-import { FiltersResponse, TreeNode } from "@repo/types";
-import { IconAdjustments, IconArrowsSort } from "@tabler/icons-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
-import FilterDrawer from "./FilterDrawer";
-import SortDrawer from "./SortDrawer";
+import { getSortProductPageLabel } from '@lib/helpers';
+import { Button, Group } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { ReservedKeysType, getParamKey } from '@repo/shared';
+import { FiltersResponse, ProductPageSortOption, TreeNode } from '@repo/types';
+import { IconAdjustments, IconArrowsSort } from '@tabler/icons-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useCallback } from 'react';
+import FilterDrawer from './FilterDrawer';
+import SortDrawer from './SortDrawer';
 
 export interface FilterData {
   categories?: string[];
@@ -26,7 +21,7 @@ export interface FilterData {
     max?: number;
   };
 }
-export type PageType = "categories" | "brands" | "tags";
+export type PageType = 'categories' | 'brands' | 'tags';
 
 interface QueryFiltersProps {
   filters: FiltersResponse;
@@ -54,42 +49,42 @@ const QueryFilters = ({
   const getParamFromUrl = useCallback(
     (key: ReservedKeysType): string[] => {
       const paramKey = getParamKey(key);
-      return searchParams.get(paramKey)?.split(",").filter(Boolean) || [];
+      return searchParams.get(paramKey)?.split(',').filter(Boolean) || [];
     },
-    [searchParams]
+    [searchParams],
   );
 
   const setParamInUrl = useCallback(
     (params: URLSearchParams, key: ReservedKeysType, values?: string[]) => {
       const paramKey = getParamKey(key);
       if (values && values.length > 0) {
-        params.set(paramKey, values.join(","));
+        params.set(paramKey, values.join(','));
       } else {
         params.delete(paramKey);
       }
     },
-    []
+    [],
   );
 
   const getCurrentFilterData = useCallback((): FilterData => {
-    const categories = getParamFromUrl("categories");
-    const brands = getParamFromUrl("brands");
-    const tags = getParamFromUrl("tags");
+    const categories = getParamFromUrl('categories');
+    const brands = getParamFromUrl('brands');
+    const tags = getParamFromUrl('tags');
 
     const variants: Record<string, string[]> = {};
     filters.variantGroups?.forEach((group) => {
       const groupSlug = group.translations[0]?.slug;
       if (groupSlug) {
         const options =
-          searchParams.get(groupSlug)?.split(",").filter(Boolean) || [];
+          searchParams.get(groupSlug)?.split(',').filter(Boolean) || [];
         if (options.length > 0) {
           variants[groupSlug] = options;
         }
       }
     });
 
-    const minPrice = searchParams.get(getParamKey("minPrice"));
-    const maxPrice = searchParams.get(getParamKey("maxPrice"));
+    const minPrice = searchParams.get(getParamKey('minPrice'));
+    const maxPrice = searchParams.get(getParamKey('maxPrice'));
 
     return {
       categories: categories.length > 0 ? categories : undefined,
@@ -110,9 +105,9 @@ const QueryFilters = ({
     (filterData: FilterData) => {
       const params = new URLSearchParams(searchParams.toString());
 
-      setParamInUrl(params, "categories", filterData.categories);
-      setParamInUrl(params, "brands", filterData.brands);
-      setParamInUrl(params, "tags", filterData.tags);
+      setParamInUrl(params, 'categories', filterData.categories);
+      setParamInUrl(params, 'brands', filterData.brands);
+      setParamInUrl(params, 'tags', filterData.tags);
 
       filters.variantGroups?.forEach((group) => {
         const groupSlug = group.translations[0]?.slug;
@@ -121,54 +116,54 @@ const QueryFilters = ({
 
       Object.entries(filterData.variants).forEach(([groupSlug, options]) => {
         if (options.length > 0) {
-          params.set(groupSlug, options.join(","));
+          params.set(groupSlug, options.join(','));
         }
       });
 
       if (filterData.priceRange?.min) {
         params.set(
-          getParamKey("minPrice"),
-          filterData.priceRange.min.toString()
+          getParamKey('minPrice'),
+          filterData.priceRange.min.toString(),
         );
       } else {
-        params.delete(getParamKey("minPrice"));
+        params.delete(getParamKey('minPrice'));
       }
 
       if (filterData.priceRange?.max) {
         params.set(
-          getParamKey("maxPrice"),
-          filterData.priceRange.max.toString()
+          getParamKey('maxPrice'),
+          filterData.priceRange.max.toString(),
         );
       } else {
-        params.delete(getParamKey("maxPrice"));
+        params.delete(getParamKey('maxPrice'));
       }
 
-      params.delete(getParamKey("page"));
+      params.delete(getParamKey('page'));
 
       onFilterChange(params);
       closeFilter();
     },
-    [searchParams, filters, onFilterChange, closeFilter, setParamInUrl]
+    [searchParams, filters, onFilterChange, closeFilter, setParamInUrl],
   );
 
   const handleSortApply = useCallback(
     (sortValue: ProductPageSortOption) => {
       const params = new URLSearchParams(searchParams.toString());
 
-      const index = getIndexFromSortOption(sortValue);
-      params.set(getParamKey("sort"), index.toString());
-      params.delete(getParamKey("page"));
+      const index = Object.values(ProductPageSortOption).indexOf(sortValue);
+      params.set(getParamKey('sort'), index.toString());
+      params.delete(getParamKey('page'));
 
       router.push(`?${params.toString()}`, { scroll: false });
       closeSort();
     },
-    [searchParams, router, closeSort]
+    [searchParams, router, closeSort],
   );
 
   const handleClearFilters = useCallback(() => {
     const params = new URLSearchParams();
-    const currentSort = searchParams.get(getParamKey("sort"));
-    if (currentSort) params.set(getParamKey("sort"), currentSort);
+    const currentSort = searchParams.get(getParamKey('sort'));
+    if (currentSort) params.set(getParamKey('sort'), currentSort);
 
     onFilterChange(params);
     closeFilter();

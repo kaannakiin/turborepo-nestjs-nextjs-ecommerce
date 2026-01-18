@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
+import fetchWrapper from '@lib/wrappers/fetchWrapper';
 import {
   Button,
   PasswordInput,
@@ -9,92 +9,85 @@ import {
   Text,
   TextInput,
   UnstyledButton,
-} from "@mantine/core";
-import { Controller, SubmitHandler, useForm, zodResolver } from "@repo/shared";
-import { RegisterSchema, RegisterSchemaType } from "@repo/types";
-import { Route } from "next";
-import { useRouter, useSearchParams } from "next/navigation";
-import CustomPhoneInput from "../../components/inputs/CustomPhoneInput";
-import GlobalLoadingOverlay from "../../components/GlobalLoadingOverlay";
+} from '@mantine/core';
+import { Controller, SubmitHandler, useForm, zodResolver } from '@repo/shared';
+import { RegisterSchema, RegisterSchemaType } from '@repo/types';
+import { Route } from 'next';
+import { useRouter, useSearchParams } from 'next/navigation';
+import CustomPhoneInput from '../../components/inputs/CustomPhoneInput';
+import LoadingOverlay from '../../components/LoadingOverlay';
+import { useSignIn, useSignUp } from '../../../hooks/useAuth';
 
 const RegisterForm = () => {
   const {
     control,
     handleSubmit,
-    formState: { isSubmitting, errors },
+    formState: { errors },
     setError,
   } = useForm<RegisterSchemaType>({
     resolver: zodResolver(RegisterSchema),
     defaultValues: {
-      confirmPassword: "",
-      email: "",
-      name: "",
-      password: "",
-      surname: "",
+      confirmPassword: '',
+      email: '',
+      name: '',
+      password: '',
+      surname: '',
     },
   });
 
   const searchParams = useSearchParams();
   const { replace, push } = useRouter();
 
+  const { mutateAsync: register, isPending: isRegisterPending } = useSignUp();
+  const { mutateAsync: login, isPending: isLoginPending } = useSignIn();
+
   const onSubmit: SubmitHandler<RegisterSchemaType> = async (data) => {
     try {
-      const registerReq = await fetchWrapper.post<{
-        success: boolean;
-        message: string;
-      }>("/auth/register", data);
+      await register(data);
 
-      if (!registerReq.success) {
-        setError("root", {
-          message: "Kayıt işlemi başarısız oldu. Lütfen tekrar deneyin.",
+      try {
+        await login({
+          type: data.email && data.email.trim() !== '' ? 'email' : 'phone',
+          email: data.email,
+          phone: data.phone,
+          password: data.password,
         });
-        return;
-      }
-      if (!registerReq.data.success) {
-        setError("root", {
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        //TODO MERGE CARTS
+
+        // const mergeResult = await mergeCarts();
+
+        // if (mergeResult.success) {
+        //   console.log("✅ Sepet birleştirildi:", mergeResult.newCart?.cartId);
+        // } else {
+        //   console.warn("⚠️ Sepet birleştirme başarısız:", mergeResult.message);
+        // }
+
+        // ✅ Küçük bir delay - localStorage'ın kesin yazılmasını garanti et
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        const redirectUrl = (searchParams.get('redirectUri') as string) || '/';
+        push(redirectUrl as Route);
+      } catch (loginError) {
+        setError('root', {
           message:
-            registerReq.data.message ||
-            "Kayıt işlemi başarısız oldu. Lütfen tekrar deneyin.",
+            'Kayıt başarılı ancak giriş yapılamadı. Lütfen manuel giriş yapın.',
         });
-        return;
       }
-      const authReq = await fetchWrapper.post("/auth/login", {
-        username:
-          data.email && data.email.trim() !== "" ? data.email : data.phone,
-        password: data.password,
-      });
-      if (!authReq.success) {
-        setError("root", {
-          message: "Giriş başarısız. Lütfen manuel olarak giriş yapın.",
-        });
-        return;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      //TODO MERGE CARTS
-
-      // const mergeResult = await mergeCarts();
-
-      // if (mergeResult.success) {
-      //   console.log("✅ Sepet birleştirildi:", mergeResult.newCart?.cartId);
-      // } else {
-      //   console.warn("⚠️ Sepet birleştirme başarısız:", mergeResult.message);
-      // }
-
-      // ✅ Küçük bir delay - localStorage'ın kesin yazılmasını garanti et
-      await new Promise((resolve) => setTimeout(resolve, 150));
-      const redirectUrl = (searchParams.get("redirectUri") as string) || "/";
-      push(redirectUrl as Route);
-    } catch {
-      setError("root", {
-        message: "Bağlantı hatası oluştu",
+    } catch (error) {
+      setError('root', {
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Kayıt işlemi başarısız oldu.',
       });
     }
   };
 
   return (
-    <Stack gap={"md"} py={"md"} className="w-full">
-      {isSubmitting && <GlobalLoadingOverlay />}
+    <Stack gap={'md'} py={'md'} className="w-full">
+      {(isRegisterPending || isLoginPending) && <LoadingOverlay />}
 
       <SimpleGrid cols={{ xs: 1, sm: 2 }}>
         <Controller
@@ -106,7 +99,7 @@ const RegisterForm = () => {
               error={fieldState.error?.message}
               placeholder="İsim"
               size="md"
-              radius={"md"}
+              radius={'md'}
             />
           )}
         />
@@ -119,7 +112,7 @@ const RegisterForm = () => {
               error={fieldState.error?.message}
               placeholder="Soyisim"
               size="md"
-              radius={"md"}
+              radius={'md'}
             />
           )}
         />
@@ -131,11 +124,11 @@ const RegisterForm = () => {
         render={({ field, fieldState }) => (
           <TextInput
             {...field}
-            value={field.value || ""}
+            value={field.value || ''}
             error={fieldState.error?.message}
             type="email"
             size="md"
-            radius={"md"}
+            radius={'md'}
             placeholder="E-posta Adresi"
           />
         )}
@@ -147,10 +140,10 @@ const RegisterForm = () => {
         render={({ field, fieldState }) => (
           <CustomPhoneInput
             {...field}
-            value={field.value || ""}
+            value={field.value || ''}
             error={fieldState.error?.message}
             size="md"
-            radius={"md"}
+            radius={'md'}
             placeholder="Telefon Numarası"
           />
         )}
@@ -164,7 +157,7 @@ const RegisterForm = () => {
             {...field}
             error={fieldState.error?.message}
             size="md"
-            radius={"md"}
+            radius={'md'}
             placeholder="Şifre"
           />
         )}
@@ -178,25 +171,25 @@ const RegisterForm = () => {
             {...field}
             error={fieldState.error?.message}
             size="md"
-            radius={"md"}
+            radius={'md'}
             placeholder="Şifre Tekrarı"
           />
         )}
       />
 
       {errors.root && (
-        <Text fz={"sm"} c="red">
+        <Text fz={'sm'} c="red">
           {errors.root.message}
         </Text>
       )}
 
-      <Stack gap={"xs"}>
+      <Stack gap={'xs'}>
         <UnstyledButton
           className="hover:text-[var(--mantine-color-primary-9)] text-[var(--mantine-color-primary-5)] transition-colors duration-150 "
-          fz={"sm"}
+          fz={'sm'}
           onClick={() => {
             const params = new URLSearchParams(searchParams);
-            params.set("tab", "login");
+            params.set('tab', 'login');
             replace(`/auth?${params.toString()}`);
           }}
           fw={700}
@@ -206,7 +199,7 @@ const RegisterForm = () => {
         <Button
           type="button"
           size="lg"
-          radius={"md"}
+          radius={'md'}
           onClick={handleSubmit(onSubmit)}
         >
           Üye Ol

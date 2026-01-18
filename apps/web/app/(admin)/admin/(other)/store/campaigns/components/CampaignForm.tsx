@@ -1,9 +1,9 @@
-"use client";
-import ActionPopover from "@/(admin)/components/ActionPopover";
+'use client';
+import ActionPopover from '@/(admin)/components/ActionPopover';
 
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
-import { getCampaignStatusLabel, getCurrencyLabel } from "@lib/helpers";
+import LoadingOverlay from '@/components/LoadingOverlay';
+import fetchWrapper, { ApiError } from '@lib/wrappers/fetchWrapper';
+import { getCampaignStatusLabel, getCurrencyLabel } from '@lib/helpers';
 import {
   Alert,
   Button,
@@ -23,11 +23,11 @@ import {
   TextInput,
   ThemeIcon,
   Title,
-} from "@mantine/core";
-import { DateTimePicker } from "@mantine/dates";
-import { useDisclosure } from "@mantine/hooks";
-import { notifications } from "@mantine/notifications";
-import { CampaignStatus, CampaignType, Currency } from "@repo/database/client";
+} from '@mantine/core';
+import { DateTimePicker } from '@mantine/dates';
+import { useDisclosure } from '@mantine/hooks';
+import { notifications } from '@mantine/notifications';
+import { CampaignStatus, CampaignType, Currency } from '@repo/database/client';
 import {
   Controller,
   dateFns,
@@ -36,7 +36,7 @@ import {
   useFieldArray,
   useForm,
   zodResolver,
-} from "@repo/shared";
+} from '@repo/shared';
 import {
   CampaignZodSchema,
   CampaignZodType,
@@ -45,7 +45,7 @@ import {
   ProductModalData,
   UpSellCampaignDefaultValues,
   UpSellingCampaignType,
-} from "@repo/types";
+} from '@repo/types';
 import {
   IconCaretUpFilled,
   IconFilter,
@@ -54,12 +54,12 @@ import {
   IconPlus,
   IconRouteX,
   IconTrash,
-} from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import FormCard from "../../../../../../components/cards/FormCard";
-import CampaignOfferForm from "./CampaignOfferForm";
-import SearchableProductModal from "./SearchableProductModal";
+} from '@tabler/icons-react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import FormCard from '../../../../../../components/cards/FormCard';
+import CampaignOfferForm from './CampaignOfferForm';
+import SearchableProductModal from './SearchableProductModal';
 
 interface CampaignFormProps {
   defaultValues?: CampaignZodType;
@@ -74,14 +74,14 @@ interface SelectedProduct {
 const calculateDisplayProducts = (
   productIds: string[],
   variantIds: string[],
-  products: ProductModalData[]
+  products: ProductModalData[],
 ): SelectedProduct[] => {
   const displayProducts: SelectedProduct[] = [];
 
   products.forEach((product) => {
     if (product.sub && product.sub.length > 0) {
       const selectedSubs = product.sub.filter((sub) =>
-        variantIds.includes(sub.id)
+        variantIds.includes(sub.id),
       );
 
       if (selectedSubs.length === product.sub.length) {
@@ -116,7 +116,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
   const [openedCrossSell, { open: openCrossSell, close: closeCrossSell }] =
     useDisclosure();
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>(
-    []
+    [],
   );
   const [modalProducts, setModalProducts] = useState<ProductModalData[]>([]);
 
@@ -140,27 +140,27 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
     defaultValues: defaultValues || UpSellCampaignDefaultValues,
   });
 
-  const allOffers = watch("offers");
-  const type = watch("type");
-  const buyableProducts = watch("buyableProducts");
-  const addMaxCartAmount = watch("requirements.addMaxCartAmount");
-  const addMinCartAmount = watch("requirements.addMinCartAmount");
-  const minCartAmount = watch("requirements.minCartAmount");
-  const maxCartAmount = watch("requirements.maxCartAmount");
-  const addStartDate = watch("dates.addStartDate");
-  const addEndDate = watch("dates.addEndDate");
-  const startDate = watch("dates.startDate");
-  const endDate = watch("dates.endDate");
-  const isAllProducts = watch("conditions.isAllProducts");
-  const crossSellProductIds = watch("conditions.productIds");
-  const crossSellVariantIds = watch("conditions.variantIds");
+  const allOffers = watch('offers');
+  const type = watch('type');
+  const buyableProducts = watch('buyableProducts');
+  const addMaxCartAmount = watch('requirements.addMaxCartAmount');
+  const addMinCartAmount = watch('requirements.addMinCartAmount');
+  const minCartAmount = watch('requirements.minCartAmount');
+  const maxCartAmount = watch('requirements.maxCartAmount');
+  const addStartDate = watch('dates.addStartDate');
+  const addEndDate = watch('dates.addEndDate');
+  const startDate = watch('dates.startDate');
+  const endDate = watch('dates.endDate');
+  const isAllProducts = watch('conditions.isAllProducts');
+  const crossSellProductIds = watch('conditions.productIds');
+  const crossSellVariantIds = watch('conditions.variantIds');
 
   const handleModalConfirm = (
     productIds: string[],
     variantIds: string[],
-    products: ProductModalData[]
+    products: ProductModalData[],
   ) => {
-    setValue("buyableProducts", {
+    setValue('buyableProducts', {
       productIds,
       variantIds,
     });
@@ -168,7 +168,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
     const displayProducts = calculateDisplayProducts(
       productIds,
       variantIds,
-      products
+      products,
     );
     setSelectedProducts(displayProducts);
 
@@ -183,7 +183,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
 
   const { fields, append, remove } = useFieldArray({
     control,
-    name: "offers",
+    name: 'offers',
   });
 
   const { push } = useRouter();
@@ -197,38 +197,38 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
     if (!response.success) {
       const errorResponse = response as ApiError;
       notifications.show({
-        title: "Hata",
+        title: 'Hata',
         message: errorResponse.error,
-        color: "red",
+        color: 'red',
       });
       return;
     }
     const { success, message } = response.data;
     if (success) {
       notifications.show({
-        title: "Başarılı",
+        title: 'Başarılı',
         message,
-        color: "green",
+        color: 'green',
       });
       return;
     }
     notifications.show({
-      title: "Hata",
+      title: 'Hata',
       message,
-      color: "red",
+      color: 'red',
     });
-    push("/admin/store/campaigns");
+    push('/admin/store/campaigns');
   };
 
   return (
     <>
-      {isSubmitting && <GlobalLoadingOverlay />}
-      <Stack gap={"md"} className="max-w-5xl w-full lg:mx-auto ">
+      {isSubmitting && <LoadingOverlay />}
+      <Stack gap={'md'} className="max-w-5xl w-full lg:mx-auto ">
         <Group justify="space-between">
           <Title order={3}>
-            Kampanya {defaultValues ? "Düzenle" : "Oluştur"}
+            Kampanya {defaultValues ? 'Düzenle' : 'Oluştur'}
           </Title>
-          <Group align="end" gap={"md"}>
+          <Group align="end" gap={'md'}>
             <Controller
               control={control}
               name="status"
@@ -250,7 +250,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
               )}
             />
             <Button variant="outline" onClick={handleSubmit(onSubmit)}>
-              {defaultValues ? "Güncelle" : "Oluştur"}
+              {defaultValues ? 'Güncelle' : 'Oluştur'}
             </Button>
           </Group>
         </Group>
@@ -308,23 +308,23 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                         value={CampaignType.UP_SELLING}
                         className={`border p-4 rounded-xl ${
                           field.value === CampaignType.UP_SELLING
-                            ? "border-2 border-[var(--mantine-primary-color-5)] bg-[var(--mantine-primary-color-light)]"
-                            : "border border-gray-400 bg-white"
+                            ? 'border-2 border-[var(--mantine-primary-color-5)] bg-[var(--mantine-primary-color-light)]'
+                            : 'border border-gray-400 bg-white'
                         }`}
                       >
                         <Group justify="space-between" align="center">
-                          <Group gap={"md"}>
+                          <Group gap={'md'}>
                             <ThemeIcon
                               variant={
                                 field.value === CampaignType.UP_SELLING
-                                  ? "filled"
-                                  : "light"
+                                  ? 'filled'
+                                  : 'light'
                               }
-                              size={"lg"}
+                              size={'lg'}
                             >
                               <IconCaretUpFilled />
                             </ThemeIcon>
-                            <Text fz={"md"}>Up Sell</Text>
+                            <Text fz={'md'}>Up Sell</Text>
                           </Group>
                           <Radio.Indicator />
                         </Group>
@@ -334,23 +334,23 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                         value={CampaignType.CROSS_SELLING}
                         className={`border p-4 rounded-xl ${
                           field.value === CampaignType.CROSS_SELLING
-                            ? "border-2 border-[var(--mantine-primary-color-5)] bg-[var(--mantine-primary-color-light)]"
-                            : "border border-gray-400 bg-white"
+                            ? 'border-2 border-[var(--mantine-primary-color-5)] bg-[var(--mantine-primary-color-light)]'
+                            : 'border border-gray-400 bg-white'
                         }`}
                       >
                         <Group justify="space-between" align="center">
-                          <Group gap={"md"}>
+                          <Group gap={'md'}>
                             <ThemeIcon
                               variant={
                                 field.value === CampaignType.CROSS_SELLING
-                                  ? "filled"
-                                  : "light"
+                                  ? 'filled'
+                                  : 'light'
                               }
-                              size={"lg"}
+                              size={'lg'}
                             >
                               <IconRouteX />
                             </ThemeIcon>
-                            <Text fz={"md"}>Cross Sell</Text>
+                            <Text fz={'md'}>Cross Sell</Text>
                           </Group>
                           <Radio.Indicator />
                         </Group>
@@ -410,21 +410,21 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
             >
               {selectedProducts.length > 0 ? (
                 <ScrollArea h={400}>
-                  <Stack gap="md" px={"md"}>
+                  <Stack gap="md" px={'md'}>
                     {selectedProducts.map((product) => (
                       <Paper
                         key={product.id}
                         withBorder
-                        p={"md"}
-                        radius={"md"}
+                        p={'md'}
+                        radius={'md'}
                         shadow="sm"
                       >
                         <Group
-                          gap={"md"}
+                          gap={'md'}
                           align="center"
                           justify="space-between"
                         >
-                          <Text fz={"md"} fw={700}>
+                          <Text fz={'md'} fw={700}>
                             {product.displayName}
                           </Text>
                           <ActionPopover
@@ -434,14 +434,14 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                             variant="transparent"
                             onConfirm={() => {
                               const originalProductData = modalProducts.find(
-                                (p) => p.id === product.id
+                                (p) => p.id === product.id,
                               );
 
                               if (product.isVariant) {
-                                setValue("buyableProducts", {
+                                setValue('buyableProducts', {
                                   ...buyableProducts,
                                   variantIds: buyableProducts.variantIds.filter(
-                                    (id) => id !== product.id
+                                    (id) => id !== product.id,
                                   ),
                                 });
                               } else if (
@@ -452,23 +452,23 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                                 const variantIdsToRemove =
                                   originalProductData.sub.map((s) => s.id);
 
-                                setValue("buyableProducts", {
+                                setValue('buyableProducts', {
                                   ...buyableProducts,
                                   variantIds: buyableProducts.variantIds.filter(
-                                    (id) => !variantIdsToRemove.includes(id)
+                                    (id) => !variantIdsToRemove.includes(id),
                                   ),
                                 });
                               } else {
-                                setValue("buyableProducts", {
+                                setValue('buyableProducts', {
                                   ...buyableProducts,
                                   productIds: buyableProducts.productIds.filter(
-                                    (id) => id !== product.id
+                                    (id) => id !== product.id,
                                   ),
                                 });
                               }
 
                               setSelectedProducts((prev) =>
-                                prev.filter((p) => p.id !== product.id)
+                                prev.filter((p) => p.id !== product.id),
                               );
                             }}
                           />
@@ -501,14 +501,14 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                   <Radio.Group
                     {...field}
                     error={fieldState.error?.message}
-                    value={field.value ? "all" : "specific"}
+                    value={field.value ? 'all' : 'specific'}
                     onChange={(value) => {
-                      const newValue = value === "all";
+                      const newValue = value === 'all';
                       field.onChange(newValue);
 
                       if (newValue) {
-                        setValue("conditions.productIds", null);
-                        setValue("conditions.variantIds", null);
+                        setValue('conditions.productIds', null);
+                        setValue('conditions.variantIds', null);
                       }
                     }}
                   >
@@ -516,19 +516,19 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                       <Radio.Card
                         className={`border border-gray-400 rounded-xl ${
                           field.value
-                            ? "bg-[var(--mantine-primary-color-1)]"
-                            : ""
+                            ? 'bg-[var(--mantine-primary-color-1)]'
+                            : ''
                         }`}
                         p="md"
                         value="all"
                         checked={field.value}
                       >
                         <Group justify="space-between" align="center">
-                          <Group gap={"xs"}>
+                          <Group gap={'xs'}>
                             <ThemeIcon
-                              size={"lg"}
-                              radius={"lg"}
-                              variant={field.value ? "filled" : "light"}
+                              size={'lg'}
+                              radius={'lg'}
+                              variant={field.value ? 'filled' : 'light'}
                             >
                               <IconPackage />
                             </ThemeIcon>
@@ -540,19 +540,19 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                       <Radio.Card
                         className={`border border-gray-400 rounded-xl ${
                           !field.value
-                            ? "bg-[var(--mantine-primary-color-1)]"
-                            : ""
+                            ? 'bg-[var(--mantine-primary-color-1)]'
+                            : ''
                         }`}
                         p="md"
                         value="specific"
                         checked={!field.value}
                       >
                         <Group justify="space-between" align="center">
-                          <Group gap={"xs"}>
+                          <Group gap={'xs'}>
                             <ThemeIcon
-                              size={"lg"}
-                              radius={"lg"}
-                              variant={!field.value ? "filled" : "light"}
+                              size={'lg'}
+                              radius={'lg'}
+                              variant={!field.value ? 'filled' : 'light'}
                             >
                               <IconFilter />
                             </ThemeIcon>
@@ -567,8 +567,8 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
               />
 
               {!isAllProducts && (
-                <Stack gap={"xs"} py={"md"}>
-                  <Group gap={"md"}>
+                <Stack gap={'xs'} py={'md'}>
+                  <Group gap={'md'}>
                     <Button
                       variant="outline"
                       onClick={() => {
@@ -590,21 +590,21 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                     )}
                   {selectedCrossSellProducts.length > 0 ? (
                     <ScrollArea h={400}>
-                      <Stack gap="md" px={"md"} pt="md">
+                      <Stack gap="md" px={'md'} pt="md">
                         {selectedCrossSellProducts.map((product) => (
                           <Paper
                             key={product.id}
                             withBorder
-                            p={"md"}
-                            radius={"md"}
+                            p={'md'}
+                            radius={'md'}
                             shadow="sm"
                           >
                             <Group
-                              gap={"md"}
+                              gap={'md'}
                               align="center"
                               justify="space-between"
                             >
-                              <Text fz={"md"} fw={700}>
+                              <Text fz={'md'} fw={700}>
                                 {product.displayName}
                               </Text>
                               <ActionPopover
@@ -615,15 +615,15 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                                 onConfirm={() => {
                                   const originalProductData =
                                     modalCrossSellProducts.find(
-                                      (p) => p.id === product.id
+                                      (p) => p.id === product.id,
                                     );
 
                                   if (product.isVariant) {
                                     setValue(
-                                      "conditions.variantIds",
+                                      'conditions.variantIds',
                                       (crossSellVariantIds || []).filter(
-                                        (id) => id !== product.id
-                                      )
+                                        (id) => id !== product.id,
+                                      ),
                                     );
                                   } else if (
                                     originalProductData &&
@@ -634,22 +634,23 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                                       originalProductData.sub.map((s) => s.id);
 
                                     setValue(
-                                      "conditions.variantIds",
+                                      'conditions.variantIds',
                                       (crossSellVariantIds || []).filter(
-                                        (id) => !variantIdsToRemove.includes(id)
-                                      )
+                                        (id) =>
+                                          !variantIdsToRemove.includes(id),
+                                      ),
                                     );
                                   } else {
                                     setValue(
-                                      "conditions.productIds",
+                                      'conditions.productIds',
                                       (crossSellProductIds || []).filter(
-                                        (id) => id !== product.id
-                                      )
+                                        (id) => id !== product.id,
+                                      ),
                                     );
                                   }
 
                                   setSelectedCrossSellProducts((prev) =>
-                                    prev.filter((p) => p.id !== product.id)
+                                    prev.filter((p) => p.id !== product.id),
                                   );
                                 }}
                               />
@@ -672,10 +673,10 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
           <FormCard
             title="Teklifler"
             classNames={{
-              root: "bg-gray-50",
+              root: 'bg-gray-50',
             }}
           >
-            <Stack gap={"md"}>
+            <Stack gap={'md'}>
               {fields.map((field, index) => {
                 const excludeProductIds = allOffers
                   ?.filter((_, i) => i !== index)
@@ -705,12 +706,12 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                   onClick={() => {
                     append({
                       order: fields.length + 1,
-                      description: "",
+                      description: '',
                       offer: {
                         ...UpSellCampaignDefaultValues.offers[0].offer,
                       },
                       productId: null,
-                      title: "",
+                      title: '',
                       variantId: null,
                     });
                   }}
@@ -724,7 +725,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
         )}
         <FormCard
           title={
-            <Stack gap={"xs"}>
+            <Stack gap={'xs'}>
               <Title order={4}>Gereksinimler</Title>
               <InputDescription>
                 Kampanya teklifi, müşteri sepetinde aşağıdaki şartları
@@ -733,8 +734,8 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
             </Stack>
           }
         >
-          <Stack gap={"md"}>
-            <Group gap={"md"} align="flex-start">
+          <Stack gap={'md'}>
+            <Group gap={'md'} align="flex-start">
               <Controller
                 control={control}
                 name="requirements.addMinCartAmount"
@@ -745,7 +746,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                     onChange={(value) => {
                       field.onChange(value);
                       if (!value.currentTarget.checked) {
-                        setValue("requirements.minCartAmount", null);
+                        setValue('requirements.minCartAmount', null);
                       }
                     }}
                     error={fieldState.error?.message}
@@ -753,7 +754,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                   />
                 )}
               />
-              <Stack gap={"xs"} style={{ flex: 1 }}>
+              <Stack gap={'xs'} style={{ flex: 1 }}>
                 <div className="flex flex-col ">
                   <Text fz="md" fw={500}>
                     Minimum Sepet Tutarı Şartı Ekle
@@ -764,7 +765,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                   </Text>
                 </div>
                 {addMinCartAmount && (
-                  <Group gap={"md"}>
+                  <Group gap={'md'}>
                     <Controller
                       control={control}
                       name="requirements.minCartAmount"
@@ -786,7 +787,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
               </Stack>
             </Group>
 
-            <Group gap={"md"} align="flex-start">
+            <Group gap={'md'} align="flex-start">
               <Controller
                 control={control}
                 name="requirements.addMaxCartAmount"
@@ -797,7 +798,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                     onChange={(value) => {
                       field.onChange(value);
                       if (!value.currentTarget.checked) {
-                        setValue("requirements.maxCartAmount", null);
+                        setValue('requirements.maxCartAmount', null);
                       }
                     }}
                     error={fieldState.error?.message}
@@ -805,7 +806,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                   />
                 )}
               />
-              <Stack gap={"xs"} style={{ flex: 1 }}>
+              <Stack gap={'xs'} style={{ flex: 1 }}>
                 <div className="flex flex-col ">
                   <Text fz="md" fw={500}>
                     Maksimum Sepet Tutarı Şartı Ekle
@@ -816,7 +817,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                   </Text>
                 </div>
                 {addMaxCartAmount && (
-                  <Group gap={"md"}>
+                  <Group gap={'md'}>
                     <Controller
                       control={control}
                       name="requirements.maxCartAmount"
@@ -838,7 +839,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
               </Stack>
             </Group>
 
-            <Group gap={"md"} align="flex-start">
+            <Group gap={'md'} align="flex-start">
               <Controller
                 control={control}
                 name="dates.addStartDate"
@@ -849,7 +850,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                     onChange={(value) => {
                       field.onChange(value);
                       if (!value.currentTarget.checked) {
-                        setValue("dates.startDate", null);
+                        setValue('dates.startDate', null);
                       }
                     }}
                     error={fieldState.error?.message}
@@ -857,7 +858,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                   />
                 )}
               />
-              <Stack gap={"xs"} style={{ flex: 1 }}>
+              <Stack gap={'xs'} style={{ flex: 1 }}>
                 <div className="flex flex-col ">
                   <Text fz="md" fw={500}>
                     Başlangıç Tarihi Ekle
@@ -868,7 +869,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                   </Text>
                 </div>
                 {addStartDate && (
-                  <Group gap={"md"}>
+                  <Group gap={'md'}>
                     <Controller
                       control={control}
                       name="dates.startDate"
@@ -882,7 +883,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                             if (date) {
                               const formattedDate = dateFns.format(
                                 date,
-                                "yyyy-MM-dd HH:mm:ss"
+                                'yyyy-MM-dd HH:mm:ss',
                               );
                               onChange(formattedDate);
                             } else {
@@ -905,7 +906,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
               </Stack>
             </Group>
 
-            <Group gap={"md"} align="flex-start">
+            <Group gap={'md'} align="flex-start">
               <Controller
                 control={control}
                 name="dates.addEndDate"
@@ -916,7 +917,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                     onChange={(value) => {
                       field.onChange(value);
                       if (!value.currentTarget.checked) {
-                        setValue("dates.endDate", null);
+                        setValue('dates.endDate', null);
                       }
                     }}
                     error={fieldState.error?.message}
@@ -924,7 +925,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                   />
                 )}
               />
-              <Stack gap={"xs"} style={{ flex: 1 }}>
+              <Stack gap={'xs'} style={{ flex: 1 }}>
                 <div className="flex flex-col ">
                   <Text fz="md" fw={500}>
                     Bitiş Tarihi Ekle
@@ -934,7 +935,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                   </Text>
                 </div>
                 {addEndDate && (
-                  <Group gap={"md"}>
+                  <Group gap={'md'}>
                     <Controller
                       control={control}
                       name="dates.endDate"
@@ -948,7 +949,7 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
                             if (date) {
                               const formattedDate = dateFns.format(
                                 date,
-                                "yyyy-MM-dd HH:mm:ss"
+                                'yyyy-MM-dd HH:mm:ss',
                               );
                               onChange(formattedDate);
                             } else {
@@ -1007,12 +1008,12 @@ const CampaignForm = ({ defaultValues }: CampaignFormProps) => {
         initialProductIds={crossSellProductIds || []}
         initialVariantIds={crossSellVariantIds || []}
         onConfirm={(productIds, variantIds, productModalData) => {
-          setValue("conditions.productIds", productIds);
-          setValue("conditions.variantIds", variantIds);
+          setValue('conditions.productIds', productIds);
+          setValue('conditions.variantIds', variantIds);
           const displayProducts = calculateDisplayProducts(
             productIds,
             variantIds,
-            productModalData
+            productModalData,
           );
           setSelectedCrossSellProducts(displayProducts);
           setModalCrossSellProducts(productModalData);

@@ -1,12 +1,12 @@
+import { getOgImageUrl } from '@lib/product-helper';
 import { getQueryClient } from '@lib/serverQueryClient';
-import { getOgImageUrl } from '@lib/ui/product-helper';
 import { createServerFetch } from '@lib/wrappers/fetchWrapper';
 import { dehydrate, HydrationBoundary } from '@repo/shared';
 import { ProductDetailType } from '@repo/types';
 import { Metadata } from 'next';
 import { unstable_cache } from 'next/cache';
 import { notFound } from 'next/navigation';
-import { Params } from 'types/GlobalTypes';
+import { Params } from 'types/types';
 import ProductPageClient from './components/ProductPageClient';
 
 interface Props {

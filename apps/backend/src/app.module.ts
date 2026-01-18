@@ -1,6 +1,11 @@
+import { RedisModule } from '@liaoliaots/nestjs-redis';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { NestMinioModule } from 'nestjs-minio';
+import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis';
+import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
 import { AdminModule } from './admin/admin.module';
 import { ChatModule } from './ai/chat/chat.module';
 import { AuthModule } from './auth/auth.module';
@@ -14,10 +19,15 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { UserModule } from './user/user.module';
-import { APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
-import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
+import { ClientContextGuard } from './common/guards/client-context.guard';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { CartModule } from './cart/cart.module';
+
 @Module({
   imports: [
+    EventEmitterModule.forRoot({
+      global: true,
+    }),
     SharedModule,
     PrismaModule,
     UserModule,
@@ -25,6 +35,20 @@ import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '../.env',
+    }),
+    RedisModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        config: {
+          namespace: 'cache',
+          url: config.getOrThrow<string>('REDIS_CACHE_URL'),
+          reconnectOnError: (err) => {
+            const targetError = 'READONLY';
+            return err.message.includes(targetError);
+          },
+        },
+      }),
     }),
     AdminModule,
     NestMinioModule.registerAsync({
@@ -57,33 +81,11 @@ import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
     CategoriesModule,
     BrandsModule,
     ProductsModule,
+    CartModule,
     // ThrottlerModule.forRootAsync({
     //   imports: [ConfigModule],
     //   inject: [ConfigService],
     //   useFactory: async (config: ConfigService) => {
-    //     const redisClient = new Redis(config.get('REDIS_URL'), {
-    //       maxRetriesPerRequest: 3,
-    //       retryStrategy: (times) => {
-    //         const delay = Math.min(times * 50, 2000);
-    //         return delay;
-    //       },
-    //       reconnectOnError: (err) => {
-    //         const targetError = 'READONLY';
-    //         if (err.message.includes(targetError)) {
-    //           return true;
-    //         }
-    //         return false;
-    //       },
-    //     });
-
-    //     redisClient.on('connect', () => {
-    //       console.log('✅ Redis connected for throttler');
-    //     });
-
-    //     redisClient.on('error', (err) => {
-    //       console.error('❌ Redis error:', err);
-    //     });
-
     //     return {
     //       throttlers: [
     //         {
@@ -109,24 +111,30 @@ import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
     //       ],
     //       errorMessage:
     //         'Çok fazla istek yapıldı. Lütfen bir süre sonra tekrar deneyin.',
-    //       storage: new ThrottlerStorageRedisService(redisClient),
+    //       storage: new ThrottlerStorageRedisService(
+    //         config.getOrThrow('REDIS_RATE_LIMIT_URL'),
+    //       ),
     //     };
     //   },
     // }),
   ],
   controllers: [],
   providers: [
-    //   {
-    //     provide: APP_GUARD,
-    //     useClass: ThrottlerGuard,
-    //   },
     {
+      //   {
+      //     provide: APP_GUARD,
+      //     useClass: ThrottlerGuard,
+      //   },
       provide: APP_PIPE,
       useClass: ZodValidationPipe,
     },
     {
       provide: APP_INTERCEPTOR,
       useClass: ZodSerializerInterceptor,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ClientContextGuard,
     },
   ],
 })

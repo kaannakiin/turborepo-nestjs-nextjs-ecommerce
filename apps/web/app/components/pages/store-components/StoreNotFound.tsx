@@ -1,18 +1,18 @@
 // components/pages/store-components/NotFoundPage.tsx
 
-"use client";
+'use client';
 
-import { Box, Button, Container, Stack, Text, Title } from "@mantine/core";
+import { Box, Button, Container, Stack, Text, Title } from '@mantine/core';
 import {
   IconBox,
   IconCategory,
   IconSearch,
   IconTag,
-} from "@tabler/icons-react";
-import { Route } from "next";
-import Link from "next/link";
+} from '@tabler/icons-react';
+import { Route } from 'next';
+import Link from 'next/link';
 
-export type NotFoundType = "category" | "brand" | "tag" | "search" | "empty";
+export type NotFoundType = 'category' | 'brand' | 'tag' | 'search' | 'empty';
 
 interface NotFoundPageProps {
   type: NotFoundType;
@@ -32,38 +32,38 @@ const config: Record<
 > = {
   category: {
     icon: IconCategory,
-    defaultTitle: "Kategori Bulunamadı",
+    defaultTitle: 'Kategori Bulunamadı',
     defaultDescription:
-      "Aradığınız kategori mevcut değil veya kaldırılmış olabilir.",
-    color: "blue",
+      'Aradığınız kategori mevcut değil veya kaldırılmış olabilir.',
+    color: 'blue',
   },
   brand: {
     icon: IconBox,
-    defaultTitle: "Marka Bulunamadı",
+    defaultTitle: 'Marka Bulunamadı',
     defaultDescription:
-      "Aradığınız marka mevcut değil veya kaldırılmış olabilir.",
-    color: "violet",
+      'Aradığınız marka mevcut değil veya kaldırılmış olabilir.',
+    color: 'violet',
   },
   tag: {
     icon: IconTag,
-    defaultTitle: "Etiket Bulunamadı",
+    defaultTitle: 'Etiket Bulunamadı',
     defaultDescription:
-      "Aradığınız etiket mevcut değil veya kaldırılmış olabilir.",
-    color: "teal",
+      'Aradığınız etiket mevcut değil veya kaldırılmış olabilir.',
+    color: 'teal',
   },
   search: {
     icon: IconSearch,
-    defaultTitle: "Sonuç Bulunamadı",
+    defaultTitle: 'Sonuç Bulunamadı',
     defaultDescription:
-      "Arama kriterlerinize uygun ürün bulunamadı. Farklı filtreler deneyebilirsiniz.",
-    color: "orange",
+      'Arama kriterlerinize uygun ürün bulunamadı. Farklı filtreler deneyebilirsiniz.',
+    color: 'orange',
   },
   empty: {
     icon: IconBox,
-    defaultTitle: "Ürün Bulunamadı",
+    defaultTitle: 'Ürün Bulunamadı',
     defaultDescription:
-      "Bu sayfada henüz ürün bulunmuyor. Daha sonra tekrar kontrol edebilirsiniz.",
-    color: "gray",
+      'Bu sayfada henüz ürün bulunmuyor. Daha sonra tekrar kontrol edebilirsiniz.',
+    color: 'gray',
   },
 };
 
@@ -73,7 +73,7 @@ const StoreNotFound = ({
   showHomeButton = true,
   showSearchButton = true,
 }: NotFoundPageProps) => {
-  const { icon: Icon, defaultTitle, defaultDescription, color } = config[type];
+  const { icon: Icon, defaultTitle, color } = config[type];
 
   return (
     <Container size="sm" py={80}>
@@ -82,11 +82,11 @@ const StoreNotFound = ({
           style={{
             width: 120,
             height: 120,
-            borderRadius: "50%",
+            borderRadius: '50%',
             backgroundColor: `var(--mantine-color-${color}-0)`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <Icon
@@ -117,7 +117,7 @@ const StoreNotFound = ({
           {showSearchButton && (
             <Button
               component={Link}
-              href={"/search" as Route}
+              href={'/' as Route}
               variant="light"
               size="md"
               radius="md"

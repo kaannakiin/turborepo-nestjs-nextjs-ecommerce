@@ -1,19 +1,17 @@
-"use client";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
-import { Stack, Title } from "@mantine/core";
-import { useQuery } from "@repo/shared";
-import { ProductPageDataType } from "@repo/types";
-import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
-import { useState } from "react";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation } from "swiper/modules";
-import type { Swiper as SwiperType } from "swiper";
-import ProductCard from "./ProductCard";
-import { useTheme } from "@/context/theme-context/ThemeContext";
+'use client';
+import { Stack, Title } from '@mantine/core';
+import { useSimilarProducts } from '@hooks/useStoreProducts';
+import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
+import { useState } from 'react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation } from 'swiper/modules';
+import type { Swiper as SwiperType } from 'swiper';
+import ProductCard from './ProductCard';
+import { useTheme } from '@/context/theme-context/ThemeContext';
 
-import "swiper/css";
-import "swiper/css/navigation";
-import styles from "./ProductCarousels.module.css";
+import 'swiper/css';
+import 'swiper/css/navigation';
+import styles from './ProductCarousels.module.css';
 
 interface ProductsCarouselsProps {
   title: string;
@@ -31,31 +29,19 @@ const ProductsCarousels = ({
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
-  const { data, isError } = useQuery({
-    queryKey: ["products", "similar-products", productId],
-    queryFn: async () => {
-      const res = await fetchWrapper.get<{
-        totalCount: number;
-        products: ProductPageDataType[];
-      }>("/users/products/similar-products/" + productId);
-      if (!res.success) {
-        return null;
-      }
-      return res.data;
-    },
-  });
+  const { data, isError } = useSimilarProducts(productId);
 
   const getSlidesPerView = () => {
-    if (media === "mobile") return 2;
-    if (media === "tablet") return 3;
+    if (media === 'mobile') return 2;
+    if (media === 'tablet') return 3;
     return 5;
   };
 
   return (
-    <Stack gap={"lg"} mt={"xl"} className={stackClassName} bg={"primary.0"}>
+    <Stack gap={'lg'} mt={'xl'} className={stackClassName} bg={'primary.0'}>
       {data && data.products.length > 0 && !isError && (
         <div className="w-full flex flex-col gap-4 max-w-[1500px] mx-auto">
-          <Title order={4} pt={"md"} px={"md"}>
+          <Title order={4} pt={'md'} px={'md'}>
             {title}
           </Title>
 

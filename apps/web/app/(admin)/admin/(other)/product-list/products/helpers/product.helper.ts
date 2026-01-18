@@ -1,5 +1,5 @@
-import { Currency, Locale } from "@repo/database/client";
-import { VariantProductZodType } from "@repo/types";
+import { Currency, Locale } from '@repo/database/client';
+import { VariantProductZodType } from '@repo/types';
 
 type VariantGroup = {
   groupId: string;
@@ -11,34 +11,34 @@ type VariantOption = {
   optionName: string;
 };
 
-type CombinatedVariant = VariantProductZodType["combinatedVariants"][number];
+type CombinatedVariant = VariantProductZodType['combinatedVariants'][number];
 
 const generateSku = (productId: string, optionNames: string[]): string => {
   const prefix = productId.slice(-8).toUpperCase();
   const suffix = optionNames
     .map((name) =>
       name
-        .replace(/[^a-zA-Z0-9ğüşıöçĞÜŞİÖÇ]/g, "")
+        .replace(/[^a-zA-Z0-9ğüşıöçĞÜŞİÖÇ]/g, '')
         .slice(0, 4)
-        .toUpperCase()
+        .toUpperCase(),
     )
-    .join("-");
+    .join('-');
 
   return `${prefix}-${suffix}`;
 };
 
 const getTrName = (
-  translations: { locale: string; name: string }[]
+  translations: { locale: string; name: string }[],
 ): string => {
   return (
-    translations.find((t) => t.locale === "TR")?.name ||
+    translations.find((t) => t.locale === 'TR')?.name ||
     translations[0]?.name ||
-    ""
+    ''
   );
 };
 
 const generateCartesianProduct = (
-  groups: VariantGroup[]
+  groups: VariantGroup[],
 ): VariantOption[][] => {
   if (groups.length === 0) return [];
 
@@ -52,23 +52,23 @@ const generateCartesianProduct = (
   const restCombinations = generateCartesianProduct(rest);
 
   return first.options.flatMap((option) =>
-    restCombinations.map((combo) => [option, ...combo])
+    restCombinations.map((combo) => [option, ...combo]),
   );
 };
 
 const createCombinationKey = (
-  variantIds: { variantGroupId: string; variantOptionId: string }[]
+  variantIds: { variantGroupId: string; variantOptionId: string }[],
 ): string => {
   return [...variantIds]
     .sort((a, b) => a.variantGroupId.localeCompare(b.variantGroupId))
     .map((v) => `${v.variantGroupId}:${v.variantOptionId}`)
-    .join("|");
+    .join('|');
 };
 
 const createDefaultCombination = (
   variantIds: { variantGroupId: string; variantOptionId: string }[],
   optionNames: string[],
-  productId: string
+  productId: string,
 ): CombinatedVariant => {
   return {
     variantIds,
@@ -76,7 +76,7 @@ const createDefaultCombination = (
     barcode: null,
     prices: [
       {
-        currency: "TRY" as Currency,
+        currency: 'TRY' as Currency,
         price: 0,
         discountPrice: null,
         buyedPrice: null,
@@ -88,7 +88,7 @@ const createDefaultCombination = (
     images: null,
     translations: [
       {
-        locale: "TR" as Locale,
+        locale: 'TR' as Locale,
         description: null,
         metaTitle: null,
         metaDescription: null,
@@ -102,17 +102,17 @@ export function returnCombinateVariant({
   existingCombinatedVariants = [],
   productId,
 }: {
-  existingVariants: VariantProductZodType["existingVariants"];
-  existingCombinatedVariants?: VariantProductZodType["combinatedVariants"];
+  existingVariants: VariantProductZodType['existingVariants'];
+  existingCombinatedVariants?: VariantProductZodType['combinatedVariants'];
   productId: string;
-}): VariantProductZodType["combinatedVariants"] {
+}): VariantProductZodType['combinatedVariants'] {
   if (!existingVariants || existingVariants.length === 0) {
     return [];
   }
 
   // Deduplicate variants by uniqueId
   const uniqueVariantsMap = new Map(
-    existingVariants.map((v) => [v.uniqueId, v])
+    existingVariants.map((v) => [v.uniqueId, v]),
   );
   const uniqueVariants = Array.from(uniqueVariantsMap.values());
 

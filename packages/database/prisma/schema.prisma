@@ -31,6 +31,75 @@ enum SubscriptionStatus {
   PENDING
 }
 
+enum StoreType {
+  B2C // Son kullanıcıya satış
+  B2B // Bayilere satış
+}
+
+model Organization {
+  id     String  @id @default(cuid())
+  name   String
+  stores Store[]
+}
+
+model Store {
+  id   String @id @default(cuid())
+  name String
+
+  subdomain String    @unique
+  type      StoreType // B2C veya B2B
+  isActive  Boolean   @default(true)
+
+  users    User[]
+  orders   OrderSchema[]
+  products Product[]
+
+  settings      StoreSettings?
+  localeConfigs StoreLocaleConfig[]
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  // Bir firmada her type'tan sadece 1 store olabilir
+  @@unique([type])
+}
+
+model StoreSettings {
+  id      String @id @default(cuid())
+  storeId String @unique
+  store   Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  customDomain String? @unique
+
+  // Genel
+  defaultLocale Locale @default(TR)
+}
+
+model StoreLocaleConfig {
+  id      String @id @default(cuid())
+  storeId String
+
+  // Kuralın Girdisi: DİL
+  locale Locale // Örn: EN
+
+  // Kuralın Çıktısı: PARA BİRİMİ
+  currency Currency // Örn: USD
+
+  // Opsiyonel: Bu dil aktif mi? (Örn: Almanca'yı ekledin ama yayına almadın)
+  isActive Boolean @default(true)
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Bir mağazada, bir dil için sadece bir tane config olabilir.
+  // Yani EN hem USD hem GBP olamaz.
+  @@unique([storeId, locale])
+}
+
 model User {
   id   String   @id @default(cuid())
   role UserRole @default(USER)
@@ -84,6 +153,8 @@ model User {
   specificDiscounts DiscountCustomer[]
   discountUsages    DiscountUsage[]
   refreshTokens     RefreshTokens[]
+  storeId           String?
+  store             Store?             @relation(fields: [storeId], references: [id])
 
   @@index([email, phone])
   @@index([accountStatus])
@@ -490,6 +561,7 @@ model Product {
   conditionInCampaigns CampaignConditionProduct[]
   discountConditions   DiscountProduct[]
   footerLinks          FooterLinks[]
+  store                Store[]
 
   @@index([brandId])
   @@index([taxonomyCategoryId])
@@ -1239,6 +1311,21 @@ model StorePaymentProvider {
   provider   PaymentProvider @unique
 }
 
+model PaymentRule {
+  id        String  @id @default(cuid())
+  name      String
+  priority  Int     @default(0) // Düşük = öncelikli
+  isActive  Boolean @default(true)
+  isDefault Boolean @default(false)
+  flowData  Json // { nodes: [], edges: [] }
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, priority])
+  @@index([isDefault])
+}
+
 model AssetLibrary {
   id        String    @id @default(cuid())
   assetType AssetType @default(IMAGE)
@@ -1272,39 +1359,47 @@ model OrderItemSchema {
 }
 
 model OrderSchema {
-  id                      String                   @id @default(cuid())
-  orderNumber             String                   @unique
+  id                      String          @id @default(cuid())
+  orderNumber             String          @unique
   totalPrice              Decimal
   totalFinalPrice         Decimal
   discountAmount          Decimal?
   taxAmount               Decimal?
   shippingCost            Decimal?
-  currency                Currency                 @default(TRY)
-  locale                  Locale                   @default(TR)
+  currency                Currency        @default(TRY)
+  locale                  Locale          @default(TR)
   orderNote               String?
-  paymentProvider         PaymentProvider          @default(IYZICO)
-  paymentStatus           PaymentStatus            @default(PENDING)
-  orderStatus             OrderStatus              @default(PENDING)
+  paymentProvider         PaymentProvider @default(IYZICO)
+  paymentStatus           PaymentStatus   @default(PENDING)
+  orderStatus             OrderStatus     @default(PENDING)
   shippingAddressSnapshot Json?
   billingAddressSnapshot  Json?
   cargoRuleSnapshot       Json?
   clientIp                String?
   userAgent               String?
-  createdAt               DateTime                 @default(now())
-  updatedAt               DateTime                 @updatedAt
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
   cartId                  String?
   userId                  String?
   shippingAddressRecordId String?
   billingAddressRecordId  String?
   cargoRuleId             String?
-  itemsSchema             OrderItemSchema[]
-  billingAddressRecord    AddressSchema?           @relation("OrderSchemaBillingAddress", fields: [billingAddressRecordId], references: [id])
-  cargoRule               CargoRule?               @relation(fields: [cargoRuleId], references: [id])
-  cart                    Cart?                    @relation(fields: [cartId], references: [id])
-  shippingAddressRecord   AddressSchema?           @relation("OrderSchemaShippingAddress", fields: [shippingAddressRecordId], references: [id])
-  user                    User?                    @relation(fields: [userId], references: [id])
-  transactions            OrderTransactionSchema[]
-  shipments               Shipment[]
+
+  // === YENİ EKLENEN KISIM ===
+  storeId String? // Siparişin ait olduğu mağaza ID'si
+  store   Store?  @relation(fields: [storeId], references: [id])
+  // ==========================
+
+  itemsSchema           OrderItemSchema[]
+  billingAddressRecord  AddressSchema?           @relation("OrderSchemaBillingAddress", fields: [billingAddressRecordId], references: [id])
+  cargoRule             CargoRule?               @relation(fields: [cargoRuleId], references: [id])
+  cart                  Cart?                    @relation(fields: [cartId], references: [id])
+  shippingAddressRecord AddressSchema?           @relation("OrderSchemaShippingAddress", fields: [shippingAddressRecordId], references: [id])
+  user                  User?                    @relation(fields: [userId], references: [id])
+  transactions          OrderTransactionSchema[]
+  shipments             Shipment[]
+
+  @@index([storeId]) // Performans için index eklemek iyi olur
 }
 
 model OrderTransactionSchema {

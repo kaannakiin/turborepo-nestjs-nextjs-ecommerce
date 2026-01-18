@@ -1,37 +1,21 @@
-"use client";
+'use client';
 
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper, { ApiError } from "@lib/wrappers/fetchWrapper";
-import { Alert, Button, Center, Group, Stack, Text } from "@mantine/core";
-import { useQuery } from "@repo/shared";
-import { BrandZodType } from "@repo/types";
-import { IconAlertCircle } from "@tabler/icons-react";
-import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import BrandForm from "../components/BrandForm";
+import LoadingOverlay from '@/components/LoadingOverlay';
+import { useBrandDetail } from '@hooks/admin/useAdminBrands';
+import { Alert, Button, Center, Group, Stack, Text } from '@mantine/core';
+import { IconAlertCircle } from '@tabler/icons-react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import BrandForm from '../components/BrandForm';
 
 const BrandFormPage = () => {
   const params = useParams();
   const router = useRouter();
+  const brandId = params.slug as string;
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["admin-brand-form", params.slug],
-    queryFn: async () => {
-      const res = await fetchWrapper.get<BrandZodType>(
-        `/admin/products/brands/get-brand-form-value/${params.slug}`
-      );
+  const { data, isLoading, error } = useBrandDetail(brandId);
 
-      if (!res.success) {
-        const error = res as ApiError;
-        throw new Error(error.error || "Failed to fetch brand data");
-      }
-
-      return res.data;
-    },
-    enabled: !!params.slug && params.slug !== "new",
-  });
-
-  if (params?.slug === "new") {
+  if (brandId === 'new') {
     return <BrandForm />;
   }
 
@@ -55,7 +39,7 @@ const BrandFormPage = () => {
           >
             {error instanceof Error
               ? error.message
-              : "Bilinmeyen bir hata oluştu"}
+              : 'Bilinmeyen bir hata oluştu'}
           </Alert>
 
           <Group>
@@ -72,7 +56,7 @@ const BrandFormPage = () => {
   }
 
   if (isLoading) {
-    return <GlobalLoadingOverlay />;
+    return <LoadingOverlay />;
   }
 
   return <BrandForm defaultValues={data} />;

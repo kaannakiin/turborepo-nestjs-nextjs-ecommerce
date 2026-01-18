@@ -118,8 +118,7 @@ const VariantSelector = ({
                             size="lg"
                             radius="xl"
                             className={`
-                            border-2 
-                            ${isSelected ? 'border-black' : 'border-gray-200'}
+                            ${isSelected ? 'border-2 border-[var(--mantine-primary-color-5)]' : ''}
                           `}
                           />
                         ) : hexValue ? (
@@ -132,8 +131,7 @@ const VariantSelector = ({
                             size="lg"
                             radius="xl"
                             className={`
-                            border-2 bg-gray-200
-                            ${isSelected ? 'border-black' : 'border-gray-200'}
+                            ${isSelected ? 'border-2 border-[var(--mantine-primary-color-5)]' : ''}
                           `}
                           >
                             {optionName.charAt(0)}
@@ -159,10 +157,10 @@ const VariantSelector = ({
                     size="xl"
                     radius="md"
                     variant={isSelected ? 'filled' : 'outline'}
-                    color={isSelected ? 'dark' : 'gray'}
+                    color={isSelected ? 'primary' : 'gray'}
                     className={`
                       cursor-pointer transition-all px-4 py-2 h-auto
-                      ${!selectable ? 'opacity-30 cursor-not-allowed line-through' : 'hover:border-black'}
+                      ${!selectable ? 'opacity-30 cursor-not-allowed line-through' : 'hover:border-[var(--mantine-primary-color-5)]'}
                     `}
                     styles={{
                       root: {

@@ -1,10 +1,9 @@
-"use client";
+'use client';
 
-import CustomPagination from "@/components/CustomPagination";
-import CustomSearchInput from "@/components/CustomSearchInput";
-import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
-import fetchWrapper from "@lib/wrappers/fetchWrapper";
-import { getDiscountTypeLabel } from "@lib/helpers";
+import Pagination from '@/components/Pagination';
+import SearchInput from '@/components/SearchInput';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import { getDiscountTypeLabel } from '@lib/helpers';
 import {
   ActionIcon,
   Button,
@@ -13,42 +12,24 @@ import {
   Stack,
   Table,
   Title,
-} from "@mantine/core";
-import { DiscountType } from "@repo/database/client";
-import { DateFormatter, useQuery } from "@repo/shared";
-import { GetAllDiscountReturnType } from "@repo/types";
-import { IconEdit, IconTrash } from "@tabler/icons-react";
-import { useRouter, useSearchParams } from "next/navigation";
+} from '@mantine/core';
+import { DiscountType } from '@repo/database/client';
+import { DateFormatter } from '@repo/shared';
+import { useAdminDiscounts } from '@hooks/admin/useAdminDiscounts';
+import { IconEdit, IconTrash } from '@tabler/icons-react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const AdminDiscountsPage = () => {
   const searchParams = useSearchParams();
   const { push, replace } = useRouter();
-  const typeParam = searchParams.get("type") as DiscountType | null;
-  const page = parseInt(searchParams.get("page") || "1", 10);
-  const { data, isLoading } = useQuery({
-    queryKey: [
-      "admin-discounts",
-      { ...(typeParam ? { type: typeParam } : {}), page },
-    ],
-    queryFn: async () => {
-      const res = await fetchWrapper.get<GetAllDiscountReturnType>(
-        `/admin/discounts/get-discounts?${new URLSearchParams({
-          ...(typeParam ? { type: typeParam } : {}),
-          page: page.toString(),
-        })}`
-      );
-      if (!res.success) {
-        throw new Error("Failed to fetch discounts");
-      }
-      if (!res.data.success) {
-        throw new Error(res.data.message);
-      }
-
-      return res.data;
-    },
+  const typeParam = searchParams.get('type') as DiscountType | null;
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const { data, isLoading } = useAdminDiscounts({
+    page,
+    type: typeParam,
   });
   if (isLoading) {
-    return <GlobalLoadingOverlay />;
+    return <LoadingOverlay />;
   }
 
   if (!data) {
@@ -58,14 +39,14 @@ const AdminDiscountsPage = () => {
 
   return (
     <>
-      <Stack gap={"md"}>
+      <Stack gap={'md'}>
         <Group justify="space-between" align="center">
           <Title order={3}>İndirimler</Title>
-          <Group gap={"sm"}>
+          <Group gap={'sm'}>
             <Button
               variant="outline"
               onClick={() => {
-                push("/admin/store/discounts/new");
+                push('/admin/store/discounts/new');
               }}
             >
               Yeni İndirim Oluştur
@@ -81,19 +62,19 @@ const AdminDiscountsPage = () => {
               onChange={(value) => {
                 const params = new URLSearchParams(searchParams.toString());
                 if (value) {
-                  params.set("type", value);
+                  params.set('type', value);
                 } else {
-                  params.delete("type");
+                  params.delete('type');
                 }
                 replace(`?${params.toString()}`);
               }}
             />
-            <CustomSearchInput variant="filled" />
+            <SearchInput variant="filled" />
           </Group>
         </Group>
         <Table.ScrollContainer minWidth={800}>
           <Table
-            verticalSpacing={"sm"}
+            verticalSpacing={'sm'}
             highlightOnHover
             highlightOnHoverColor="admin.0"
           >
@@ -116,13 +97,13 @@ const AdminDiscountsPage = () => {
                     <Table.Td>
                       {discount._count.usages > 0
                         ? discount._count.usages
-                        : "Kullanılmadı"}
+                        : 'Kullanılmadı'}
                     </Table.Td>
                     <Table.Td>
                       {DateFormatter.withTime(discount.createdAt)}
                     </Table.Td>
                     <Table.Td>
-                      <Group gap={"sm"}>
+                      <Group gap={'sm'}>
                         <ActionIcon
                           variant="transparent"
                           onClick={() => {
@@ -141,7 +122,7 @@ const AdminDiscountsPage = () => {
             </Table.Tbody>
           </Table>
         </Table.ScrollContainer>
-        {pagination && <CustomPagination total={pagination.totalPages} />}
+        {pagination && <Pagination total={pagination.totalPages} />}
       </Stack>
     </>
   );

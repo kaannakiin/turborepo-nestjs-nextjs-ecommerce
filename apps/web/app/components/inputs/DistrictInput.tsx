@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { turkishSelectFilter } from "@lib/ui/product-helper";
-import { ComboboxItem, Select, SelectProps } from "@mantine/core";
-import { CountryType } from "@repo/database/client";
-import { TURKEY_DB_ID } from "@repo/types";
-import { useMemo } from "react";
-import { useDistricts } from "../../../hooks/useLocations";
+import { turkishSelectFilter } from '@lib/product-helper';
+import { ComboboxItem, Select, SelectProps } from '@mantine/core';
+import { CountryType } from '@repo/database/client';
+import { TURKEY_DB_ID } from '@repo/types';
+import { useMemo } from 'react';
+import { useDistricts } from '../../../hooks/useLocations';
 
 export interface DistrictSelectData {
   value: string;
@@ -16,7 +16,7 @@ interface DistrictInputProps {
   countryId: string;
   cityId: string;
   addressType: CountryType;
-  selectProps?: Omit<SelectProps, "data">;
+  selectProps?: Omit<SelectProps, 'data'>;
   onSelect?: (selectedData: DistrictSelectData | null) => void;
 }
 
@@ -31,7 +31,7 @@ const DistrictInput = ({
     !!countryId &&
     !!cityId &&
     countryId === TURKEY_DB_ID &&
-    addressType === "CITY";
+    addressType === 'CITY';
 
   const {
     data: districts,
@@ -49,7 +49,7 @@ const DistrictInput = ({
       (district): DistrictSelectData => ({
         value: district.id.toString(),
         label: district.name,
-      })
+      }),
     );
   }, [districts]);
 
@@ -72,12 +72,12 @@ const DistrictInput = ({
       disabled={isDisabled}
       placeholder={
         !countryId
-          ? "Önce ülke seçin"
+          ? 'Önce ülke seçin'
           : !cityId
-            ? "Önce şehir seçin"
+            ? 'Önce şehir seçin'
             : isLoading
-              ? "Yükleniyor..."
-              : "İlçe seçin"
+              ? 'Yükleniyor...'
+              : 'İlçe seçin'
       }
       searchable
       nothingFoundMessage="İlçe bulunamadı"

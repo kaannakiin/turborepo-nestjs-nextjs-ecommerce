@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import CustomImage from "@/components/CustomImage";
-import { AspectRatio } from "@mantine/core";
-import { AssetType } from "@repo/database/client";
-import { useState } from "react";
-import type { Swiper as SwiperType } from "swiper";
-import { Pagination } from "swiper/modules";
-import { Swiper, SwiperSlide } from "swiper/react";
+import Image from '@/components/Image';
+import { AspectRatio } from '@mantine/core';
+import { AssetType } from '@repo/database/client';
+import { useState } from 'react';
+import type { Swiper as SwiperType } from 'swiper';
+import { Pagination } from 'swiper/modules';
+import { Swiper, SwiperSlide } from 'swiper/react';
 
-import "swiper/css";
-import "swiper/css/pagination";
+import 'swiper/css';
+import 'swiper/css/pagination';
 
 interface Asset {
   url: string;
@@ -41,20 +41,20 @@ const MobileAssetViewer = ({ assets }: MobileAssetViewerProps) => {
         slidesPerView={1}
         pagination={{
           clickable: true,
-          bulletClass: "swiper-pagination-bullet !bg-gray-300 !opacity-100",
-          bulletActiveClass: "!bg-black !w-6 !rounded-full",
+          bulletClass:
+            'swiper-pagination-bullet bg-[var(--mantine-primary-color-5)]',
+          bulletActiveClass: '!w-6 !rounded-full',
         }}
         onSlideChange={(swiper: SwiperType) =>
           setActiveIndex(swiper.activeIndex)
         }
-        className="mobile-asset-viewer"
       >
         {assets.map((asset, index) => {
           const isVideo = asset.type === AssetType.VIDEO;
 
           return (
             <SwiperSlide key={index}>
-              <AspectRatio ratio={1} w={"100%"}>
+              <AspectRatio ratio={1} w={'100%'}>
                 {isVideo ? (
                   <video
                     src={asset.url}
@@ -67,10 +67,7 @@ const MobileAssetViewer = ({ assets }: MobileAssetViewerProps) => {
                   />
                 ) : (
                   <div className="w-full h-full overflow-hidden ">
-                    <CustomImage
-                      src={asset.url}
-                      alt={`Ürün görseli ${index + 1}`}
-                    />
+                    <Image src={asset.url} alt={`Ürün görseli ${index + 1}`} />
                   </div>
                 )}
               </AspectRatio>

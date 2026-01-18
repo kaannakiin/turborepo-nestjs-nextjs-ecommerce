@@ -12,7 +12,7 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/user/reflectors/roles.decorator';
 import { PaymentsService } from './payments.service';
-import { $Enums } from '@repo/database';
+import { PaymentProvider } from '@repo/database';
 
 @Controller('/admin/payments')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -27,8 +27,8 @@ export class PaymentsController {
 
   @Get('payment-method/:methodType')
   async getPaymentMethod(
-    @Param('methodType', new ParseEnumPipe($Enums.PaymentProvider))
-    methodType: $Enums.PaymentProvider,
+    @Param('methodType', new ParseEnumPipe(PaymentProvider))
+    methodType: PaymentProvider,
   ) {
     return this.paymentsService.getPaymentMethod(methodType);
   }

@@ -14,4 +14,5 @@ export * from "./categories/index";
 export * from "./customers/index";
 export * from "./payment-methods/index";
 export * from "./theme/index";
+export * from "./store/index";
 export { flattenError, ZodType, z } from "zod";

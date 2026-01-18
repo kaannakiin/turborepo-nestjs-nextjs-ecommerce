@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   findBestMatchingVariant,
@@ -8,10 +8,10 @@ import {
   getSelectedOptionIds,
   getSelectionsFromVariant,
   getVariantSlugsFromParams,
-} from "@lib/ui/variant-helper";
-import { ProductDetailType } from "@repo/types";
-import { usePathname, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+} from '@lib/variant-helper';
+import { ProductDetailType } from '@repo/types';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 interface UseVariantSelectionProps {
   product: ProductDetailType | undefined;
@@ -24,7 +24,7 @@ export const useVariantSelection = ({ product }: UseVariantSelectionProps) => {
   const variants = useMemo(() => product?.variants ?? [], [product?.variants]);
   const variantGroups = useMemo(
     () => product?.variantGroups ?? [],
-    [product?.variantGroups]
+    [product?.variantGroups],
   );
 
   const [selectedSlugs, setSelectedSlugs] = useState<Record<string, string>>(
@@ -34,7 +34,7 @@ export const useVariantSelection = ({ product }: UseVariantSelectionProps) => {
 
       const defaultVariant = getDefaultVariant(variants);
       return getDefaultSelections(defaultVariant, variantGroups);
-    }
+    },
   );
 
   const selectedOptionIds = useMemo(() => {
@@ -49,18 +49,18 @@ export const useVariantSelection = ({ product }: UseVariantSelectionProps) => {
     if (!selectedVariant || variants.length === 0) return;
 
     const variantOptionIds = selectedVariant.options.map(
-      (opt) => opt.productVariantOption.variantOption.id
+      (opt) => opt.productVariantOption.variantOption.id,
     );
 
     const allSelectionsMatch = Object.values(selectedOptionIds).every((id) =>
-      variantOptionIds.includes(id)
+      variantOptionIds.includes(id),
     );
 
     if (!allSelectionsMatch) {
       const correctedSlugs = getSelectionsFromVariant(
         selectedVariant,
         variantGroups,
-        selectedSlugs
+        selectedSlugs,
       );
 
       setSelectedSlugs(correctedSlugs);
@@ -71,8 +71,8 @@ export const useVariantSelection = ({ product }: UseVariantSelectionProps) => {
       });
       window.history.replaceState(
         null,
-        "",
-        `${pathname}?${newParams.toString()}`
+        '',
+        `${pathname}?${newParams.toString()}`,
       );
     }
   }, [
@@ -99,25 +99,25 @@ export const useVariantSelection = ({ product }: UseVariantSelectionProps) => {
       newParams.set(groupSlug, optionSlug);
       window.history.replaceState(
         null,
-        "",
-        `${pathname}?${newParams.toString()}`
+        '',
+        `${pathname}?${newParams.toString()}`,
       );
     },
-    [pathname, searchParams]
+    [pathname, searchParams],
   );
 
   const isOptionSelected = useCallback(
     (groupSlug: string, optionSlug: string) => {
       return selectedSlugs[groupSlug] === optionSlug;
     },
-    [selectedSlugs]
+    [selectedSlugs],
   );
 
   const isOptionSelectable = useCallback(
     (groupId: string, optionId: string) => {
       return selectableOptions[groupId]?.includes(optionId) ?? false;
     },
-    [selectableOptions]
+    [selectableOptions],
   );
 
   const price =

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { signOutClient } from "@lib/auth/signout-client";
+import { useSignOut } from '@hooks/useAuth';
 import {
   ActionIcon,
   AppShell,
@@ -13,20 +13,20 @@ import {
   Text,
   Tooltip,
   UnstyledButton,
-} from "@mantine/core";
-import { useHotkeys } from "@mantine/hooks";
-import { openSpotlight } from "@mantine/spotlight";
-import { TokenPayload } from "@repo/types";
+} from '@mantine/core';
+import { useHotkeys } from '@mantine/hooks';
+import { openSpotlight } from '@mantine/spotlight';
+import { TokenPayload } from '@repo/types';
 import {
   IconCommand,
   IconLayoutSidebarLeftExpandFilled,
   IconLayoutSidebarRightExpandFilled,
   IconLogout,
   IconSearch,
-} from "@tabler/icons-react";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { findActiveNav, navGroups } from "./data";
+} from '@tabler/icons-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { findActiveNav, navGroups } from './data';
 
 interface AdminNavbarProps {
   session: TokenPayload;
@@ -42,12 +42,13 @@ const AdminNavbar = ({
   onNavItemClick,
 }: AdminNavbarProps) => {
   const [activeGroup, setActiveGroup] = useState<number>(0);
-  const [activeHref, setActiveHref] = useState<string>("");
+  const [activeHref, setActiveHref] = useState<string>('');
+  const { mutate } = useSignOut();
 
   const router = useRouter();
   const pathname = usePathname();
 
-  useHotkeys([["mod+K", () => openSpotlight()]]);
+  useHotkeys([['mod+K', () => openSpotlight()]]);
 
   useEffect(() => {
     const { groupIndex, href } = findActiveNav(pathname);
@@ -125,15 +126,15 @@ const AdminNavbar = ({
                 offset={12}
               >
                 <ActionIcon
-                  variant={activeGroup === index ? "filled" : "subtle"}
-                  color={activeGroup === index ? "admin" : "gray"}
+                  variant={activeGroup === index ? 'filled' : 'subtle'}
+                  color={activeGroup === index ? 'admin' : 'gray'}
                   size="lg"
                   radius="xl"
                   onClick={() => handleGroupClick(index)}
                   className={`transition-all duration-200 ${
                     activeGroup === index
-                      ? "shadow-md hover:shadow-lg"
-                      : "hover:bg-slate-100"
+                      ? 'shadow-md hover:shadow-lg'
+                      : 'hover:bg-slate-100'
                   }`}
                 >
                   {item.icon}
@@ -179,7 +180,7 @@ const AdminNavbar = ({
                 {session.name}
               </Text>
               <Text size="xs" c="dimmed" className="leading-tight mt-0.5">
-                {session.email || session.phone || "Admin"}
+                {session.email || session.phone || 'Admin'}
               </Text>
               <Text
                 size="xs"
@@ -259,15 +260,15 @@ const AdminNavbar = ({
                 offset={8}
               >
                 <ActionIcon
-                  variant={activeGroup === index ? "filled" : "subtle"}
-                  color={activeGroup === index ? "admin" : "gray"}
+                  variant={activeGroup === index ? 'filled' : 'subtle'}
+                  color={activeGroup === index ? 'admin' : 'gray'}
                   size="lg"
                   radius="lg"
                   onClick={() => handleGroupClick(index)}
                   className={`transition-all duration-200 ${
                     activeGroup === index
-                      ? "shadow-md hover:shadow-lg hover:scale-105"
-                      : "hover:bg-slate-100 hover:scale-105"
+                      ? 'shadow-md hover:shadow-lg hover:scale-105'
+                      : 'hover:bg-slate-100 hover:scale-105'
                   }`}
                 >
                   {item.icon}
@@ -292,8 +293,8 @@ const AdminNavbar = ({
                   onClick={() => handleSubItemClick(subItem.href)}
                   className={`w-full px-3 py-2 rounded-lg transition-all duration-200 ${
                     activeHref === subItem.href
-                      ? "bg-[var(--mantine-primary-color-5)] text-white shadow-md hover:bg-[var(--mantine-primary-color-7)]"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 hover:translate-x-0.5"
+                      ? 'bg-[var(--mantine-primary-color-5)] text-white shadow-md hover:bg-[var(--mantine-primary-color-7)]'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 hover:translate-x-0.5'
                   }`}
                 >
                   <Tooltip
@@ -321,9 +322,13 @@ const AdminNavbar = ({
 
       <AppShell.Section className="p-3 border-t border-slate-100">
         <UnstyledButton
-          onClick={async (e) => {
+          onClick={(e) => {
             e.preventDefault();
-            await signOutClient();
+            mutate(undefined, {
+              onSuccess: () => {
+                router.push('/');
+              },
+            });
           }}
           className="w-full px-3 py-2 rounded-lg text-red-500 hover:bg-red-50 transition-all duration-200 group"
         >

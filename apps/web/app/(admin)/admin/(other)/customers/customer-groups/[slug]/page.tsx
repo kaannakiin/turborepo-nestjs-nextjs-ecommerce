@@ -1,6 +1,6 @@
 'use client';
 
-import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
+import LoadingOverlay from '@/components/LoadingOverlay';
 import RadioCard from '@/components/inputs/RadioCard';
 import {
   useCreateCustomerSegment,
@@ -185,7 +185,7 @@ const CustomerSegmentFormPage = () => {
             : 'hidden'
         }
       >
-        <GlobalLoadingOverlay />
+        <LoadingOverlay />
       </Activity>
 
       <form onSubmit={handleSubmit(onSubmit)}>

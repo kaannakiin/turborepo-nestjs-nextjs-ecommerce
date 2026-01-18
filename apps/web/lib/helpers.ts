@@ -24,6 +24,7 @@ import {
   MantineFontWeight,
   MantineSize,
   ProductPageDataType,
+  ProductPageSortOption,
   ShippingRuleType,
   SortAdminUserTable,
   TextAlign,
@@ -934,4 +935,54 @@ export const getFulfillmentStrategyTypeLabel = (
   type: FullfillmentStrategyType,
 ): string => {
   return fulfillmentStrategyTypesConfigs[type]?.label || 'Bilinmeyen';
+};
+
+const localeConfigs: Record<Locale, { label: string }> = {
+  TR: { label: 'Türkçe' },
+  EN: { label: 'English' },
+  DE: { label: 'Deutsch' },
+};
+
+export const getLocaleLabel = (locale: Locale): string => {
+  return localeConfigs[locale]?.label || 'Bilinmeyen';
+};
+
+export const extractBaseDomain = (domain: string) => {
+  const parts = domain.toLowerCase().split('.');
+  if (parts.length >= 2) {
+    return parts.slice(-2).join('.');
+  }
+  return domain.toLowerCase();
+};
+
+const productSortOptionConfig: Record<
+  ProductPageSortOption,
+  { label: string }
+> = {
+  'a-z': {
+    label: 'A-Z',
+  },
+  'best-selling': {
+    label: 'En Çok Satılan',
+  },
+  newest: {
+    label: 'En Yeni',
+  },
+  'price-desc': {
+    label: 'Fiyat: Yüksekten Düşüğe',
+  },
+  'price-asc': {
+    label: 'Fiyat: Düşükten Yüksüğe',
+  },
+  'z-a': {
+    label: 'Z-A',
+  },
+  oldest: {
+    label: 'En Eski',
+  },
+};
+export const getSortProductPageLabel = (
+  option: ProductPageSortOption,
+): string => {
+  return productSortOptionConfig[option]?.label || 'Bilinmeyen';
 };
