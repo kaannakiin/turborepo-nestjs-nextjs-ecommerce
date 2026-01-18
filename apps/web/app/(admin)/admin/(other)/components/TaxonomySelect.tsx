@@ -317,6 +317,7 @@ const TaxonomySelect = ({ field }: TaxonomySelectProps) => {
         <TextInput
           placeholder="Kategori ara..."
           value={searchTerm}
+          data-autofocus
           onChange={(event) => {
             const value = event.currentTarget.value;
             setSearchTerm(value);

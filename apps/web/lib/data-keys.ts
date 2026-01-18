@@ -115,6 +115,14 @@ export const DataKeys = {
     createOrUpdate: 'create-or-update-cargo-zone',
     zone: (id: string) => ['get-cargo-zone', id] as const,
   },
+  paymentRules: {
+    key: 'payment-rules' as const,
+    list: (page = 1, limit = 10) => ['payment-rules', page, limit] as const,
+    detail: (id: string) => ['payment-rule', id] as const,
+    create: 'payment-rule-create',
+    update: 'payment-rule-update',
+    delete: 'payment-rule-delete',
+  },
   campaigns: {
     list: (search?: string, type?: string, page?: number) =>
       ['admin-campaigns', { search, type, page }] as const,

@@ -109,6 +109,25 @@ async create(
 ) {}
 ```
 
+### DTO Pattern (nestjs-zod)
+
+> **KURAL**: Backend DTO'ları `nestjs-zod`'un `createZodDto` fonksiyonu ile oluşturulur. Bu OpenAPI/Swagger uyumluluğu sağlar.
+
+```typescript
+// ✅ DOĞRU - nestjs-zod kullan
+import { CreateProductSchema, UpdateProductSchema } from "@repo/types";
+import { createZodDto } from "nestjs-zod";
+
+export class CreateProductDto extends createZodDto(CreateProductSchema) {}
+export class UpdateProductDto extends createZodDto(UpdateProductSchema) {}
+
+// ❌ YANLIŞ - Manuel class tanımlama
+export class CreateProductDto {
+  name: string;
+  price: number;
+}
+```
+
 ### API Endpoint Yapısı
 
 | Prefix     | Kullanım       | Auth              |

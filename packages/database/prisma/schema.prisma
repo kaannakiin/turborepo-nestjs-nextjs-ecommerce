@@ -1311,6 +1311,21 @@ model StorePaymentProvider {
   provider   PaymentProvider @unique
 }
 
+model PaymentRule {
+  id        String  @id @default(cuid())
+  name      String
+  priority  Int     @default(0) // Düşük = öncelikli
+  isActive  Boolean @default(true)
+  isDefault Boolean @default(false)
+  flowData  Json // { nodes: [], edges: [] }
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, priority])
+  @@index([isDefault])
+}
+
 model AssetLibrary {
   id        String    @id @default(cuid())
   assetType AssetType @default(IMAGE)

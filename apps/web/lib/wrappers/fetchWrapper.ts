@@ -1,4 +1,8 @@
-import { LOCALE_COOKIE_NAME, STORE_TYPE_COOKIE_NAME } from '@repo/types';
+import {
+  LOCALE_COOKIE_NAME,
+  NOT_RETRY_REFRESH_TOKEN_ENDPOINTS,
+  STORE_TYPE_COOKIE_NAME,
+} from '@repo/types';
 import axios, {
   AxiosError,
   AxiosInstance,
@@ -256,6 +260,10 @@ class ClientAxiosWrapper {
         }
 
         if (error.response.status === 401 && !originalRequest._retry) {
+          if (NOT_RETRY_REFRESH_TOKEN_ENDPOINTS.includes(originalRequest.url)) {
+            return Promise.reject(error);
+          }
+
           if (this.isRefreshing) {
             return new Promise((resolve, reject) => {
               this.failedQueue.push({ resolve, reject });

@@ -94,7 +94,7 @@ export const SliderSchema = SlideSchema.safeExtend({
   },
   {
     error: "Slayt en az bir görüntüleme (desktop veya mobile) içermelidir.",
-  }
+  },
 );
 
 export const SliderComponentSchema = z.object({
@@ -117,7 +117,7 @@ export const SliderComponentSchema = z.object({
       },
       {
         error: "Slayt sıralamaları benzersiz olmalıdır.",
-      }
+      },
     ),
   options: z.object({
     aspectRatio: z.enum(AspectRatio, {
@@ -206,7 +206,7 @@ export const MarqueeComponentSchema = z.object({
               input: item.text,
             });
           }
-        })
+        }),
     )
 
     .min(1, { error: "Marquee en az bir öğe içermelidir." }),
@@ -248,7 +248,7 @@ export const CarouselItemSchema = z
     },
     {
       error: "Ürün veya Varyant ID'si zorunludur.",
-    }
+    },
   );
 
 export const CarouselConfigSchema = z.object({
@@ -307,7 +307,7 @@ export const ProductCarouselComponentSchema = z
     {
       message: "Başlık gösterilecekse başlık alanı zorunludur.",
       path: ["title"],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -319,7 +319,7 @@ export const ProductCarouselComponentSchema = z
     {
       message: "Açıklama gösterilecekse açıklama alanı zorunludur.",
       path: ["description"],
-    }
+    },
   );
 
 export const ThemeComponentSchema = z.discriminatedUnion("type", [
@@ -339,7 +339,7 @@ export const PageSchema = z.object({
     },
     {
       error: "Component sıralamaları benzersiz olmalıdır.",
-    }
+    },
   ),
 });
 
@@ -361,7 +361,7 @@ export const ThemeSchema = z.object({
       {
         message:
           "Bir temada her sayfa türünden (Örn: Homepage) sadece bir tane bulunabilir.",
-      }
+      },
     ),
 });
 

@@ -1,4 +1,3 @@
-//packages/types/src/customers/customer-segment-domain.ts
 import {
   AccountStatus,
   RegistrationSource,
@@ -411,7 +410,7 @@ export const customerSegmentDomain: ConditionDomainConfig<
   createEmptyCondition: (field) =>
     createGenericEmptyCondition<CustomerGroupSmartFields, SegmentCondition>(
       field,
-      CUSTOMER_SEGMENT_FIELDS
+      CUSTOMER_SEGMENT_FIELDS,
     ),
 };
 

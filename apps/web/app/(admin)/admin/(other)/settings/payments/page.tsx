@@ -89,8 +89,14 @@ const AdminPaymentsPage = () => {
               Ödeme ayarlarını yapılandırarak müşterilerinize farklı ödeme
               yöntemleri sunabilirsiniz.
             </Text>
-            <Button variant="filled" disabled={!hasPaymentMethods}>
-              Ödeme Ayarı Ekle
+            <Button
+              variant="filled"
+              disabled={!hasPaymentMethods}
+              onClick={() => {
+                push('/admin/settings/payments/payment-rules' as Route);
+              }}
+            >
+              Ödeme Kurallarını Yönet
             </Button>
             {!hasPaymentMethods && (
               <Text size="sm" c="dimmed" className="text-center">

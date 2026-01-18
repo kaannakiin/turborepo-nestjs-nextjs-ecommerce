@@ -13,6 +13,7 @@ import { Themev2Module } from './themev2/themev2.module';
 import { UsersModule } from './users/users.module';
 import { StoreModule } from './store/store.module';
 import { ShippingModule } from './shipping/shipping.module';
+import { PaymentRulesModule } from './payment-rules/payment-rules.module';
 
 @Module({
   controllers: [AdminController],
@@ -25,6 +26,7 @@ import { ShippingModule } from './shipping/shipping.module';
     DiscountsModule,
     CampaignsModule,
     PaymentsModule,
+    PaymentRulesModule,
     Themev2Module,
     ProductsModule,
     InventoryModule,
