@@ -106,7 +106,6 @@ export const AspectRatio = {
   AUTO: "auto",
   SQUARE: "1/1",
   FOUR_BY_THREE: "4/3",
-
   SIXTEEN_BY_NINE: "16/9",
 } as const;
 

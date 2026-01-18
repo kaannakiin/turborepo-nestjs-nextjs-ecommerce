@@ -677,15 +677,7 @@ export const AspectRatioConfigs: Record<
   auto: { label: 'Otomatik', value: 0 },
   '1/1': { label: '1:1 (Kare - Instagram Post)', value: 1 },
   '4/3': { label: '4:3 (Klasik TV)', value: 4 / 3 },
-  '3/4': { label: '3:4 (Dikey - Portre)', value: 3 / 4 },
   '16/9': { label: '16:9 (Geniş Ekran - YouTube)', value: 16 / 9 },
-  '9/16': { label: '9:16 (Dikey Video - TikTok, Reels)', value: 9 / 16 },
-  '21/9': { label: '21:9 (Ultra Geniş - Sinema)', value: 21 / 9 },
-  '2/1': { label: '2:1 (Panorama)', value: 2 / 1 },
-  '3/2': { label: '3:2 (DSLR Fotoğraf)', value: 3 / 2 },
-  '2/3': { label: '2/3 (Portre Fotoğraf)', value: 2 / 3 },
-  '5/4': { label: '5:4 (Klasik Monitor)', value: 5 / 4 },
-  '4/5': { label: '4:5 (Instagram Portre)', value: 4 / 5 },
 };
 
 export const getAspectRatioLabel = (ratio: AspectRatio): string => {
