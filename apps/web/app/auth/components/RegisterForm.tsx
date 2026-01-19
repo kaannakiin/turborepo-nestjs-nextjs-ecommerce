@@ -1,6 +1,5 @@
 'use client';
 
-import fetchWrapper from '@lib/wrappers/fetchWrapper';
 import {
   Button,
   PasswordInput,
@@ -12,11 +11,11 @@ import {
 } from '@mantine/core';
 import { Controller, SubmitHandler, useForm, zodResolver } from '@repo/shared';
 import { RegisterSchema, RegisterSchemaType } from '@repo/types';
+import { PhoneInput } from '@repo/ui/inputs';
 import { Route } from 'next';
 import { useRouter, useSearchParams } from 'next/navigation';
-import CustomPhoneInput from '../../components/inputs/CustomPhoneInput';
-import LoadingOverlay from '../../components/LoadingOverlay';
 import { useSignIn, useSignUp } from '../../../hooks/useAuth';
+import LoadingOverlay from '../../components/LoadingOverlay';
 
 const RegisterForm = () => {
   const {
@@ -138,13 +137,12 @@ const RegisterForm = () => {
         control={control}
         name="phone"
         render={({ field, fieldState }) => (
-          <CustomPhoneInput
+          <PhoneInput
             {...field}
             value={field.value || ''}
             error={fieldState.error?.message}
             size="md"
             radius={'md'}
-            placeholder="Telefon Numarası"
           />
         )}
       />

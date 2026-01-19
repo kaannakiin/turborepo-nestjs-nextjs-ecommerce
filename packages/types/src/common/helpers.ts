@@ -1,18 +1,26 @@
-import {
-  CountryCallingCode,
-  getCountries,
-  getCountryCallingCode,
-} from "libphonenumber-js";
+import { PhoneNumberUtil } from "google-libphonenumber";
 
-export const isPhoneJustCallingCode = (phone: string): boolean => {
-  const callingCodes = getCountryCodes();
-  return callingCodes.includes(phone as CountryCallingCode);
+const phoneUtil = PhoneNumberUtil.getInstance();
+
+export const isValidPhoneNumber = (phone: string): boolean => {
+  try {
+    const parsedNumber = phoneUtil.parse(phone);
+    return phoneUtil.isValidNumber(parsedNumber);
+  } catch {
+    return false;
+  }
 };
 
 export const getCountryCodes = (): string[] => {
-  const countryCodes = getCountries();
-  const callingCodes = countryCodes.map(
-    (code) => `+${getCountryCallingCode(code)}`
-  ) as CountryCallingCode[];
-  return callingCodes;
+  const regions = phoneUtil.getSupportedRegions();
+  const callingCodes = regions.map((region: string) => {
+    const code = phoneUtil.getCountryCodeForRegion(region);
+    return `+${code}`;
+  });
+  return [...new Set(callingCodes)] as string[]; // Unique değerlert
+};
+
+export const isPhoneJustCallingCode = (phone: string): boolean => {
+  const callingCodes = getCountryCodes();
+  return callingCodes.includes(phone);
 };

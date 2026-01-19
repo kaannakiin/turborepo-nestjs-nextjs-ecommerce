@@ -1,6 +1,5 @@
 'use client';
 
-import CustomPhoneInput from '@/components/inputs/CustomPhoneInput';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import { Button, Card, Group, SimpleGrid, TextInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
@@ -10,6 +9,7 @@ import {
   UserDashboardInfoSchema,
   UserDashboardInfoType,
 } from '@repo/types';
+import { PhoneInput } from '@repo/ui/inputs';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 interface UserInfoFormProps {
@@ -100,7 +100,7 @@ const UserInfoForm = ({ session }: UserInfoFormProps) => {
             control={control}
             name="phone"
             render={({ field, fieldState }) => (
-              <CustomPhoneInput
+              <PhoneInput
                 {...field}
                 error={fieldState.error?.message}
                 label="Telefon Numarası"

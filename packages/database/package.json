@@ -32,18 +32,19 @@
     "db:prisma": "prisma studio"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.0.0",
-    "@prisma/client": "^7.0.0",
-    "argon2": "^0.44.0",
+    "@prisma/adapter-pg": "catalog:",
+    "@prisma/client": "catalog:",
+    "argon2": "catalog:",
     "iconv-lite": "^0.7.0",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "pg": "catalog:"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/pg": "^8.15.5",
     "dotenv": "^16.4.7",
-    "prisma": "^7.0.0",
+    "prisma": "catalog:",
     "tsup": "^8.0.0"
   }
 }

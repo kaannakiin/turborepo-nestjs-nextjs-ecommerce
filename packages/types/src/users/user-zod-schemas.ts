@@ -1,7 +1,10 @@
 import { UserRole } from "@repo/database/client";
-import { CountryCallingCode, isValidPhoneNumber } from "libphonenumber-js";
 import { z } from "zod";
-import { getCountryCodes, isPhoneJustCallingCode } from "../common/helpers";
+import {
+  getCountryCodes,
+  isPhoneJustCallingCode,
+  isValidPhoneNumber,
+} from "../common/helpers";
 
 export const PhoneSchema = z
   .string({
@@ -17,7 +20,7 @@ export const PhoneSchema = z
     },
     {
       message: "Geçersiz telefon numarası",
-    }
+    },
   );
 
 export const PhoneSchemaOptional = z
@@ -36,7 +39,7 @@ export const PhoneSchemaOptional = z
     },
     {
       message: "Geçersiz telefon numarası",
-    }
+    },
   );
 
 export const RegisterSchema = z
@@ -74,11 +77,9 @@ export const RegisterSchema = z
     const callingCodes = getCountryCodes();
     const phoneValue = value.phone?.trim() || "";
 
-    const isPhoneJustCallingCode = callingCodes.includes(
-      phoneValue as CountryCallingCode
-    );
+    const isPhoneJustCallingCodeValue = callingCodes.includes(phoneValue);
     const isPhoneEmpty = phoneValue === "";
-    const isPhoneProvided = !isPhoneEmpty && !isPhoneJustCallingCode;
+    const isPhoneProvided = !isPhoneEmpty && !isPhoneJustCallingCodeValue;
 
     if (!isEmailProvided && !isPhoneProvided) {
       issues.push({
@@ -125,6 +126,7 @@ export const RegisterSchema = z
   });
 
 export type RegisterSchemaType = z.infer<typeof RegisterSchema>;
+
 export const LoginSchemaWithPhone = z.object({
   type: z.literal("phone"),
   phone: z
@@ -141,7 +143,7 @@ export const LoginSchemaWithPhone = z.object({
       },
       {
         message: "Geçersiz telefon numarası",
-      }
+      },
     ),
   password: z
     .string({
@@ -150,7 +152,9 @@ export const LoginSchemaWithPhone = z.object({
     .min(6, "Şifre en az 6 karakter olmalıdır")
     .max(50, "Şifre en fazla 50 karakter olabilir"),
 });
+
 export type LoginSchemaWithPhoneType = z.infer<typeof LoginSchemaWithPhone>;
+
 export const LoginSchemaWithEmail = z.object({
   type: z.literal("email"),
   email: z.email("Geçersiz e-posta adresi"),
@@ -161,6 +165,7 @@ export const LoginSchemaWithEmail = z.object({
     .min(6, "Şifre en az 6 karakter olmalıdır")
     .max(50, "Şifre en fazla 50 karakter olabilir"),
 });
+
 export type LoginSchemaWithEmailType = z.infer<typeof LoginSchemaWithEmail>;
 
 export const LoginSchema = z.discriminatedUnion("type", [

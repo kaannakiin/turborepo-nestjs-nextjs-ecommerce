@@ -1,20 +1,15 @@
 import { CountryType } from "@repo/database/client";
-import { isPossiblePhoneNumber } from "libphonenumber-js";
 import * as z from "zod";
 import { tcKimlikNoRegex } from "../common";
 import { TURKEY_DB_ID } from "../common/constants";
+import { PhoneSchema } from "../users";
 
 const BaseAddressSchema = z
   .object({
     id: z.cuid2({
       error: "Geçersiz Adres Kimliği",
     }),
-    phone: z
-      .string({ error: "Telefon Numarası gereklidir" })
-      .refine((val) => isPossiblePhoneNumber(val), {
-        message: "Geçersiz Telefon Numarası",
-      }),
-
+    phone: PhoneSchema,
     name: z
       .string({
         error: " İsim gereklidir",
@@ -69,7 +64,7 @@ const BaseAddressSchema = z
       })
       .regex(
         /^[a-z0-9][a-z0-9\- ]{0,10}[a-z0-9]$/i,
-        "Geçersiz postal kodu formatı"
+        "Geçersiz postal kodu formatı",
       )
       .nullable()
       .optional(),

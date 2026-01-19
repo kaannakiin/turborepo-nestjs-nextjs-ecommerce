@@ -3,7 +3,7 @@
 import ActionPopover from '@/(admin)/components/ActionPopover';
 import PriceFormatter from '@/(user)/components/PriceFormatter';
 import LoadingOverlay from '@/components/LoadingOverlay';
-import CountryModal from '@/components/modals/CountryModal';
+import { DataSelectModal } from '@repo/ui/modals';
 import { useCreateOrUpdateCargoZone } from '@hooks/admin/useShipping';
 import { useCountries } from '@hooks/useLocations';
 import { getConditionText, getSelectionTextShipping } from '@lib/helpers';
@@ -30,6 +30,7 @@ import {
 import {
   CargoZoneConfigSchema,
   CargoZoneType,
+  GetAllCountryReturnType,
   LocationType,
 } from '@repo/types';
 import { IconEdit, IconInfoCircle, IconTrash } from '@tabler/icons-react';
@@ -317,10 +318,19 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
           </div>
         </Card>
       </div>
-      <CountryModal
+      <DataSelectModal
         opened={opened}
         onClose={close}
+        title="Bölge Ekle"
+        data={countries || []}
+        isLoading={countriesIsLoading}
         selectedIds={locations.map((l) => l.countryId)}
+        idKey="id"
+        labelKey="translations"
+        searchFn={(item, query) =>
+          item.translations[0].name.toLowerCase().includes(query.toLowerCase())
+        }
+        searchPlaceholder="Bölge adı"
         onSubmit={(selectedCountries) => {
           const indexesToRemove: number[] = [];
           locations.forEach((loc, index) => {
@@ -342,6 +352,11 @@ const ShippingForm = ({ defaultValues }: ShippingFormProps) => {
             }
           });
         }}
+        renderItem={(country: GetAllCountryReturnType) => (
+          <Text>
+            {country.emoji} {country.translations[0].name}
+          </Text>
+        )}
       />
       <ShippingRuleModal
         closeRuleModal={() => {

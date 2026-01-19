@@ -29,7 +29,7 @@ const dynamicRemotePatterns: NextConfig['images']['remotePatterns'] = envDomains
 const nextConfig: NextConfig = {
   reactCompiler: true,
   typedRoutes: true,
-  transpilePackages: ['@repo/database'],
+  transpilePackages: ['@repo/database', '@repo/ui'],
   serverExternalPackages: ['@prisma/client', 'pg'],
   images: {
     remotePatterns: [

@@ -1,14 +1,16 @@
 'use client';
 
 import FormCard from '@/components/cards/FormCard';
-import LoadingOverlay from '@/components/LoadingOverlay';
 import AdminInventoryLocationTypeSelect from '@/components/inputs/admin/AdminInventoryLocationTypeSelect';
 import CityInput from '@/components/inputs/CityInput';
 import CountryInput from '@/components/inputs/CountryInput';
-import CustomPhoneInput from '@/components/inputs/CustomPhoneInput';
 import DistrictInput from '@/components/inputs/DistrictInput';
 import StateInput from '@/components/inputs/StateInput';
-import fetchWrapper, { ApiError } from '@lib/wrappers/fetchWrapper';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import {
+  useInventoryLocationDetail,
+  useUpsertInventoryLocation,
+} from '@hooks/admin/useInventory';
 import {
   Alert,
   Box,
@@ -34,14 +36,11 @@ import {
   zodResolver,
 } from '@repo/shared';
 import {
-  useInventoryLocationDetail,
-  useUpsertInventoryLocation,
-} from '@hooks/admin/useInventory';
-import {
   InventoryLocationZodSchema,
   InventoryLocationZodSchemaType,
   TURKEY_DB_ID,
 } from '@repo/types';
+import { PhoneInput } from '@repo/ui/inputs';
 import {
   IconAlertCircle,
   IconArrowLeft,
@@ -459,7 +458,7 @@ const InventoryFormPage = () => {
                 name="contactPhone"
                 control={control}
                 render={({ field, fieldState }) => (
-                  <CustomPhoneInput
+                  <PhoneInput
                     {...field}
                     label="Telefon"
                     size="sm"

@@ -6,7 +6,7 @@ import { SubmitHandler, useForm, useWatch, zodResolver } from '@repo/shared';
 import { LocationSchema, LocationType } from '@repo/types';
 import { useStates, useCities } from '@hooks/useLocations';
 import Loader from '@/components/Loader';
-import BasicItemModal from '@/components/modals/LocationItemModal';
+import { DataSelectModal } from '@repo/ui/modals';
 
 interface ShippingLocationDrawerProps {
   defaultValues: LocationType;
@@ -127,14 +127,17 @@ const ShippingLocationDrawer = ({
         </Card>
       </Drawer>
 
-      <BasicItemModal
+      <DataSelectModal
         opened={modalOpened}
         onClose={closeModal}
         title={isStateMode ? 'Eyalet Seçin' : 'Şehir Seçin'}
         searchPlaceholder={`${isStateMode ? 'Eyalet' : 'Şehir'} ara...`}
-        items={currentItems}
+        data={currentItems || []}
         isLoading={isStateMode ? statesIsLoading : citiesIsLoading}
         selectedIds={currentSelectedIds}
+        idKey="id"
+        labelKey="name"
+        searchKeys={['name']}
         onSubmit={(selectedItems) => {
           const selectedIds = selectedItems.map((item) => item.id);
           if (isStateMode) {
@@ -144,6 +147,7 @@ const ShippingLocationDrawer = ({
           }
           closeModal();
         }}
+        renderItem={(item) => <Text>{item.name}</Text>}
       />
     </>
   );

@@ -10,10 +10,10 @@ import {
 } from '@mantine/core';
 import { Controller, SubmitHandler, useForm, zodResolver } from '@repo/shared';
 import { LoginSchema, LoginSchemaType } from '@repo/types';
+import { PhoneInput } from '@repo/ui/inputs';
 import { IconMail, IconPhone } from '@tabler/icons-react';
 import { Route } from 'next';
 import { useRouter, useSearchParams } from 'next/navigation';
-import CustomPhoneInput from '../../components/inputs/CustomPhoneInput';
 import LoadingOverlay from '../../components/LoadingOverlay';
 
 const LoginForm = () => {
@@ -97,12 +97,7 @@ const LoginForm = () => {
           control={control}
           name="phone"
           render={({ field }) => (
-            <CustomPhoneInput
-              {...field}
-              placeholder="Telefon Numarası"
-              size="md"
-              radius={'md'}
-            />
+            <PhoneInput {...field} size="md" radius={'md'} />
           )}
         />
       )}
