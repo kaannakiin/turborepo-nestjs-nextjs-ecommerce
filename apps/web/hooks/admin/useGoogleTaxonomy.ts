@@ -1,6 +1,6 @@
 import { DataKeys } from '@lib/data-keys';
 import fetchWrapper, { ApiError } from '@lib/wrappers/fetchWrapper';
-import { useQuery } from '@repo/shared';
+import { type UseQueryResult, useQuery } from '@repo/shared';
 import { NewTaxonomyCategory } from '@repo/types';
 
 export interface SimplifiedTaxonomyCategory {
@@ -87,14 +87,18 @@ const fetchCategoryDetails = async (
   return response.data.category;
 };
 
-export const useGoogleTaxonomyCategories = (parentId: string | null) => {
+export const useGoogleTaxonomyCategories = (
+  parentId: string | null,
+): UseQueryResult<SimplifiedTaxonomyCategory[], Error> => {
   return useQuery({
     queryKey: DataKeys.googleTaxonomy.categories(parentId),
     queryFn: () => fetchCategoriesByParent(parentId),
   });
 };
 
-export const useGoogleTaxonomyDetails = (id: string | null) => {
+export const useGoogleTaxonomyDetails = (
+  id: string | null,
+): UseQueryResult<SimplifiedTaxonomyCategory, Error> => {
   return useQuery({
     queryKey: DataKeys.googleTaxonomy.details(id || ''),
     queryFn: () => fetchCategoryDetails(id!),
@@ -106,7 +110,7 @@ export const useGoogleTaxonomyDetails = (id: string | null) => {
 export const useGoogleTaxonomyAncestors = (
   id: string | null,
   enabled: boolean,
-) => {
+): UseQueryResult<string[], Error> => {
   return useQuery({
     queryKey: DataKeys.googleTaxonomy.ancestors(id || ''),
     queryFn: () => fetchAncestorIds(id!),
@@ -115,7 +119,9 @@ export const useGoogleTaxonomyAncestors = (
   });
 };
 
-export const useGoogleTaxonomySearch = (term: string) => {
+export const useGoogleTaxonomySearch = (
+  term: string,
+): UseQueryResult<SimplifiedTaxonomyCategory[], Error> => {
   return useQuery({
     queryKey: DataKeys.googleTaxonomy.search(term),
     queryFn: () => fetchCategoryBySearch(term),

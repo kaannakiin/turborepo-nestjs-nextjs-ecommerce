@@ -1,7 +1,12 @@
 import { DataKeys } from '@lib/data-keys';
 import fetchWrapper, { ApiError } from '@lib/wrappers/fetchWrapper';
 import { FulfillmentStrategy, LocationType } from '@repo/database/client';
-import { useMutation, useQuery } from '@repo/shared';
+import {
+  useMutation,
+  useQuery,
+  type UseMutationResult,
+  type UseQueryResult,
+} from '@repo/shared';
 import {
   AdminInventoryTableReturnType,
   FullfillmentStrategyInput,
@@ -23,7 +28,13 @@ export const useInvetoryRule = ({
   take = 20,
   search,
   enabled = true,
-}: InventoryProps) => {
+}: InventoryProps): UseQueryResult<
+  {
+    data: FulfillmentStrategy[];
+    pagination: Pagination;
+  },
+  Error
+> => {
   return useQuery({
     queryKey: DataKeys.admin.inventory.list(page, take, search),
     enabled,
@@ -52,7 +63,7 @@ export const useInvetoryRule = ({
 export const useInventoryRuleDetail = (
   id: string,
   options?: { enabled?: boolean },
-) => {
+): UseQueryResult<FullfillmentStrategyInput, Error> => {
   return useQuery({
     queryKey: DataKeys.admin.inventory.detail(id),
     enabled: options?.enabled ?? true,
@@ -69,7 +80,12 @@ export const useInventoryRuleDetail = (
   });
 };
 
-export const useUpsertInventoryRule = () => {
+export const useUpsertInventoryRule = (): UseMutationResult<
+  UpsertInventoryRuleFulfillmentStrategy,
+  Error,
+  FullfillmentStrategyOutput,
+  unknown
+> => {
   return useMutation({
     mutationKey: DataKeys.admin.inventory.upsert,
     mutationFn: async (data: FullfillmentStrategyOutput) => {
@@ -104,7 +120,10 @@ export const useInventoryLocations = ({
   limit,
   search,
   type,
-}: InventoryLocationProps) => {
+}: InventoryLocationProps): UseQueryResult<
+  AdminInventoryTableReturnType,
+  Error
+> => {
   return useQuery({
     queryKey: ['admin-inventory-location-list', page, limit, search, type],
     queryFn: async () => {
@@ -128,7 +147,7 @@ export const useInventoryLocations = ({
 export const useInventoryLocationDetail = (
   slug: string,
   isEditMode: boolean,
-) => {
+): UseQueryResult<InventoryLocationZodSchemaType, Error> => {
   return useQuery({
     queryKey: ['inventory-location-detail', slug],
     queryFn: async () => {
@@ -149,7 +168,12 @@ export const useInventoryLocationDetail = (
 export const useUpsertInventoryLocation = (
   isEditMode: boolean,
   slug: string,
-) => {
+): UseMutationResult<
+  unknown,
+  Error,
+  InventoryLocationZodSchemaType,
+  unknown
+> => {
   return useMutation({
     mutationKey: ['upsert-inventory-location'],
     mutationFn: async (data: InventoryLocationZodSchemaType) => {

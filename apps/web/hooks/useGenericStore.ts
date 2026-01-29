@@ -1,5 +1,12 @@
 import fetchWrapper from '@lib/wrappers/fetchWrapper';
-import { getParamKey, useInfiniteQuery, useQuery } from '@repo/shared';
+import {
+  getParamKey,
+  useInfiniteQuery,
+  useQuery,
+  type UseInfiniteQueryResult,
+  type UseQueryResult,
+  type InfiniteData,
+} from '@repo/shared';
 import { CategoryProductsResponse, FiltersResponse } from '@repo/types';
 
 interface UseStoreInfinityQueryProps {
@@ -16,7 +23,10 @@ export const useStoreInfinityQuery = ({
   slug,
   currentParams,
   staleTime,
-}: UseStoreInfinityQueryProps) => {
+}: UseStoreInfinityQueryProps): UseInfiniteQueryResult<
+  InfiniteData<CategoryProductsResponse>,
+  Error
+> => {
   return useInfiniteQuery({
     queryKey,
     initialPageParam: 1,
@@ -57,7 +67,7 @@ export const useStoreFilters = ({
   slug,
   currentParams,
   staleTime,
-}: UseStoreFiltersProps) => {
+}: UseStoreFiltersProps): UseQueryResult<FiltersResponse, Error> => {
   return useQuery({
     queryKey,
     queryFn: async () => {

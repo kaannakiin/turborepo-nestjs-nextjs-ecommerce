@@ -1,6 +1,11 @@
 import { DataKeys } from '@lib/data-keys';
 import fetchWrapper, { ApiError } from '@lib/wrappers/fetchWrapper';
-import { useMutation, useQuery } from '@repo/shared';
+import {
+  useMutation,
+  useQuery,
+  type UseMutationResult,
+  type UseQueryResult,
+} from '@repo/shared';
 import {
   AdminCategoryTableReturnType,
   CategoryIdAndName,
@@ -126,7 +131,7 @@ export const useCategories = (
   search: string,
   page: number,
   limit: number = 20,
-) => {
+): UseQueryResult<AdminCategoryTableReturnType, Error> => {
   return useQuery({
     queryKey: DataKeys.admin.categories.list(search, page, limit),
     queryFn: () => fetchCategories(search, page, limit),
@@ -134,7 +139,9 @@ export const useCategories = (
   });
 };
 
-export const useParentCategories = (currentCategoryId?: string) => {
+export const useParentCategories = (
+  currentCategoryId?: string,
+): UseQueryResult<CategoryGroup[], Error> => {
   return useQuery({
     queryKey: DataKeys.admin.categories.parents(currentCategoryId),
     queryFn: () => fetchParentCategories(currentCategoryId),
@@ -144,7 +151,7 @@ export const useParentCategories = (currentCategoryId?: string) => {
 export const useCategoryDetail = (
   categoryId: string,
   enabled: boolean = true,
-) => {
+): UseQueryResult<CategoryZodType, Error> => {
   return useQuery({
     queryKey: DataKeys.admin.categories.detail(categoryId),
     queryFn: () => fetchCategoryDetail(categoryId),
@@ -153,7 +160,12 @@ export const useCategoryDetail = (
   });
 };
 
-export const useCreateOrUpdateCategory = () => {
+export const useCreateOrUpdateCategory = (): UseMutationResult<
+  { categoryId: string },
+  Error,
+  Omit<CategoryZodType, 'image'>,
+  unknown
+> => {
   return useMutation({
     mutationKey: [DataKeys.admin.categories.createOrUpdate],
     mutationFn: createOrUpdateCategory,
@@ -168,7 +180,15 @@ export const useCreateOrUpdateCategory = () => {
   });
 };
 
-export const useUploadCategoryImage = () => {
+export const useUploadCategoryImage = (): UseMutationResult<
+  unknown,
+  Error,
+  {
+    file: File;
+    uniqueId: string;
+  },
+  unknown
+> => {
   return useMutation({
     mutationKey: [DataKeys.admin.categories.uploadImage],
     mutationFn: uploadCategoryImage,
@@ -183,7 +203,12 @@ export const useUploadCategoryImage = () => {
   });
 };
 
-export const useDeleteCategoryImage = () => {
+export const useDeleteCategoryImage = (): UseMutationResult<
+  unknown,
+  Error,
+  string,
+  unknown
+> => {
   return useMutation({
     mutationKey: [DataKeys.admin.categories.deleteImage],
     mutationFn: deleteCategoryImage,
@@ -195,7 +220,15 @@ export const useDeleteCategoryImage = () => {
   });
 };
 
-export const useDeleteCategory = () => {
+export const useDeleteCategory = (): UseMutationResult<
+  {
+    success: boolean;
+    message: string;
+  },
+  Error,
+  string,
+  unknown
+> => {
   return useMutation({
     mutationKey: [DataKeys.admin.categories.delete],
     mutationFn: deleteCategory,
@@ -207,7 +240,9 @@ export const useDeleteCategory = () => {
   });
 };
 
-export const useAllCategoriesSimple = (enabled: boolean = true) => {
+export const useAllCategoriesSimple = (
+  enabled: boolean = true,
+): UseQueryResult<CategoryIdAndName[], Error> => {
   return useQuery({
     queryKey: DataKeys.admin.categories.allSimple,
     queryFn: async () => {

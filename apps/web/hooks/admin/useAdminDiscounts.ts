@@ -1,7 +1,7 @@
 import { DataKeys } from '@lib/data-keys';
 import fetchWrapper from '@lib/wrappers/fetchWrapper';
 import { DiscountConditionType } from '@repo/database/client';
-import { useQuery } from '@repo/shared';
+import { type UseQueryResult, useQuery } from '@repo/shared';
 import {
   DiscountItem,
   GetAllDiscountReturnType,
@@ -14,7 +14,13 @@ export const useAdminDiscounts = ({
 }: {
   page?: number;
   type?: string | null;
-}) => {
+}): UseQueryResult<
+  {
+    data: GetAllDiscountReturnType['data'];
+    pagination: GetAllDiscountReturnType['pagination'];
+  },
+  Error
+> => {
   return useQuery({
     queryKey: DataKeys.discounts.list(type ?? undefined, page),
     queryFn: async () => {
@@ -40,7 +46,9 @@ export const useAdminDiscounts = ({
   });
 };
 
-export const useDiscountConditionData = (type: DiscountConditionType) => {
+export const useDiscountConditionData = (
+  type: DiscountConditionType,
+): UseQueryResult<DiscountItem[], Error> => {
   return useQuery({
     queryKey: DataKeys.discounts.conditionData(type),
     queryFn: async () => {
@@ -67,7 +75,9 @@ export const useDiscountConditionData = (type: DiscountConditionType) => {
   });
 };
 
-export const useAdminDiscountDetail = (slug: string) => {
+export const useAdminDiscountDetail = (
+  slug: string,
+): UseQueryResult<MainDiscount | null, Error> => {
   return useQuery({
     queryKey: DataKeys.discounts.detail(slug),
     queryFn: async () => {

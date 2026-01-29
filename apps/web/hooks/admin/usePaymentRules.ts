@@ -1,6 +1,12 @@
 import { DataKeys } from '@lib/data-keys';
 import fetchWrapper, { ApiError } from '@lib/wrappers/fetchWrapper';
-import { useMutation, useQuery, useQueryClient } from '@repo/shared';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseMutationResult,
+  type UseQueryResult,
+} from '@repo/shared';
 import {
   CreatePaymentRuleZodOutput,
   PaymentRuleDetailResponse,
@@ -9,7 +15,10 @@ import {
 } from '@repo/types';
 import { notifications } from '@mantine/notifications';
 
-export const usePaymentRules = (page = 1, limit = 10) => {
+export const usePaymentRules = (
+  page = 1,
+  limit = 10,
+): UseQueryResult<PaymentRuleListResponse, Error> => {
   return useQuery({
     queryKey: DataKeys.paymentRules.list(page, limit),
     queryFn: async () => {
@@ -25,7 +34,9 @@ export const usePaymentRules = (page = 1, limit = 10) => {
   });
 };
 
-export const usePaymentRule = (id: string | null) => {
+export const usePaymentRule = (
+  id: string | null,
+): UseQueryResult<PaymentRuleDetailResponse['data'], Error> => {
   return useQuery({
     queryKey: DataKeys.paymentRules.detail(id || ''),
     queryFn: async () => {
@@ -46,7 +57,12 @@ export const usePaymentRule = (id: string | null) => {
   });
 };
 
-export const useCreatePaymentRule = () => {
+export const useCreatePaymentRule = (): UseMutationResult<
+  PaymentRuleMutationResponse,
+  Error,
+  CreatePaymentRuleZodOutput,
+  unknown
+> => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -83,7 +99,12 @@ export const useCreatePaymentRule = () => {
   });
 };
 
-export const useUpdatePaymentRule = () => {
+export const useUpdatePaymentRule = (): UseMutationResult<
+  PaymentRuleMutationResponse,
+  Error,
+  { id: string; data: CreatePaymentRuleZodOutput },
+  unknown
+> => {
   return useMutation({
     mutationKey: [DataKeys.paymentRules.update],
     mutationFn: async ({
@@ -127,7 +148,12 @@ export const useUpdatePaymentRule = () => {
   });
 };
 
-export const useDeletePaymentRule = () => {
+export const useDeletePaymentRule = (): UseMutationResult<
+  PaymentRuleMutationResponse,
+  Error,
+  string,
+  unknown
+> => {
   const queryClient = useQueryClient();
 
   return useMutation({

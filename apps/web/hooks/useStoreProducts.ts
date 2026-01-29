@@ -1,9 +1,11 @@
 import { DataKeys } from '@lib/data-keys';
 import fetchWrapper from '@lib/wrappers/fetchWrapper';
-import { useQuery } from '@repo/shared';
+import { type UseQueryResult, useQuery } from '@repo/shared';
 import { ProductDetailType, ProductPageDataType } from '@repo/types';
 
-export const useProductDetail = (slug: string) => {
+export const useProductDetail = (
+  slug: string,
+): UseQueryResult<ProductDetailType, Error> => {
   return useQuery({
     queryKey: DataKeys.products.detail(slug),
     queryFn: async () => {
@@ -17,7 +19,15 @@ export const useProductDetail = (slug: string) => {
   });
 };
 
-export const useSimilarProducts = (productId: string) => {
+export const useSimilarProducts = (
+  productId: string,
+): UseQueryResult<
+  {
+    totalCount: number;
+    products: ProductPageDataType[];
+  } | null,
+  Error
+> => {
   return useQuery({
     queryKey: DataKeys.products.similar(productId),
     queryFn: async () => {

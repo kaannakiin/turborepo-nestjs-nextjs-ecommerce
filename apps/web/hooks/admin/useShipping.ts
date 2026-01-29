@@ -1,9 +1,26 @@
 import { DataKeys } from '@lib/data-keys';
 import fetchWrapper, { ApiError } from '@lib/wrappers/fetchWrapper';
-import { useMutation, useQuery } from '@repo/shared';
+import {
+  useMutation,
+  useQuery,
+  type UseMutationResult,
+  type UseQueryResult,
+} from '@repo/shared';
 import { CargoZones, CargoZoneType, Pagination } from '@repo/types';
 
-export const useCargoZones = (page = 1, limit = 10, search?: string) => {
+export const useCargoZones = (
+  page = 1,
+  limit = 10,
+  search?: string,
+): UseQueryResult<
+  {
+    success: boolean;
+    message: string;
+    data?: CargoZones[];
+    pagination?: Pagination;
+  } | null,
+  Error
+> => {
   return useQuery({
     queryKey: DataKeys.shipping.zones(page, limit, search),
     queryFn: async () => {
@@ -34,7 +51,15 @@ export const useCargoZones = (page = 1, limit = 10, search?: string) => {
   });
 };
 
-export const useCreateOrUpdateCargoZone = () => {
+export const useCreateOrUpdateCargoZone = (): UseMutationResult<
+  {
+    success: boolean;
+    message?: string;
+  },
+  Error,
+  CargoZoneType,
+  unknown
+> => {
   return useMutation({
     mutationKey: [DataKeys.shipping.createOrUpdate],
     mutationFn: async (data: CargoZoneType) => {
@@ -66,7 +91,9 @@ export const useCreateOrUpdateCargoZone = () => {
   });
 };
 
-export const useGetCargoZone = (slug: string) => {
+export const useGetCargoZone = (
+  slug: string,
+): UseQueryResult<CargoZoneType | null, Error> => {
   return useQuery({
     queryKey: DataKeys.shipping.zone(slug),
     queryFn: async () => {

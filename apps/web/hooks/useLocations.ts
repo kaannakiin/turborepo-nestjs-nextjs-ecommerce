@@ -1,6 +1,6 @@
 import { DataKeys } from '@lib/data-keys';
 import fetchWrapper from '@lib/wrappers/fetchWrapper';
-import { useQuery, UseQueryOptions } from '@repo/shared';
+import { type UseQueryResult, useQuery, UseQueryOptions } from '@repo/shared';
 import {
   GetAllCountryReturnType,
   GetAllCityReturnType,
@@ -15,7 +15,7 @@ export const useCountries = (
     UseQueryOptions<GetAllCountryReturnType[], Error>,
     'queryKey' | 'queryFn'
   >,
-) => {
+): UseQueryResult<GetAllCountryReturnType[], Error> => {
   return useQuery({
     queryKey: DataKeys.locations.countries,
     queryFn: async () => {
@@ -42,7 +42,7 @@ export const useStates = ({
   countryId,
   addressType,
   enabled = true,
-}: UseStatesOptions) => {
+}: UseStatesOptions): UseQueryResult<GetAllStateReturnType[], Error> => {
   return useQuery({
     queryKey: DataKeys.locations.states(countryId),
     queryFn: async () => {
@@ -70,7 +70,7 @@ export const useCities = ({
   countryId,
   addressType,
   enabled = true,
-}: UseCitiesOptions) => {
+}: UseCitiesOptions): UseQueryResult<GetAllCityReturnType[], Error> => {
   return useQuery({
     queryKey: DataKeys.locations.cities(countryId),
     queryFn: async () => {
@@ -98,7 +98,10 @@ export const useDistricts = ({
   countryId,
   cityId,
   enabled = true,
-}: UseDistrictsOptions) => {
+}: UseDistrictsOptions): UseQueryResult<
+  { id: string; name: string }[],
+  Error
+> => {
   return useQuery({
     queryKey: DataKeys.locations.districts(countryId, cityId),
     queryFn: async () => {

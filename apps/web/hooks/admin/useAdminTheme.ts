@@ -1,6 +1,6 @@
 import { DataKeys } from '@lib/data-keys';
 import fetchWrapper from '@lib/wrappers/fetchWrapper';
-import { keepPreviousData, useQuery } from '@repo/shared';
+import { keepPreviousData, useQuery, type UseQueryResult } from '@repo/shared';
 import { ProductCart } from '@repo/types';
 
 export const useThemeCarouselProducts = ({
@@ -11,7 +11,14 @@ export const useThemeCarouselProducts = ({
   componentId: string;
   productIds: string[];
   variantIds: string[];
-}) => {
+}): UseQueryResult<
+  {
+    success: boolean;
+    products: ProductCart[];
+    variants: ProductCart[];
+  },
+  Error
+> => {
   return useQuery({
     queryKey: DataKeys.products.themeCarousel(
       componentId,
@@ -20,7 +27,7 @@ export const useThemeCarouselProducts = ({
     ),
     queryFn: async ({ client }) => {
       if (productIds.length === 0 && variantIds.length === 0) {
-        return { products: [], variants: [] };
+        return { success: true, products: [], variants: [] };
       }
 
       const existingQueries = client.getQueriesData<{
@@ -48,6 +55,7 @@ export const useThemeCarouselProducts = ({
           variants: cachedData.variants.filter((v) =>
             variantIds.includes(v.id),
           ),
+          success: true,
         };
       }
 

@@ -1,7 +1,7 @@
 import { DataKeys } from '@lib/data-keys';
 import fetchWrapper, { ApiError } from '@lib/wrappers/fetchWrapper';
 import { User } from '@repo/database/client';
-import { keepPreviousData, useQuery } from '@repo/shared';
+import { keepPreviousData, useQuery, type UseQueryResult } from '@repo/shared';
 import { AllUsersReturnType, Pagination } from '@repo/types';
 
 export const useAdminSelectableUsers = ({
@@ -12,7 +12,13 @@ export const useAdminSelectableUsers = ({
   page?: number;
   search?: string;
   enabled?: boolean;
-}) => {
+}): UseQueryResult<
+  {
+    users: User[];
+    pagination?: Pagination;
+  },
+  Error
+> => {
   return useQuery({
     queryKey: DataKeys.users.selectable(page, search),
     queryFn: async () => {
@@ -38,7 +44,9 @@ export const useAdminSelectableUsers = ({
   });
 };
 
-export const useAllUsers = (enabled: boolean = true) => {
+export const useAllUsers = (
+  enabled: boolean = true,
+): UseQueryResult<AllUsersReturnType[], Error> => {
   return useQuery({
     queryKey: DataKeys.users.all,
     queryFn: async () => {

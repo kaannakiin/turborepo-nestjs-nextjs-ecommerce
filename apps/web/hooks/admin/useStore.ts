@@ -1,9 +1,19 @@
 import { DataKeys } from '@lib/data-keys';
 import fetchWrapper, { ApiError } from '@lib/wrappers/fetchWrapper';
-import { useMutation, useQuery } from '@repo/shared';
+import {
+  useMutation,
+  useQuery,
+  type UseMutationResult,
+  type UseQueryResult,
+} from '@repo/shared';
 import { StoreZodInputType, StoreZodOutputType } from '@repo/types';
 
-export const useStoreUpsertMutation = () => {
+export const useStoreUpsertMutation = (): UseMutationResult<
+  unknown,
+  Error,
+  StoreZodOutputType,
+  unknown
+> => {
   return useMutation({
     mutationKey: DataKeys.admin.store.upsert,
     mutationFn: async (data: StoreZodOutputType) => {
@@ -22,7 +32,10 @@ export const useStoreUpsertMutation = () => {
   });
 };
 
-export const useStoreGetQuery = () => {
+export const useStoreGetQuery = (): UseQueryResult<
+  StoreZodInputType,
+  Error
+> => {
   return useQuery({
     queryKey: DataKeys.admin.store.get,
     queryFn: async () => {

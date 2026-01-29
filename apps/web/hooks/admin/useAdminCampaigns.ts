@@ -1,7 +1,7 @@
 import { DataKeys } from '@lib/data-keys';
 import fetchWrapper, { ApiError } from '@lib/wrappers/fetchWrapper';
 import { CampaignStatus } from '@repo/database/client';
-import { useQuery } from '@repo/shared';
+import { useQuery, type UseQueryResult } from '@repo/shared';
 import { CampaignZodType, GetCampaignsReturnType } from '@repo/types';
 
 interface UseAdminCampaignsProps {
@@ -14,7 +14,13 @@ export const useAdminCampaigns = ({
   page = 1,
   search,
   type,
-}: UseAdminCampaignsProps) => {
+}: UseAdminCampaignsProps): UseQueryResult<
+  {
+    data: GetCampaignsReturnType['data'];
+    pagination: GetCampaignsReturnType['pagination'];
+  },
+  Error
+> => {
   return useQuery({
     queryKey: DataKeys.campaigns.list(search, type ?? undefined, page),
     queryFn: async () => {
@@ -42,7 +48,9 @@ export const useAdminCampaigns = ({
   });
 };
 
-export const useAdminCampaignDetail = (slug: string) => {
+export const useAdminCampaignDetail = (
+  slug: string,
+): UseQueryResult<CampaignZodType, Error> => {
   return useQuery({
     queryKey: DataKeys.campaigns.detail(slug),
     queryFn: async () => {

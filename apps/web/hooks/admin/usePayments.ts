@@ -1,10 +1,13 @@
 import { DataKeys } from '@lib/data-keys';
 import fetchWrapper, { ApiError } from '@lib/wrappers/fetchWrapper';
 import { PaymentProvider } from '@repo/database/client';
-import { useQuery } from '@repo/shared';
+import { type UseQueryResult, useQuery } from '@repo/shared';
 import { GetPaymentMethodResponseType, PaymentMethodType } from '@repo/types';
 
-export const usePaymentMethods = () => {
+export const usePaymentMethods = (): UseQueryResult<
+  PaymentMethodType[],
+  Error
+> => {
   return useQuery({
     queryKey: DataKeys.payments.methods,
     queryFn: async () => {
@@ -22,7 +25,9 @@ export const usePaymentMethods = () => {
   });
 };
 
-export const usePaymentMethod = (paymentProvider: PaymentProvider | null) => {
+export const usePaymentMethod = (
+  paymentProvider: PaymentProvider | null,
+): UseQueryResult<GetPaymentMethodResponseType['data'], Error> => {
   return useQuery({
     queryKey: DataKeys.payments.method(paymentProvider || ''),
     queryFn: async () => {

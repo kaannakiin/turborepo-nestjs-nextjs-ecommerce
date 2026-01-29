@@ -1,22 +1,34 @@
 import { useCartStore } from '@/context/cart-context/CartContext';
 import { DataKeys } from '@lib/data-keys';
 import fetchWrapper, { ApiError } from '@lib/wrappers/fetchWrapper';
-import { useMutation, useQueryClient } from '@repo/shared';
+import {
+  useMutation,
+  useQueryClient,
+  type UseMutationResult,
+} from '@repo/shared';
 import { LoginSchemaType, RegisterSchemaType } from '@repo/types';
 
-export const useSignOut = () => {
+export const useSignOut = (): UseMutationResult<
+  { success: boolean; message?: string },
+  Error,
+  void,
+  unknown
+> => {
   const clearCartState = useCartStore((state) => state.clearCartState);
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationKey: [DataKeys.auth.signOut],
     mutationFn: async () => {
-      const res = await fetchWrapper.post('/auth/sign-out', {});
+      const res = await fetchWrapper.post<{
+        success: boolean;
+        message?: string;
+      }>('/auth/sign-out', {});
       if (!res.success) {
         const error = res as ApiError;
         throw new Error(error.error || 'Çıkış yaparken bir hata oluştu.');
       }
-      return res;
+      return res.data;
     },
     onSuccess: () => {
       clearCartState();
@@ -25,7 +37,12 @@ export const useSignOut = () => {
   });
 };
 
-export const useSignIn = () => {
+export const useSignIn = (): UseMutationResult<
+  { success: boolean; message: string },
+  Error,
+  LoginSchemaType,
+  unknown
+> => {
   return useMutation({
     mutationKey: [DataKeys.auth.signIn],
     mutationFn: async (data: LoginSchemaType) => {
@@ -40,7 +57,7 @@ export const useSignIn = () => {
         const error = res as ApiError;
         throw new Error(error.error || 'Giriş yaparken bir hata oluştu.');
       }
-      return res;
+      return res.data;
     },
     onSuccess: async (_, __, ___, context) => {
       await context.client.invalidateQueries({ queryKey: DataKeys.cart.get });
@@ -48,7 +65,12 @@ export const useSignIn = () => {
   });
 };
 
-export const useSignUp = () => {
+export const useSignUp = (): UseMutationResult<
+  { success: boolean; message: string },
+  Error,
+  RegisterSchemaType,
+  unknown
+> => {
   return useMutation({
     mutationKey: [DataKeys.auth.signUp],
     mutationFn: async (data: RegisterSchemaType) => {
@@ -62,7 +84,7 @@ export const useSignUp = () => {
         throw new Error(error.error || 'Kayıt olurken bir hata oluştu.');
       }
 
-      return res;
+      return res.data;
     },
   });
 };

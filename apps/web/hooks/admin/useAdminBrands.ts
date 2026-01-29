@@ -6,6 +6,7 @@ import {
   BrandTableApiResponse,
   BrandZodType,
 } from '@repo/types';
+import { type UseMutationResult, type UseQueryResult } from '@repo/shared';
 
 const fetchBrands = async (search?: string, page: number = 1) => {
   const params = new URLSearchParams();
@@ -97,14 +98,20 @@ const deleteBrand = async (brandId: string) => {
   return result.data;
 };
 
-export const useBrands = (search?: string, page: number = 1) => {
+export const useBrands = (
+  search?: string,
+  page: number = 1,
+): UseQueryResult<BrandTableApiResponse, Error> => {
   return useQuery({
     queryKey: DataKeys.admin.brands.list(search, page),
     queryFn: () => fetchBrands(search, page),
   });
 };
 
-export const useBrandDetail = (brandId: string, enabled: boolean = true) => {
+export const useBrandDetail = (
+  brandId: string,
+  enabled: boolean = true,
+): UseQueryResult<BrandZodType, Error> => {
   return useQuery({
     queryKey: DataKeys.admin.brands.detail(brandId),
     queryFn: () => fetchBrandDetail(brandId),
@@ -112,7 +119,12 @@ export const useBrandDetail = (brandId: string, enabled: boolean = true) => {
   });
 };
 
-export const useCreateOrUpdateBrand = () => {
+export const useCreateOrUpdateBrand = (): UseMutationResult<
+  { brandId: string },
+  Error,
+  Omit<BrandZodType, 'image'>,
+  unknown
+> => {
   return useMutation({
     mutationKey: [DataKeys.admin.brands.createOrUpdate],
     mutationFn: createOrUpdateBrand,
@@ -124,7 +136,15 @@ export const useCreateOrUpdateBrand = () => {
   });
 };
 
-export const useUploadBrandImage = () => {
+export const useUploadBrandImage = (): UseMutationResult<
+  unknown,
+  Error,
+  {
+    file: File;
+    brandId: string;
+  },
+  unknown
+> => {
   return useMutation({
     mutationKey: [DataKeys.admin.brands.uploadImage],
     mutationFn: uploadBrandImage,
@@ -136,7 +156,12 @@ export const useUploadBrandImage = () => {
   });
 };
 
-export const useDeleteBrandImage = () => {
+export const useDeleteBrandImage = (): UseMutationResult<
+  unknown,
+  Error,
+  string,
+  unknown
+> => {
   return useMutation({
     mutationKey: [DataKeys.admin.brands.deleteImage],
     mutationFn: deleteBrandImage,
@@ -148,7 +173,12 @@ export const useDeleteBrandImage = () => {
   });
 };
 
-export const useDeleteBrand = () => {
+export const useDeleteBrand = (): UseMutationResult<
+  { message: string },
+  Error,
+  string,
+  unknown
+> => {
   return useMutation({
     mutationKey: [DataKeys.admin.brands.delete],
     mutationFn: deleteBrand,
@@ -160,7 +190,9 @@ export const useDeleteBrand = () => {
   });
 };
 
-export const useAllBrandsSimple = (enabled: boolean = true) => {
+export const useAllBrandsSimple = (
+  enabled: boolean = true,
+): UseQueryResult<BrandIdAndName[], Error> => {
   return useQuery({
     queryKey: DataKeys.admin.brands.allSimple,
     queryFn: async () => {

@@ -1,7 +1,12 @@
 import { DataKeys } from '@lib/data-keys';
 import fetchWrapper, { ApiError } from '@lib/wrappers/fetchWrapper';
 import { CustomerGroup, User } from '@repo/database/client';
-import { useMutation, useQuery } from '@repo/shared';
+import {
+  useMutation,
+  useQuery,
+  type UseMutationResult,
+  type UseQueryResult,
+} from '@repo/shared';
 import {
   createDefaultDecisionTree,
   CustomerGroupInputZodType,
@@ -20,7 +25,12 @@ type CustomerGroupResponse = {
   users: User[];
 };
 
-export const useCreateCustomerSegment = () => {
+export const useCreateCustomerSegment = (): UseMutationResult<
+  CustomerGroupUpsertResponse,
+  Error,
+  CustomerGroupOutputZodType,
+  unknown
+> => {
   return useMutation({
     mutationKey: [DataKeys.admin.customerGroups.create],
     mutationFn: async (data: CustomerGroupOutputZodType) => {
@@ -52,7 +62,13 @@ export const useGetCustomerSegments = (
   page: number = 1,
   limit: number = 20,
   search?: string,
-) => {
+): UseQueryResult<
+  {
+    groups: (CustomerGroup & { _count: { users: number } })[];
+    pagination: Pagination;
+  },
+  Error
+> => {
   return useQuery({
     queryKey: DataKeys.admin.customerGroups.list(page, limit, search),
     queryFn: async () => {
@@ -80,7 +96,9 @@ export const useGetCustomerSegments = (
   });
 };
 
-export const useGetCustomerSegment = (segmentId: string) => {
+export const useGetCustomerSegment = (
+  segmentId: string,
+): UseQueryResult<CustomerGroupInputZodType, Error> => {
   return useQuery({
     queryKey: DataKeys.admin.customerGroups.detail(segmentId),
 
@@ -139,7 +157,7 @@ export const useGetCustomerList = (
   limit: number,
   search?: string,
   sortBy?: SortAdminUserTable,
-) => {
+): UseQueryResult<{ users: User[]; pagination: Pagination }, Error> => {
   return useQuery({
     queryKey: DataKeys.admin.customers.list(page, limit, search, sortBy),
     queryFn: async () => {
@@ -167,7 +185,7 @@ export const useGetCustomerList = (
   });
 };
 
-export const useCustomerGroups = () => {
+export const useCustomerGroups = (): UseQueryResult<CustomerGroup[], Error> => {
   return useQuery({
     queryKey: DataKeys.admin.customerGroups.all,
     queryFn: async () => {

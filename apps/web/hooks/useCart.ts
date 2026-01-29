@@ -1,7 +1,13 @@
 import { useCartStore } from '@/context/cart-context/CartContext';
 import { DataKeys } from '@lib/data-keys';
 import fetchWrapper, { ApiError } from '@lib/wrappers/fetchWrapper';
-import { recalculateCartTotals, useMutation, useQuery } from '@repo/shared';
+import {
+  recalculateCartTotals,
+  useMutation,
+  useQuery,
+  type UseMutationResult,
+  type UseQueryResult,
+} from '@repo/shared';
 import {
   AddCartItemZodType,
   CartContextUpdateResponse,
@@ -88,7 +94,7 @@ const cartApi = {
   },
 };
 
-export const useGetCart = () => {
+export const useGetCart = (): UseQueryResult<CartType, Error> => {
   const setCart = useCartStore((state) => state.setCart);
 
   const query = useQuery({
@@ -105,7 +111,12 @@ export const useGetCart = () => {
   return query;
 };
 
-export const useAddCartItem = () => {
+export const useAddCartItem = (): UseMutationResult<
+  CartType,
+  Error,
+  AddCartItemZodType,
+  unknown
+> => {
   const setCart = useCartStore((state) => state.setCart);
 
   return useMutation({
@@ -117,7 +128,12 @@ export const useAddCartItem = () => {
   });
 };
 
-export const useRemoveCartItem = () => {
+export const useRemoveCartItem = (): UseMutationResult<
+  CartType,
+  Error,
+  RemoveCartItemZodType,
+  { previousCart: CartType | null }
+> => {
   const cart = useCartStore((state) => state.cart);
   const setCart = useCartStore((state) => state.setCart);
 
@@ -145,7 +161,12 @@ export const useRemoveCartItem = () => {
   });
 };
 
-export const useIncreaseCartItemQuantity = () => {
+export const useIncreaseCartItemQuantity = (): UseMutationResult<
+  CartType,
+  Error,
+  IncreaseCartItemQuantityZodType,
+  { previousCart: CartType | null }
+> => {
   const cart = useCartStore((state) => state.cart);
   const setCart = useCartStore((state) => state.setCart);
 
@@ -175,7 +196,12 @@ export const useIncreaseCartItemQuantity = () => {
   });
 };
 
-export const useDecreaseCartItemQuantity = () => {
+export const useDecreaseCartItemQuantity = (): UseMutationResult<
+  CartType,
+  Error,
+  DecreaseCartItemQuantityZodType,
+  { previousCart: CartType | null }
+> => {
   const cart = useCartStore((state) => state.cart);
   const setCart = useCartStore((state) => state.setCart);
 
@@ -205,7 +231,12 @@ export const useDecreaseCartItemQuantity = () => {
   });
 };
 
-export const useClearCart = () => {
+export const useClearCart = (): UseMutationResult<
+  CartType,
+  Error,
+  ClearCartZodType,
+  unknown
+> => {
   const setCart = useCartStore((state) => state.setCart);
 
   return useMutation({
@@ -217,7 +248,12 @@ export const useClearCart = () => {
   });
 };
 
-export const useUpdateCartContext = () => {
+export const useUpdateCartContext = (): UseMutationResult<
+  CartContextUpdateResponse,
+  Error,
+  UpdateLocaleCartZodType,
+  unknown
+> => {
   const setCart = useCartStore((state) => state.setCart);
 
   return useMutation({

@@ -1,15 +1,22 @@
 import { DataKeys } from '@lib/data-keys';
 import { getBulkActionMessages } from '@lib/ui/bulk-action.helper';
-import fetchWrapper, { ApiError } from '@lib/wrappers/fetchWrapper';
+import fetchWrapper, {
+  ApiError,
+  ApiResponse,
+} from '@lib/wrappers/fetchWrapper';
 import { notifications } from '@mantine/notifications';
-import { useMutation, useQuery } from '@repo/shared';
+import {
+  useMutation,
+  useQuery,
+  type UseMutationResult,
+  type UseQueryResult,
+} from '@repo/shared';
 import {
   AdminProductTableProductData,
   BaseProductZodType,
   Pagination,
   ProductBulkAction,
   SearchableProductModalData,
-  SearchableProductModalResponseType,
   TaxonomyCategoryWithChildren,
   UpSellProductReturnType,
   VariantGroupZodType,
@@ -43,7 +50,7 @@ export const useProductList = (
   search?: string,
   page: number = 1,
   limit = 20,
-) => {
+): UseQueryResult<ProductsResponse, Error> => {
   return useQuery({
     queryKey: DataKeys.admin.products.list(search, page),
     queryFn: () => fetchProducts(search, page, limit),
@@ -51,7 +58,13 @@ export const useProductList = (
   });
 };
 
-export const useGetProduct = (slug: string, enabled: boolean = true) => {
+export const useGetProduct = (
+  slug: string,
+  enabled: boolean = true,
+): UseQueryResult<
+  VariantProductZodType | BaseProductZodType | undefined,
+  Error
+> => {
   return useQuery({
     queryKey: DataKeys.admin.products.detail(slug),
     queryFn: async () => {
@@ -70,7 +83,10 @@ export const useGetProduct = (slug: string, enabled: boolean = true) => {
   });
 };
 
-export const useGetVariants = () => {
+export const useGetVariants = (): UseQueryResult<
+  VariantGroupZodType[],
+  Error
+> => {
   return useQuery({
     queryKey: DataKeys.admin.products.variants,
     queryFn: async (): Promise<VariantGroupZodType[]> => {
@@ -85,7 +101,10 @@ export const useGetVariants = () => {
   });
 };
 
-export const useGetGoogleTaxonomyCategories = () => {
+export const useGetGoogleTaxonomyCategories = (): UseQueryResult<
+  TaxonomyCategoryWithChildren[],
+  Error
+> => {
   return useQuery({
     queryKey: DataKeys.admin.products.googleTaxonomy,
     queryFn: async (): Promise<TaxonomyCategoryWithChildren[]> => {
@@ -103,7 +122,16 @@ export const useGetGoogleTaxonomyCategories = () => {
   });
 };
 
-export const useCreateOrUpdateBasicProduct = () => {
+export const useCreateOrUpdateBasicProduct = (): UseMutationResult<
+  {
+    success: boolean;
+    message: string;
+    productId: string;
+  },
+  Error,
+  Omit<BaseProductZodType, 'images' | 'existingImages'>,
+  unknown
+> => {
   return useMutation({
     mutationKey: [DataKeys.admin.products.createBasic],
     mutationFn: async (
@@ -124,7 +152,18 @@ export const useCreateOrUpdateBasicProduct = () => {
   });
 };
 
-export const useCreateOrUpdateVariantProduct = () => {
+export const useCreateOrUpdateVariantProduct = (): UseMutationResult<
+  {
+    productId: string;
+    combinations: {
+      id: string;
+      sku: string | null;
+    }[];
+  },
+  Error,
+  Omit<VariantProductZodType, 'images' | 'existingImages'>,
+  unknown
+> => {
   return useMutation({
     mutationKey: [DataKeys.admin.products.createVariant],
     mutationFn: async (
@@ -149,7 +188,17 @@ export const useCreateOrUpdateVariantProduct = () => {
   });
 };
 
-export const useUploadProductImage = () => {
+export const useUploadProductImage = (): UseMutationResult<
+  ApiResponse<unknown>,
+  Error,
+  {
+    file: File;
+    productId?: string;
+    variantId?: string;
+    order: number;
+  },
+  unknown
+> => {
   return useMutation({
     mutationKey: [DataKeys.admin.products.uploadImage],
     mutationFn: async ({
@@ -177,7 +226,15 @@ export const useUploadProductImage = () => {
   });
 };
 
-export const useUploadVariantOptionFile = () => {
+export const useUploadVariantOptionFile = (): UseMutationResult<
+  ApiResponse<unknown>,
+  Error,
+  {
+    file: File;
+    uniqueId: string;
+  },
+  unknown
+> => {
   return useMutation({
     mutationKey: [DataKeys.admin.products.uploadVariantFile],
     mutationFn: async ({
@@ -198,7 +255,12 @@ export const useUploadVariantOptionFile = () => {
   });
 };
 
-export const useDeleteProductAsset = () => {
+export const useDeleteProductAsset = (): UseMutationResult<
+  ApiResponse<unknown>,
+  Error,
+  string,
+  unknown
+> => {
   return useMutation({
     mutationKey: [DataKeys.admin.products.deleteAsset],
     mutationFn: async (url: string) => {
@@ -215,7 +277,12 @@ export const useDeleteProductAsset = () => {
   });
 };
 
-export const useDeleteOptionAsset = () => {
+export const useDeleteOptionAsset = (): UseMutationResult<
+  ApiResponse<unknown>,
+  Error,
+  string,
+  unknown
+> => {
   return useMutation({
     mutationKey: [DataKeys.admin.products.deleteOptionAsset],
     mutationFn: async (imageUrl: string) => {
@@ -275,7 +342,7 @@ const productBulkAction = async (
 
 export const useProductBulkAction = (
   options: UseProductBulkActionOptions = {},
-) => {
+): UseMutationResult<BulkActionResult, Error, BulkActionPayload, unknown> => {
   const { needsRefresh = true, onSuccess, onError } = options;
 
   return useMutation({
@@ -329,7 +396,7 @@ export const useProductBulkAction = (
 export const useAdminUpsellPreview = (
   productId?: string,
   variantId?: string,
-) => {
+): UseQueryResult<UpSellProductReturnType['product'], Error> => {
   return useQuery({
     queryKey: DataKeys.products.upsellPreview(variantId || productId || ''),
     queryFn: async () => {
@@ -362,7 +429,7 @@ export const useAdminSearchableProductsModal = ({
   search: string;
   opened: boolean;
   queryKey?: string[];
-}) => {
+}): UseQueryResult<SearchableProductModalData, Error> => {
   return useQuery({
     queryKey: queryKey || DataKeys.products.searchableModal(search),
     queryFn: async () => {
@@ -379,33 +446,5 @@ export const useAdminSearchableProductsModal = ({
       return res.data;
     },
     enabled: opened,
-  });
-};
-
-export const useAdminSelectableProducts = ({
-  page,
-  limit,
-  search,
-  enabled = true,
-}: {
-  page: number;
-  limit: number;
-  search?: string;
-  enabled?: boolean;
-}) => {
-  return useQuery({
-    queryKey: DataKeys.products.selectableModal(page, limit, search || ''),
-    queryFn: async () => {
-      const res = await fetchWrapper.get<SearchableProductModalResponseType>(
-        '/admin/themev2/selectable-products',
-        {
-          params: { limit, page, search: search ? search.trim() : undefined },
-        },
-      );
-      if (!res.success) throw new Error('Failed to fetch products');
-      if (!res.data.success) throw new Error('Failed to fetch products data');
-      return res.data;
-    },
-    enabled,
   });
 };
