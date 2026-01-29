@@ -2,7 +2,7 @@
 
 import PriceFormatter from '@/(user)/components/PriceFormatter';
 import LoadingOverlay from '@/components/LoadingOverlay';
-import { useTheme } from '@/context/theme-context/ThemeContext';
+import { useDeviceContext } from '@/context/device-context/DeviceContext';
 import { Button, Grid, Text } from '@mantine/core';
 import { useProductDetail } from '@hooks/useStoreProducts';
 import dynamic from 'next/dynamic';
@@ -27,7 +27,7 @@ interface ProductPageClientProps {
 }
 
 const ProductPageClient = ({ slug }: ProductPageClientProps) => {
-  const { actualMedia } = useTheme();
+  const { actualMedia } = useDeviceContext();
   const isMobile = actualMedia === 'mobile';
 
   const { data: product } = useProductDetail(slug);
@@ -41,7 +41,6 @@ const ProductPageClient = ({ slug }: ProductPageClientProps) => {
     price,
     originalPrice,
     discountPercentage,
-    isInStock,
   } = useVariantSelection({ product: product! });
 
   const assets = useMemo(() => {

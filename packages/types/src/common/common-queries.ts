@@ -2,7 +2,7 @@ import { Currency, Locale, Prisma } from "@repo/database/client";
 
 export const commonProductVariantWhereClause = (
   currency?: Currency,
-  locale?: Locale
+  locale?: Locale,
 ): Prisma.ProductVariantCombinationWhereInput => {
   return {
     active: true,
@@ -64,7 +64,7 @@ export const variantsOptionsOrderByQuery = [
       order: "asc",
     },
   },
-] as const satisfies Prisma.ProductVariantCombinationOptionOrderByWithRelationInput[];
+] satisfies Prisma.ProductVariantCombinationOptionOrderByWithRelationInput[];
 
 export const variantOptionsQuery = {
   productVariantOption: {
@@ -100,7 +100,7 @@ export const variantOptionsQuery = {
 
 export const commonProductVariantClause = (
   currency: Currency,
-  locale: Locale
+  locale: Locale,
 ): Prisma.ProductVariantCombinationWhereInput => {
   return {
     active: true,
@@ -120,7 +120,7 @@ export const commonProductVariantClause = (
 
 export const commonProductWhereClause = (
   currency: Currency,
-  locale: Locale
+  locale: Locale,
 ): Prisma.ProductWhereInput => {
   return {
     active: true,

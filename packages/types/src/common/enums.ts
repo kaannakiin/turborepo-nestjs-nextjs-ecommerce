@@ -12,7 +12,6 @@ export const TextAlign = {
   center: "center",
   right: "right",
 };
-
 export type TextAlign = (typeof TextAlign)[keyof typeof TextAlign];
 
 export const MantineSize = {
@@ -79,28 +78,6 @@ export const FontFamily = {
 } as const;
 
 export type FontFamily = (typeof FontFamily)[keyof typeof FontFamily];
-
-export const ThemeComponents = {
-  SLIDER: "SLIDER",
-  MARQUEE: "MARQUEE",
-  PRODUCT_CAROUSEL: "PRODUCT_CAROUSEL",
-} as const;
-
-export type ThemeComponents =
-  (typeof ThemeComponents)[keyof typeof ThemeComponents];
-
-export const ThemeSections = {
-  HEADER: "HEADER",
-  FOOTER: "FOOTER",
-};
-export type ThemeSections = (typeof ThemeSections)[keyof typeof ThemeSections];
-
-export const ThemePages = {
-  HOMEPAGE: "HOMEPAGE",
-  PRODUCT: "PRODUCT",
-} as const;
-
-export type ThemePages = (typeof ThemePages)[keyof typeof ThemePages];
 
 export const AspectRatio = {
   AUTO: "auto",
@@ -493,3 +470,54 @@ export const PaymentRuleConditionField = {
 
 export type PaymentRuleConditionField =
   (typeof PaymentRuleConditionField)[keyof typeof PaymentRuleConditionField];
+
+export const DesignPageType = {
+  HOME: "HOME",
+  CATEGORY: "CATEGORY",
+  PRODUCT: "PRODUCT",
+  BRAND: "BRAND",
+  OTHER: "OTHER",
+} as const;
+export type DesignPageType =
+  (typeof DesignPageType)[keyof typeof DesignPageType];
+
+export const DesignComponentType = {
+  SLIDER: "SLIDER",
+  MARQUEE: "MARQUEE",
+  PRODUCT_CAROUSEL: "PRODUCT_CAROUSEL",
+  CATEGORY_GRID: "CATEGORY_GRID",
+  EMAIL_SIGNUP: "EMAIL_SIGNUP",
+  ONBOARD_GRID: "ONBOARD_GRID",
+} as const;
+export type DesignComponentType =
+  (typeof DesignComponentType)[keyof typeof DesignComponentType];
+
+export const DesignComponentCategory = {
+  HERO: "hero",
+  CONTENT: "content",
+  PRODUCT: "product",
+  NAVIGATION: "navigation",
+  SOCIAL: "social",
+  UTILITY: "utility",
+} as const;
+export type DesignComponentCategory =
+  (typeof DesignComponentCategory)[keyof typeof DesignComponentCategory];
+
+export const DesignName = {
+  ELEGANT: "ELEGANT",
+  MINIMAL: "MINIMAL",
+  MODERN: "MODERN",
+  CLASSIC: "CLASSIC",
+  VIBRANT: "VIBRANT",
+} as const;
+export type DesignName = (typeof DesignName)[keyof typeof DesignName];
+
+export const HeaderLinkType = {
+  CATEGORY: "CATEGORY",
+  BRAND: "BRAND",
+  PRODUCT: "PRODUCT",
+  SUBMENU: "SUBMENU",
+  CUSTOM_URL: "CUSTOM_URL",
+};
+export type HeaderLinkType =
+  (typeof HeaderLinkType)[keyof typeof HeaderLinkType];

@@ -24,6 +24,10 @@
     "./inputs": {
       "types": "./src/inputs/index.ts",
       "import": "./src/inputs/index.ts"
+    },
+    "./designs": {
+      "types": "./src/designs/index.ts",
+      "import": "./src/designs/index.ts"
     }
   },
   "scripts": {
@@ -34,6 +38,7 @@
     "@mantine/core": "catalog:",
     "@mantine/hooks": "catalog:",
     "@repo/types": "workspace:*",
+    "@tabler/icons-react": "catalog:",
     "google-libphonenumber": "catalog:",
     "react-imask": "^7.6.1",
     "swiper": "catalog:"

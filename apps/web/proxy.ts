@@ -15,12 +15,10 @@ import parse, { Cookie, splitCookiesString } from 'set-cookie-parser';
 const countryToLocale: Record<string, Locale> = {
   TR: 'TR',
   CY: 'TR',
-
   DE: 'DE',
   AT: 'DE',
   CH: 'DE',
   LI: 'DE',
-
   US: 'EN',
   GB: 'EN',
   AU: 'EN',

@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import FormCard from "@/components/cards/FormCard";
+import FormCard from '@/components/cards/FormCard';
 import CountryInput, {
   CountrySelectData,
-} from "@/components/inputs/CountryInput";
+} from '@/components/inputs/CountryInput';
 import {
   closestCenter,
   DndContext,
@@ -12,15 +12,16 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-} from "@dnd-kit/core";
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+} from '@dnd-kit/core';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import {
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { useCities, useCountries, useStates } from '@hooks/useLocations';
 import {
   ActionIcon,
   Badge,
@@ -35,20 +36,20 @@ import {
   Stack,
   Text,
   ThemeIcon,
-} from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
-import { CountryType } from "@repo/database/client";
+} from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { CountryType } from '@repo/database/client';
 import {
   Control,
   Controller,
   useFieldArray,
   UseFormReturn,
   useWatch,
-} from "@repo/shared";
+} from '@repo/shared';
 import {
   InventoryLocationZodSchemaType,
   ServiceZoneSchemaType,
-} from "@repo/types";
+} from '@repo/types';
 import {
   IconChevronDown,
   IconChevronUp,
@@ -56,13 +57,8 @@ import {
   IconPlus,
   IconTrash,
   IconWorld,
-} from "@tabler/icons-react";
-import { Activity, memo, useCallback, useMemo } from "react";
-import {
-  useCities,
-  useCountries,
-  useStates,
-} from "../../../../../../hooks/useLocations";
+} from '@tabler/icons-react';
+import { Activity, memo, useCallback, useMemo } from 'react';
 
 interface CountryData {
   id: string;
@@ -74,7 +70,7 @@ interface SortableZoneItemProps {
   field: ServiceZoneSchemaType & { fieldId: string };
   index: number;
   control: Control<InventoryLocationZodSchemaType>;
-  setValue: UseFormReturn<InventoryLocationZodSchemaType>["setValue"];
+  setValue: UseFormReturn<InventoryLocationZodSchemaType>['setValue'];
   remove: (index: number) => void;
   countriesData: CountryData[];
 }
@@ -106,7 +102,7 @@ const SortableZoneItem = memo(
         opacity: isDragging ? 0.5 : 1,
         zIndex: isDragging ? 1000 : 1,
       }),
-      [transform, transition, isDragging]
+      [transform, transition, isDragging],
     );
 
     const zoneData = useWatch({
@@ -118,23 +114,23 @@ const SortableZoneItem = memo(
       zoneData || {};
 
     const { data: states, isLoading: statesLoading } = useStates({
-      countryId: countryId || "",
-      enabled: !!countryId && countryType === "STATE",
+      countryId: countryId || '',
+      enabled: !!countryId && countryType === 'STATE',
     });
 
     const { data: cities, isLoading: citiesLoading } = useCities({
-      countryId: countryId || "",
-      enabled: !!countryId && countryType === "CITY",
+      countryId: countryId || '',
+      enabled: !!countryId && countryType === 'CITY',
     });
 
     const statesData = useMemo(
       () => states?.map((s) => ({ value: s.id, label: s.name })) || [],
-      [states]
+      [states],
     );
 
     const citiesData = useMemo(
       () => cities?.map((c) => ({ value: c.id, label: c.name })) || [],
-      [cities]
+      [cities],
     );
 
     const handleCountryChange = useCallback(
@@ -143,13 +139,13 @@ const SortableZoneItem = memo(
           setValue(`serviceZones.${index}.countryId`, selectData.value);
           setValue(
             `serviceZones.${index}.countryType`,
-            selectData.country.type
+            selectData.country.type,
           );
           setValue(`serviceZones.${index}.stateIds`, []);
           setValue(`serviceZones.${index}.cityIds`, []);
         }
       },
-      [setValue, index]
+      [setValue, index],
     );
 
     const handleRemove = useCallback(() => {
@@ -157,21 +153,21 @@ const SortableZoneItem = memo(
     }, [remove, index]);
 
     const countryLabel = useMemo(() => {
-      if (!countryId) return "Ülke seçin";
+      if (!countryId) return 'Ülke seçin';
       const country = countriesData.find((c) => c.id === countryId);
-      return country ? `${country.emoji} ${country.name}` : "Ülke seçin";
+      return country ? `${country.emoji} ${country.name}` : 'Ülke seçin';
     }, [countryId, countriesData]);
 
     const subRegionText = useMemo(() => {
-      if (countryType === "STATE") {
-        if (!stateIds?.length) return "Tüm eyaletler";
+      if (countryType === 'STATE') {
+        if (!stateIds?.length) return 'Tüm eyaletler';
         return `${stateIds.length} eyalet seçili`;
       }
-      if (countryType === "CITY") {
-        if (!cityIds?.length) return "Tüm şehirler";
+      if (countryType === 'CITY') {
+        if (!cityIds?.length) return 'Tüm şehirler';
         return `${cityIds.length} şehir seçili`;
       }
-      return "Tüm bölgeler";
+      return 'Tüm bölgeler';
     }, [countryType, stateIds, cityIds]);
 
     return (
@@ -181,14 +177,14 @@ const SortableZoneItem = memo(
         withBorder
         radius="md"
         p="sm"
-        bg={isDragging ? "gray.1" : "white"}
+        bg={isDragging ? 'gray.1' : 'white'}
       >
         <Group justify="space-between" wrap="nowrap">
           <Group gap="sm" wrap="nowrap">
             <ActionIcon
               variant="subtle"
               color="gray"
-              style={{ cursor: isDragging ? "grabbing" : "grab" }}
+              style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
               {...attributes}
               {...listeners}
             >
@@ -240,8 +236,8 @@ const SortableZoneItem = memo(
                     value={f.value}
                     onChange={handleCountryChange}
                     selectProps={{
-                      label: "Ülke",
-                      placeholder: "Ülke seçin",
+                      label: 'Ülke',
+                      placeholder: 'Ülke seçin',
                       error: fieldState.error?.message,
                       required: true,
                     }}
@@ -270,7 +266,7 @@ const SortableZoneItem = memo(
               />
             </Grid.Col>
 
-            {countryType === "STATE" && (
+            {countryType === 'STATE' && (
               <Grid.Col span={12}>
                 <Controller
                   control={control}
@@ -283,8 +279,8 @@ const SortableZoneItem = memo(
                       label="Eyaletler"
                       placeholder={
                         statesLoading
-                          ? "Yükleniyor..."
-                          : "Boş bırakırsanız tüm eyaletlere hizmet verir"
+                          ? 'Yükleniyor...'
+                          : 'Boş bırakırsanız tüm eyaletlere hizmet verir'
                       }
                       description="Belirli eyaletler seçin veya tümüne hizmet vermek için boş bırakın"
                       searchable
@@ -298,7 +294,7 @@ const SortableZoneItem = memo(
               </Grid.Col>
             )}
 
-            {countryType === "CITY" && (
+            {countryType === 'CITY' && (
               <Grid.Col span={12}>
                 <Controller
                   control={control}
@@ -311,8 +307,8 @@ const SortableZoneItem = memo(
                       label="Şehirler"
                       placeholder={
                         citiesLoading
-                          ? "Yükleniyor..."
-                          : "Boş bırakırsanız tüm şehirlere hizmet verir"
+                          ? 'Yükleniyor...'
+                          : 'Boş bırakırsanız tüm şehirlere hizmet verir'
                       }
                       description="Belirli şehirler seçin veya tümüne hizmet vermek için boş bırakın"
                       searchable
@@ -326,7 +322,7 @@ const SortableZoneItem = memo(
               </Grid.Col>
             )}
 
-            {countryType === "NONE" && (
+            {countryType === 'NONE' && (
               <Grid.Col span={12}>
                 <Text size="sm" c="dimmed">
                   Bu ülke için alt bölge seçimi gerekmiyor. Tüm ülkeye hizmet
@@ -338,15 +334,15 @@ const SortableZoneItem = memo(
         </Collapse>
       </Card>
     );
-  }
+  },
 );
 
-SortableZoneItem.displayName = "SortableZoneItem";
+SortableZoneItem.displayName = 'SortableZoneItem';
 
 interface InventoryServiceInputProps {
   control: Control<InventoryLocationZodSchemaType>;
-  setValue: UseFormReturn<InventoryLocationZodSchemaType>["setValue"];
-  getValues: UseFormReturn<InventoryLocationZodSchemaType>["getValues"];
+  setValue: UseFormReturn<InventoryLocationZodSchemaType>['setValue'];
+  getValues: UseFormReturn<InventoryLocationZodSchemaType>['getValues'];
 }
 
 const InventoryServiceInput = ({
@@ -356,8 +352,8 @@ const InventoryServiceInput = ({
 }: InventoryServiceInputProps) => {
   const { fields, append, remove, move } = useFieldArray({
     control,
-    name: "serviceZones",
-    keyName: "fieldId",
+    name: 'serviceZones',
+    keyName: 'fieldId',
   });
 
   const { data: countries } = useCountries();
@@ -367,9 +363,9 @@ const InventoryServiceInput = ({
       countries?.map((c) => ({
         id: c.id,
         name: c.translations?.[0]?.name,
-        emoji: c.emoji || "",
+        emoji: c.emoji || '',
       })) || [],
-    [countries]
+    [countries],
   );
 
   const sensors = useSensors(
@@ -380,7 +376,7 @@ const InventoryServiceInput = ({
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const handleDragEnd = useCallback(
@@ -394,21 +390,21 @@ const InventoryServiceInput = ({
         move(oldIndex, newIndex);
 
         requestAnimationFrame(() => {
-          const currentZones = getValues("serviceZones");
+          const currentZones = getValues('serviceZones');
           currentZones.forEach((_, idx) => {
             setValue(`serviceZones.${idx}.priority`, idx);
           });
         });
       }
     },
-    [fields, move, getValues, setValue]
+    [fields, move, getValues, setValue],
   );
 
   const handleAddZone = useCallback(() => {
     append({
       id: undefined,
-      countryId: "",
-      countryType: "CITY" as CountryType,
+      countryId: '',
+      countryType: 'CITY' as CountryType,
       stateIds: [],
       cityIds: [],
       priority: fields.length,
@@ -419,7 +415,7 @@ const InventoryServiceInput = ({
   return (
     <FormCard
       title={
-        <Group p={"md"} justify="space-between">
+        <Group p={'md'} justify="space-between">
           <Group gap="xs">
             <IconWorld size={20} />
             <div>
@@ -441,7 +437,7 @@ const InventoryServiceInput = ({
         </Group>
       }
     >
-      <Activity mode={fields.length === 0 ? "visible" : "hidden"}>
+      <Activity mode={fields.length === 0 ? 'visible' : 'hidden'}>
         <Card withBorder bg="gray.0" p="xl" radius="md">
           <Stack align="center" gap="sm">
             <ThemeIcon variant="light" size="xl" color="gray">
@@ -463,7 +459,7 @@ const InventoryServiceInput = ({
           </Stack>
         </Card>
       </Activity>
-      <Activity mode={fields.length > 0 ? "visible" : "hidden"}>
+      <Activity mode={fields.length > 0 ? 'visible' : 'hidden'}>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}

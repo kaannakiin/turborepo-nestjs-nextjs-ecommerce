@@ -1,7 +1,7 @@
 generator client {
   provider        = "prisma-client"
   output          = "../generated/prisma"
-  runtime         = "nodejs"
+  runtime         = "bun"
   previewFeatures = ["views"]
 }
 
@@ -265,17 +265,15 @@ model RefreshTokens {
 }
 
 model Asset {
-  id                String             @id @default(cuid())
-  type              AssetType          @default(IMAGE)
-  url               String             @unique
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  brand             Brand?
-  category          Category?
-  productAsset      ProductAsset[]
-  desktopSliderItem SliderItemSchema[] @relation("DesktopAsset")
-  mobileSliderItem  SliderItemSchema[] @relation("MobileAsset")
-  variantOption     VariantOption?
+  id            String         @id @default(cuid())
+  type          AssetType      @default(IMAGE)
+  url           String         @unique
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  brand         Brand?
+  category      Category?
+  productAsset  ProductAsset[]
+  variantOption VariantOption?
 
   @@index([url])
 }
@@ -298,16 +296,15 @@ model CategoryTranslation {
 }
 
 model Category {
-  id                      String                 @id @default(cuid())
-  imageId                 String?                @unique
+  id                      String                @id @default(cuid())
+  imageId                 String?               @unique
   parentCategoryId        String?
-  createdAt               DateTime               @default(now())
-  updatedAt               DateTime               @updatedAt
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
   categoryGridComponentId String?
-  categoryGridComponent   CategoryGridComponent? @relation(fields: [categoryGridComponentId], references: [id], onDelete: Cascade)
-  image                   Asset?                 @relation(fields: [imageId], references: [id], onDelete: Cascade)
-  parentCategory          Category?              @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id], onDelete: SetNull)
-  childCategories         Category[]             @relation("CategoryHierarchy")
+  image                   Asset?                @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  parentCategory          Category?             @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id], onDelete: SetNull)
+  childCategories         Category[]            @relation("CategoryHierarchy")
   translations            CategoryTranslation[]
   discountConditions      DiscountCategory[]
   footerLinks             FooterLinks[]
@@ -513,13 +510,18 @@ model ProductTagTranslation {
 
 model ProductTag {
   id           String                  @id @default(cuid())
+  parentTagId  String?
   color        String?
   icon         String?
   priority     Int?
   createdAt    DateTime                @default(now())
   updatedAt    DateTime                @updatedAt
+  parentTag    ProductTag?             @relation("TagHierarchy", fields: [parentTagId], references: [id], onDelete: SetNull)
+  childTags    ProductTag[]            @relation("TagHierarchy")
   products     ProductTagOnProduct[]
   translations ProductTagTranslation[]
+
+  @@index([parentTagId])
 }
 
 model ProductTagOnProduct {
@@ -622,11 +624,10 @@ model ProductVariantCombination {
   translations    ProductVariantTranslation[]
   priceListPrices ProductPriceListPrice[]
 
-  prices           ProductPrice[]
-  assets           ProductAsset[]
-  cartItems        CartItem[]
-  orderItems       OrderItemSchema[]
-  productListItems ProductListCarouselItem[]
+  prices     ProductPrice[]
+  assets     ProductAsset[]
+  cartItems  CartItem[]
+  orderItems OrderItemSchema[]
 
   buyableInCampaigns   CampaignBuyableVariant[]
   conditionInCampaigns CampaignConditionVariant[]
@@ -876,116 +877,6 @@ model Footer {
   createdAt  DateTime           @default(now())
   updatedAt  DateTime           @updatedAt
   linkGroups FooterLinkGroups[]
-}
-
-model SliderItemSchema {
-  id               String         @id @default(cuid())
-  order            Int
-  isActive         Boolean        @default(true)
-  mobileAssetId    String?
-  desktopAssetId   String?
-  customLink       String?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  sliderSettingsId String
-  desktopAsset     Asset?         @relation("DesktopAsset", fields: [desktopAssetId], references: [id])
-  mobileAsset      Asset?         @relation("MobileAsset", fields: [mobileAssetId], references: [id])
-  SliderSettings   SliderSettings @relation(fields: [sliderSettingsId], references: [id])
-
-  @@index([isActive])
-}
-
-model SliderSettings {
-  id               String             @id @default(cuid())
-  isAutoPlay       Boolean            @default(false)
-  autoPlayInterval Int?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  component        LayoutComponent[]
-  items            SliderItemSchema[]
-}
-
-model MarqueeSchema {
-  id         String            @id @default(cuid())
-  options    Json?
-  createdAt  DateTime          @default(now())
-  updatedAt  DateTime          @updatedAt
-  components LayoutComponent[]
-}
-
-model ProductListCarouselTranslation {
-  id                    String              @id @default(cuid())
-  locale                Locale              @default(TR)
-  title                 String
-  productListCarouselId String
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
-  productListCarousel   ProductListCarousel @relation(fields: [productListCarouselId], references: [id], onDelete: Cascade)
-
-  @@unique([locale, productListCarouselId])
-  @@index([productListCarouselId])
-}
-
-model ProductListCarousel {
-  id           String                           @id @default(cuid())
-  createdAt    DateTime                         @default(now())
-  updatedAt    DateTime                         @updatedAt
-  components   LayoutComponent[]
-  items        ProductListCarouselItem[]
-  translations ProductListCarouselTranslation[]
-}
-
-model ProductListCarouselItem {
-  id                    String   @id @default(cuid())
-  productListCarouselId String
-  variantId             String
-  order                 Int
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-
-  variant             ProductVariantCombination @relation(fields: [variantId], references: [id], onDelete: Cascade)
-  productListCarousel ProductListCarousel       @relation(fields: [productListCarouselId], references: [id], onDelete: Cascade)
-
-  @@unique([productListCarouselId, variantId])
-  @@unique([productListCarouselId, order])
-  @@index([productListCarouselId, order])
-}
-
-model CategoryGridComponent {
-  id         String            @id @default(cuid())
-  options    Json?
-  createdAt  DateTime          @default(now())
-  updatedAt  DateTime          @updatedAt
-  categories Category[]
-  components LayoutComponent[]
-}
-
-model LayoutComponent {
-  id                      String                 @id @default(cuid())
-  type                    LayoutComponentType
-  order                   Int
-  layoutId                String
-  sliderId                String?
-  marqueeId               String?
-  productListCarouselId   String?
-  categoryGridComponentId String?
-  createdAt               DateTime               @default(now())
-  updatedAt               DateTime               @updatedAt
-  categoryGrid            CategoryGridComponent? @relation(fields: [categoryGridComponentId], references: [id], onDelete: Cascade)
-  layout                  Layout                 @relation(fields: [layoutId], references: [id], onDelete: Cascade)
-  marquee                 MarqueeSchema?         @relation(fields: [marqueeId], references: [id], onDelete: Cascade)
-  productListCarousel     ProductListCarousel?   @relation(fields: [productListCarouselId], references: [id], onDelete: Cascade)
-  slider                  SliderSettings?        @relation(fields: [sliderId], references: [id])
-
-  @@unique([layoutId, order])
-}
-
-model Layout {
-  id            String            @id @default(cuid())
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  otherSettings Json?
-  components    LayoutComponent[]
 }
 
 model AddressSchema {
@@ -1444,29 +1335,6 @@ model ErrorLog {
   @@index([createdAt(sort: Desc)])
 }
 
-model Theme {
-  id             String         @id @default(cuid())
-  name           String
-  isActive       Boolean        @default(false)
-  globalSettings Json           @default("{}")
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  pageTemplates  PageTemplate[]
-}
-
-model PageTemplate {
-  id        String   @id @default(cuid())
-  name      String
-  pageType  PageType
-  themeId   String
-  sections  Json     @default("[]")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  theme     Theme    @relation(fields: [themeId], references: [id], onDelete: Cascade)
-
-  @@unique([themeId, pageType, name])
-}
-
 enum VariantGroupRenderType {
   DROPDOWN
   BADGE
@@ -1703,14 +1571,6 @@ enum CardAssociation {
   MIR
   CUP
   UNKNOWN
-}
-
-enum PageType {
-  HOME
-  CATEGORY
-  PRODUCT
-  BRAND
-  OTHER
 }
 
 view ProductListingView {
@@ -2278,4 +2138,61 @@ enum FulfillmentDecisionType {
 enum LogicalOperator {
   AND
   OR
+}
+
+// ============================================
+// HIERARCHY VIEWS (Recursive Tree Structures)
+// ============================================
+
+// NOT: View'lar locale parametre ile query edilir
+// Örnek: prisma.categoryHierarchyView.findMany({ where: { nodeId: "x", locale: "TR" } })
+// Her node için sadece belirtilen locale'in translation'ı döner
+
+view CategoryHierarchyView {
+  nodeId          String
+  parentId        String?
+  depth           Int
+  locale          Locale
+  name            String?
+  slug            String?
+  description     String?
+  metaTitle       String?
+  metaDescription String?
+  imageUrl        String?
+  imageType       AssetType?
+
+  @@unique([nodeId, locale, depth])
+  @@map("CategoryHierarchyView")
+}
+
+view BrandHierarchyView {
+  nodeId          String
+  parentId        String?
+  depth           Int
+  locale          Locale
+  name            String?
+  slug            String?
+  description     String?
+  metaTitle       String?
+  metaDescription String?
+  imageUrl        String?
+  imageType       AssetType?
+
+  @@unique([nodeId, locale, depth])
+  @@map("BrandHierarchyView")
+}
+
+view TagHierarchyView {
+  nodeId   String
+  parentId String?
+  depth    Int
+  locale   Locale
+  name     String?
+  slug     String?
+  color    String?
+  icon     String?
+  priority Int?
+
+  @@unique([nodeId, locale, depth])
+  @@map("TagHierarchyView")
 }

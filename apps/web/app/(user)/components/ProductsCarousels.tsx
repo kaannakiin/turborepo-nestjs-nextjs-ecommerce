@@ -7,7 +7,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import ProductCard from './ProductCard';
-import { useTheme } from '@/context/theme-context/ThemeContext';
+import { useDeviceContext } from '@/context/device-context/DeviceContext';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -24,7 +24,7 @@ const ProductsCarousels = ({
   stackClassName,
   productId,
 }: ProductsCarouselsProps) => {
-  const { actualMedia: media } = useTheme();
+  const { actualMedia: media } = useDeviceContext();
   const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);

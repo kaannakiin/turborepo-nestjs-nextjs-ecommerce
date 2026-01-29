@@ -5,7 +5,7 @@ import {
 } from '../../lib/product-helper';
 import PriceFormatter from '@/(user)/components/PriceFormatter';
 import { useCartStore } from '@/context/cart-context/CartContext';
-import { useTheme } from '@/context/theme-context/ThemeContext';
+import { useDeviceContext } from '@/context/device-context/DeviceContext';
 import {
   useDecreaseCartItemQuantity,
   useGetCart,
@@ -44,7 +44,7 @@ const CartDrawer = () => {
 
   const showSkeleton = isLoading || (isFetching && !cart);
   const isEmpty = !cart || cart.items.length === 0;
-  const { actualMedia: media } = useTheme();
+  const { actualMedia: media } = useDeviceContext();
   const { push } = useRouter();
 
   const decreaseItemMutation = useDecreaseCartItemQuantity();

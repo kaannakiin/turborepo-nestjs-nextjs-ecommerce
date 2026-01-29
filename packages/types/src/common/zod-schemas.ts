@@ -1,6 +1,7 @@
 import { AssetType, Currency, Locale } from "@repo/database/client";
 import { parseDocument } from "htmlparser2";
 import { z } from "zod";
+import { MantineSize } from "./enums";
 /**
  * Asset tiplerine karşılık gelen MIME type'ları tanımlar.
  * Her asset tipi için izin verilen dosya formatlarının MIME type listesi.
@@ -83,19 +84,21 @@ export const getAssetTypeMessage = (types: AssetType[] | AssetType): string => {
 export const FileSchema = ({
   type,
   maxSize = 10 * 1024 * 1024,
+  error = "Geçerli bir dosya yükleyiniz.",
 }: {
   type: AssetType[] | AssetType;
   maxSize?: number;
+  error?: string;
 }) => {
   const allowedTypes = Array.isArray(type) ? type : [type];
   const allowedMimeTypes = allowedTypes.flatMap(getMimeTypesForAssetType);
 
   return z
     .instanceof(File, {
-      error: "Geçerli bir dosya yükleyiniz.",
+      error,
     })
     .refine((file) => file.size > 0, {
-      error: "Dosya boş olamaz.",
+      error,
     })
     .refine((file) => file.size <= maxSize, {
       error: `Dosya boyutu en fazla ${maxSize / (1024 * 1024)} MB olabilir.`,
@@ -117,7 +120,7 @@ export const htmlDescriptionSchema = z
     },
     {
       error: "Güvenlik nedeniyle bazı HTML etiketlerine izin verilmez.",
-    }
+    },
   )
   .refine(
     (value) => {
@@ -128,7 +131,7 @@ export const htmlDescriptionSchema = z
         return false;
       }
     },
-    { error: "HTML etiketleri düzgün kapatılmalıdır." }
+    { error: "HTML etiketleri düzgün kapatılmalıdır." },
   )
   .optional()
   .nullable();
@@ -144,3 +147,18 @@ export const tcKimlikNoRegex = /^[1-9]{1}[0-9]{9}[02468]{1}$/;
 
 export const localeSchema = z.enum(Locale);
 export const currencySchema = z.enum(Currency);
+
+export const componentBreakpointSchema = z.object({
+  mobile: z
+    .int({ error: "Lütfen geçerli bir değer giriniz." })
+    .min(1, { error: "Girdiğiniz değer 1'den küçük olamaz" })
+    .max(10, { error: "Lütfen 10'dan küçük bir değer giriniz." }),
+  tablet: z
+    .int({ error: "Lütfen geçerli bir değer giriniz." })
+    .min(1, { error: "Girdiğiniz değer 1'den küçük olamaz" })
+    .max(10, { error: "Lütfen 10'dan küçük bir değer giriniz." }),
+  desktop: z
+    .int({ error: "Lütfen geçerli bir değer giriniz." })
+    .min(1, { error: "Girdiğiniz değer 1'den küçük olamaz" })
+    .max(10, { error: "Lütfen 10'dan küçük bir değer giriniz." }),
+});

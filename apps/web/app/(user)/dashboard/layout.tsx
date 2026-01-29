@@ -1,26 +1,26 @@
-"use client";
-import { useTheme } from "@/context/theme-context/ThemeContext";
-import { Accordion, Group, Stack, Text, UnstyledButton } from "@mantine/core";
-import { Route } from "next";
-import { usePathname, useRouter } from "next/navigation";
-import { ReactNode } from "react";
+'use client';
+import { useDeviceContext } from '@/context/device-context/DeviceContext';
+import { Accordion, Group, Stack, Text, UnstyledButton } from '@mantine/core';
+import { Route } from 'next';
+import { usePathname, useRouter } from 'next/navigation';
+import { ReactNode } from 'react';
 
 const DashboardLayout = ({ children }: { children: ReactNode }) => {
   const links: Array<{ url: string; label: string }> = [
-    { label: "Profilim", url: "/dashboard" },
-    { label: "Siparişlerim", url: "/dashboard/orders" },
-    { label: "Adreslerim", url: "/dashboard/addresses" },
-    { label: "Beğendiğim Ürünler", url: "/dashboard/wishlist" },
+    { label: 'Profilim', url: '/dashboard' },
+    { label: 'Siparişlerim', url: '/dashboard/orders' },
+    { label: 'Adreslerim', url: '/dashboard/addresses' },
+    { label: 'Beğendiğim Ürünler', url: '/dashboard/wishlist' },
   ];
   const pathname = usePathname();
-  const { actualMedia: media } = useTheme();
+  const { actualMedia: media } = useDeviceContext();
   const { push } = useRouter();
   return (
-    <Stack gap={"xl"} className="flex-1 w-full lg:mx-auto max-w-[1500px]  px-4">
-      {media === "desktop" ? (
+    <Stack gap={'xl'} className="flex-1 w-full lg:mx-auto max-w-[1500px]  px-4">
+      {media === 'desktop' ? (
         <Group
-          pt={"xl"}
-          gap={"xl"}
+          pt={'xl'}
+          gap={'xl'}
           justify="center"
           className="border-b border-gray-300 pb-4"
         >
@@ -32,9 +32,9 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
               }}
             >
               <Text
-                tt={"capitalize"}
+                tt={'capitalize'}
                 fw={pathname === link.url ? 700 : 400}
-                fz={"lg"}
+                fz={'lg'}
               >
                 {link.label}
               </Text>
@@ -43,20 +43,20 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
         </Group>
       ) : (
         <Accordion
-          pt={"xl"}
+          pt={'xl'}
           chevronIconSize={24}
           classNames={{
-            control: "bg-transparent",
+            control: 'bg-transparent',
           }}
         >
           <Accordion.Item value="main">
             <Accordion.Control px={0}>
-              <Text tt={"capitalize"} fw={500} fz={"lg"}>
+              <Text tt={'capitalize'} fw={500} fz={'lg'}>
                 Hesabım
               </Text>
             </Accordion.Control>
             <Accordion.Panel px={0}>
-              <Stack gap={"xs"} px={0} py={"md"}>
+              <Stack gap={'xs'} px={0} py={'md'}>
                 {links.map((link, idx) => (
                   <UnstyledButton
                     key={idx}
@@ -65,9 +65,9 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
                     }}
                   >
                     <Text
-                      tt={"capitalize"}
+                      tt={'capitalize'}
                       fw={pathname === link.url ? 700 : 400}
-                      fz={"lg"}
+                      fz={'lg'}
                     >
                       {link.label}
                     </Text>

@@ -512,3 +512,8 @@ type HasDuplicate<T extends readonly unknown[]> = T extends readonly [
 
 export type NoDuplicates<T extends readonly unknown[]> =
   HasDuplicate<T> extends true ? never : T;
+
+export interface ProductModalItem {
+  itemId: string;
+  productName: string;
+}

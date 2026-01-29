@@ -1,4 +1,4 @@
-import { Media } from '@/context/theme-context/ThemeContext';
+import { Media } from '@/context/device-context/DeviceContext';
 import { MantineColor, MantineColorsTuple } from '@mantine/core';
 import {
   CampaignOfferTargetPage,
@@ -28,9 +28,6 @@ import {
   ShippingRuleType,
   SortAdminUserTable,
   TextAlign,
-  ThemeComponents,
-  ThemePages,
-  ThemeSections,
 } from '@repo/types';
 
 export function getUserRoleLabels(role: UserRole) {
@@ -688,39 +685,6 @@ export const getAspectRatioValue = (ratio: AspectRatio): number => {
   return AspectRatioConfigs[ratio]?.value || 0;
 };
 
-const ThemePageConfigs: Record<
-  ThemePages,
-  { label: string; value: ThemePages; createbleComponents?: ThemeComponents[] }
-> = {
-  HOMEPAGE: {
-    label: 'Anasayfa',
-    value: 'HOMEPAGE',
-    createbleComponents: ['MARQUEE', 'PRODUCT_CAROUSEL', 'SLIDER'],
-  },
-  PRODUCT: {
-    label: 'Ürün Sayfası',
-    value: 'PRODUCT',
-    createbleComponents: ['MARQUEE'],
-  },
-};
-
-export function getThemePageLabel(page: ThemePages): string {
-  return ThemePageConfigs[page]?.label || 'Bilinmeyen';
-}
-
-export function getThemePageValue(page: ThemePages): ThemePages {
-  return ThemePageConfigs[page]?.value || 'HOMEPAGE';
-}
-
-export function getThemePageCreatebleComponents(
-  page: ThemePages,
-): ThemeComponents[] {
-  const createbleComponentSet = new Set(
-    ThemePageConfigs[page]?.createbleComponents,
-  );
-  return [...createbleComponentSet];
-}
-
 const MediaConfigs: Record<Media, { breakpoint: number }> = {
   desktop: { breakpoint: 1024 },
   tablet: { breakpoint: 768 },
@@ -730,22 +694,6 @@ const MediaConfigs: Record<Media, { breakpoint: number }> = {
 export function getMediaBreakpoint(media: Media): number {
   return MediaConfigs[media]?.breakpoint || 0;
 }
-
-const ThemeSectionConfigs: Record<
-  ThemeSections,
-  { label: string; value: ThemeSections }
-> = {
-  HEADER: { label: 'Header', value: 'HEADER' },
-  FOOTER: { label: 'Footer', value: 'FOOTER' },
-};
-
-export const getThemeSectionLabel = (section: ThemeSections): string => {
-  return ThemeSectionConfigs[section]?.label || 'Bilinmeyen';
-};
-
-export const getThemeSectionValue = (section: ThemeSections): ThemeSections => {
-  return ThemeSectionConfigs[section]?.value || 'HEADER';
-};
 
 export const fontSelectData = [
   {

@@ -13,7 +13,6 @@ export * from "./brands/index";
 export * from "./categories/index";
 export * from "./customers/index";
 export * from "./payment-methods/index";
-export * from "./theme/index";
 export * from "./store/index";
-export * from "./designs/index";
+export * from "./design/index";
 export { flattenError, ZodType, z } from "zod";

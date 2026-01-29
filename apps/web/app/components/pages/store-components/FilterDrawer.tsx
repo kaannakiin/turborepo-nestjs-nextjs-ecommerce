@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   Box,
@@ -13,19 +13,19 @@ import {
   Stack,
   Text,
   UnstyledButton,
-} from "@mantine/core";
+} from '@mantine/core';
 import {
   VariantGroupRenderType,
   VariantGroupType,
-} from "@repo/database/client";
-import { FiltersResponse, TreeNode } from "@repo/types";
-import { IconChevronDown, IconFilter2, IconX } from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { FilterData, PageType } from "./QueryFilters";
-import BadgeRenderer from "./renderer-items/BadgeRenderer";
-import CheckboxRenderer from "./renderer-items/CheckboxRenderer";
-import ColorSwatchRenderer from "./renderer-items/ColorSwatchRenderer";
+} from '@repo/database/client';
+import { FiltersResponse, TreeNode } from '@repo/types';
+import { IconChevronDown, IconFilter2, IconX } from '@tabler/icons-react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { FilterData, PageType } from './QueryFilters';
+import BadgeRenderer from './renderer-items/BadgeRenderer';
+import CheckboxRenderer from './renderer-items/CheckboxRenderer';
+import ColorSwatchRenderer from './renderer-items/ColorSwatchRenderer';
 
 interface FilterDrawerProps {
   opened: boolean;
@@ -61,9 +61,9 @@ const FilterSection = ({
     <Box>
       <UnstyledButton
         onClick={() => setOpened(!opened)}
-        style={{ width: "100%" }}
+        style={{ width: '100%' }}
       >
-        <Group justify="space-between" mb={opened ? "md" : "0"}>
+        <Group justify="space-between" mb={opened ? 'md' : '0'}>
           <Group gap="xs">
             <Text fw={500} size="sm" tt="uppercase" c="dimmed">
               {title}
@@ -72,8 +72,8 @@ const FilterSection = ({
           <IconChevronDown
             size={16}
             style={{
-              transform: opened ? "rotate(180deg)" : "none",
-              transition: "transform 200ms ease",
+              transform: opened ? 'rotate(180deg)' : 'none',
+              transition: 'transform 200ms ease',
             }}
           />
         </Group>
@@ -88,7 +88,7 @@ const FilterSection = ({
 
 const flattenCategoryTree = (
   categories: TreeNode[],
-  level = 0
+  level = 0,
 ): Array<{ category: TreeNode; level: number }> => {
   const result: Array<{ category: TreeNode; level: number }> = [];
 
@@ -132,9 +132,9 @@ const FilterDrawer = ({
   }, [opened, selectedData]);
 
   const handleToggle = (
-    category: "categories" | "brands" | "tags",
+    category: 'categories' | 'brands' | 'tags',
     slug: string,
-    checked: boolean
+    checked: boolean,
   ) => {
     setLocalData((prev) => {
       const current = prev[category] || [];
@@ -156,7 +156,7 @@ const FilterDrawer = ({
   const handleVariantToggle = (
     groupSlug: string,
     optionSlug: string,
-    checked: boolean
+    checked: boolean,
   ) => {
     setLocalData((prev) => {
       const currentOptions = prev.variants[groupSlug] || [];
@@ -187,14 +187,14 @@ const FilterDrawer = ({
   };
 
   const handlePriceInputChange = (
-    type: "min" | "max",
-    value: number | string
+    type: 'min' | 'max',
+    value: number | string,
   ) => {
-    const numValue = typeof value === "string" ? parseFloat(value) : value;
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
     if (isNaN(numValue)) return;
 
     const newRange: [number, number] =
-      type === "min" ? [numValue, priceRange[1]] : [priceRange[0], numValue];
+      type === 'min' ? [numValue, priceRange[1]] : [priceRange[0], numValue];
 
     setPriceRange(newRange);
     setLocalData((prev) => ({
@@ -233,8 +233,8 @@ const FilterDrawer = ({
       }
       styles={{
         header: {
-          borderBottom: "1px solid var(--mantine-color-gray-3)",
-          paddingBottom: "1rem",
+          borderBottom: '1px solid var(--mantine-color-gray-3)',
+          paddingBottom: '1rem',
         },
         body: {
           padding: 0,
@@ -243,15 +243,15 @@ const FilterDrawer = ({
     >
       <Box
         style={{
-          display: "flex",
-          flexDirection: "column",
-          height: "calc(100vh - 80px)",
+          display: 'flex',
+          flexDirection: 'column',
+          height: 'calc(100vh - 80px)',
         }}
       >
         <ScrollArea flex={1} type="scroll">
           <Box px="md" py="md">
             <Stack gap={0}>
-              {pageType === "categories" && flatCategories.length > 0 && (
+              {pageType === 'categories' && flatCategories.length > 0 && (
                 <FilterSection title="Alt Kategoriler">
                   <Stack gap={0}>
                     {flatCategories.map(({ category, level }) => (
@@ -269,7 +269,7 @@ const FilterDrawer = ({
                 </FilterSection>
               )}
 
-              {pageType !== "categories" &&
+              {pageType !== 'categories' &&
                 filters.categories &&
                 filters.categories.length > 0 && (
                   <FilterSection
@@ -285,13 +285,13 @@ const FilterDrawer = ({
                       }))}
                       selectedSlugs={localData.categories || []}
                       onToggle={(slug, checked) =>
-                        handleToggle("categories", slug, checked)
+                        handleToggle('categories', slug, checked)
                       }
                     />
                   </FilterSection>
                 )}
 
-              {pageType !== "brands" &&
+              {pageType !== 'brands' &&
                 filters.brands &&
                 filters.brands.length > 0 && (
                   <FilterSection
@@ -307,13 +307,13 @@ const FilterDrawer = ({
                       }))}
                       selectedSlugs={localData.brands || []}
                       onToggle={(slug, checked) =>
-                        handleToggle("brands", slug, checked)
+                        handleToggle('brands', slug, checked)
                       }
                     />
                   </FilterSection>
                 )}
 
-              {pageType !== "tags" &&
+              {pageType !== 'tags' &&
                 filters.tags &&
                 filters.tags.length > 0 && (
                   <FilterSection
@@ -329,7 +329,7 @@ const FilterDrawer = ({
                       }))}
                       selectedSlugs={localData.tags || []}
                       onToggle={(slug, checked) =>
-                        handleToggle("tags", slug, checked)
+                        handleToggle('tags', slug, checked)
                       }
                     />
                   </FilterSection>
@@ -349,12 +349,12 @@ const FilterDrawer = ({
                     value={priceRange}
                     onChange={handlePriceRangeChange}
                     marks={[
-                      { value: 0, label: "₺0" },
-                      { value: 5000, label: "₺5K" },
-                      { value: 10000, label: "₺10K" },
+                      { value: 0, label: '₺0' },
+                      { value: 5000, label: '₺5K' },
+                      { value: 10000, label: '₺10K' },
                     ]}
                     styles={{
-                      markLabel: { fontSize: "12px" },
+                      markLabel: { fontSize: '12px' },
                     }}
                   />
 
@@ -366,8 +366,8 @@ const FilterDrawer = ({
                       max={priceRange[1]}
                       value={priceRange[0]}
                       hideControls
-                      onChange={(value) => handlePriceInputChange("min", value)}
-                      styles={{ input: { textAlign: "center" } }}
+                      onChange={(value) => handlePriceInputChange('min', value)}
+                      styles={{ input: { textAlign: 'center' } }}
                     />
 
                     <NumberInput
@@ -377,8 +377,8 @@ const FilterDrawer = ({
                       max={10000}
                       value={priceRange[1]}
                       hideControls
-                      onChange={(value) => handlePriceInputChange("max", value)}
-                      styles={{ input: { textAlign: "center" } }}
+                      onChange={(value) => handlePriceInputChange('max', value)}
+                      styles={{ input: { textAlign: 'center' } }}
                     />
                   </Group>
                 </Stack>
@@ -395,7 +395,7 @@ const FilterDrawer = ({
 
                 const hasDropdownRender = group.productVariantGroups?.some(
                   (pvg) =>
-                    pvg.renderVisibleType === VariantGroupRenderType.DROPDOWN
+                    pvg.renderVisibleType === VariantGroupRenderType.DROPDOWN,
                 );
 
                 if (group.type === VariantGroupType.LIST) {
@@ -474,8 +474,8 @@ const FilterDrawer = ({
         <Box
           p="md"
           style={{
-            borderTop: "1px solid var(--mantine-color-gray-3)",
-            backgroundColor: "white",
+            borderTop: '1px solid var(--mantine-color-gray-3)',
+            backgroundColor: 'white',
           }}
         >
           <Group grow>

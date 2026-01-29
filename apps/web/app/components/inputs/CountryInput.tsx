@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { ComboboxItem, Group, Select, SelectProps, Text } from "@mantine/core";
-import { Locale } from "@repo/database/client";
-import { GetAllCountryReturnType } from "@repo/types";
-import { useMemo } from "react";
-import { useCountries } from "../../../hooks/useLocations";
+import { useCountries } from '@hooks/useLocations';
+import { ComboboxItem, Group, Select, SelectProps, Text } from '@mantine/core';
+import { Locale } from '@repo/database/client';
+import { GetAllCountryReturnType } from '@repo/types';
+import { useMemo } from 'react';
 
 export interface CountrySelectData {
   value: string;
@@ -15,7 +15,7 @@ export interface CountrySelectData {
 }
 
 interface CountryInputProps {
-  selectProps?: Omit<SelectProps, "data" | "onChange">;
+  selectProps?: Omit<SelectProps, 'data' | 'onChange'>;
   locale?: Locale;
   onChange?: (selectedData: CountrySelectData | null) => void;
   value?: string | null;
@@ -25,7 +25,7 @@ interface CountryInputProps {
 
 const CountryInput = ({
   selectProps,
-  locale = "TR",
+  locale = 'TR',
   onChange,
   value,
   onlyState,
@@ -38,15 +38,15 @@ const CountryInput = ({
 
     return countries
       .filter((country) => {
-        if (onlyState && country.type !== "STATE") return false;
-        if (onlyCity && country.type !== "CITY") return false;
+        if (onlyState && country.type !== 'STATE') return false;
+        if (onlyCity && country.type !== 'CITY') return false;
         return true;
       })
       .map((country): CountrySelectData => {
         const translation = country.translations.find(
-          (t) => t.locale === locale
+          (t) => t.locale === locale,
         );
-        const name = translation?.name ?? country.translations[0]?.name ?? "";
+        const name = translation?.name ?? country.translations[0]?.name ?? '';
 
         return {
           value: country.id.toString(),
@@ -85,7 +85,7 @@ const CountryInput = ({
       filter={({ options, search }) => {
         const searchLower = search.toLowerCase().trim();
         return options.filter((option): option is ComboboxItem => {
-          if (!("value" in option)) return false;
+          if (!('value' in option)) return false;
           const item = selectData.find((d) => d.value === option.value);
           return item?.name.toLowerCase().includes(searchLower) ?? false;
         });

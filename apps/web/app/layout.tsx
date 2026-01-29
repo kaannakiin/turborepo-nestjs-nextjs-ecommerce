@@ -3,7 +3,7 @@ import { ColorSchemeScript, mantineHtmlProps } from '@mantine/core';
 import { ReactNode } from 'react';
 import LayoutProviderWrapper from './components/LayoutProviderWrapper';
 import './globals.css';
-import ThemeProvider from './context/theme-context/ThemeContext';
+import DeviceProvider from './context/device-context/DeviceContext';
 import { NextIntlClientProvider } from 'next-intl';
 
 export default function RootLayout({
@@ -14,12 +14,12 @@ export default function RootLayout({
   return (
     <html lang="tr" {...mantineHtmlProps}>
       <head>
-        <ColorSchemeScript />
+        <ColorSchemeScript forceColorScheme="light" defaultColorScheme="auto" />
       </head>
       <body className="relative" suppressHydrationWarning={true}>
         <NextIntlClientProvider>
           <LayoutProviderWrapper>
-            <ThemeProvider>{children}</ThemeProvider>
+            <DeviceProvider>{children}</DeviceProvider>
           </LayoutProviderWrapper>
         </NextIntlClientProvider>
       </body>

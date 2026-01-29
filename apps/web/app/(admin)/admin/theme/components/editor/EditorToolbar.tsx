@@ -1,0 +1,81 @@
+'use client';
+
+import { ActionIcon, Button, Group, Tooltip } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import { DesignSchema } from '@repo/types';
+import { IconDeviceFloppy, IconEye, IconX } from '@tabler/icons-react';
+import { useDesignStore } from '../../store/design-store';
+
+export default function EditorToolbar() {
+  const isDirty = useDesignStore((s) => s.isDirty);
+  const design = useDesignStore((s) => s.design);
+  const resetToOriginal = useDesignStore((s) => s.resetToOriginal);
+  const markClean = useDesignStore((s) => s.markClean);
+
+  const handleSave = () => {
+    if (!design) return;
+
+    const result = DesignSchema.safeParse(design);
+
+    if (!result.success) {
+      const firstError = result.error.issues[0];
+      notifications.show({
+        title: 'Doğrulama Hatası',
+        message: firstError?.message || 'Tasarımda hatalar var.',
+        color: 'red',
+      });
+      console.error('Validation errors:', result.error.issues);
+      return;
+    }
+
+    markClean();
+    notifications.show({
+      title: 'Başarılı',
+      message: 'Tasarım kaydedildi.',
+      color: 'green',
+    });
+  };
+
+  const handleCancel = () => {
+    resetToOriginal();
+    notifications.show({
+      title: 'İptal Edildi',
+      message: 'Değişiklikler geri alındı.',
+      color: 'blue',
+    });
+  };
+
+  const handlePreview = () => {
+    console.log('Preview design:', design);
+  };
+
+  return (
+    <Group gap="xs">
+      <Tooltip label="Önizleme">
+        <ActionIcon variant="subtle" size="md" onClick={handlePreview}>
+          <IconEye size={18} />
+        </ActionIcon>
+      </Tooltip>
+
+      <Button
+        size="xs"
+        variant="light"
+        color="red"
+        leftSection={<IconX size={14} />}
+        disabled={!isDirty}
+        onClick={handleCancel}
+      >
+        İptal
+      </Button>
+
+      <Button
+        size="xs"
+        leftSection={<IconDeviceFloppy size={14} />}
+        disabled={!isDirty}
+        onClick={handleSave}
+      >
+        Kaydet
+      </Button>
+    </Group>
+  );
+}
