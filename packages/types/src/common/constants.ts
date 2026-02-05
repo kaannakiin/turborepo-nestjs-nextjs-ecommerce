@@ -9,3 +9,7 @@ export const CART_COOKIE_NAME = "cart_id";
 export const REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
 export const ACCESS_TOKEN_COOKIE_NAME = "token";
 export const NOT_RETRY_REFRESH_TOKEN_ENDPOINTS = ["/auth/login"];
+
+export const CATEGORY_BASE_SLUG = "categories";
+export const BRAND_BASE_SLUG = "brands";
+export const TAG_BASE_SLUG = "tags";

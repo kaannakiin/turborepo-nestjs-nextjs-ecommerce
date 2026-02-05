@@ -1,27 +1,16 @@
 'use client';
 
-import {
-  ActionIcon,
-  Group,
-  NumberInput,
-  Stack,
-  Switch,
-  Text,
-} from '@mantine/core';
-import { ThemeFormCard } from '@repo/ui/cards';
+import { NumberInput, Stack, Switch } from '@mantine/core';
 import { Controller } from '@repo/shared';
 import { DesignSliderSchema, DesignSliderSchemaInputType } from '@repo/types';
-import { IconPlus } from '@tabler/icons-react';
+import { ThemeFormCard } from '@repo/ui/cards';
 import { useComponentForm } from '../../hooks/useComponentForm';
 import { ComponentFormProps } from '../../registry/registry-types';
-import { useDesignStore } from '../../store/design-store';
-import SliderSlideList from './SliderSlideList';
 
 const SliderForm = ({ uniqueId }: ComponentFormProps) => {
   const { control, handleFieldChange, data } = useComponentForm<
     typeof DesignSliderSchema
   >(DesignSliderSchema, uniqueId);
-  const select = useDesignStore((s) => s.select);
 
   if (!data) return null;
 
@@ -94,21 +83,6 @@ const SliderForm = ({ uniqueId }: ComponentFormProps) => {
             )}
           />
         </Stack>
-      </ThemeFormCard>
-
-      <ThemeFormCard title={`Slaytlar (${typedData.slides.length})`}>
-        <Group justify="end" mb="sm">
-          <ActionIcon variant="light" size="sm">
-            <IconPlus size={14} />
-          </ActionIcon>
-        </Group>
-        <SliderSlideList
-          slides={typedData.slides}
-          parentUniqueId={uniqueId}
-          onSelectItem={(itemUniqueId) =>
-            select('item', itemUniqueId, [uniqueId, itemUniqueId])
-          }
-        />
       </ThemeFormCard>
     </Stack>
   );

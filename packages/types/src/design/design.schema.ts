@@ -1,6 +1,6 @@
 import { StoreType } from "@repo/database/client";
 import { z } from "zod";
-import { DesignName, FileSchema } from "../common";
+import { DesignName, existingAssetSchema, FileSchema } from "../common";
 import { DesignPageSchema } from "./design-page.schema";
 
 export const DesignSchema = z.object({
@@ -8,6 +8,7 @@ export const DesignSchema = z.object({
     type: ["IMAGE"],
     error: "Lütfen bir logo yükleyin.",
   }),
+  existingLogo: existingAssetSchema.nullish(),
   storeType: z.enum(StoreType, { error: "Geçersiz mağaza tipi." }),
   designType: z.enum(DesignName, { error: "Geçersiz tasarım adı." }),
   isActive: z.boolean({ error: "Aktiflik durumu gereklidir." }),

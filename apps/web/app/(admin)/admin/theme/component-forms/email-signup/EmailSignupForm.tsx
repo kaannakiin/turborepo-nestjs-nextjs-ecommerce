@@ -1,12 +1,8 @@
 'use client';
 
 import {
-  Box,
-  Button,
-  ColorInput,
   Group,
   NumberInput,
-  Select,
   Slider,
   Stack,
   Switch,
@@ -14,11 +10,6 @@ import {
   TextInput,
   Textarea,
 } from '@mantine/core';
-import {
-  ColorPickerInput,
-  MantineSizeInput,
-  MantineTextAlignSizeInput,
-} from '@repo/ui/inputs';
 import { Controller } from '@repo/shared';
 import {
   DesignEmailSignupSchema,
@@ -26,15 +17,23 @@ import {
   MantineSize,
   TextAlign,
 } from '@repo/types';
-import { IconUpload } from '@tabler/icons-react';
+import { ThemeFormCard } from '@repo/ui/cards';
+import {
+  ColorPickerInput,
+  FileInput,
+  MantineSizeInput,
+  MantineTextAlignSizeInput,
+} from '@repo/ui/inputs';
 import { useComponentForm } from '../../hooks/useComponentForm';
 import { ComponentFormProps } from '../../registry/registry-types';
-import { ThemeFormCard } from '@repo/ui/cards';
+import { useDeleteAsset } from '@hooks/admin/useImage';
 
 const EmailSignupForm = ({ uniqueId }: ComponentFormProps) => {
   const { control, handleFieldChange, data } = useComponentForm<
     typeof DesignEmailSignupSchema
   >(DesignEmailSignupSchema, uniqueId);
+
+  const { deleteAsset } = useDeleteAsset();
 
   if (!data) return null;
 
@@ -123,23 +122,34 @@ const EmailSignupForm = ({ uniqueId }: ComponentFormProps) => {
 
       <ThemeFormCard title="Arkaplan">
         <Stack gap="xs">
-          <Box>
-            <Text size="sm" mb={4}>
-              Arkaplan Görseli
-            </Text>
-            <Box
-              style={{
-                border: '2px dashed var(--mantine-color-gray-4)',
-                borderRadius: 'var(--mantine-radius-md)',
-                padding: 'var(--mantine-spacing-md)',
-                textAlign: 'center',
-              }}
-            >
-              <Button variant="light" leftSection={<IconUpload size={16} />}>
-                Görsel Yükle
-              </Button>
-            </Box>
-          </Box>
+          <Controller
+            control={control}
+            name="backgroundImage"
+            render={({ field }) => (
+              <FileInput
+                accept="IMAGE"
+                multiple={false}
+                value={field.value}
+                existingFiles={
+                  typedData.existingBackgroundAsset
+                    ? [
+                        {
+                          url: typedData.existingBackgroundAsset.url,
+                          type: typedData.existingBackgroundAsset.type,
+                        },
+                      ]
+                    : undefined
+                }
+                onChange={(file) =>
+                  handleFieldChange('backgroundImage', file as File | null)
+                }
+                removeExistingFileFn={async (url) => {
+                  await deleteAsset(url);
+                  handleFieldChange('existingBackgroundAsset', null);
+                }}
+              />
+            )}
+          />
           <Controller
             control={control}
             name="backgroundColor"

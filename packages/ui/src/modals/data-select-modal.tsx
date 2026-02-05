@@ -5,6 +5,7 @@ import {
   Group,
   Modal,
   ModalProps,
+  Radio,
   ScrollArea,
   Stack,
   Text,
@@ -21,6 +22,7 @@ export interface DataSelectModalProps<T> extends Omit<ModalProps, "onSubmit"> {
   onSubmit: (selectedItems: T[]) => void;
   idKey: keyof T;
   labelKey: keyof T;
+  multiple?: boolean;
   searchKeys?: (keyof T)[];
   searchFn?: (item: T, query: string) => boolean;
   searchPlaceholder?: string;
@@ -38,6 +40,7 @@ const DataSelectModal = <T,>({
   onSubmit,
   idKey,
   labelKey,
+  multiple = true,
   searchKeys,
   searchFn,
   searchPlaceholder = "Ara...",
@@ -57,7 +60,7 @@ const DataSelectModal = <T,>({
     if (props.opened) {
       setLocalSelectedIds(selectedIds);
     }
-  }, [props.opened, selectedIds]);
+  }, [props.opened]);
 
   const keysToSearch = searchKeys || [labelKey];
 
@@ -80,9 +83,13 @@ const DataSelectModal = <T,>({
       : data;
 
   const handleToggle = (id: string) => {
-    setLocalSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
-    );
+    if (multiple) {
+      setLocalSelectedIds((prev) =>
+        prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+      );
+    } else {
+      setLocalSelectedIds([id]);
+    }
   };
 
   const handleSave = () => {
@@ -149,7 +156,11 @@ const DataSelectModal = <T,>({
                             handleToggle(itemId);
                           }}
                         >
-                          <Checkbox readOnly checked={isSelected} />
+                          {multiple ? (
+                            <Checkbox readOnly checked={isSelected} />
+                          ) : (
+                            <Radio readOnly checked={isSelected} />
+                          )}
                           {renderItem ? (
                             renderItem(item)
                           ) : (

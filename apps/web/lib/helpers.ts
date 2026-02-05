@@ -1,4 +1,3 @@
-import { Media } from '@/context/device-context/DeviceContext';
 import { MantineColor, MantineColorsTuple } from '@mantine/core';
 import {
   CampaignOfferTargetPage,
@@ -23,6 +22,7 @@ import {
   LocationType,
   MantineFontWeight,
   MantineSize,
+  Media,
   ProductPageDataType,
   ProductPageSortOption,
   ShippingRuleType,
@@ -684,16 +684,6 @@ export const getAspectRatioLabel = (ratio: AspectRatio): string => {
 export const getAspectRatioValue = (ratio: AspectRatio): number => {
   return AspectRatioConfigs[ratio]?.value || 0;
 };
-
-const MediaConfigs: Record<Media, { breakpoint: number }> = {
-  desktop: { breakpoint: 1024 },
-  tablet: { breakpoint: 768 },
-  mobile: { breakpoint: 0 },
-};
-
-export function getMediaBreakpoint(media: Media): number {
-  return MediaConfigs[media]?.breakpoint || 0;
-}
 
 export const fontSelectData = [
   {

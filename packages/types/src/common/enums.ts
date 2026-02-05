@@ -493,12 +493,12 @@ export type DesignComponentType =
   (typeof DesignComponentType)[keyof typeof DesignComponentType];
 
 export const DesignComponentCategory = {
-  HERO: "hero",
-  CONTENT: "content",
-  PRODUCT: "product",
-  NAVIGATION: "navigation",
-  SOCIAL: "social",
-  UTILITY: "utility",
+  HERO: "HERO",
+  CONTENT: "CONTENT",
+  PRODUCT: "PRODUCT",
+  NAVIGATION: "NAVIGATION",
+  SOCIAL: "SOCIAL",
+  UTILITY: "UTILITY",
 } as const;
 export type DesignComponentCategory =
   (typeof DesignComponentCategory)[keyof typeof DesignComponentCategory];
@@ -521,3 +521,18 @@ export const HeaderLinkType = {
 };
 export type HeaderLinkType =
   (typeof HeaderLinkType)[keyof typeof HeaderLinkType];
+
+export const Media = {
+  MOBILE: "mobile",
+  TABLET: "tablet",
+  DESKTOP: "desktop",
+} as const;
+export type Media = (typeof Media)[keyof typeof Media];
+
+export const OnboardGridItemLinkType = {
+  BRAND: "BRAND",
+  CATEGORY: "CATEGORY",
+  TAG: "TAG",
+} as const;
+export type OnboardGridItemLinkType =
+  (typeof OnboardGridItemLinkType)[keyof typeof OnboardGridItemLinkType];

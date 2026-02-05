@@ -125,24 +125,21 @@ const ProductCarouselForm = ({ uniqueId }: ComponentFormProps) => {
         )}
       />
 
-      <ThemeFormCard title="Gorunum Sayilari">
+      <ThemeFormCard title="Görünüm Sayıları">
         <Group grow>
           <Controller
             control={control}
-            name="viewCounts.mobileProductCount"
+            name="breakPoints.mobile"
             render={({ field }) => (
               <NumberInput
                 label="Mobil"
                 min={1}
-                max={12}
+                max={10}
                 value={field.value || 2}
                 onChange={(value) =>
-                  handleFieldChange('viewCounts', {
-                    mobileProductCount: value as number,
-                    tabletProductCount:
-                      typedData.viewCounts?.tabletProductCount ?? 4,
-                    desktopProductCount:
-                      typedData.viewCounts?.desktopProductCount ?? 6,
+                  handleFieldChange('breakPoints', {
+                    ...typedData.breakPoints,
+                    mobile: value as number,
                   })
                 }
               />
@@ -150,20 +147,17 @@ const ProductCarouselForm = ({ uniqueId }: ComponentFormProps) => {
           />
           <Controller
             control={control}
-            name="viewCounts.tabletProductCount"
+            name="breakPoints.tablet"
             render={({ field }) => (
               <NumberInput
                 label="Tablet"
                 min={1}
-                max={12}
+                max={10}
                 value={field.value || 4}
                 onChange={(value) =>
-                  handleFieldChange('viewCounts', {
-                    mobileProductCount:
-                      typedData.viewCounts?.mobileProductCount ?? 2,
-                    tabletProductCount: value as number,
-                    desktopProductCount:
-                      typedData.viewCounts?.desktopProductCount ?? 6,
+                  handleFieldChange('breakPoints', {
+                    ...typedData.breakPoints,
+                    tablet: value as number,
                   })
                 }
               />
@@ -171,20 +165,17 @@ const ProductCarouselForm = ({ uniqueId }: ComponentFormProps) => {
           />
           <Controller
             control={control}
-            name="viewCounts.desktopProductCount"
+            name="breakPoints.desktop"
             render={({ field }) => (
               <NumberInput
-                label="Masaustu"
+                label="Masaüstü"
                 min={1}
-                max={12}
+                max={10}
                 value={field.value || 6}
                 onChange={(value) =>
-                  handleFieldChange('viewCounts', {
-                    mobileProductCount:
-                      typedData.viewCounts?.mobileProductCount ?? 2,
-                    tabletProductCount:
-                      typedData.viewCounts?.tabletProductCount ?? 4,
-                    desktopProductCount: value as number,
+                  handleFieldChange('breakPoints', {
+                    ...typedData.breakPoints,
+                    desktop: value as number,
                   })
                 }
               />

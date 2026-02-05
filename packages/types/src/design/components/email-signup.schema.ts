@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   colorHex,
   DesignComponentType,
+  existingAssetSchema,
   FileSchema,
   MantineSize,
   TextAlign,
@@ -40,6 +41,7 @@ export const DesignEmailSignupSchema = z.object({
     type: ["IMAGE"],
     error: "Lütfen bir görsel yükleyin.",
   }).nullish(),
+  existingBackgroundAsset: existingAssetSchema.nullish(),
   backgroundColor: colorHex.nullish(),
   overlayOpacity: z
     .int({ error: "Geçersiz overlay opaklık değeri." })

@@ -1,6 +1,6 @@
 'use client';
 
-import Dropzone from '@/components/Dropzone';
+import { Dropzone } from '@repo/ui/inputs';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import SeoCard from '@/components/SeoCard';
 import {

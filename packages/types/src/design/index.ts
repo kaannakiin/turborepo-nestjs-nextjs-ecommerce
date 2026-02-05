@@ -2,6 +2,7 @@
 export * from "./components/product-carousel.schema";
 export * from "./components/slider.schema";
 export * from "./components/email-signup.schema";
+export * from "./components/onboard-grid-schema";
 
 // Aggregated Schemas
 export * from "./design-components.schema";

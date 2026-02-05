@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { colorHex, DesignComponentType, FileSchema } from "../../common";
+import { AssetType } from "@repo/database";
 
 export const DesignSliderSlideSchema = z.object({
   uniqueId: z.cuid2(),
@@ -7,6 +8,16 @@ export const DesignSliderSlideSchema = z.object({
     type: ["IMAGE"],
     error: "Lütfen bir görsel yükleyin.",
   }),
+  existingAsset: z
+    .object({
+      url: z.url({
+        error: "Geçersiz asset URL'i.",
+      }),
+      type: z.enum(AssetType, {
+        error: "Geçersiz asset tipi.",
+      }),
+    })
+    .nullish(),
   title: z
     .string()
     .min(1, { error: "Başlık en az 1 karakter olmalıdır." })

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMediaQuery } from '@mantine/hooks';
+import { Media } from '@repo/types';
 import { usePathname } from 'next/navigation';
 import {
   createContext,
@@ -49,8 +50,6 @@ import {
   osName,
   osVersion,
 } from 'react-device-detect';
-
-export type Media = 'mobile' | 'tablet' | 'desktop';
 
 export interface DeviceInfo {
   actualMedia: Media;

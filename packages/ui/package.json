@@ -36,9 +36,16 @@
   },
   "dependencies": {
     "@mantine/core": "catalog:",
+    "@mantine/dropzone": "catalog:",
     "@mantine/hooks": "catalog:",
+    "@repo/database": "workspace:*",
+    "@dnd-kit/core": "catalog:",
+    "@dnd-kit/modifiers": "catalog:",
+    "@dnd-kit/sortable": "catalog:",
+    "@dnd-kit/utilities": "catalog:",
     "@repo/types": "workspace:*",
     "@tabler/icons-react": "catalog:",
+    "clsx": "catalog:",
     "google-libphonenumber": "catalog:",
     "react-imask": "^7.6.1",
     "swiper": "catalog:"

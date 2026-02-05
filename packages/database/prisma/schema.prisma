@@ -372,7 +372,7 @@ model Brand {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   deletedAt          DateTime?
-  image              Asset?             @relation(fields: [imageId], references: [id])
+  image              Asset?             @relation(fields: [imageId], references: [id], onDelete: SetNull)
   parentBrand        Brand?             @relation("BrandHierarchy", fields: [parentBrandId], references: [id], onDelete: SetNull)
   childBrands        Brand[]            @relation("BrandHierarchy")
   translations       BrandTranslation[]
@@ -435,7 +435,7 @@ model VariantOption {
   createdAt             DateTime                   @default(now())
   updatedAt             DateTime                   @updatedAt
   productVariantOptions ProductVariantOption[]     @relation("ProductVariantOptions")
-  asset                 Asset?                     @relation(fields: [assetId], references: [id])
+  asset                 Asset?                     @relation(fields: [assetId], references: [id], onDelete: SetNull)
   variantGroup          VariantGroup               @relation(fields: [variantGroupId], references: [id], onDelete: Cascade)
   translations          VariantOptionTranslation[]
 

@@ -1,14 +1,11 @@
 'use client';
 
-import { Box, Button, Group, Stack, Text, TextInput } from '@mantine/core';
-import { ThemeFormCard } from '@repo/ui/cards';
-import { ColorPickerInput } from '@repo/ui/inputs';
+import { useDeleteAsset } from '@hooks/admin/useImage';
+import { Group, Stack, TextInput } from '@mantine/core';
 import { Controller } from '@repo/shared';
-import {
-  DesignSliderSlideSchema,
-  DesignSliderSlideSchemaInputType,
-} from '@repo/types';
-import { IconUpload } from '@tabler/icons-react';
+import { DesignSliderSlideSchema } from '@repo/types';
+import { ThemeFormCard } from '@repo/ui/cards';
+import { ColorPickerInput, FileInput } from '@repo/ui/inputs';
 import { useItemForm } from '../../hooks/useComponentForm';
 import { ItemFormProps } from '../../registry/registry-types';
 
@@ -17,29 +14,44 @@ const SlideItemForm = ({ uniqueId, parentUniqueId }: ItemFormProps) => {
     typeof DesignSliderSlideSchema
   >(DesignSliderSlideSchema, uniqueId, parentUniqueId);
 
-  if (!data) return null;
+  const { deleteAsset } = useDeleteAsset();
 
-  const typedData = data as DesignSliderSlideSchemaInputType;
+  if (!data) return null;
 
   return (
     <Stack gap="md">
-      {/* Image Upload */}
       <ThemeFormCard title="Gorsel">
-        <Box
-          style={{
-            border: '2px dashed var(--mantine-color-gray-4)',
-            borderRadius: 'var(--mantine-radius-md)',
-            padding: 'var(--mantine-spacing-xl)',
-            textAlign: 'center',
-          }}
-        >
-          <Button variant="light" leftSection={<IconUpload size={16} />}>
-            Gorsel Yukle
-          </Button>
-        </Box>
+        <Controller
+          control={control}
+          name="image"
+          render={({ field: { onChange, ...field } }) => (
+            <FileInput
+              accept={['IMAGE', 'VIDEO']}
+              multiple={false}
+              value={field.value}
+              existingFiles={
+                data.existingAsset
+                  ? [
+                      {
+                        url: data.existingAsset.url,
+                        type: data.existingAsset.type,
+                      },
+                    ]
+                  : undefined
+              }
+              onChange={(file) =>
+                handleFieldChange('image', file as File | null)
+              }
+              removeExistingFileFn={async (url) => {
+                // API'ye silme isteği at
+                await deleteAsset(url);
+                handleFieldChange('existingAsset', null);
+              }}
+            />
+          )}
+        />
       </ThemeFormCard>
 
-      {/* Title */}
       <Controller
         control={control}
         name="title"
@@ -54,7 +66,6 @@ const SlideItemForm = ({ uniqueId, parentUniqueId }: ItemFormProps) => {
         )}
       />
 
-      {/* Subtitle */}
       <Controller
         control={control}
         name="subtitle"
@@ -71,7 +82,6 @@ const SlideItemForm = ({ uniqueId, parentUniqueId }: ItemFormProps) => {
         )}
       />
 
-      {/* Button */}
       <ThemeFormCard title="Buton">
         <Stack gap="xs">
           <Controller
@@ -107,7 +117,6 @@ const SlideItemForm = ({ uniqueId, parentUniqueId }: ItemFormProps) => {
         </Stack>
       </ThemeFormCard>
 
-      {/* Colors */}
       <ThemeFormCard title="Renkler">
         <Stack gap="xs">
           <Group grow>

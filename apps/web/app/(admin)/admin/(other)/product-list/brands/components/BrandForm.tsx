@@ -1,6 +1,5 @@
 'use client';
 
-import Dropzone from '@/components/Dropzone';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import SeoCard from '@/components/SeoCard';
 import AdminBrandDataSelect from '@/components/inputs/admin/AdminBrandDataSelect';
@@ -29,7 +28,7 @@ import {
 } from '@repo/shared';
 import { BrandSchema, BrandZodType } from '@repo/types';
 import { useRouter } from 'next/navigation';
-
+import { Dropzone } from '@repo/ui/inputs';
 interface BrandFormProps {
   defaultValues?: BrandZodType;
 }

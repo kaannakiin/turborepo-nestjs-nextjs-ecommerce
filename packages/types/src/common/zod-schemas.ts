@@ -1,7 +1,7 @@
 import { AssetType, Currency, Locale } from "@repo/database/client";
 import { parseDocument } from "htmlparser2";
 import { z } from "zod";
-import { MantineSize } from "./enums";
+import { AspectRatio, Media } from "./enums";
 /**
  * Asset tiplerine karşılık gelen MIME type'ları tanımlar.
  * Her asset tipi için izin verilen dosya formatlarının MIME type listesi.
@@ -45,13 +45,13 @@ export const getAssetTypeMessage = (types: AssetType[] | AssetType): string => {
   const messages = typeArray.map((type) => {
     switch (type) {
       case AssetType.IMAGE:
-        return "resim dosyaları (JPEG, PNG, GIF, WebP, SVG)";
+        return "(JPEG, PNG, GIF, WebP, SVG)";
       case AssetType.VIDEO:
-        return "video dosyaları (MP4, AVI, MOV, WebM)";
+        return "(MP4, AVI, MOV, WebM)";
       case AssetType.AUDIO:
-        return "ses dosyaları (MP3, WAV, AAC, FLAC)";
+        return "(MP3, WAV, AAC, FLAC)";
       case AssetType.DOCUMENT:
-        return "döküman dosyaları (PDF, DOC, DOCX, XLS, XLSX, TXT)";
+        return "(PDF, DOC, DOCX, XLS, XLSX, TXT)";
       default:
         return "desteklenen dosyalar";
     }
@@ -148,17 +148,25 @@ export const tcKimlikNoRegex = /^[1-9]{1}[0-9]{9}[02468]{1}$/;
 export const localeSchema = z.enum(Locale);
 export const currencySchema = z.enum(Currency);
 
-export const componentBreakpointSchema = z.object({
-  mobile: z
-    .int({ error: "Lütfen geçerli bir değer giriniz." })
-    .min(1, { error: "Girdiğiniz değer 1'den küçük olamaz" })
-    .max(10, { error: "Lütfen 10'dan küçük bir değer giriniz." }),
-  tablet: z
-    .int({ error: "Lütfen geçerli bir değer giriniz." })
-    .min(1, { error: "Girdiğiniz değer 1'den küçük olamaz" })
-    .max(10, { error: "Lütfen 10'dan küçük bir değer giriniz." }),
-  desktop: z
-    .int({ error: "Lütfen geçerli bir değer giriniz." })
-    .min(1, { error: "Girdiğiniz değer 1'den küçük olamaz" })
-    .max(10, { error: "Lütfen 10'dan küçük bir değer giriniz." }),
+export const aspectRatioSchema = z.enum(AspectRatio, {
+  error: "Geçersiz en-boy oranı.",
+});
+export const mediaSchema = z.enum(Media, {
+  error: "Geçersiz medya tipi.",
+});
+
+export const componentBreakpointSchema = z.record(
+  mediaSchema,
+  z
+    .number({
+      error: "Geçersiz breakpoint değeri.",
+    })
+    .min(1, "Breakpoint değeri en az 1 olmalıdır.")
+    .max(10, "Breakpoint değeri en fazla 10 olmalıdır.")
+    .default(1),
+);
+
+export const existingAssetSchema = z.object({
+  url: z.url({ error: "Geçersiz URL." }),
+  type: z.enum(AssetType, { error: "Geçersiz dosya tipi." }),
 });

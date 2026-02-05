@@ -2,11 +2,11 @@
 
 import type { DefaultValues, FieldValues, Path, Resolver } from '@repo/shared';
 import { useForm, zodResolver } from '@repo/shared';
-import { z } from '@repo/types';
+import { ZodObject, z } from '@repo/types';
 import { useCallback, useEffect } from 'react';
 import { useDesignStore } from '../store/design-store';
 
-export function useComponentForm<T extends z.ZodTypeAny>(
+export function useComponentForm<T extends ZodObject>(
   schema: T,
   uniqueId: string,
 ) {
@@ -52,7 +52,7 @@ export function useComponentForm<T extends z.ZodTypeAny>(
   };
 }
 
-export function useItemForm<T extends z.ZodTypeAny>(
+export function useItemForm<T extends ZodObject>(
   schema: T,
   uniqueId: string,
   _parentUniqueId: string,

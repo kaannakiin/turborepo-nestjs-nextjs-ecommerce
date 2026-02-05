@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   BrandHierarchyView,
   CategoryHierarchyView,
+  Locale,
   TagHierarchyView,
 } from '@repo/database';
 import { Pagination } from '@repo/types';
@@ -12,6 +13,7 @@ export class HierarchyService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async getCategoriesHierarchy(
+    locale: Locale,
     limit?: number,
     page?: number,
     search?: string,
@@ -23,20 +25,21 @@ export class HierarchyService {
     const safePage = Math.max(page || 1, 1);
     const skip = (safePage - 1) * safeLimit;
 
-    const where = search?.trim()
-      ? {
-          OR: [
-            { name: { contains: search.trim(), mode: 'insensitive' as const } },
-            { slug: { contains: search.trim(), mode: 'insensitive' as const } },
-            {
-              description: {
-                contains: search.trim(),
-                mode: 'insensitive' as const,
-              },
+    const where = {
+      locale,
+      ...(search?.trim() && {
+        OR: [
+          { name: { contains: search.trim(), mode: 'insensitive' as const } },
+          { slug: { contains: search.trim(), mode: 'insensitive' as const } },
+          {
+            description: {
+              contains: search.trim(),
+              mode: 'insensitive' as const,
             },
-          ],
-        }
-      : {};
+          },
+        ],
+      }),
+    };
 
     const [categories, total] = await Promise.all([
       this.prismaService.categoryHierarchyView.findMany({
@@ -60,6 +63,7 @@ export class HierarchyService {
   }
 
   async getBrandsHierarchy(
+    locale: Locale,
     limit?: number,
     page?: number,
     search?: string,
@@ -71,20 +75,21 @@ export class HierarchyService {
     const safePage = Math.max(page || 1, 1);
     const skip = (safePage - 1) * safeLimit;
 
-    const where = search?.trim()
-      ? {
-          OR: [
-            { name: { contains: search.trim(), mode: 'insensitive' as const } },
-            { slug: { contains: search.trim(), mode: 'insensitive' as const } },
-            {
-              description: {
-                contains: search.trim(),
-                mode: 'insensitive' as const,
-              },
+    const where = {
+      locale,
+      ...(search?.trim() && {
+        OR: [
+          { name: { contains: search.trim(), mode: 'insensitive' as const } },
+          { slug: { contains: search.trim(), mode: 'insensitive' as const } },
+          {
+            description: {
+              contains: search.trim(),
+              mode: 'insensitive' as const,
             },
-          ],
-        }
-      : {};
+          },
+        ],
+      }),
+    };
 
     const [brands, total] = await Promise.all([
       this.prismaService.brandHierarchyView.findMany({
@@ -108,6 +113,7 @@ export class HierarchyService {
   }
 
   async getTagsHierarchy(
+    locale: Locale,
     limit?: number,
     page?: number,
     search?: string,
@@ -119,14 +125,15 @@ export class HierarchyService {
     const safePage = Math.max(page || 1, 1);
     const skip = (safePage - 1) * safeLimit;
 
-    const where = search?.trim()
-      ? {
-          OR: [
-            { name: { contains: search.trim(), mode: 'insensitive' as const } },
-            { slug: { contains: search.trim(), mode: 'insensitive' as const } },
-          ],
-        }
-      : {};
+    const where = {
+      locale,
+      ...(search?.trim() && {
+        OR: [
+          { name: { contains: search.trim(), mode: 'insensitive' as const } },
+          { slug: { contains: search.trim(), mode: 'insensitive' as const } },
+        ],
+      }),
+    };
 
     const [tags, total] = await Promise.all([
       this.prismaService.tagHierarchyView.findMany({

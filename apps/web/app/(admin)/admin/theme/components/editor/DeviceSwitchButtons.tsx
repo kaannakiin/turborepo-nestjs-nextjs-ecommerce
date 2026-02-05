@@ -1,12 +1,12 @@
 'use client';
 
-import { Media } from '@/context/device-context/DeviceContext';
 import {
   Group,
   UnstyledButton,
   useMantineTheme,
   useComputedColorScheme,
 } from '@mantine/core';
+import { Media } from '@repo/types';
 import {
   IconDeviceDesktop,
   IconDeviceIpad,

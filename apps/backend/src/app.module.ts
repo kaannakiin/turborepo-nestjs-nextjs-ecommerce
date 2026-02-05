@@ -22,6 +22,7 @@ import { UserModule } from './user/user.module';
 import { ClientContextGuard } from './common/guards/client-context.guard';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { CartModule } from './cart/cart.module';
+import { AssetModule } from './asset/asset.module';
 
 @Module({
   imports: [
@@ -82,6 +83,7 @@ import { CartModule } from './cart/cart.module';
     BrandsModule,
     ProductsModule,
     CartModule,
+    AssetModule,
     // ThrottlerModule.forRootAsync({
     //   imports: [ConfigModule],
     //   inject: [ConfigService],

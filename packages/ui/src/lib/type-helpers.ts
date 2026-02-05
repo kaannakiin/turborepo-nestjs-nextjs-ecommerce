@@ -1,4 +1,9 @@
-import { MantineFontWeight, MantineSize, TextAlign } from "@repo/types";
+import {
+  AspectRatio,
+  MantineFontWeight,
+  MantineSize,
+  TextAlign,
+} from "@repo/types";
 
 export function getMantineSizeLabel(size: MantineSize): string {
   switch (size) {
@@ -44,3 +49,16 @@ export function getMantineFontWeightLabel(weight: MantineFontWeight) {
       return "Medium";
   }
 }
+
+export const getAspectRatioLabel = (ratio: AspectRatio): string => {
+  switch (ratio) {
+    case AspectRatio.AUTO:
+      return "Otomatik";
+    case AspectRatio.SQUARE:
+      return "Kare (1:1)";
+    case AspectRatio.FOUR_BY_THREE:
+      return "4:3";
+    case AspectRatio.SIXTEEN_BY_NINE:
+      return "16:9";
+  }
+};

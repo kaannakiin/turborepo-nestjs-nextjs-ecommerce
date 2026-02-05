@@ -1,5 +1,5 @@
 'use client';
-import Dropzone from '@/components/Dropzone';
+import { Dropzone } from '@repo/ui/inputs';
 import {
   ActionIcon,
   Avatar,
@@ -44,7 +44,6 @@ import {
 } from '@tabler/icons-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import classes from './RadioCard.module.css';
-
 import LoadingOverlay from '@/components/LoadingOverlay';
 import {
   closestCenter,

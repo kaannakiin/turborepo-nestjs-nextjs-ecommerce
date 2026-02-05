@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   ActionIcon,
@@ -8,9 +8,9 @@ import {
   Popover,
   Stack,
   Text,
-} from "@mantine/core";
-import { MantineSize } from "@repo/types";
-import { useState } from "react";
+} from '@mantine/core';
+import { MantineSize } from '@repo/types';
+import { useState } from 'react';
 
 interface ActionPopoverrProps {
   targetIcon: React.ReactNode;
@@ -18,16 +18,16 @@ interface ActionPopoverrProps {
   onConfirm?: () => void | Promise<void>;
   size?: MantineSize;
   className?: string;
-  variant?: ActionIconProps["variant"];
+  variant?: ActionIconProps['variant'];
 }
 
 const ActionPopover = ({
   targetIcon,
   text,
   onConfirm,
-  size = "xs",
+  size = 'xs',
   className,
-  variant = "transparent",
+  variant = 'transparent',
 }: ActionPopoverrProps) => {
   const [opened, setOpened] = useState(false);
   const handleConfirm = async () => {
@@ -42,16 +42,16 @@ const ActionPopover = ({
         <ActionIcon
           className={className}
           variant={variant}
-          c={"red"}
+          c={'red'}
           size={size}
           onClick={() => setOpened((o) => !o)}
         >
           {targetIcon}
         </ActionIcon>
       </Popover.Target>
-      <Popover.Dropdown bg={"gray.3"} maw={300}>
-        <Stack gap={"xs"}>
-          <Text fz={"md"}>{text}</Text>
+      <Popover.Dropdown bg={'gray.3'} maw={300}>
+        <Stack gap={'xs'}>
+          <Text fz={'md'}>{text}</Text>
           <Group justify="end" gap="xs">
             <Button
               variant="default"
@@ -60,7 +60,7 @@ const ActionPopover = ({
             >
               İptal
             </Button>
-            <Button size="xs" color={"red"} onClick={handleConfirm}>
+            <Button size="xs" color={'red'} onClick={handleConfirm}>
               Onayla
             </Button>
           </Group>

@@ -15,4 +15,4 @@ export * from "./customers/index";
 export * from "./payment-methods/index";
 export * from "./store/index";
 export * from "./design/index";
-export { flattenError, ZodType, z } from "zod";
+export { flattenError, ZodType, z, ZodObject } from "zod";

@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { colorHex, DesignComponentType, MantineSize } from "../../common";
+import {
+  colorHex,
+  componentBreakpointSchema,
+  DesignComponentType,
+  MantineSize,
+} from "../../common";
 
 export const DesignProductCarouselProductSchema = z
   .object({
@@ -15,6 +20,7 @@ export const DesignProductCarouselProductSchema = z
       .max(128, { error: "Badge yazısı en fazla 128 karakter olabilir." })
       .nullish(),
     customBadgeColor: colorHex.nullish(),
+    customBadgeTextColor: colorHex.nullish(),
     order: z.number().int().default(0),
   })
   .refine(
@@ -63,26 +69,7 @@ export const DesignProductCarouselSchema = z.object({
       error: "Geçersiz ürün listesi.",
     })
     .min(1, { error: "En az 1 ürün eklemelisiniz." }),
-  viewCounts: z.object({
-    mobileProductCount: z
-      .int({ error: "Geçersiz mobil ürün sayısı." })
-      .min(1)
-      .max(12)
-      .nullish()
-      .default(2),
-    tabletProductCount: z
-      .int({ error: "Geçersiz tablet ürün sayısı." })
-      .min(1)
-      .max(12)
-      .nullish()
-      .default(4),
-    desktopProductCount: z
-      .int({ error: "Geçersiz masaüstü ürün sayısı." })
-      .min(1)
-      .max(12)
-      .nullish()
-      .default(6),
-  }),
+  breakPoints: componentBreakpointSchema,
   showPrice: z.boolean({ error: "Fiyat gösterim durumu gereklidir." }),
   showAddToCartButton: z.boolean({
     error: "Sepete ekle butonu durumu gereklidir.",

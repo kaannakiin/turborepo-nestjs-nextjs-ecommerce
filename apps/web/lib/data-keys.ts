@@ -95,9 +95,16 @@ export const DataKeys = {
       detail: (id: string) => ['inventory', 'detail', id] as const,
       upsert: ['inventory', 'upsert'],
     },
+
+    hierarchy: {
+      key: 'hierarchy' as const,
+      brands: (search?: string) => ['hierarchy', 'brands', search] as const,
+      categories: (search?: string) =>
+        ['hierarchy', 'categories', search] as const,
+      tags: (search?: string) => ['hierarchy', 'tags', search] as const,
+    },
   },
 
-  // New keys added for refactoring
   googleTaxonomy: {
     categories: (parentId: string | null) =>
       ['google-taxonomy', parentId ?? 'root'] as const,
