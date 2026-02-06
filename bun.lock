@@ -247,6 +247,7 @@
         "@mantine/dropzone": "catalog:",
         "@mantine/hooks": "catalog:",
         "@repo/database": "workspace:*",
+        "@repo/shared": "workspace:*",
         "@repo/types": "workspace:*",
         "@tabler/icons-react": "catalog:",
         "clsx": "catalog:",

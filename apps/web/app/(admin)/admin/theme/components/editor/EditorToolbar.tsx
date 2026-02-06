@@ -3,7 +3,13 @@
 import { ActionIcon, Button, Group, Tooltip } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { DesignSchema } from '@repo/types';
-import { IconDeviceFloppy, IconEye, IconX } from '@tabler/icons-react';
+import {
+  IconDeviceFloppy,
+  IconEye,
+  IconEyeOff,
+  IconX,
+} from '@tabler/icons-react';
+import { usePreviewStore } from '../../store/preview-store';
 import { useDesignStore } from '../../store/design-store';
 
 export default function EditorToolbar() {
@@ -11,6 +17,8 @@ export default function EditorToolbar() {
   const design = useDesignStore((s) => s.design);
   const resetToOriginal = useDesignStore((s) => s.resetToOriginal);
   const markClean = useDesignStore((s) => s.markClean);
+  const isPreviewMode = usePreviewStore((s) => s.isPreviewMode);
+  const togglePreview = usePreviewStore((s) => s.togglePreview);
 
   const handleSave = () => {
     if (!design) return;
@@ -46,14 +54,19 @@ export default function EditorToolbar() {
   };
 
   const handlePreview = () => {
-    console.log('Preview design:', design);
+    togglePreview();
   };
 
   return (
     <Group gap="xs">
-      <Tooltip label="Önizleme">
-        <ActionIcon variant="subtle" size="md" onClick={handlePreview}>
-          <IconEye size={18} />
+      <Tooltip label={isPreviewMode ? 'Düzenleme Modu' : 'Önizleme'}>
+        <ActionIcon
+          variant={isPreviewMode ? 'filled' : 'subtle'}
+          size="md"
+          onClick={handlePreview}
+          color={isPreviewMode ? 'blue' : undefined}
+        >
+          {isPreviewMode ? <IconEyeOff size={18} /> : <IconEye size={18} />}
         </ActionIcon>
       </Tooltip>
 

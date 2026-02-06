@@ -1,4 +1,4 @@
-import { Card, Text } from "@mantine/core";
+import { Card, Stack, Text } from "@mantine/core";
 import { ReactNode } from "react";
 
 interface ThemeFormCardProps {
@@ -23,7 +23,7 @@ const ThemeFormCard = ({ title, children }: ThemeFormCardProps) => {
       >
         {title}
       </Text>
-      {children}
+      <Stack gap={"xs"}>{children}</Stack>
     </Card>
   );
 };

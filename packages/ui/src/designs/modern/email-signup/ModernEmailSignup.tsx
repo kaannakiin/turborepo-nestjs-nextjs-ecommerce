@@ -10,15 +10,14 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { DesignEmailSignupSchemaInputType } from "@repo/types";
+import { EmailSignupPreviewProps } from "@repo/types";
 import { IconMail } from "@tabler/icons-react";
-import { DesignPreviewProps } from "../types";
 
 const ModernEmailSignup = ({
   data,
   isSelected,
   onSelect,
-}: DesignPreviewProps<DesignEmailSignupSchemaInputType>) => {
+}: EmailSignupPreviewProps) => {
   const alignmentStyle = {
     left: "flex-start",
     center: "center",

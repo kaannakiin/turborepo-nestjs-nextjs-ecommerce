@@ -80,10 +80,25 @@ export const FontFamily = {
 export type FontFamily = (typeof FontFamily)[keyof typeof FontFamily];
 
 export const AspectRatio = {
-  AUTO: "auto",
-  SQUARE: "1/1",
-  FOUR_BY_THREE: "4/3",
-  SIXTEEN_BY_NINE: "16/9",
+  AUTO: "AUTO",
+  "1/1": "1/1",
+  "4/3": "4/3",
+  "16/9": "16/9",
+  "9/16": "9/16",
+  "21/9": "21/9",
+  "3/2": "3/2",
+  "2/3": "2/3",
+  "3/4": "3/4",
+  "4/5": "4/5",
+  "5/4": "5/4",
+  "5/7": "5/7",
+  "7/5": "7/5",
+  "8/5": "8/5",
+  "5/8": "5/8",
+  "16/10": "16/10",
+  "10/16": "10/16",
+  "21/10": "21/10",
+  "10/21": "10/21",
 } as const;
 
 export type AspectRatio = (typeof AspectRatio)[keyof typeof AspectRatio];

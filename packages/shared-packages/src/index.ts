@@ -7,3 +7,4 @@ export * from "./shared-constants";
 export * from "./shared-helpers/cart-helpers";
 export * from "./shared-helpers/shared-helper";
 export * from "./shared-helpers/time-helpers";
+export * from "./product-helpers/product-helpers";

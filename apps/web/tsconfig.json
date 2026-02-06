@@ -6,6 +6,7 @@
       "@components/*": ["./app/components/*"],
       "@lib/*": ["./lib/*"],
       "@hooks/*": ["./hooks/*"],
+      "@/stores/*": ["./stores/*"],
       "types/*": ["./types/*"]
     },
     "plugins": [

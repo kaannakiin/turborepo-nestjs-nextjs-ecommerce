@@ -1,32 +1,24 @@
 import {
+  BaseComponentPreviewProps,
+  BaseItemPreviewProps,
   DesignComponentCategory,
   DesignComponentsSchemaInputType,
   DesignComponentType,
 } from '@repo/types';
-import { FC, RefObject } from 'react';
+import { FC } from 'react';
 
 export interface ComponentFormProps {
   uniqueId: string;
 }
 
-export interface ComponentPreviewProps<T = unknown> {
-  ref?: RefObject<HTMLDivElement>;
-  data: T;
-  isSelected?: boolean;
-  onSelect?: () => void;
-}
+export type ComponentPreviewProps<T = unknown> = BaseComponentPreviewProps<T>;
 
 export interface ItemFormProps {
   uniqueId: string;
   parentUniqueId: string;
 }
 
-export interface ItemPreviewProps<T = unknown> {
-  data: T;
-  index: number;
-  isSelected?: boolean;
-  onSelect?: () => void;
-}
+export type ItemPreviewProps<T = unknown> = BaseItemPreviewProps<T>;
 
 export interface ItemRegistryConfig<T = unknown> {
   arrayKey: string;

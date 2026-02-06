@@ -1,7 +1,7 @@
 'use client';
 
 import { useDeleteAsset } from '@hooks/admin/useImage';
-import { Group, Stack, TextInput } from '@mantine/core';
+import { Group, Stack, Switch, TextInput } from '@mantine/core';
 import { Controller } from '@repo/shared';
 import { DesignSliderSlideSchema } from '@repo/types';
 import { ThemeFormCard } from '@repo/ui/cards';
@@ -20,7 +20,7 @@ const SlideItemForm = ({ uniqueId, parentUniqueId }: ItemFormProps) => {
 
   return (
     <Stack gap="md">
-      <ThemeFormCard title="Gorsel">
+      <ThemeFormCard title="Görseller">
         <Controller
           control={control}
           name="image"
@@ -29,6 +29,7 @@ const SlideItemForm = ({ uniqueId, parentUniqueId }: ItemFormProps) => {
               accept={['IMAGE', 'VIDEO']}
               multiple={false}
               value={field.value}
+              label="Masaüstü Görseli"
               existingFiles={
                 data.existingAsset
                   ? [
@@ -43,14 +44,58 @@ const SlideItemForm = ({ uniqueId, parentUniqueId }: ItemFormProps) => {
                 handleFieldChange('image', file as File | null)
               }
               removeExistingFileFn={async (url) => {
-                // API'ye silme isteği at
                 await deleteAsset(url);
                 handleFieldChange('existingAsset', null);
               }}
             />
           )}
         />
+
+        <Controller
+          control={control}
+          name="mobileAsset"
+          render={({ field: { onChange, ...field } }) => (
+            <FileInput
+              accept={['IMAGE', 'VIDEO']}
+              multiple={false}
+              value={field.value}
+              label="Mobil Görseli"
+              existingFiles={
+                data.mobileExistingAsset
+                  ? [
+                      {
+                        url: data.mobileExistingAsset.url,
+                        type: data.mobileExistingAsset.type,
+                      },
+                    ]
+                  : undefined
+              }
+              onChange={(file) => {
+                handleFieldChange('mobileAsset', file as File | null);
+              }}
+              removeExistingFileFn={async (url) => {
+                await deleteAsset(url);
+                handleFieldChange('mobileExistingAsset', null);
+              }}
+            />
+          )}
+        />
       </ThemeFormCard>
+
+      <Controller
+        control={control}
+        name="withOverlay"
+        render={({ field }) => (
+          <Switch
+            label="Overlay Göster"
+            description="Görsel üzerine koyu gradient ekler"
+            checked={field.value || false}
+            onChange={(e) =>
+              handleFieldChange('withOverlay', e.currentTarget.checked)
+            }
+          />
+        )}
+      />
 
       <Controller
         control={control}

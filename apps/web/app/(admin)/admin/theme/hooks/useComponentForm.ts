@@ -3,7 +3,7 @@
 import type { DefaultValues, FieldValues, Path, Resolver } from '@repo/shared';
 import { useForm, zodResolver } from '@repo/shared';
 import { ZodObject, z } from '@repo/types';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useDesignStore } from '../store/design-store';
 
 export function useComponentForm<T extends ZodObject>(
@@ -12,13 +12,32 @@ export function useComponentForm<T extends ZodObject>(
 ) {
   type FormData = z.infer<T>;
 
-  const data = useDesignStore((s) => s.findByUniqueId<FormData>(uniqueId));
   const updateByUniqueId = useDesignStore((s) => s.updateByUniqueId);
+
+  const prevUniqueIdRef = useRef<string>(uniqueId);
+  const initialDataRef = useRef<FormData | null>(null);
+
+  if (initialDataRef.current === null || prevUniqueIdRef.current !== uniqueId) {
+    initialDataRef.current = useDesignStore
+      .getState()
+      .findByUniqueId<FormData>(uniqueId);
+    prevUniqueIdRef.current = uniqueId;
+  }
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema) as Resolver<FormData>,
-    defaultValues: (data ?? {}) as DefaultValues<FormData>,
+    defaultValues: (initialDataRef.current ?? {}) as DefaultValues<FormData>,
   });
+
+  useEffect(() => {
+    const newData = useDesignStore
+      .getState()
+      .findByUniqueId<FormData>(uniqueId);
+    if (newData) {
+      initialDataRef.current = newData;
+      form.reset(newData as DefaultValues<FormData>);
+    }
+  }, [uniqueId, form]);
 
   const handleFieldChange = useCallback(
     <K extends keyof FormData>(key: K, value: FormData[K]) => {
@@ -26,6 +45,7 @@ export function useComponentForm<T extends ZodObject>(
         key as unknown as Path<FormData>,
         value as FieldValues[string],
       );
+
       updateByUniqueId(uniqueId, { [key]: value } as Partial<
         Record<string, unknown>
       >);
@@ -33,11 +53,9 @@ export function useComponentForm<T extends ZodObject>(
     [form, updateByUniqueId, uniqueId],
   );
 
-  useEffect(() => {
-    if (data) {
-      form.reset(data);
-    }
-  }, [data, form]);
+  const formValues = form.watch();
+
+  const data = { ...initialDataRef.current, ...formValues } as FormData;
 
   return {
     form,

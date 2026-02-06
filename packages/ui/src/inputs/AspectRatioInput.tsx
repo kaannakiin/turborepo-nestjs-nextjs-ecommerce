@@ -8,6 +8,8 @@ const AspectRatioInput = ({ ...props }: AspectRatioInputProps) => {
   return (
     <Select
       {...props}
+      label={props?.label || "Aspect Ratio"}
+      allowDeselect={false}
       data={Object.values(AspectRatio).map((aspectRatio) => ({
         value: aspectRatio,
         label: getAspectRatioLabel(aspectRatio),

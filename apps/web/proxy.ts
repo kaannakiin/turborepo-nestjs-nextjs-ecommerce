@@ -1,6 +1,10 @@
 import { adminRoutes, authRoutes, userRoutes } from '@lib/constants';
 import { getStoreConfig } from '@lib/store-config';
-import { Locale } from '@repo/database/client';
+import {
+  getCurrencyForLocale,
+  parseLocaleFromCookie,
+} from '@lib/locale-server';
+import { Currency, Locale, StoreType } from '@repo/database/client';
 import {
   ACCESS_TOKEN_COOKIE_NAME,
   LOCALE_COOKIE_NAME,
@@ -100,7 +104,8 @@ async function verifyAccessToken(token: string) {
 
 interface LocaleContext {
   locale: Locale;
-  storeType: 'B2C' | 'B2B';
+  storeType: StoreType;
+  currency: Currency;
   shouldRedirect: boolean;
   redirectUrl?: string;
   shouldRewrite: boolean;
@@ -128,9 +133,9 @@ function extractLocaleFromPath(pathname: string): {
 function determineStoreType(
   hostname: string,
   config: StoreZodOutputType,
-): 'B2C' | 'B2B' {
-  if (!config.isB2BActive) return 'B2C';
-  if (!config.isB2CActive) return 'B2B';
+): StoreType {
+  if (!config.isB2BActive) return StoreType.B2C;
+  if (!config.isB2CActive) return StoreType.B2B;
 
   const currentHost = hostname.toLowerCase();
 
@@ -139,7 +144,7 @@ function determineStoreType(
       currentHost === config.b2bCustomDomain.toLowerCase() ||
       currentHost.endsWith(`.${config.b2bCustomDomain.toLowerCase()}`)
     ) {
-      return 'B2B';
+      return StoreType.B2B;
     }
   }
 
@@ -149,11 +154,11 @@ function determineStoreType(
       currentHost.startsWith(`${b2bSubdomain}.`) ||
       currentHost === b2bSubdomain
     ) {
-      return 'B2B';
+      return StoreType.B2B;
     }
   }
 
-  return 'B2C';
+  return StoreType.B2C;
 }
 
 function getGeoLocale(
@@ -203,21 +208,23 @@ function resolveLocaleContext(
   config: StoreZodOutputType | null,
 ): LocaleContext {
   const { pathname, hostname } = req.nextUrl;
-  const cookieLocale = req.cookies
-    .get(LOCALE_COOKIE_NAME)
-    ?.value?.toUpperCase() as Locale | undefined;
+  const cookieLocale = parseLocaleFromCookie(
+    req.cookies.get(LOCALE_COOKIE_NAME)?.value,
+  );
 
   if (!config) {
+    const fallbackLocale = cookieLocale || Locale.TR;
     return {
-      locale: cookieLocale || 'TR',
-      storeType: 'B2C',
+      locale: fallbackLocale,
+      storeType: StoreType.B2C,
+      currency: Currency.TRY,
       shouldRedirect: false,
       shouldRewrite: false,
     };
   }
 
   const storeType = determineStoreType(hostname, config);
-  const isB2B = storeType === 'B2B';
+  const isB2B = storeType === StoreType.B2B;
 
   const defaultLocale = (
     isB2B ? config.b2bDefaultLocale : config.b2cDefaultLocale
@@ -248,9 +255,11 @@ function resolveLocaleContext(
       getGeoLocale(req, availableLocales) ||
       getBrowserLocale(req, availableLocales) ||
       defaultLocale;
+    const currency = getCurrencyForLocale(finalLocale, storeType, config);
     return {
       locale: finalLocale,
       storeType,
+      currency,
       shouldRedirect: false,
       shouldRewrite: false,
     };
@@ -278,9 +287,12 @@ function resolveLocaleContext(
       cookieLocale || getBrowserLocale(req, availableLocales) || defaultLocale;
   }
 
+  const currency = getCurrencyForLocale(resolvedLocale, storeType, config);
+
   return {
     locale: resolvedLocale,
     storeType,
+    currency,
     shouldRedirect,
     redirectUrl,
     shouldRewrite,

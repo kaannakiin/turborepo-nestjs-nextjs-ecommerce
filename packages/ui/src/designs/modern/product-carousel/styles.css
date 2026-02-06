@@ -1,0 +1,53 @@
+/* Spring-Slider Style Product Carousel */
+
+.product-carousel-swiper {
+  width: 100%;
+  padding: 8px 0;
+}
+
+.product-slide {
+  width: 280px;
+  height: auto;
+}
+
+/* Spring Physics Animation */
+.product-card {
+  transform: scale(0.95);
+  opacity: 0.7;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Active/Center Card Effect */
+.swiper-slide-active .product-card,
+.product-card:hover {
+  transform: scale(1);
+  opacity: 1;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Smooth Shadow Transitions */
+.product-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Grab Cursor */
+.product-carousel-swiper {
+  cursor: grab;
+}
+
+.product-carousel-swiper:active {
+  cursor: grabbing;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .product-slide {
+    width: 220px;
+  }
+}
+
+@media (max-width: 480px) {
+  .product-slide {
+    width: 180px;
+  }
+}

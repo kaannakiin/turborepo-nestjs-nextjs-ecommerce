@@ -9,6 +9,9 @@ export * from "./design-components.schema";
 export * from "./design-page.schema";
 export * from "./design.schema";
 
+// Props Types
+export * from "./design-component-props";
+
 // Other
 export * from "./design-default-values";
 export * from "./header-zod-schema";

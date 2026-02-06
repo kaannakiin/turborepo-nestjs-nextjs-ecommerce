@@ -12,16 +12,16 @@ import {
   ModernOnboardGrid,
   ModernProductCarousel,
   ModernSlider,
+  OnboardGridItemPreview,
+  ProductCarouselItemPreview,
+  SlideItemPreview,
 } from '@repo/ui/designs';
 import EmailSignupForm from '../component-forms/email-signup/EmailSignupForm';
 import OnboardGridForm from '../component-forms/onboard-grid/OnboardGridForm';
 import OnboardGridItemForm from '../component-forms/onboard-grid/OnboardGridItemForm';
-import OnboardGridItemPreview from '../component-forms/onboard-grid/OnboardGridItemPreview';
 import ProductCarouselForm from '../component-forms/product-carousel/ProductCarouselForm';
 import ProductCarouselItemForm from '../component-forms/product-carousel/ProductCarouselItemForm';
-import ProductCarouselItemPreview from '../component-forms/product-carousel/ProductCarouselItemPreview';
 import SlideItemForm from '../component-forms/slider/SlideItemForm';
-import SlideItemPreview from '../component-forms/slider/SlideItemPreview';
 import SliderForm from '../component-forms/slider/SliderForm';
 import { ComponentRegistryEntry } from './registry-types';
 
@@ -37,11 +37,11 @@ const ProductCarouselEntry: ComponentRegistryEntry<DesignProductCarouselSchemaIn
       type: DesignComponentType.PRODUCT_CAROUSEL,
       title: null,
       subtitle: null,
-      titleColor: null,
-      subtitleColor: null,
+      titleColor: '#1a1a1a',
+      subtitleColor: '#666666',
       titleSize: 'lg',
       subtitleSize: 'md',
-      backgroundColor: null,
+      backgroundColor: '#ffffff',
       products: [],
       breakPoints: {
         mobile: 2,
@@ -62,19 +62,20 @@ const ProductCarouselEntry: ComponentRegistryEntry<DesignProductCarouselSchemaIn
       defaultValue:
         (): DesignProductCarouselSchemaInputType['products'][number] => ({
           uniqueId: createId(),
-          productVariantCombinationId: '',
           isCustomBadgeActive: false,
           customBadgeText: null,
-          customBadgeColor: null,
-          productName: '',
-          customBadgeTextColor: null,
+          customBadgeColor: '#ef4444',
+          customBadgeTextColor: '#ffffff',
+          productData: null,
           order: 0,
         }),
       getItemLabel: (
         item: DesignProductCarouselSchemaInputType['products'][number],
         index: number,
       ) => {
-        if (item.productName) return item.productName;
+        if (item.productData?.translations?.[0]?.name) {
+          return item.productData.translations[0].name;
+        }
         if (item.isCustomBadgeActive && item.customBadgeText) {
           return `Ürün ${index + 1} - ${item.customBadgeText}`;
         }
@@ -97,13 +98,14 @@ const SliderEntry: ComponentRegistryEntry<DesignSliderSchemaInputType> = {
     showArrows: true,
     showDots: true,
     slides: [],
+    aspectRatio: '16/9',
+    mobileAspectRatio: '9/16',
   }),
   FormComponent: SliderForm,
   PreviewComponent: ModernSlider,
   itemConfig: {
     arrayKey: 'slides',
     label: 'Slayt',
-
     sortable: true,
     FormComponent: SlideItemForm,
     PreviewComponent: SlideItemPreview,
@@ -115,10 +117,13 @@ const SliderEntry: ComponentRegistryEntry<DesignSliderSchemaInputType> = {
       subtitle: null,
       buttonText: null,
       buttonLink: null,
-      titleColor: null,
-      subtitleColor: null,
-      buttonColor: null,
-      buttonTextColor: null,
+      titleColor: '#ffffff',
+      subtitleColor: '#f3f4f6',
+      mobileAsset: null,
+      mobileExistingAsset: null,
+      buttonColor: '#3b82f6',
+      buttonTextColor: '#ffffff',
+      withOverlay: true,
       order: 0,
     }),
     getItemLabel: (
@@ -147,14 +152,14 @@ const EmailSignupEntry: ComponentRegistryEntry<DesignEmailSignupSchemaInputType>
       buttonText: 'Abone Ol',
       successMessage: 'Başarıyla abone oldunuz!',
       backgroundImage: null,
-      backgroundColor: null,
+      backgroundColor: '#f9fafb',
       overlayOpacity: 50,
-      titleColor: null,
+      titleColor: '#1a1a1a',
       titleSize: 'xl',
-      subtitleColor: null,
+      subtitleColor: '#666666',
       subtitleSize: 'md',
-      buttonColor: null,
-      buttonTextColor: null,
+      buttonColor: '#3b82f6',
+      buttonTextColor: '#ffffff',
       alignment: 'center',
       compact: false,
       minHeight: 300,
@@ -177,8 +182,8 @@ const OnboardGridEntry: ComponentRegistryEntry<DesignOnboardGridSchemaInputType>
       type: DesignComponentType.ONBOARD_GRID,
       title: null,
       description: null,
-      titleColor: null,
-      descriptionColor: null,
+      titleColor: '#1a1a1a',
+      descriptionColor: '#666666',
       items: [],
       breakPoints: {
         mobile: 1,
@@ -198,14 +203,14 @@ const OnboardGridEntry: ComponentRegistryEntry<DesignOnboardGridSchemaInputType>
         uniqueId: createId(),
         customImage: null,
         existingImage: null,
-        aspectRatio: 'auto',
-        titleColor: null,
-        descriptionColor: null,
+        aspectRatio: 'AUTO',
+        titleColor: '#1a1a1a',
+        descriptionColor: '#666666',
         slug: null,
         customUrl: null,
         buttonText: null,
-        buttonTextColor: null,
-        buttonBackgroundColor: null,
+        buttonTextColor: '#ffffff',
+        buttonBackgroundColor: '#3b82f6',
         title: null,
         description: null,
         brandId: null,

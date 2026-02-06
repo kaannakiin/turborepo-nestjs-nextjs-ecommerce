@@ -43,6 +43,7 @@
     "@dnd-kit/modifiers": "catalog:",
     "@dnd-kit/sortable": "catalog:",
     "@dnd-kit/utilities": "catalog:",
+    "@repo/shared": "workspace:*",
     "@repo/types": "workspace:*",
     "@tabler/icons-react": "catalog:",
     "clsx": "catalog:",

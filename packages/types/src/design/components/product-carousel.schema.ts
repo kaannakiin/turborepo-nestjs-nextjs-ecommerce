@@ -5,14 +5,12 @@ import {
   DesignComponentType,
   MantineSize,
 } from "../../common";
+import type { AdminProductTableProductData } from "../../products/product-prisma-types";
 
 export const DesignProductCarouselProductSchema = z
   .object({
     uniqueId: z.cuid2(),
-    productVariantCombinationId: z.string({
-      error: "Ürün varyant kombinasyonu gereklidir.",
-    }),
-    productName: z.string().nullish(),
+    productData: z.custom<AdminProductTableProductData>().nullish(),
     isCustomBadgeActive: z.boolean({ error: "Badge durumu gereklidir." }),
     customBadgeText: z
       .string()

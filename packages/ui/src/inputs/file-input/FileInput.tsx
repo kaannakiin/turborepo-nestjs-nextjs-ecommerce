@@ -4,6 +4,7 @@ import { Button, FileButton, Stack, Tooltip } from "@mantine/core";
 import { AssetType } from "@repo/database/client";
 import { IconInfoCircle } from "@tabler/icons-react";
 import {
+  Activity,
   Suspense,
   lazy,
   useCallback,
@@ -29,6 +30,7 @@ export interface FileInputProps {
   value?: File | File[] | null;
   onChange?: (files: File | File[] | null) => void;
   onOrderChange?: (items: FileItem[]) => void;
+  label?: string;
 }
 
 const FileInput = ({
@@ -40,6 +42,7 @@ const FileInput = ({
   onChange,
   onOrderChange,
   value,
+  label,
 }: FileInputProps) => {
   const acceptTypes = accept ? getAcceptTypes(accept).join(",") : undefined;
   const acceptInfo = accept ? getAcceptTypeInfo(accept) : undefined;
@@ -49,21 +52,19 @@ const FileInput = ({
   const blobUrlCache = useRef<Map<string, string>>(new Map());
 
   useEffect(() => {
-    if (existingFileObjects.length > 0) {
-      const existingItems: FileItem[] = existingFileObjects.map((f, index) => ({
-        id: `existing-${f.url}-${index}`,
-        file: f.file,
-        url: f.url,
-        isExisting: true,
-        type: f.type,
-        originalUrl: f.url,
-      }));
+    const existingItems: FileItem[] = existingFileObjects.map((f, index) => ({
+      id: `existing-${f.url}-${index}`,
+      file: f.file,
+      url: f.url,
+      isExisting: true,
+      type: f.type,
+      originalUrl: f.url,
+    }));
 
-      setLocalFiles((prev) => {
-        const newFiles = prev.filter((p) => !p.isExisting);
-        return [...existingItems, ...newFiles];
-      });
-    }
+    setLocalFiles((prev) => {
+      const newFiles = prev.filter((p) => !p.isExisting);
+      return [...existingItems, ...newFiles];
+    });
   }, [existingFileObjects]);
 
   useEffect(() => {
@@ -114,8 +115,10 @@ const FileInput = ({
   }, []);
 
   const handleAddFiles = useCallback(
-    async (files: File | File[]) => {
+    async (files: File | File[] | null) => {
+      if (!files) return;
       const fileArray = Array.isArray(files) ? files : [files];
+      if (fileArray.length === 0) return;
 
       if (multiple) {
         const currentNewFiles = localFiles
@@ -195,8 +198,6 @@ const FileInput = ({
 
   const handlePreview = useCallback((item: FileItem) => {}, []);
 
-  const ListComponent = sortable ? SortableFileList : FileList;
-
   return (
     <Stack gap="xs">
       <FileButton
@@ -216,28 +217,31 @@ const FileInput = ({
               )
             }
           >
-            Dosya Yükle
+            {label || "Dosya Yükle"}
           </Button>
         )}
       </FileButton>
-
-      {localFiles.length > 0 &&
-        (sortable ? (
-          <Suspense fallback={null}>
-            <SortableFileList
-              items={localFiles}
-              onRemove={handleRemove}
-              onPreview={handlePreview}
-              onOrderChange={handleOrderChange}
-            />
-          </Suspense>
-        ) : (
-          <FileList
+      <Activity
+        mode={localFiles?.length > 0 && sortable ? "visible" : "hidden"}
+      >
+        <Suspense fallback={null}>
+          <SortableFileList
             items={localFiles}
             onRemove={handleRemove}
             onPreview={handlePreview}
+            onOrderChange={handleOrderChange}
           />
-        ))}
+        </Suspense>
+      </Activity>
+      <Activity
+        mode={localFiles?.length > 0 && sortable ? "hidden" : "visible"}
+      >
+        <FileList
+          items={localFiles}
+          onRemove={handleRemove}
+          onPreview={handlePreview}
+        />
+      </Activity>
     </Stack>
   );
 };

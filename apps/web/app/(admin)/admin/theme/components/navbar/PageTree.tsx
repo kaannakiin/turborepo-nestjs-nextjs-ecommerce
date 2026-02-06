@@ -15,7 +15,6 @@ import {
   Stack,
   Text,
   Tooltip,
-  UnstyledButton,
   useComputedColorScheme,
   useMantineTheme,
 } from '@mantine/core';
@@ -28,9 +27,9 @@ import {
   IconTrash,
 } from '@tabler/icons-react';
 import { useState } from 'react';
-import { useScrollContext } from '../../context/scroll-context';
 import { componentRegistry } from '../../registry';
 import { useDesignStore, useIsSelected } from '../../store/design-store';
+import { useScrollStore } from '../../store/scroll-store';
 import { ComponentDragData, ItemDragData } from '../dnd/DndProvider';
 
 const PageTree = () => {
@@ -102,7 +101,7 @@ const ComponentTreeItem = ({
   const deleteByUniqueId = useDesignStore((s) => s.deleteByUniqueId);
   const addItem = useDesignStore((s) => s.addItem);
   const isSelected = useIsSelected(component.uniqueId);
-  const { scrollToComponent } = useScrollContext();
+  const scrollToComponent = useScrollStore((s) => s.scrollToComponent);
 
   const entry = componentRegistry[component.type];
   const itemConfig = entry?.itemConfig;

@@ -2,8 +2,13 @@
 
 import { NumberInput, Stack, Switch } from '@mantine/core';
 import { Controller } from '@repo/shared';
-import { DesignSliderSchema, DesignSliderSchemaInputType } from '@repo/types';
+import {
+  AspectRatio,
+  DesignSliderSchema,
+  DesignSliderSchemaInputType,
+} from '@repo/types';
 import { ThemeFormCard } from '@repo/ui/cards';
+import { AspectRatioInput } from '@repo/ui/inputs';
 import { useComponentForm } from '../../hooks/useComponentForm';
 import { ComponentFormProps } from '../../registry/registry-types';
 
@@ -18,7 +23,7 @@ const SliderForm = ({ uniqueId }: ComponentFormProps) => {
 
   return (
     <Stack gap="md">
-      <ThemeFormCard title="Otomatik Oynatma">
+      <ThemeFormCard title="Genel">
         <Stack gap="xs">
           <Controller
             control={control}
@@ -51,6 +56,32 @@ const SliderForm = ({ uniqueId }: ComponentFormProps) => {
               )}
             />
           )}
+          <Controller
+            control={control}
+            name="aspectRatio"
+            render={({ field }) => (
+              <AspectRatioInput
+                value={field.value}
+                label="Masaüstü En-Boy Orani"
+                onChange={(value) =>
+                  handleFieldChange('aspectRatio', value as AspectRatio)
+                }
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name="mobileAspectRatio"
+            render={({ field }) => (
+              <AspectRatioInput
+                value={field.value}
+                label="Mobil En-Boy Orani"
+                onChange={(value) =>
+                  handleFieldChange('mobileAspectRatio', value as AspectRatio)
+                }
+              />
+            )}
+          />
         </Stack>
       </ThemeFormCard>
 

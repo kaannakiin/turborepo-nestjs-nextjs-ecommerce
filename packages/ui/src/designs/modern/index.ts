@@ -1,4 +1,4 @@
-export { default as ModernSlider } from './ModernSlider';
-export { default as ModernProductCarousel } from './ModernProductCarousel';
-export { default as ModernEmailSignup } from './ModernEmailSignup';
-export { default as ModernOnboardGrid } from './ModernOnboardGrid';
+export * from "./slider";
+export * from "./product-carousel";
+export * from "./email-signup";
+export * from "./onboard-grid";

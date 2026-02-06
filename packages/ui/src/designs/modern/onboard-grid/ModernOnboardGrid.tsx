@@ -1,15 +1,14 @@
-'use client';
+"use client";
 
-import { Box, Card, Group, Stack, Text } from '@mantine/core';
-import { DesignOnboardGridSchemaInputType } from '@repo/types';
-import { IconLayoutGrid } from '@tabler/icons-react';
-import { DesignPreviewProps } from '../types';
+import { Box, Card, Group, Stack, Text } from "@mantine/core";
+import { OnboardGridPreviewProps } from "@repo/types";
+import { IconLayoutGrid } from "@tabler/icons-react";
 
 const ModernOnboardGrid = ({
   data,
   isSelected,
   onSelect,
-}: DesignPreviewProps<DesignOnboardGridSchemaInputType>) => {
+}: OnboardGridPreviewProps) => {
   const itemCount = data.items.length;
 
   return (
@@ -18,20 +17,20 @@ const ModernOnboardGrid = ({
       p={0}
       onClick={onSelect}
       style={{
-        cursor: 'pointer',
-        borderColor: isSelected ? 'var(--mantine-color-blue-6)' : undefined,
+        cursor: "pointer",
+        borderColor: isSelected ? "var(--mantine-color-blue-6)" : undefined,
         borderWidth: isSelected ? 2 : 1,
-        overflow: 'hidden',
+        overflow: "hidden",
       }}
     >
       {/* Preview Area */}
       <Box
         style={{
           height: 200,
-          backgroundColor: 'var(--mantine-color-gray-1)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          backgroundColor: "var(--mantine-color-gray-1)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
         <Stack align="center" gap="xs">
@@ -39,12 +38,12 @@ const ModernOnboardGrid = ({
             size={48}
             color={
               itemCount > 0
-                ? 'var(--mantine-color-gray-5)'
-                : 'var(--mantine-color-gray-4)'
+                ? "var(--mantine-color-gray-5)"
+                : "var(--mantine-color-gray-4)"
             }
           />
           <Text size="sm" c="dimmed">
-            {itemCount > 0 ? `${itemCount} öğe` : 'Öğe eklenmedi'}
+            {itemCount > 0 ? `${itemCount} öğe` : "Öğe eklenmedi"}
           </Text>
         </Stack>
       </Box>
@@ -52,7 +51,7 @@ const ModernOnboardGrid = ({
       {/* Info Bar */}
       <Box
         p="sm"
-        style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}
+        style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}
       >
         <Group justify="space-between">
           <Group gap="xs">

@@ -1,18 +1,18 @@
 'use client';
 
+import { useProductList } from '@hooks/admin/useProducts';
 import { Button, Stack, Switch, Text, TextInput } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { Controller } from '@repo/shared';
 import {
+  AdminProductTableProductData,
   DesignProductCarouselProductSchema,
   DesignProductCarouselProductSchemaInputType,
-  ProductModalItem,
 } from '@repo/types';
 import { ColorPickerInput } from '@repo/ui/inputs';
 import { ProductsModal } from '@repo/ui/modals';
 import { IconSearch } from '@tabler/icons-react';
 import { useState } from 'react';
-import { useProductList } from '@hooks/admin/useProducts';
 import { useItemForm } from '../../hooks/useComponentForm';
 import { ItemFormProps } from '../../registry/registry-types';
 
@@ -34,10 +34,11 @@ const ProductCarouselItemForm = ({
 
   const typedData = data as DesignProductCarouselProductSchemaInputType;
 
-  const handleProductSelect = (items: ProductModalItem[]) => {
+  const handleProductSelect = (
+    items: { product: AdminProductTableProductData; variantId: string }[],
+  ) => {
     if (items.length > 0) {
-      handleFieldChange('productVariantCombinationId', items[0].itemId);
-      handleFieldChange('productName', items[0].productName);
+      handleFieldChange('productData', items[0].product);
       close();
     }
   };
@@ -46,13 +47,13 @@ const ProductCarouselItemForm = ({
     <Stack gap="md">
       <Stack gap="xs">
         <Text size="sm" fw={500}>
-          Urun Secimi
+          Ürün Seçimi
         </Text>
-        {typedData.productVariantCombinationId ? (
+        {typedData.productData ? (
           <TextInput
             readOnly
             value={
-              typedData.productName || typedData.productVariantCombinationId
+              typedData.productData.translations[0]?.name || 'İsimsiz Ürün'
             }
             rightSectionWidth={100}
             rightSection={
@@ -68,7 +69,7 @@ const ProductCarouselItemForm = ({
             fullWidth
             onClick={open}
           >
-            Urun Sec
+            Ürün Seç
           </Button>
         )}
       </Stack>
@@ -133,16 +134,7 @@ const ProductCarouselItemForm = ({
           onSearch={setSearch}
           onPageChange={setPage}
           onSubmit={handleProductSelect}
-          selectedItems={
-            typedData.productVariantCombinationId
-              ? [
-                  {
-                    itemId: typedData.productVariantCombinationId,
-                    productName: '',
-                  },
-                ]
-              : []
-          }
+          selectedItems={[]}
           multiple={false}
         />
       )}

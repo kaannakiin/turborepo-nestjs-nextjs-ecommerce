@@ -14,11 +14,12 @@ import {
   TextInput,
 } from "@mantine/core";
 import { useDebouncedCallback } from "@mantine/hooks";
-import {
-  AdminProductTableProductData,
-  Pagination,
-  ProductModalItem,
-} from "@repo/types";
+import { AdminProductTableProductData, Pagination } from "@repo/types";
+
+interface SelectedProductItem {
+  product: AdminProductTableProductData;
+  variantId: string;
+}
 import { useEffect, useState } from "react";
 import { Loader } from "../common";
 
@@ -27,9 +28,12 @@ interface ProductsModalProps extends Omit<ModalProps, "onSubmit" | "children"> {
     products: AdminProductTableProductData[];
     pagination?: Pagination;
   };
-  onSubmit: (items: ProductModalItem[]) => void;
+  onSubmit: (items: SelectedProductItem[]) => void;
   onSearch: (query: string) => void;
-  selectedItems: ProductModalItem[];
+  selectedItems?: {
+    product: AdminProductTableProductData;
+    variantId: string;
+  }[];
   onPageChange: (page: number) => void;
   isLoading: boolean;
   multiple?: boolean;
@@ -47,23 +51,19 @@ const ProductsModal = ({
   ...props
 }: ProductsModalProps) => {
   const [selectedItemsMap, setSelectedItemsMap] = useState<
-    Map<string, ProductModalItem>
+    Map<string, SelectedProductItem>
   >(() => {
-    const map = new Map<string, ProductModalItem>();
-    selectedItems.forEach((item) => {
-      if (item.itemId) {
-        map.set(item.itemId, item);
-      }
+    const map = new Map<string, SelectedProductItem>();
+    selectedItems?.forEach((item) => {
+      map.set(item.variantId, item);
     });
     return map;
   });
 
   useEffect(() => {
-    const newMap = new Map<string, ProductModalItem>();
+    const newMap = new Map<string, SelectedProductItem>();
     selectedItems.forEach((item) => {
-      if (item.itemId) {
-        newMap.set(item.itemId, item);
-      }
+      newMap.set(item.variantId, item);
     });
     setSelectedItemsMap(newMap);
   }, [selectedItems]);
@@ -81,47 +81,12 @@ const ProductsModal = ({
     setSelectedItemsMap((prev) => {
       const newMap = multiple ? new Map(prev) : new Map();
 
-      if (multiple) {
-        if (newMap.has(variantId)) {
-          newMap.delete(variantId);
-        } else {
-          const variant = product.variants.find((v) => v.id === variantId);
-          let finalName = product.translations[0]?.name || "İsimsiz Ürün";
-          if (variant) {
-            const variantLabel = formatVariantLabel(variant);
-
-            if (
-              variantLabel &&
-              variantLabel !== variant.id &&
-              variantLabel !== variant.sku &&
-              variantLabel !== "Varsayılan Varyant"
-            ) {
-              finalName += ` - ${variantLabel}`;
-            }
-          }
-          newMap.set(variantId, {
-            itemId: variantId,
-            productName: finalName,
-          });
-        }
+      if (newMap.has(variantId)) {
+        newMap.delete(variantId);
       } else {
-        const variant = product.variants.find((v) => v.id === variantId);
-        let finalName = product.translations[0]?.name || "İsimsiz Ürün";
-        if (variant) {
-          const variantLabel = formatVariantLabel(variant);
-
-          if (
-            variantLabel &&
-            variantLabel !== variant.id &&
-            variantLabel !== variant.sku &&
-            variantLabel !== "Varsayılan Varyant"
-          ) {
-            finalName += ` - ${variantLabel}`;
-          }
-        }
         newMap.set(variantId, {
-          itemId: variantId,
-          productName: finalName,
+          product,
+          variantId,
         });
       }
 
@@ -143,21 +108,9 @@ const ProductsModal = ({
         if (allSelected) {
           newMap.delete(variant.id);
         } else {
-          let finalName = product.translations[0]?.name || "İsimsiz Ürün";
-          const variantLabel = formatVariantLabel(variant);
-
-          if (
-            variantLabel &&
-            variantLabel !== variant.id &&
-            variantLabel !== variant.sku &&
-            variantLabel !== "Varsayılan Varyant"
-          ) {
-            finalName += ` - ${variantLabel}`;
-          }
-
           newMap.set(variant.id, {
-            itemId: variant.id,
-            productName: finalName,
+            product,
+            variantId: variant.id,
           });
         }
       });

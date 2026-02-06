@@ -1,5 +1,8 @@
 'use client';
 
+import { useDeviceContext } from '@/context/device-context/DeviceContext';
+import { useCurrency } from '@hooks/useCurrency';
+import { useLocale } from '@hooks/useLocale';
 import {
   Box,
   Stack,
@@ -8,13 +11,13 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import {
-  DesignComponentsSchemaInputType,
   DesignComponentType,
+  DesignComponentsSchemaInputType,
 } from '@repo/types';
 import { Activity, useCallback, useEffect, useRef } from 'react';
-import { useScrollContext } from '../../context/scroll-context';
 import { componentRegistry } from '../../registry';
 import { useDesignStore, useIsSelected } from '../../store/design-store';
+import { useScrollStore } from '../../store/scroll-store';
 
 interface ComponentRendererProps {
   pageUniqueId: string;
@@ -65,17 +68,22 @@ function PreviewCard({ component, pageUniqueId }: PreviewCardProps) {
   const theme = useMantineTheme();
   const colorScheme = useComputedColorScheme('light');
   const cardRef = useRef<HTMLDivElement>(null);
+  const { actualMedia } = useDeviceContext();
+  const { locale } = useLocale();
+  const { currency } = useCurrency();
 
   const select = useDesignStore((s) => s.select);
   const isSelected = useIsSelected(component.uniqueId);
-  const { registerRef } = useScrollContext();
+  const registerRef = useScrollStore((s) => s.registerRef);
+  const scrollToComponent = useScrollStore((s) => s.scrollToComponent);
 
   const entry = componentRegistry[component.type as DesignComponentType];
   const PreviewComponent = entry?.PreviewComponent;
 
   const handleSelect = useCallback(() => {
     select('component', component.uniqueId, [pageUniqueId, component.uniqueId]);
-  }, [select, component.uniqueId, pageUniqueId]);
+    scrollToComponent(component.uniqueId);
+  }, [select, scrollToComponent, component.uniqueId, pageUniqueId]);
 
   useEffect(() => {
     if (cardRef.current) {
@@ -89,22 +97,41 @@ function PreviewCard({ component, pageUniqueId }: PreviewCardProps) {
   return (
     <div ref={cardRef}>
       <Activity mode={PreviewComponent ? 'visible' : 'hidden'}>
-        <PreviewComponent
-          data={component}
-          isSelected={isSelected}
-          onSelect={handleSelect}
-        />
+        <Box
+          onClick={handleSelect}
+          style={{
+            cursor: 'pointer',
+            border: isSelected
+              ? `2px solid ${theme.colors.blue[6]}`
+              : '2px solid transparent',
+            borderRadius: theme.radius.md,
+            transition: 'border-color 0.2s ease',
+          }}
+        >
+          <PreviewComponent
+            data={component}
+            isSelected={isSelected}
+            onSelect={handleSelect}
+            media={actualMedia}
+            locale={locale || 'TR'}
+            currency={currency || 'TRY'}
+          />
+        </Box>
       </Activity>
       <Activity mode={!PreviewComponent ? 'visible' : 'hidden'}>
         <Box
           p="xl"
           onClick={handleSelect}
           style={{
+            cursor: 'pointer',
             backgroundColor:
               colorScheme === 'dark'
                 ? theme.colors.dark[6]
                 : theme.colors.gray[1],
             borderRadius: theme.radius.md,
+            border: isSelected
+              ? `2px solid ${theme.colors.blue[6]}`
+              : '2px solid transparent',
           }}
         >
           <Text size="sm" c="dimmed" ta="center">
